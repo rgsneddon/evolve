@@ -1,0 +1,1 @@
+String? readEnv(String key) => null;
