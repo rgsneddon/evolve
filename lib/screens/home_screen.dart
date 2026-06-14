@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/analysis_mode.dart';
 import '../providers/evolve_provider.dart';
 import '../widgets/cohesion_report_panel.dart';
+import '../widgets/evolve_banner.dart';
 import '../widgets/construct_completion_banner.dart';
 import '../widgets/grok_construal_bar.dart';
 import '../widgets/framework_equations_panel.dart';
@@ -97,6 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        const EvolveBanner(),
+                        const SizedBox(height: 16),
                         _startFreshButton(context, provider, s),
                         const SizedBox(height: 12),
                         _regionSelectAdvice(s.t('region_select_advice')),

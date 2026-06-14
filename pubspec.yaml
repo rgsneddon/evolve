@@ -1,7 +1,7 @@
 name: evolve
 description: Evolve Chronoflux framework — percent chance and social cohesion analysis.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -28,6 +28,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/banner/evolve.jfif
     - assets/data/outcome_registry.json
     - assets/config/grok_proxy.json
     - assets/flags/gb.png

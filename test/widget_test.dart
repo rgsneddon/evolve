@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/main.dart';
 import 'package:evolve/providers/evolve_provider.dart';
+import 'package:evolve/widgets/evolve_banner.dart';
 
 void main() {
   testWidgets('app loads with both analysis modes', (tester) async {
@@ -14,6 +15,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Evolve'), findsOneWidget);
+    expect(find.byType(EvolveBanner), findsOneWidget);
     expect(find.textContaining('SELECT THE REGION OR COUNTRY'), findsOneWidget);
     expect(find.text('YOUR SCENARIO'), findsOneWidget);
     expect(find.text('RESULTS'), findsOneWidget);
