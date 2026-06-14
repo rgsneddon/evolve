@@ -391,6 +391,8 @@ final _en = {
   'grok_dialog_ok': 'OK',
   'status_calc_grok_pipeline': 'Construing with Grok, then running Chronoflux…',
   'start_fresh': 'RESET',
+  'web_grok_inactive_notice':
+      'Grok construe is not active on the web version of Evolve. Download the Windows or Android app for full capabilities, or run the calculation with manual inputs.',
   'region_select_advice': 'SELECT THE REGION OR COUNTRY YOU WISH TO ANALYSE',
   'posed_question_section': 'YOUR QUESTION',
   'posed_question_label': 'POSE YOUR QUESTION HERE',
@@ -758,6 +760,8 @@ final _es = {
   'grok_dialog_ok': 'Aceptar',
   'status_calc_grok_pipeline': 'Construyendo con Grok, luego Chronoflux…',
   'start_fresh': 'REINICIAR',
+  'web_grok_inactive_notice':
+      'Grok construal no está activo en la versión web de Evolve. Descargue la app de Windows o Android para todas las funciones, o ejecute el cálculo con entradas manuales.',
   'region_select_advice': 'SELECCIONE LA REGIÓN O EL PAÍS QUE DESEA ANALIZAR',
   'posed_question_section': 'SU PREGUNTA',
   'posed_question_label': 'PLANTEE SU PREGUNTA AQUÍ',

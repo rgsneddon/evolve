@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -100,6 +101,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         const EvolveBanner(),
                         const SizedBox(height: 16),
+                        if (kIsWeb) ...[
+                          _webGrokInactiveNotice(s.t('web_grok_inactive_notice')),
+                          const SizedBox(height: 12),
+                        ],
                         _startFreshButton(context, provider, s),
                         const SizedBox(height: 12),
                         _regionSelectAdvice(s.t('region_select_advice')),
@@ -248,6 +253,37 @@ class _HomeScreenState extends State<HomeScreen> {
         fontWeight: FontWeight.w800,
         letterSpacing: 1.1,
         color: Color(0xFF9BA3B8),
+      ),
+    );
+  }
+
+  Widget _webGrokInactiveNotice(String text) {
+    const accent = Color(0xFF60A5FA);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: accent.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withOpacity(0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline_rounded, color: accent, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+                color: accent,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
