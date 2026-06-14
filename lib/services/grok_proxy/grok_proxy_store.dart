@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 
+import '../../models/scenario_input.dart';
+import '../narrative_link_reader.dart';
 import 'grok_construct_prompt.dart';
 import 'grok_proxy_config.dart';
 import 'grok_proxy_heuristic.dart';
@@ -127,6 +129,87 @@ class GrokProxyStore {
     _premium = sub.contains('premium');
   }
 
+  /// Server-side narrative fetch — bypasses browser CORS; X posts use the signed-in OAuth token.
+  Future<Map<String, dynamic>> fetchNarrativeLink(String urlString) async {
+    final uri = NarrativeLinkReader.normalizeUrl(urlString);
+    if (uri == null) {
+      throw NarrativeLinkProxyException('invalid');
+    }
+
+    if (NarrativeLinkReader.isXUrl(urlString)) {
+      if (_accessToken == null) {
+        throw NarrativeLinkProxyException('x_auth_required', statusCode: 401);
+      }
+      return _fetchXPost(uri);
+    }
+
+    final html = await NarrativeLinkReader.fetchHtmlForUri(uri, client: _client);
+    final content = NarrativeLinkReader.parseHtml(html, uri.toString());
+    if (NarrativeLinkReader.meaningfulLength(content.narrative) <
+        NarrativeLinkReader.minMeaningfulChars) {
+      throw NarrativeLinkProxyException('empty');
+    }
+    return {
+      'url': content.url,
+      'title': content.title,
+      'narrative': content.narrative,
+    };
+  }
+
+  Future<Map<String, dynamic>> _fetchXPost(Uri uri) async {
+    final tweetId = NarrativeLinkReader.tweetIdFromUri(uri);
+    if (tweetId == null) {
+      throw NarrativeLinkProxyException('invalid');
+    }
+
+    final apiUri = Uri.https(
+      'api.x.com',
+      '/2/tweets/$tweetId',
+      {
+        'tweet.fields': 'text,created_at,author_id',
+        'expansions': 'author_id',
+        'user.fields': 'username,name',
+      },
+    );
+
+    final res = await _client.get(
+      apiUri,
+      headers: {'Authorization': 'Bearer $_accessToken'},
+    );
+
+    if (res.statusCode == 401 || res.statusCode == 403) {
+      throw NarrativeLinkProxyException('x_auth_required', statusCode: 401);
+    }
+    if (res.statusCode == 429) {
+      throw NarrativeLinkProxyException('blocked', statusCode: 429);
+    }
+    if (res.statusCode != 200) {
+      throw NarrativeLinkProxyException('fetch', cause: res.body);
+    }
+
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    final data = json['data'] as Map<String, dynamic>?;
+    final text = '${data?['text'] ?? ''}'.trim();
+    if (text.isEmpty) {
+      throw NarrativeLinkProxyException('empty');
+    }
+
+    var author = '@x';
+    final users = json['includes']?['users'];
+    if (users is List && users.isNotEmpty) {
+      final user = users.first as Map<String, dynamic>;
+      final username = '${user['username'] ?? ''}'.trim();
+      if (username.isNotEmpty) author = '@$username';
+    }
+
+    final narrative = '$author: $text';
+    return {
+      'url': uri.toString(),
+      'title': 'X post $tweetId',
+      'narrative': ScenarioInput.clamp(narrative),
+    };
+  }
+
   Future<Map<String, dynamic>> construe(Map<String, dynamic> payload) async {
     final apiKey = config.xaiApiKey;
     if (apiKey != null && apiKey.isNotEmpty) {
@@ -235,4 +318,16 @@ Map<String, String> tokenExchangeBody({
     body['client_id'] = clientId;
   }
   return body;
+}
+
+/// Narrative fetch errors returned by the Grok proxy API.
+class NarrativeLinkProxyException implements Exception {
+  NarrativeLinkProxyException(this.code, {this.statusCode = 400, this.cause});
+
+  final String code;
+  final int statusCode;
+  final Object? cause;
+
+  @override
+  String toString() => 'NarrativeLinkProxyException($code)';
 }

@@ -26,7 +26,15 @@ class NarrativeLinkReader {
 
   http.Client get _http => _client ?? http.Client();
 
-  Future<NarrativeLinkContent> fetch(String urlString) async {
+  Future<NarrativeLinkContent> fetch(
+    String urlString, {
+    String? proxyBaseUrl,
+  }) async {
+    final proxy = proxyBaseUrl?.trim() ?? '';
+    if (proxy.isNotEmpty) {
+      return fetchViaProxy(proxy, urlString);
+    }
+
     final uri = normalizeUrl(urlString);
     if (uri == null) {
       throw NarrativeLinkException('invalid');
@@ -52,7 +60,7 @@ class NarrativeLinkReader {
           }
           if (response.statusCode >= 200 && response.statusCode < 300) {
             final content = parseHtml(response.body, uri.toString());
-            if (_meaningfulLength(content.narrative) < minMeaningfulChars) {
+            if (meaningfulLength(content.narrative) < minMeaningfulChars) {
               lastError = 'empty';
               continue;
             }
@@ -72,6 +80,115 @@ class NarrativeLinkReader {
       throw NarrativeLinkException('blocked', cause: lastError);
     }
     throw NarrativeLinkException('fetch', cause: lastError);
+  }
+
+  /// Fetches narrative text through the Grok proxy (web CORS bypass + X OAuth).
+  Future<NarrativeLinkContent> fetchViaProxy(String proxyBaseUrl, String urlString) async {
+    final base = proxyBaseUrl.endsWith('/')
+        ? proxyBaseUrl.substring(0, proxyBaseUrl.length - 1)
+        : proxyBaseUrl;
+    final uri = normalizeUrl(urlString);
+    if (uri == null) {
+      throw NarrativeLinkException('invalid');
+    }
+
+    final response = await _http
+        .post(
+          Uri.parse('$base/narrative/fetch'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'url': uri.toString()}),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    Map<String, dynamic> json;
+    try {
+      json = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw NarrativeLinkException('fetch', cause: response.statusCode);
+    }
+
+    final error = '${json['error'] ?? ''}'.trim();
+    if (error.isNotEmpty || response.statusCode >= 400) {
+      throw NarrativeLinkException(
+        error.isNotEmpty ? error : 'fetch',
+        cause: response.statusCode,
+      );
+    }
+
+    final narrative = '${json['narrative'] ?? ''}'.trim();
+    if (meaningfulLength(narrative) < minMeaningfulChars) {
+      throw NarrativeLinkException('empty');
+    }
+
+    return NarrativeLinkContent(
+      url: '${json['url'] ?? uri}'.trim().isEmpty ? uri.toString() : '${json['url']}',
+      title: '${json['title'] ?? ''}'.trim().isEmpty
+          ? _titleFromUrl(uri.toString())
+          : '${json['title']}',
+      narrative: narrative,
+    );
+  }
+
+  static bool isXUrl(String urlString) {
+    final uri = normalizeUrl(urlString);
+    return uri != null && _isAuthWalledHost(uri);
+  }
+
+  static String? tweetIdFromUri(Uri uri) {
+    final segments = uri.pathSegments;
+    final statusIdx = segments.indexOf('status');
+    if (statusIdx < 0 || statusIdx + 1 >= segments.length) return null;
+    final id = segments[statusIdx + 1].replaceAll(RegExp(r'\D'), '');
+    return id.isEmpty ? null : id;
+  }
+
+  /// Server-side HTML fetch (Grok proxy) — no browser CORS limits.
+  static Future<String> fetchHtmlForUri(
+    Uri uri, {
+    required http.Client client,
+  }) async {
+    Object? lastError;
+    for (final fetchUri in _directFetchCandidates(uri)) {
+      for (final headers in _headerVariants()) {
+        try {
+          final response = await client
+              .get(fetchUri, headers: headers)
+              .timeout(const Duration(seconds: 25));
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            return response.body;
+          }
+          lastError = 'HTTP ${response.statusCode}';
+        } catch (e) {
+          lastError = e;
+        }
+      }
+    }
+    throw NarrativeLinkException('fetch', cause: lastError);
+  }
+
+  static List<Uri> _directFetchCandidates(Uri uri) {
+    final seen = <String>{};
+    final out = <Uri>[];
+
+    void add(Uri? candidate) {
+      if (candidate == null) return;
+      final key = candidate.toString();
+      if (seen.add(key)) out.add(candidate);
+    }
+
+    final https = uri.scheme == 'http'
+        ? uri.replace(scheme: 'https', port: uri.hasPort ? uri.port : null)
+        : uri;
+    add(https);
+    add(uri);
+
+    final host = https.host;
+    if (!host.startsWith('www.')) {
+      add(https.replace(host: 'www.$host'));
+    } else if (host.length > 4) {
+      add(https.replace(host: host.substring(4)));
+    }
+    return out;
   }
 
   static Uri? normalizeUrl(String raw) {
@@ -176,7 +293,7 @@ class NarrativeLinkReader {
     );
   }
 
-  static int _meaningfulLength(String text) {
+  static int meaningfulLength(String text) {
     var count = 0;
     for (final code in text.runes) {
       final ch = String.fromCharCode(code);

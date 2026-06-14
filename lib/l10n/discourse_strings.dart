@@ -362,6 +362,10 @@ const sharedInfoStringsEn = <String, String>{
       'That page returned little or no readable text (often a login wall or JavaScript-only layout). Paste the article text into your posed question manually.',
   'link_error_blocked':
       'That site blocked automated reading (common on X/Twitter and paywalled pages). Paste the narrative text into your posed question manually.',
+  'link_error_x_auth':
+      'Sign in with X (Grok construal bar) to read posts from X/Twitter, then try the link again.',
+  'link_fetched_connect_x':
+      'Narrative loaded. Sign in with X to fill ω/σ/Iτ/Jμ from the text, then calculate.',
 };
 
 /// Shared UI / binding / construct strings — Spanish.
@@ -455,6 +459,10 @@ const sharedInfoStringsEs = <String, String>{
       'La página devolvió poco o ningún texto legible (muro de acceso o solo JavaScript). Pegue el artículo en su pregunta planteada.',
   'link_error_blocked':
       'El sitio bloqueó la lectura automática (común en X/Twitter y páginas de pago). Pegue la narrativa en su pregunta planteada.',
+  'link_error_x_auth':
+      'Inicie sesión con X (barra Grok construal) para leer publicaciones de X/Twitter y vuelva a intentar el enlace.',
+  'link_fetched_connect_x':
+      'Narrativa cargada. Inicie sesión con X para completar ω/σ/Iτ/Jμ desde el texto y calcule.',
 };
 
 const sharedInfoStringsFr = <String, String>{

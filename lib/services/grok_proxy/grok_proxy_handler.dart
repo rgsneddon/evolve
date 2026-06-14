@@ -87,6 +87,17 @@ Future<void> handleGrokProxyRequest(HttpRequest request, GrokProxyStore store) a
     final result = await store.construe(payload);
     return _json(request, 200, result);
   }
+  if (path == '/narrative/fetch' && method == 'POST') {
+    final body = await utf8.decoder.bind(request).join();
+    final payload = jsonDecode(body) as Map<String, dynamic>;
+    final url = '${payload['url'] ?? ''}'.trim();
+    try {
+      final result = await store.fetchNarrativeLink(url);
+      return _json(request, 200, result);
+    } on NarrativeLinkProxyException catch (e) {
+      return _json(request, e.statusCode, {'error': e.code});
+    }
+  }
 
   _json(request, 404, {'error': 'not_found'});
 }

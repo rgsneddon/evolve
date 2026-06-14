@@ -641,7 +641,22 @@ class EvolveProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final content = await _linkReader.fetch(trimmed);
+      await _ensureGrokProxyResolved();
+      final proxy = _grokProxyBaseUrl;
+      final isXLink = NarrativeLinkReader.isXUrl(trimmed);
+      final useProxy = proxy.isNotEmpty && (kIsWeb || isXLink);
+
+      if (isXLink && useProxy && !grokSession.canConstrue) {
+        statusMessage = strings.t('link_error_x_auth');
+        isFetchingLink = false;
+        notifyListeners();
+        return;
+      }
+
+      final content = useProxy
+          ? await _linkReader.fetchViaProxy(proxy, trimmed)
+          : await _linkReader.fetch(trimmed);
+
       input = input.copyWith(
         sourceUrl: content.url,
         topic: content.title,
@@ -652,13 +667,21 @@ class EvolveProvider extends ChangeNotifier {
       grokFilledFields = {};
       _persistCurrentMode();
       statusMessage = strings.t('link_fetched');
-      if (grokConstrualEnabled) {
+
+      if (!grokConstrualEnabled) {
+        grokConstrualEnabled = true;
+      }
+      await _ensureGrokProxyReady();
+      if (_usesHeuristicConstrual || grokSession.canConstrue) {
         await _runConstrual();
+      } else if (useProxy) {
+        statusMessage = strings.t('link_fetched_connect_x');
       }
     } on NarrativeLinkException catch (e) {
       statusMessage = switch (e.code) {
         'empty' => strings.t('link_error_empty'),
         'blocked' => strings.t('link_error_blocked'),
+        'x_auth_required' => strings.t('link_error_x_auth'),
         _ => strings.t('link_error_fetch'),
       };
     } catch (_) {
