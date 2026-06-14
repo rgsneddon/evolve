@@ -48551,7 +48551,7 @@ P(a){var s=B.bR(a,A.dF,t.l).w,r=s.a.a<600?8:16
 return new B.uW(new B.acj(this,r),null)}}
 B.acj.prototype={
 $2(a,b){var s=this.b,r=A.o.aO(b.b-s*2,0,1/0),q=A.o.aO(r/3.2,56,220)
-return new B.bb(new B.at(s,0,s,0),B.aF7(B.cE(12),B.dp(B.aKU("assets/banner/evolve.jfif",A.b6,new B.aci(this.a,q),A.fA,A.T7,null,"Evolve banner",null),q,r),A.dL),null)},
+return new B.bb(new B.at(s,0,s,0),B.aF7(B.cE(12),B.dp(B.aKU("assets/banner/evolve.jpg",A.b6,new B.aci(this.a,q),A.fA,A.T7,null,"Evolve banner",null),q,r),A.dL),null)},
 $S:368}
 B.aci.prototype={
 $3(a,b,c){var s=null,r=B.cE(12)
