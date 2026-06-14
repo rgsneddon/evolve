@@ -11,6 +11,7 @@ class GrokConstrualBar extends StatelessWidget {
   const GrokConstrualBar({super.key});
 
   static const _accent = Color(0xFFF59E0B);
+  static const _webBlockedRed = Color(0xFFDC2626);
 
   @override
   Widget build(BuildContext context) {
@@ -29,41 +30,7 @@ class GrokConstrualBar extends StatelessWidget {
         signedIn &&
         provider.input.posedQuestion.trim().isNotEmpty;
 
-    final switchRow = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          s.t('grok_no'),
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: enabled ? const Color(0xFF9BA3B8) : _accent,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Switch(
-          value: enabled,
-          onChanged: (v) => provider.setGrokConstrual(v, context),
-          thumbColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.selected) ? _accent : null,
-          ),
-          trackColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.selected)
-                ? _accent.withOpacity(0.35)
-                : null,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          s.t('grok_yes'),
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: enabled ? _accent : const Color(0xFF9BA3B8),
-          ),
-        ),
-      ],
-    );
+    final switchRow = _buildGrokSwitchRow(context, provider, s, enabled);
 
     return Container(
       width: double.infinity,
@@ -201,6 +168,110 @@ class GrokConstrualBar extends StatelessWidget {
                 switchRow,
               ],
             ),
+    );
+  }
+
+  Widget _buildGrokSwitchRow(
+    BuildContext context,
+    EvolveProvider provider,
+    dynamic s,
+    bool enabled,
+  ) {
+    const inactiveLabel = Color(0xFF9BA3B8);
+    final webBlocked = kIsWeb;
+
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          s.t('grok_no'),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: enabled && !webBlocked ? inactiveLabel : _accent,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Switch(
+          value: enabled && !webBlocked,
+          onChanged: webBlocked
+              ? null
+              : (v) => provider.setGrokConstrual(v, context),
+          thumbColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? _accent : null,
+          ),
+          trackColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? _accent.withOpacity(0.35)
+                : null,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          s.t('grok_yes'),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: enabled && !webBlocked ? _accent : inactiveLabel,
+          ),
+        ),
+      ],
+    );
+
+    if (!webBlocked) return row;
+
+    return TooltipTheme(
+      data: const TooltipThemeData(
+        decoration: BoxDecoration(
+          color: _webBlockedRed,
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black38,
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        textStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          height: 1.45,
+          fontWeight: FontWeight.w600,
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        waitDuration: Duration(milliseconds: 120),
+        showDuration: Duration(seconds: 10),
+      ),
+      child: Tooltip(
+        message: s.t('web_grok_inactive_notice'),
+        preferBelow: true,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.forbidden,
+          child: GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: _webBlockedRed,
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 6),
+                  content: Text(
+                    s.t('web_grok_inactive_notice'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              );
+            },
+            child: row,
+          ),
+        ),
+      ),
     );
   }
 

@@ -222,6 +222,12 @@ class EvolveProvider extends ChangeNotifier {
   }
 
   Future<void> setGrokConstrual(bool enabled, BuildContext context) async {
+    if (enabled && kIsWeb) {
+      statusMessage = strings.t('web_grok_inactive_notice');
+      notifyListeners();
+      return;
+    }
+
     if (!enabled) {
       grokConstrualEnabled = false;
       isConnectingGrok = false;
@@ -668,14 +674,16 @@ class EvolveProvider extends ChangeNotifier {
       _persistCurrentMode();
       statusMessage = strings.t('link_fetched');
 
-      if (!grokConstrualEnabled) {
-        grokConstrualEnabled = true;
-      }
-      await _ensureGrokProxyReady();
-      if (_usesHeuristicConstrual || grokSession.canConstrue) {
-        await _runConstrual();
-      } else if (useProxy) {
-        statusMessage = strings.t('link_fetched_connect_x');
+      if (!kIsWeb) {
+        if (!grokConstrualEnabled) {
+          grokConstrualEnabled = true;
+        }
+        await _ensureGrokProxyReady();
+        if (_usesHeuristicConstrual || grokSession.canConstrue) {
+          await _runConstrual();
+        } else if (useProxy) {
+          statusMessage = strings.t('link_fetched_connect_x');
+        }
       }
     } on NarrativeLinkException catch (e) {
       statusMessage = switch (e.code) {
