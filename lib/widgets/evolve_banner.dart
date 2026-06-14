@@ -10,7 +10,7 @@ class EvolveBanner extends StatelessWidget {
   /// Extra inset inside the content column; defaults scale with viewport width.
   final double? sideBuffer;
 
-  static const _assetPath = 'assets/banner/evolve.jfif';
+  static const _assetPath = 'assets/banner/evolve.jpg';
 
   /// Wide header art (~3.2:1); keeps height stable when width is constrained.
   static const _aspectRatio = 3.2;
