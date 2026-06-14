@@ -78,9 +78,15 @@ if (-not $SkipPages) {
         git config user.email "$owner@users.noreply.github.com"
         git config user.name $owner
     }
+    $pagesBranch = 'gh-pages'
     git fetch origin
-    git checkout main
-    git pull --ff-only origin main
+    if (git show-ref --verify --quiet "refs/remotes/origin/$pagesBranch") {
+        git checkout $pagesBranch
+        git pull --ff-only origin $pagesBranch
+    } else {
+        git checkout --orphan $pagesBranch
+        git rm -rf . 2>$null | Out-Null
+    }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     Get-ChildItem -Force | Where-Object {
@@ -102,9 +108,9 @@ if (-not $SkipPages) {
             throw 'Pages deploy commit failed (set git user.name and user.email).'
         }
         if ($DryRun) {
-            Write-Host '[dry-run] Would push Pages deploy to origin main' -ForegroundColor Yellow
+            Write-Host "[dry-run] Would push Pages deploy to origin $pagesBranch" -ForegroundColor Yellow
         } else {
-            git push origin main
+            git push -u origin $pagesBranch
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             Write-Host "Pages deploy pushed: https://$owner.github.io/$RepoName/" -ForegroundColor Green
         }
