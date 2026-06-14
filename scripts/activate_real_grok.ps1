@@ -21,12 +21,13 @@ Import-GrokLocalEnv -Root $Root | Out-Null
 if (-not $env:X_CLIENT_ID -or $env:X_CLIENT_ID -match 'your_x_oauth') {
     Write-Host 'X_CLIENT_ID missing in grok_proxy.local.env' -ForegroundColor Red
     Write-Host ''
-    Write-Host 'X Developer setup (fixes "Something went wrong"):' -ForegroundColor Cyan
-    Write-Host '  1. https://console.x.com/ - your app - User authentication - OAuth 2.0 ON'
-    Write-Host '  2. App type: Native App (desktop) or Web App'
-    Write-Host '  3. Callback URL EXACTLY: http://127.0.0.1:8787/auth/callback (not localhost)'
-    Write-Host '  4. Scopes: tweet.read, users.read, offline.access'
-    Write-Host '  5. Copy Client ID into grok_proxy.local.env (and next to evolve.exe on Windows)'
+    Write-Host 'X Developer setup (fixes "Something went wrong" and SSUCF popup name):' -ForegroundColor Cyan
+    Write-Host '  1. https://console.x.com/ - your app - App settings - App name: Evolve'
+    Write-Host '  2. User authentication - OAuth 2.0 ON'
+    Write-Host '  3. App type: Native App (desktop) or Web App'
+    Write-Host '  4. Callback URL EXACTLY: http://127.0.0.1:8787/auth/callback (not localhost)'
+    Write-Host '  5. Scopes: tweet.read, users.read, offline.access'
+    Write-Host '  6. Copy Client ID into grok_proxy.local.env (and next to evolve.exe on Windows)'
     Write-Host ''
     notepad $envFile
     exit 1

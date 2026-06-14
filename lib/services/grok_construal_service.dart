@@ -7,6 +7,7 @@ import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
 import 'grok_auth_client.dart';
+import 'narrative_construct_construal.dart';
 
 /// Applies live Grok suggestions to blank construct fields (never overwrites user bias).
 class GrokConstrualService {
@@ -26,17 +27,9 @@ class GrokConstrualService {
     LocalizedOutput? output,
   }) async {
     final out = output ?? LocalizedOutput.of(locale);
-    final body = jsonEncode({
-      'posedQuestion': input.posedQuestion,
-      'regionId': locale.regionId,
-      'regionLabel': out.regionName(locale.regionId),
-      'topic': input.topic,
-      'sourceUrl': input.sourceUrl,
-      'vortexText': input.vortexText,
-      'shearText': input.shearText,
-      'resistanceText': input.resistanceText,
-      'flowText': input.flowText,
-    });
+    final body = jsonEncode(
+      NarrativeConstructConstrual.grokPayload(input, locale, out),
+    );
 
     final res = await _http
         .post(

@@ -15,6 +15,7 @@ import '../services/grok_construal_service.dart';
 import '../services/grok_oauth_launcher.dart';
 import '../services/grok_proxy_launcher.dart';
 import '../services/grok_heuristic_construal.dart';
+import '../services/narrative_construct_construal.dart';
 import '../services/grok_service_config.dart';
 import '../services/narrative_link_reader.dart';
 import '../services/evolve_engine.dart';
@@ -646,45 +647,24 @@ class EvolveProvider extends ChangeNotifier {
     statusMessage = strings.t('link_fetching');
     notifyListeners();
 
+    ScenarioInput? loadedInput;
     try {
       await _ensureGrokProxyResolved();
-      final proxy = _grokProxyBaseUrl;
-      final isXLink = NarrativeLinkReader.isXUrl(trimmed);
-      final useProxy = proxy.isNotEmpty && (kIsWeb || isXLink);
-
-      if (isXLink && useProxy && !grokSession.canConstrue) {
-        statusMessage = strings.t('link_error_x_auth');
-        isFetchingLink = false;
-        notifyListeners();
-        return;
-      }
-
-      final content = useProxy
-          ? await _linkReader.fetchViaProxy(proxy, trimmed)
-          : await _linkReader.fetch(trimmed);
-
-      input = input.copyWith(
+      final content = await _fetchNarrativeContent(trimmed);
+      loadedInput = input.copyWith(
         sourceUrl: content.url,
         topic: content.title,
         posedQuestion: ScenarioInput.clamp(content.narrative),
         vortexText: '',
+        shearText: '',
+        resistanceText: '',
+        flowText: '',
       );
+      input = loadedInput;
       result = null;
       grokFilledFields = {};
       _persistCurrentMode();
       statusMessage = strings.t('link_fetched');
-
-      if (!kIsWeb) {
-        if (!grokConstrualEnabled) {
-          grokConstrualEnabled = true;
-        }
-        await _ensureGrokProxyReady();
-        if (_usesHeuristicConstrual || grokSession.canConstrue) {
-          await _runConstrual();
-        } else if (useProxy) {
-          statusMessage = strings.t('link_fetched_connect_x');
-        }
-      }
     } on NarrativeLinkException catch (e) {
       statusMessage = switch (e.code) {
         'empty' => strings.t('link_error_empty'),
@@ -692,12 +672,56 @@ class EvolveProvider extends ChangeNotifier {
         'x_auth_required' => strings.t('link_error_x_auth'),
         _ => strings.t('link_error_fetch'),
       };
+      return;
     } catch (_) {
       statusMessage = strings.t('link_error_fetch');
+      return;
+    } finally {
+      isFetchingLink = false;
+      notifyListeners();
     }
 
-    isFetchingLink = false;
-    notifyListeners();
+    if (loadedInput == null) return;
+    try {
+      await _populateConstructsFromNarrative(loadedInput);
+    } catch (_) {
+      try {
+        await _applyHeuristicConstrualToForm(loadedInput);
+        statusMessage = strings.t('grok_fields_populated');
+      } catch (_) {
+        statusMessage = strings.t('link_fetched');
+      }
+      notifyListeners();
+    }
+  }
+
+  /// Prefer the embedded/hosted Grok proxy (server-side fetch); fall back to direct HTTP.
+  Future<NarrativeLinkContent> _fetchNarrativeContent(String trimmed) async {
+    final uri = NarrativeLinkReader.normalizeUrl(trimmed)!;
+    final needsProxy = NarrativeLinkReader.requiresProxyFetch(uri);
+
+    if (!kIsWeb) {
+      try {
+        await _ensureGrokProxyReady();
+      } catch (_) {
+        // Another listener may still be healthy on 8787.
+      }
+    }
+
+    final proxy = _grokProxyBaseUrl;
+    if (proxy.isNotEmpty && await _activeGrokAuth.isProxyReachable()) {
+      try {
+        return await _linkReader.fetchViaProxy(proxy, trimmed);
+      } on NarrativeLinkException catch (e) {
+        if (needsProxy || e.code == 'x_auth_required') rethrow;
+      }
+    }
+
+    if (needsProxy) {
+      throw NarrativeLinkException('blocked', cause: uri.host);
+    }
+
+    return await _linkReader.fetch(trimmed);
   }
 
   Future<void> calculate() async {
@@ -758,6 +782,67 @@ class EvolveProvider extends ChangeNotifier {
     }
   }
 
+  /// After cohesion narrative link load — fill blank ω/σ/Iτ/Jμ like percent-chance Grok construal.
+  Future<void> _populateConstructsFromNarrative(ScenarioInput narrativeInput) async {
+    if (narrativeInput.posedQuestion.trim().isEmpty) return;
+
+    final generation = ++_construeGeneration;
+    isConstruing = true;
+    statusMessage = strings.t('grok_construing');
+    notifyListeners();
+
+    try {
+      if (!grokConstrualEnabled) {
+        grokConstrualEnabled = true;
+      }
+      try {
+        await _ensureGrokProxyReady();
+      } catch (_) {
+        // Heuristic construal does not require the proxy.
+      }
+
+      if (_usesHeuristicConstrual || grokSession.canConstrue) {
+        await _fetchAndApplyConstrual(narrativeInput, persistToForm: true);
+      } else {
+        await _applyHeuristicConstrualToForm(narrativeInput);
+      }
+      if (generation != _construeGeneration) return;
+      statusMessage = strings.t('grok_fields_populated');
+    } on GrokAuthException {
+      if (generation != _construeGeneration) return;
+      await _applyHeuristicConstrualToForm(narrativeInput);
+      statusMessage = strings.t('grok_fields_populated');
+    } catch (_) {
+      if (generation != _construeGeneration) return;
+      await _applyHeuristicConstrualToForm(narrativeInput);
+      statusMessage = strings.t('grok_fields_populated');
+    } finally {
+      if (generation == _construeGeneration) {
+        isConstruing = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> _applyHeuristicConstrualToForm(ScenarioInput source) async {
+    final suggestions = NarrativeConstructConstrual.isNarrativeLinked(source)
+        ? NarrativeConstructConstrual.suggest(
+            input: source,
+            locale: locale,
+            output: output,
+          )
+        : GrokHeuristicConstrual.suggest(
+            input: source,
+            locale: locale,
+            output: output,
+          );
+    final merged = _grokConstrual.applySuggestions(source, suggestions);
+    grokFilledFields = _detectGrokFilled(source, merged);
+    input = merged;
+    _persistCurrentMode();
+    notifyListeners();
+  }
+
   Future<void> _runConstrual() async {
     if (!grokConstrualEnabled || input.posedQuestion.trim().isEmpty) return;
     if (!grokSession.canConstrue) return;
@@ -802,6 +887,13 @@ class EvolveProvider extends ChangeNotifier {
 
   Future<GrokConstrualResult> _fetchConstrualSuggestions(ScenarioInput source) async {
     if (_usesHeuristicConstrual) {
+      if (NarrativeConstructConstrual.isNarrativeLinked(source)) {
+        return NarrativeConstructConstrual.suggest(
+          input: source,
+          locale: locale,
+          output: output,
+        );
+      }
       return GrokHeuristicConstrual.suggest(
         input: source,
         locale: locale,

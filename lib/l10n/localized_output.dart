@@ -122,7 +122,7 @@ class LocalizedOutput {
   String partTwoShearRefinement({
     required String question,
     required String subject,
-    required int weightPct,
+    required int sentiencePct,
     required int scs,
     required QuestionFrame frame,
     required OutcomePolarity polarity,
@@ -132,7 +132,7 @@ class LocalizedOutput {
         .t('part_two_shear_question')
         .replaceAll('{question}', question)
         .replaceAll('{subject}', subject)
-        .replaceAll('{weight}', '$weightPct')
+        .replaceAll('{sentience}', '$sentiencePct')
         .replaceAll('{scs}', '$scs')
         .replaceAll('{frame}', _partTwoFrameLabel(frame))
         .replaceAll('{polarity}', _partTwoPolarityLabel(polarity));
@@ -145,7 +145,7 @@ class LocalizedOutput {
   String partTwoResistanceFlow({
     required String question,
     required String subject,
-    required int resistanceWeightPct,
+    required int saliencePct,
     required int flowWeightPct,
     required int resistanceScs,
     required int flowScs,
@@ -157,7 +157,7 @@ class LocalizedOutput {
         .t('part_two_resistance_flow_question')
         .replaceAll('{question}', question)
         .replaceAll('{subject}', subject)
-        .replaceAll('{res_weight}', '$resistanceWeightPct')
+        .replaceAll('{salience}', '$saliencePct')
         .replaceAll('{flow_weight}', '$flowWeightPct')
         .replaceAll('{res_scs}', '$resistanceScs')
         .replaceAll('{flow_scs}', '$flowScs')
@@ -294,6 +294,17 @@ class LocalizedOutput {
           .t('percent_outcome_subtitle')
           .replaceAll('{lean}', lean)
           .replaceAll('{qualifier}', continuumOutcomeQualifier(regressive));
+
+  /// Calibrated Chronoflux headline % (same formula as Percent Chance tab).
+  int cohesionContinuumHeadlinePercent(double percentChance) =>
+      percentChance.round();
+
+  /// Lean + calibrated headline % under the big SCS score.
+  String cohesionContinuumSubtitle({
+    required String lean,
+    required int pct,
+  }) =>
+      strings.t('cohesion_continuum_subtitle').replaceAll('{lean}', lean).replaceAll('{pct}', '$pct');
 
   String percentOutcomePhraseLine({
     required String percentPhrase,

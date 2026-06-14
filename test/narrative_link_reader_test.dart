@@ -76,15 +76,92 @@ void main() {
     );
   });
 
-  test('x.com links are rejected as blocked', () async {
+  test('social media links are rejected as blocked without proxy', () async {
     const reader = NarrativeLinkReader();
-    expect(
-      () => reader.fetch('https://x.com/example/status/1'),
-      throwsA(
-        predicate(
-          (e) => e is NarrativeLinkException && e.code == 'blocked',
+    for (final url in [
+      'https://x.com/example/status/1',
+      'https://instagram.com/p/abc123',
+      'https://www.facebook.com/post/1',
+      'https://www.tiktok.com/@user/video/1',
+      'https://bsky.app/profile/alice/post/3kx',
+    ]) {
+      expect(
+        () => reader.fetch(url),
+        throwsA(
+          predicate(
+            (e) => e is NarrativeLinkException && e.code == 'blocked',
+          ),
         ),
+        reason: url,
+      );
+    }
+  });
+
+  test('requiresProxyFetch covers major social hosts', () {
+    expect(
+      NarrativeLinkReader.isSocialMediaUrl('https://x.com/a/status/1'),
+      isTrue,
+    );
+    expect(
+      NarrativeLinkReader.isSocialMediaUrl('https://youtu.be/abc123'),
+      isTrue,
+    );
+    expect(
+      NarrativeLinkReader.isSocialMediaUrl('https://news.test/story'),
+      isFalse,
+    );
+    final mastodon = Uri.parse('https://mastodon.social/@alice/123456');
+    expect(NarrativeLinkReader.requiresProxyFetch(mastodon), isTrue);
+  });
+
+  test('minMeaningfulCharsForUri is lower for short-form posts', () {
+    expect(
+      NarrativeLinkReader.minMeaningfulCharsForUri(
+        Uri.parse('https://x.com/a/status/1'),
       ),
+      NarrativeLinkReader.minMeaningfulCharsShortForm,
+    );
+    expect(
+      NarrativeLinkReader.minMeaningfulCharsForUri(
+        Uri.parse('https://news.test/article'),
+      ),
+      NarrativeLinkReader.minMeaningfulChars,
+    );
+  });
+
+  test('parseOembedTweetHtml extracts tweet body', () {
+    const html =
+        '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Parliament is just a revolving door of policies we didn\'t vote for.</p>&mdash; Russell (@rgsneddon) <a href="https://twitter.com/rgsneddon/status/1">June 14, 2026</a></blockquote>';
+    expect(
+      NarrativeLinkReader.parseOembedTweetHtml(html),
+      'Parliament is just a revolving door of policies we didn\'t vote for.',
+    );
+    expect(
+      NarrativeLinkReader.authorHandleFromOembed({
+        'author_url': 'https://twitter.com/rgsneddon',
+      }),
+      'rgsneddon',
+    );
+  });
+
+  test('platform URL helpers parse common shapes', () {
+    expect(
+      NarrativeLinkReader.youtubeIdFromUri(
+        Uri.parse('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+      ),
+      'dQw4w9WgXcQ',
+    );
+    expect(
+      NarrativeLinkReader.blueskyPostFromUri(
+        Uri.parse('https://bsky.app/profile/alice.bsky.social/post/3kxabc'),
+      ),
+      isNotNull,
+    );
+    expect(
+      NarrativeLinkReader.redditJsonPath(
+        Uri.parse('https://www.reddit.com/r/news/comments/abc/title'),
+      ),
+      '/r/news/comments/abc/title.json',
     );
   });
 

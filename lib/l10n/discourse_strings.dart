@@ -354,14 +354,14 @@ const sharedInfoStringsEn = <String, String>{
   'link_hint': 'https://example.com/article…',
   'link_fetch': 'Read narrative from link',
   'link_fetching': 'Reading narrative from link…',
-  'link_fetched': 'Narrative loaded — review your posed question below and calculate SCS.',
+  'link_fetched': 'Narrative loaded — ω/σ/Iτ/Jμ fields are being filled from the link text.',
   'link_error_invalid': 'Enter a valid http or https link.',
   'link_error_fetch':
       'Could not read that link. Check the URL, try https://, or paste the narrative text into your posed question manually.',
   'link_error_empty':
       'That page returned little or no readable text (often a login wall or JavaScript-only layout). Paste the article text into your posed question manually.',
   'link_error_blocked':
-      'That site blocked automated reading (common on X/Twitter and paywalled pages). Paste the narrative text into your posed question manually.',
+      'That site blocked automated reading (common on X, Facebook, Instagram, TikTok, and other social links). Run Evolve desktop with the Grok proxy, or paste the narrative text into your posed question manually.',
   'link_error_x_auth':
       'Sign in with X (Grok construal bar) to read posts from X/Twitter, then try the link again.',
   'link_fetched_connect_x':
@@ -451,14 +451,14 @@ const sharedInfoStringsEs = <String, String>{
   'link_hint': 'https://ejemplo.com/articulo…',
   'link_fetch': 'Leer narrativa del enlace',
   'link_fetching': 'Leyendo narrativa del enlace…',
-  'link_fetched': 'Narrativa cargada — revise ω abajo y calcule SCS.',
+  'link_fetched': 'Narrativa cargada — rellenando ω/σ/Iτ/Jμ desde el enlace.',
   'link_error_invalid': 'Introduzca un enlace http o https válido.',
   'link_error_fetch':
       'No se pudo leer el enlace. Compruebe la URL, pruebe https://, o pegue el texto en su pregunta planteada.',
   'link_error_empty':
       'La página devolvió poco o ningún texto legible (muro de acceso o solo JavaScript). Pegue el artículo en su pregunta planteada.',
   'link_error_blocked':
-      'El sitio bloqueó la lectura automática (común en X/Twitter y páginas de pago). Pegue la narrativa en su pregunta planteada.',
+      'El sitio bloqueó la lectura automática (común en X, Facebook, Instagram, TikTok y otras redes). Use Evolve en escritorio con el proxy Grok, o pegue la narrativa en su pregunta planteada.',
   'link_error_x_auth':
       'Inicie sesión con X (barra Grok construal) para leer publicaciones de X/Twitter y vuelva a intentar el enlace.',
   'link_fetched_connect_x':

@@ -325,16 +325,19 @@ final _en = {
   'grok_open_x_body':
       'Tap the button below to open X login in a new tab. '
       'This works with DuckDuckGo, Chrome, Edge, Firefox, and your default browser. '
+      'The X permission screen should say Evolve wants to access your account. '
+      'If it still shows SSUCF, rename your app at console.x.com (see checklist below). '
       'After you sign in, return here — Evolve will detect your Premium account.',
   'grok_oauth_redirect_hint':
       'If X says “Something went wrong”, register this exact callback in console.x.com → your app → OAuth 2.0 → Callback URLs (use 127.0.0.1, not localhost):',
   'grok_oauth_portal_checklist':
       'X Developer Portal checklist:\n'
-      '1. console.x.com → your app → User authentication settings → OAuth 2.0 enabled\n'
-      '2. App type: Native App (desktop) or Web App with the callback below\n'
-      '3. Callback URL exactly: http://127.0.0.1:8787/auth/callback\n'
-      '4. Scopes allowed: tweet.read, users.read, offline.access\n'
-      '5. Copy Client ID into grok_proxy.local.env next to evolve.exe (Windows) or project root',
+      '1. console.x.com → your app → App settings → App name: Evolve (replaces SSUCF in the sign-in popup)\n'
+      '2. User authentication settings → OAuth 2.0 enabled\n'
+      '3. App type: Native App (desktop) or Web App with the callback below\n'
+      '4. Callback URL exactly: http://127.0.0.1:8787/auth/callback\n'
+      '5. Scopes allowed: tweet.read, users.read, offline.access\n'
+      '6. Copy Client ID into grok_proxy.local.env next to evolve.exe (Windows) or project root',
   'grok_oauth_denied':
       'X denied access — check your Developer Portal callback URL and OAuth 2.0 settings.',
   'grok_dialog_cancel': 'Cancel',
@@ -541,9 +544,9 @@ final _en = {
   'part_two_vortex_topic':
       'Continuum vortex on "{question}": elite framing of "{topic}" compresses "{subject}" into one narrative lane (ω {weight}% salience, SCS {scs}/100).',
   'part_two_shear_question':
-      'Shear on "{question}": {frame} polarisation on "{subject}" — {polarity} (σ {weight}% salience, SCS {scs}/100).',
+      'Shear on "{question}": {frame} polarisation on "{subject}" — {polarity} (σ {sentience}% sentience, SCS {scs}/100).',
   'part_two_resistance_flow_question':
-      'Resistance & flow for "{question}": Iτ drag ({res_weight}% salience, SCS {res_scs}/100) vs Jμ transport ({flow_weight}% salience, SCS {flow_scs}/100) — {transport}; net lean {lean}.',
+      'Resistance & flow for "{question}": Iτ drag ({salience}% salience, SCS {res_scs}/100) vs Jμ transport ({flow_weight}% weight, SCS {flow_scs}/100) — {transport}; net lean {lean}.',
   'part_two_hint_suffix': 'Scenario signal: {hint}.',
   'part_two_frame_probability': 'probability-frame',
   'part_two_frame_predictive': 'predictive-path',
@@ -578,7 +581,7 @@ final _en = {
   'continuum_conclusion_signals':
       'Construal data — posed question: "{question}"; {frame} frame, {polarity}, event class {event_class}, {horizon}-day horizon, region {region}{hints_clause}.',
   'continuum_conclusion_constructs':
-      'Question-inferred Chronoflux: ω {vortex_scs}/100 ({w_v}% w), σ {shear_scs}/100 ({w_s}% w), Iτ {res_scs}/100 ({w_r}% w), Jμ {flow_scs}/100 ({w_f}% w) → refined SCS {refined}/100; THE CONTINUUM {reg}% regressive / {prog}% progressive → {lean}.',
+      'Question-inferred Chronoflux: ω {vortex_scs}/100 ({w_v}% w), σ {shear_scs}/100 ({sentience}% sentience), Iτ {res_scs}/100 ({salience}% salience), Jμ {flow_scs}/100 ({w_f}% w) → refined SCS {refined}/100; THE CONTINUUM {reg}% regressive / {prog}% progressive → {lean}.',
   'continuum_conclusion_registry':
       'Outcome registry ({event_class}, {horizon}d): {base_rate}% from {n} cases ({year_min}–{year_max}); historical Wilson 95% CI {hist_ci_low}–{hist_ci_high}%; Brier {brier}; sources: {sources}.',
   'percent_outcome_subtitle': '{lean} — {qualifier}',
@@ -686,6 +689,7 @@ final _en = {
   'explainer_how_read': 'How to read this conclusion',
   'cohesion_refined_panel':
       'Refined cohesion score\nPART ONE / TWO / THREE complete (~{scs}/100)',
+  'cohesion_continuum_subtitle': '{lean} — {pct}%',
   ...discourseStringsEn,
   ...leanMitigateVariants(discourseStringsEn),
   ...sharedInfoStringsEn,
@@ -704,15 +708,17 @@ final _es = {
   'grok_open_x_tab': 'ABRIR X (NUEVA PESTAÑA)',
   'grok_open_x_body':
       'Pulse el botón para abrir el inicio de sesión de X en una nueva pestaña. '
-      'Compatible con DuckDuckGo, Chrome, Edge y su navegador predeterminado.',
+      'Compatible con DuckDuckGo, Chrome, Edge y su navegador predeterminado. '
+      'La pantalla de permisos de X debe decir Evolve. Si aún muestra SSUCF, renombre la app en console.x.com.',
   'grok_oauth_redirect_hint':
       'Si X muestra un error, registre esta URL de retorno en console.x.com → su app → OAuth 2.0 (use 127.0.0.1, no localhost):',
   'grok_oauth_portal_checklist':
       'Lista en el portal de X:\n'
-      '1. OAuth 2.0 activado en la app\n'
-      '2. Tipo Native App o Web App con la URL de retorno indicada\n'
-      '3. URL exacta: http://127.0.0.1:8787/auth/callback\n'
-      '4. Ámbitos: tweet.read, users.read, offline.access',
+      '1. console.x.com → su app → App settings → App name: Evolve\n'
+      '2. OAuth 2.0 activado en la app\n'
+      '3. Tipo Native App o Web App con la URL de retorno indicada\n'
+      '4. URL exacta: http://127.0.0.1:8787/auth/callback\n'
+      '5. Ámbitos: tweet.read, users.read, offline.access',
   'grok_oauth_denied':
       'X denegó el acceso — revise la URL de retorno y OAuth 2.0 en el portal.',
   'grok_dialog_cancel': 'Cancelar',
@@ -814,7 +820,7 @@ final _es = {
   'continuum_conclusion_signals':
       'Datos de construal — pregunta planteada: «{question}»; marco {frame}, {polarity}, clase {event_class}, horizonte {horizon} días, región {region}{hints_clause}.',
   'continuum_conclusion_constructs':
-      'Chronoflux inferido de la pregunta: ω {vortex_scs}/100 ({w_v}% p), σ {shear_scs}/100 ({w_s}% p), Iτ {res_scs}/100 ({w_r}% p), Jμ {flow_scs}/100 ({w_f}% p) → SCS refinado {refined}/100; EL CONTINUO {reg}% regresivo / {prog}% progresivo → {lean}.',
+      'Chronoflux inferido de la pregunta: ω {vortex_scs}/100 ({w_v}% p), σ {shear_scs}/100 ({sentience}% sentiencia), Iτ {res_scs}/100 ({salience}% saliencia), Jμ {flow_scs}/100 ({w_f}% p) → SCS refinado {refined}/100; EL CONTINUO {reg}% regresivo / {prog}% progresivo → {lean}.',
   'continuum_conclusion_registry':
       'Registro de resultados ({event_class}, {horizon}d): {base_rate}% de {n} casos ({year_min}–{year_max}); IC Wilson histórico 95% {hist_ci_low}–{hist_ci_high}%; Brier {brier}; fuentes: {sources}.',
   'percent_outcome_subtitle': '{lean} — {qualifier}',
@@ -854,6 +860,7 @@ final _es = {
   'cohesion_refined': 'Puntuación de cohesión refinada: ~{scs}/100',
   'cohesion_refined_panel':
       'Puntuación refinada\nPARTE UNO / DOS / TRES (~{scs}/100)',
+  'cohesion_continuum_subtitle': '{lean} — {pct}%',
   'cohesion_subtitle': 'Cohesión social bajo continuidad covariante Chronoflux',
   'cohesion_topic': 'Tema: {topic}',
   'cohesion_vortex': '### Vórtice (condiciones iniciales)',
@@ -917,9 +924,9 @@ final _es = {
   'part_two_vortex_topic':
       'Vórtice del continuo sobre «{question}»: el encuadre de «{topic}» comprime «{subject}» en un solo carril narrativo (ω {weight}% de saliencia, SCS {scs}/100).',
   'part_two_shear_question':
-      'Cizalla sobre «{question}»: polarización {frame} en «{subject}» — {polarity} (σ {weight}% de saliencia, SCS {scs}/100).',
+      'Cizalla sobre «{question}»: polarización {frame} en «{subject}» — {polarity} (σ {sentience}% de sentiencia, SCS {scs}/100).',
   'part_two_resistance_flow_question':
-      'Resistencia y flujo para «{question}»: arrastre Iτ ({res_weight}% de saliencia, SCS {res_scs}/100) frente a transporte Jμ ({flow_weight}% de saliencia, SCS {flow_scs}/100) — {transport}; inclinación neta {lean}.',
+      'Resistencia y flujo para «{question}»: arrastre Iτ ({salience}% de saliencia, SCS {res_scs}/100) frente a transporte Jμ ({flow_weight}% de peso, SCS {flow_scs}/100) — {transport}; inclinación neta {lean}.',
   'part_two_hint_suffix': 'Señal del escenario: {hint}.',
   'part_two_frame_probability': 'marco probabilístico',
   'part_two_frame_predictive': 'trayectoria predictiva',

@@ -1,4 +1,7 @@
+import '../../models/locale_config.dart';
+import '../../models/scenario_input.dart';
 import '../grok_construct_discourse.dart';
+import '../narrative_construct_construal.dart';
 
 /// Lightweight heuristic construal for the standalone Grok proxy (no Flutter deps).
 class GrokProxyHeuristic {
@@ -9,11 +12,36 @@ class GrokProxyHeuristic {
     bool mock = false,
   }) {
     final question = '${payload['posedQuestion'] ?? ''}'.trim();
+    final narrative = '${payload['narrativeText'] ?? ''}'.trim();
+    final sourceUrl = '${payload['sourceUrl'] ?? ''}'.trim();
     final region = '${payload['regionLabel'] ?? payload['regionId'] ?? 'global'}';
     final regionId = '${payload['regionId'] ?? 'global'}';
 
-    if (question.isEmpty) {
+    if (question.isEmpty && narrative.isEmpty) {
       return _empty(mock: mock);
+    }
+
+    if (sourceUrl.isNotEmpty && narrative.isNotEmpty) {
+      final input = ScenarioInput(
+        posedQuestion: narrative,
+        topic: '${payload['topic'] ?? ''}',
+        sourceUrl: sourceUrl,
+        vortexText: '${payload['vortexText'] ?? ''}',
+        shearText: '${payload['shearText'] ?? ''}',
+        resistanceText: '${payload['resistanceText'] ?? ''}',
+        flowText: '${payload['flowText'] ?? ''}',
+      );
+      final result = NarrativeConstructConstrual.suggest(
+        input: input,
+        locale: LocaleConfig(regionId: regionId, languageCode: 'en'),
+      );
+      return {
+        'vortexText': result.vortexText,
+        'shearText': result.shearText,
+        'resistanceText': result.resistanceText,
+        'flowText': result.flowText,
+        'provenance': mock ? 'grok-mock' : result.provenance,
+      };
     }
 
     String pick(String existing, String construct) {

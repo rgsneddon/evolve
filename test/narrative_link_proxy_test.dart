@@ -16,6 +16,53 @@ void main() {
     expect(NarrativeLinkReader.isXUrl('https://news.test/story'), isFalse);
   });
 
+  test('fetchViaProxy loads X post via public oembed without OAuth', () async {
+    final client = MockClient((request) async {
+      if (request.url.host == '127.0.0.1') {
+        return http.Response(
+          jsonEncode({
+            'url': 'https://x.com/rgsneddon/status/2066269545849880814',
+            'title': 'X post 2066269545849880814',
+            'narrative':
+                '@rgsneddon: Parliament is just a revolving door of policies we didn\'t vote for.',
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('', 404);
+    });
+
+    final reader = NarrativeLinkReader(client: client);
+    final content = await reader.fetchViaProxy(
+      'http://127.0.0.1:8787',
+      'https://x.com/rgsneddon/status/2066269545849880814',
+    );
+    expect(content.narrative, contains('revolving door'));
+    expect(content.narrative, contains('@rgsneddon'));
+  });
+
+  test('fetchViaProxy accepts short X narratives from proxy', () async {
+    final client = MockClient((request) async {
+      return http.Response(
+        jsonEncode({
+          'url': 'https://x.com/a/status/1',
+          'title': 'X post',
+          'narrative': '@alice: Short but meaningful post text here.',
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final reader = NarrativeLinkReader(client: client);
+    final content = await reader.fetchViaProxy(
+      'http://127.0.0.1:8787',
+      'https://x.com/a/status/1',
+    );
+    expect(content.narrative, contains('@alice'));
+  });
+
   test('fetchViaProxy maps proxy JSON to NarrativeLinkContent', () async {
     final client = MockClient((request) async {
       expect(request.url.path, '/narrative/fetch');

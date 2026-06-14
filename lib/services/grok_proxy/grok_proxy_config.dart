@@ -34,14 +34,17 @@ class GrokProxyConfig {
 
   static GrokProxyConfig fromEnvironment({int port = 8787}) {
     final clientId = env.readEnv('X_CLIENT_ID');
+    final hasClientId = clientId != null &&
+        clientId.isNotEmpty &&
+        !clientId.toLowerCase().contains('your_x_oauth');
     final forceMock = env.readEnv('GROK_PROXY_MOCK') == '1';
-    final mock = forceMock || clientId == null;
+    final mock = forceMock || !hasClientId;
     final publicBase = env.readEnv('GROK_PROXY_PUBLIC_URL');
 
     return GrokProxyConfig(
       port: port,
       mock: mock,
-      xClientId: clientId,
+      xClientId: hasClientId ? clientId : null,
       xClientSecret: env.readEnv('X_CLIENT_SECRET'),
       xaiApiKey: env.readEnv('XAI_API_KEY'),
       xaiConstrualModel: env.readEnv('XAI_CONSTRUAL_MODEL') ?? 'grok-2-latest',

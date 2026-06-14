@@ -21,6 +21,12 @@ class CohesionReportPanel extends StatelessWidget {
     final strings = provider.strings;
     final report = result.cohesionReport;
     final score = result.core.refinedScs;
+    final regressive = result.core.lean == 'REGRESSIVE';
+    final lean = provider.output.leanLabel(result.core.lean);
+    final continuumSubtitle = provider.output.cohesionContinuumSubtitle(
+      lean: lean,
+      pct: provider.output.cohesionContinuumHeadlinePercent(result.percentChance),
+    );
     final split = ConclusionExplainer.splitCohesionReport(report, locale);
 
     return Card(
@@ -49,24 +55,28 @@ class CohesionReportPanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Text(
-                  '~${score.round()}/100',
-                  style: const TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF6C63FF),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    strings.t('cohesion_refined_panel').replaceAll('{scs}', '${score.round()}'),
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8), height: 1.4),
-                  ),
-                ),
-              ],
+            Text(
+              '~${score.round()}/100',
+              style: const TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF6C63FF),
+                height: 1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              continuumSubtitle,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: regressive ? const Color(0xFFFF8A7A) : const Color(0xFF7AE582),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              strings.t('cohesion_refined_panel').replaceAll('{scs}', '${score.round()}'),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8), height: 1.4),
             ),
             const SizedBox(height: 16),
             PartTwoPanel(partTwo: result.partTwo),

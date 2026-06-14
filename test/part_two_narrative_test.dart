@@ -30,7 +30,7 @@ void main() {
     expect(two.shearRefinement.toLowerCase(), isNot(contains('observed shear')));
   });
 
-  test('PART TWO cites scenario-relative weight salience', () {
+  test('PART TWO cites sentience on σ and salience on Iτ', () {
     const input = ScenarioInput(
       posedQuestion:
           'What is the chance of sporadic civil unrest in the UK near-term?',
@@ -38,6 +38,8 @@ void main() {
     final result = engine.analyze(input);
 
     expect(result.partTwo.expandedVortex, contains('% salience'));
+    expect(result.partTwo.shearRefinement.toLowerCase(), contains('sentience'));
+    expect(result.partTwo.resistanceFlow.toLowerCase(), contains('salience'));
     expect(result.partTwo.shearRefinement, contains('σ'));
     expect(result.partTwo.resistanceFlow, contains('Iτ'));
     expect(result.partTwo.resistanceFlow, contains('Jμ'));

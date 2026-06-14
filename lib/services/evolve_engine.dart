@@ -8,6 +8,7 @@ import 'cohesion_report_formatter.dart';
 import 'forecast_calibrator.dart';
 import 'grok_style_formatter.dart';
 import 'chronoflux_weight_construal.dart';
+import 'sentience_salience_construal.dart';
 import 'conclusion_explainer_data_builder.dart';
 import 'continuum_conclusion_builder.dart';
 import 'scenario_calculation_context.dart';
@@ -48,9 +49,10 @@ class EvolveEngine {
     final out = LocalizedOutput.of(locale);
     final input = parser.enrich(raw, locale: locale, output: out);
     final narratives = parser.narratives(input, locale: locale, output: out);
-    final baseline = _hydrodynamicCore(input);
+    final awareness = _awareness(input, locale);
+    final baseline = _hydrodynamicCore(input, awareness);
     final partOne = _partOne(input, narratives, baseline);
-    var partTwo = runPartTwo(input, baseline, out, locale);
+    var partTwo = runPartTwo(input, baseline, out, locale, awareness: awareness);
     NarrativePartyRefinement? partyRefinement;
     if (mode == AnalysisMode.cohesionScore && input.sourceUrl.trim().isNotEmpty) {
       partyRefinement = _refineFromPartyResponses(
@@ -64,7 +66,7 @@ class EvolveEngine {
       }
     }
     final partThree = _partThree(input, partTwo, out, locale);
-    final heuristicPct = _percentChance(partTwo, input);
+    final heuristicPct = _percentChance(partTwo, input, awareness);
     final forecast = forecastCalibrator.calibrate(
       input: input,
       locale: locale,
@@ -153,12 +155,13 @@ class EvolveEngine {
       vortexText: excerpt,
     );
     final input = parser.enrich(sub, locale: locale, output: out);
-    final baseline = _hydrodynamicCore(input);
+    final awareness = _awareness(input, locale);
+    final baseline = _hydrodynamicCore(input, awareness);
     final contextLean = ScenarioCalculationContext.from(
       input: input,
       regionId: locale.regionId,
     ).effectiveLean;
-    return _refinedCore(baseline, contextLean: contextLean);
+    return _refinedCore(baseline, contextLean: contextLean, awareness: awareness);
   }
 
   NarrativePartyRefinement? _refineFromPartyResponses({
@@ -228,6 +231,8 @@ class EvolveEngine {
       vortexScs: core.vortexScs,
       positive: core.positive,
       dissipative: core.dissipative,
+      sentiencePct: core.sentiencePct,
+      saliencePct: core.saliencePct,
     );
     return PartTwoSection(
       core: updatedCore,
@@ -246,16 +251,47 @@ class EvolveEngine {
     ScenarioInput input,
     _BaselineCore baseline,
     LocalizedOutput out,
-    LocaleConfig locale,
-  ) =>
-      _partTwo(input, baseline, out, locale);
+    LocaleConfig locale, {
+    SentienceSalienceResult? awareness,
+  }) =>
+      _partTwo(
+        input,
+        baseline,
+        out,
+        locale,
+        awareness: awareness ?? _awareness(input, locale),
+      );
 
-  _BaselineCore _hydrodynamicCore(ScenarioInput input) {
+  SentienceSalienceResult _awareness(ScenarioInput input, LocaleConfig locale) {
+    final ctx = ScenarioCalculationContext.from(
+      input: input,
+      regionId: locale.regionId,
+    );
+    final weights = const ChronofluxWeightConstrual().construeFromContext(ctx);
+    final sem = QuestionSemantics.parse(
+      input,
+      regionId: locale.regionId,
+      regionLabel: LocalizedOutput.of(locale).regionName(locale.regionId),
+    );
+    return const SentienceSalienceConstrual().construe(
+      context: ctx,
+      normalizedWeights: weights.normalized,
+      semantics: sem,
+    );
+  }
+
+  _BaselineCore _hydrodynamicCore(
+    ScenarioInput input,
+    SentienceSalienceResult awareness,
+  ) {
     final e = _effective(input);
     final weightedScs = _weightedScs(input);
 
+    final shearReacted = e.shear * awareness.shearReaction;
+    final resistanceReacted = e.resistance * awareness.resistanceReaction;
+
     final positive = (e.flow + e.vortex + e.continuum * 0.75) / 2.75;
-    final dissipative = (e.shear * 0.62 + e.resistance * 0.78) / 1.4;
+    final dissipative = (shearReacted * 0.62 + resistanceReacted * 0.78) / 1.4;
 
     var scs = (positive - dissipative * 0.68) * 1.25;
     final lo = (weightedScs - 14).clamp(22.0, 62.0);
@@ -264,7 +300,7 @@ class EvolveEngine {
 
     final progressiveRaw = (positive * 0.82) * (1 - dissipative / 155);
     var regressiveRaw =
-        dissipative * 0.95 * (1 + (e.resistance - 55) / 140);
+        dissipative * 0.95 * (1 + (resistanceReacted - 55) / 140);
     regressiveRaw = regressiveRaw.clamp(28, 45);
 
     final total = progressiveRaw + regressiveRaw;
@@ -291,15 +327,18 @@ class EvolveEngine {
   HydrodynamicCore _refinedCore(
     _BaselineCore baseline, {
     required String contextLean,
+    required SentienceSalienceResult awareness,
   }) {
     final input = baseline.input;
     final constructive = (input.vortex.scs + input.flow.scs) / 2;
-    final dissipativeChannel = (input.shear.scs + input.resistance.scs) / 2;
+    final shearReacted = input.shear.scs * awareness.shearReaction;
+    final resistanceReacted = input.resistance.scs * awareness.resistanceReaction;
+    final dissipativeChannel = (shearReacted + resistanceReacted) / 2;
 
     final refinedPositive = (constructive + baseline.positive) / 2;
     final refinedDissipative =
         (dissipativeChannel * 0.68 + baseline.dissipative) / 1.68;
-    final eliteFactor = 1 + (input.shear.scs + input.resistance.scs) / 300;
+    final eliteFactor = 1 + (shearReacted + resistanceReacted) / 300;
     final mechanicalBaseline = (input.vortex.scs +
             input.shear.scs +
             input.resistance.scs +
@@ -320,7 +359,7 @@ class EvolveEngine {
     final progRaw = (refinedPositive * 0.82) * (1 - refinedDissipative / 155);
     var regRaw = refinedDissipative *
         0.95 *
-        (1 + (input.resistance.scs - 55) / 140);
+        (1 + (resistanceReacted - 55) / 140);
     regRaw = regRaw.clamp(28, 55);
 
     final total = progRaw + regRaw;
@@ -352,6 +391,8 @@ class EvolveEngine {
       vortexScs: input.vortex.scs,
       positive: refinedPositive,
       dissipative: refinedDissipative,
+      sentiencePct: awareness.sentiencePct,
+      saliencePct: awareness.saliencePct,
     );
   }
 
@@ -405,13 +446,18 @@ class EvolveEngine {
     ScenarioInput input,
     _BaselineCore baseline,
     LocalizedOutput out,
-    LocaleConfig locale,
-  ) {
+    LocaleConfig locale, {
+    required SentienceSalienceResult awareness,
+  }) {
     final calcCtx = ScenarioCalculationContext.from(
       input: input,
       regionId: locale.regionId,
     );
-    final core = _refinedCore(baseline, contextLean: calcCtx.effectiveLean);
+    final core = _refinedCore(
+      baseline,
+      contextLean: calcCtx.effectiveLean,
+      awareness: awareness,
+    );
     final sem = QuestionSemantics.parse(
       input,
       regionId: locale.regionId,
@@ -472,11 +518,24 @@ class EvolveEngine {
     );
   }
 
-  double _percentChance(PartTwoSection two, ScenarioInput input) =>
-      (two.regressivePct * 0.55 +
-              input.shear.scs * 0.25 +
-              (100 - two.refinedScs) * 0.2)
-          .clamp(8, 92);
+  /// Chronoflux headline % — regressive continuum × 0.55 + σ × 0.25 + strain × 0.2.
+  static double heuristicPercentChance({
+    required double regressivePct,
+    required double refinedScs,
+    required double shearScs,
+  }) =>
+      (regressivePct * 0.55 + shearScs * 0.25 + (100 - refinedScs) * 0.2).clamp(8, 92);
+
+  double _percentChance(
+    PartTwoSection two,
+    ScenarioInput input,
+    SentienceSalienceResult awareness,
+  ) =>
+      heuristicPercentChance(
+        regressivePct: two.regressivePct,
+        refinedScs: two.refinedScs,
+        shearScs: input.shear.scs * awareness.shearReaction,
+      );
 
   String _percentPhrase(
     double pct,

@@ -26,6 +26,14 @@ switch ($Platform) {
     }
     'windows' {
         & $flutter build windows $mode
+        $envSrc = Join-Path $Root 'grok_proxy.local.env'
+        $envDst = Join-Path $Root 'build\windows\x64\runner\Release\grok_proxy.local.env'
+        if (Test-Path $envSrc) {
+            Copy-Item $envSrc $envDst -Force
+            Write-Host 'Copied grok_proxy.local.env beside evolve.exe' -ForegroundColor Cyan
+        } else {
+            Write-Host 'No grok_proxy.local.env — Windows Grok will use mock X sign-in.' -ForegroundColor Yellow
+        }
         Write-Host ''
         Write-Host 'Output: build\windows\x64\runner\Release\evolve.exe' -ForegroundColor Green
     }

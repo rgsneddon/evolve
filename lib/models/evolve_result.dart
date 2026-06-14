@@ -19,6 +19,8 @@ class HydrodynamicCore {
     required this.vortexScs,
     this.positive = 0,
     this.dissipative = 0,
+    this.sentiencePct = 50,
+    this.saliencePct = 50,
   });
 
   final double overallScs;
@@ -35,6 +37,8 @@ class HydrodynamicCore {
   final double vortexScs;
   final double positive;
   final double dissipative;
+  final double sentiencePct;
+  final double saliencePct;
 }
 
 class PartOneSection {

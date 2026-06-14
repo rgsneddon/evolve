@@ -79,6 +79,8 @@ class ConclusionExplainerDataBuilder {
         .replaceAll('{w_s}', '${wPct[2]}')
         .replaceAll('{w_r}', '${wPct[3]}')
         .replaceAll('{w_f}', '${wPct[1]}')
+        .replaceAll('{sentience}', '${core.sentiencePct.round()}')
+        .replaceAll('{salience}', '${core.saliencePct.round()}')
         .replaceAll('{refined}', '${core.refinedScs.round()}')
         .replaceAll('{reg}', '${core.regressivePct.round()}')
         .replaceAll('{prog}', '${core.progressivePct.round()}')

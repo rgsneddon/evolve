@@ -12,7 +12,7 @@ import 'grok_proxy_heuristic.dart';
 
 /// OAuth session + construal logic shared by CLI proxy and embedded server.
 class GrokProxyStore {
-  GrokProxyStore(this.config) : _client = http.Client();
+  GrokProxyStore(this.config, {http.Client? client}) : _client = client ?? http.Client();
 
   final GrokProxyConfig config;
   final http.Client _client;
@@ -137,16 +137,57 @@ class GrokProxyStore {
     }
 
     if (NarrativeLinkReader.isXUrl(urlString)) {
-      if (_accessToken == null) {
-        throw NarrativeLinkProxyException('x_auth_required', statusCode: 401);
+      try {
+        return await _fetchXPostPublic(uri);
+      } catch (_) {
+        // Fall through to authenticated X API v2 when signed in.
       }
-      return _fetchXPost(uri);
+      if (_accessToken != null) {
+        return _fetchXPost(uri);
+      }
+      throw NarrativeLinkProxyException('fetch');
     }
 
+    if (NarrativeLinkReader.isYouTubeUrl(urlString)) {
+      try {
+        return await _fetchYouTube(uri);
+      } catch (_) {
+        // Fall through to HTML/OG parsing.
+      }
+    }
+
+    if (NarrativeLinkReader.isBlueskyUrl(urlString)) {
+      try {
+        return await _fetchBluesky(uri);
+      } catch (_) {
+        // Fall through to HTML/OG parsing.
+      }
+    }
+
+    if (NarrativeLinkReader.isRedditUrl(urlString)) {
+      try {
+        return await _fetchReddit(uri);
+      } catch (_) {
+        // Fall through to HTML/OG parsing.
+      }
+    }
+
+    if (NarrativeLinkReader.isMastodonUrl(urlString)) {
+      try {
+        return await _fetchMastodon(uri);
+      } catch (_) {
+        // Fall through to HTML/OG parsing.
+      }
+    }
+
+    return _fetchHtmlNarrative(uri);
+  }
+
+  Future<Map<String, dynamic>> _fetchHtmlNarrative(Uri uri) async {
     final html = await NarrativeLinkReader.fetchHtmlForUri(uri, client: _client);
     final content = NarrativeLinkReader.parseHtml(html, uri.toString());
-    if (NarrativeLinkReader.meaningfulLength(content.narrative) <
-        NarrativeLinkReader.minMeaningfulChars) {
+    final minChars = NarrativeLinkReader.minMeaningfulCharsForUri(uri);
+    if (NarrativeLinkReader.meaningfulLength(content.narrative) < minChars) {
       throw NarrativeLinkProxyException('empty');
     }
     return {
@@ -154,6 +195,87 @@ class GrokProxyStore {
       'title': content.title,
       'narrative': content.narrative,
     };
+  }
+
+  /// Public X endpoints — no OAuth; works for most public posts.
+  Future<Map<String, dynamic>> _fetchXPostPublic(Uri uri) async {
+    final tweetId = NarrativeLinkReader.tweetIdFromUri(uri);
+    if (tweetId == null) {
+      throw NarrativeLinkProxyException('invalid');
+    }
+
+    Object? lastError;
+
+    try {
+      final oembedRes = await _client.get(
+        Uri.https(
+          'publish.twitter.com',
+          '/oembed',
+          {'url': uri.toString(), 'omit_script': '1', 'lang': 'en'},
+        ),
+      );
+      if (oembedRes.statusCode == 200) {
+        final json = jsonDecode(oembedRes.body) as Map<String, dynamic>;
+        final text = NarrativeLinkReader.parseOembedTweetHtml('${json['html'] ?? ''}');
+        if (text != null && text.isNotEmpty) {
+          final handle = NarrativeLinkReader.authorHandleFromOembed(json);
+          final author = handle != null ? '@$handle' : '${json['author_name'] ?? ''}'.trim();
+          final narrative = author.isEmpty ? text : '$author: $text';
+          if (NarrativeLinkReader.meaningfulLength(narrative) >=
+              NarrativeLinkReader.minMeaningfulCharsForUri(uri)) {
+            return {
+              'url': uri.toString(),
+              'title': 'X post $tweetId',
+              'narrative': ScenarioInput.clamp(narrative),
+            };
+          }
+        }
+      } else {
+        lastError = 'oembed HTTP ${oembedRes.statusCode}';
+      }
+    } catch (e) {
+      lastError = e;
+    }
+
+    try {
+      final syndicationRes = await _client.get(
+        Uri.https(
+          'cdn.syndication.twimg.com',
+          '/tweet-result',
+          {'id': tweetId, 'features': 'sfw', 'token': '1'},
+        ),
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Accept': '*/*',
+        },
+      );
+      if (syndicationRes.statusCode == 200) {
+        final json = jsonDecode(syndicationRes.body) as Map<String, dynamic>;
+        final text = '${json['text'] ?? ''}'.trim();
+        if (text.isNotEmpty) {
+          var author = '@x';
+          final user = json['user'] as Map<String, dynamic>?;
+          final screenName = '${user?['screen_name'] ?? ''}'.trim();
+          if (screenName.isNotEmpty) author = '@$screenName';
+          final narrative = '$author: $text';
+          if (NarrativeLinkReader.meaningfulLength(narrative) >=
+              NarrativeLinkReader.minMeaningfulCharsForUri(uri)) {
+            return {
+              'url': uri.toString(),
+              'title': 'X post $tweetId',
+              'narrative': ScenarioInput.clamp(narrative),
+            };
+          }
+        }
+      } else {
+        lastError = 'syndication HTTP ${syndicationRes.statusCode}';
+      }
+    } catch (e) {
+      lastError = e;
+    }
+
+    throw NarrativeLinkProxyException('fetch', cause: lastError);
   }
 
   Future<Map<String, dynamic>> _fetchXPost(Uri uri) async {
@@ -206,6 +328,210 @@ class GrokProxyStore {
     return {
       'url': uri.toString(),
       'title': 'X post $tweetId',
+      'narrative': ScenarioInput.clamp(narrative),
+    };
+  }
+
+  Future<Map<String, dynamic>> _fetchYouTube(Uri uri) async {
+    final videoId = NarrativeLinkReader.youtubeIdFromUri(uri);
+    if (videoId == null) {
+      throw NarrativeLinkProxyException('invalid');
+    }
+
+    var title = 'YouTube video $videoId';
+    var author = '';
+    final oembedRes = await _client.get(
+      Uri.https(
+        'www.youtube.com',
+        '/oembed',
+        {'url': uri.toString(), 'format': 'json'},
+      ),
+    );
+    if (oembedRes.statusCode == 200) {
+      final json = jsonDecode(oembedRes.body) as Map<String, dynamic>;
+      title = '${json['title'] ?? title}'.trim();
+      author = '${json['author_name'] ?? ''}'.trim();
+    }
+
+    var description = '';
+    try {
+      final html = await NarrativeLinkReader.fetchHtmlForUri(uri, client: _client);
+      description = NarrativeLinkReader.parseHtml(html, uri.toString()).narrative;
+    } catch (_) {}
+
+    final parts = <String>[];
+    if (author.isNotEmpty) parts.add(author);
+    if (title.isNotEmpty) parts.add(title);
+    if (description.isNotEmpty) parts.add(description);
+    final narrative = parts.join('\n\n').trim();
+    if (NarrativeLinkReader.meaningfulLength(narrative) <
+        NarrativeLinkReader.minMeaningfulCharsForUri(uri)) {
+      throw NarrativeLinkProxyException('empty');
+    }
+
+    return {
+      'url': uri.toString(),
+      'title': title,
+      'narrative': ScenarioInput.clamp(narrative),
+    };
+  }
+
+  Future<Map<String, dynamic>> _fetchBluesky(Uri uri) async {
+    final ref = NarrativeLinkReader.blueskyPostFromUri(uri);
+    if (ref == null) {
+      throw NarrativeLinkProxyException('invalid');
+    }
+
+    final resolveRes = await _client.get(
+      Uri.https(
+        'public.api.bsky.app',
+        '/xrpc/com.atproto.identity.resolveHandle',
+        {'handle': ref.handle},
+      ),
+    );
+    if (resolveRes.statusCode != 200) {
+      throw NarrativeLinkProxyException('fetch', cause: resolveRes.body);
+    }
+
+    final did =
+        '${(jsonDecode(resolveRes.body) as Map<String, dynamic>)['did'] ?? ''}'.trim();
+    if (did.isEmpty) {
+      throw NarrativeLinkProxyException('fetch');
+    }
+
+    final atUri = 'at://$did/app.bsky.bsky.feed.post/${ref.rkey}';
+    final postRes = await _client.get(
+      Uri.https(
+        'public.api.bsky.app',
+        '/xrpc/app.bsky.feed.getPosts',
+        {'uris': atUri},
+      ),
+    );
+    if (postRes.statusCode != 200) {
+      throw NarrativeLinkProxyException('fetch', cause: postRes.body);
+    }
+
+    final posts = (jsonDecode(postRes.body) as Map<String, dynamic>)['posts'];
+    if (posts is! List || posts.isEmpty) {
+      throw NarrativeLinkProxyException('empty');
+    }
+
+    final post = posts.first as Map<String, dynamic>;
+    final record = post['record'] as Map<String, dynamic>?;
+    final text = '${record?['text'] ?? ''}'.trim();
+    if (text.isEmpty) {
+      throw NarrativeLinkProxyException('empty');
+    }
+
+    var author = '@${ref.handle}';
+    final authorObj = post['author'] as Map<String, dynamic>?;
+    final handle = '${authorObj?['handle'] ?? ''}'.trim();
+    if (handle.isNotEmpty) author = '@$handle';
+
+    final narrative = '$author: $text';
+    return {
+      'url': uri.toString(),
+      'title': 'Bluesky post',
+      'narrative': ScenarioInput.clamp(narrative),
+    };
+  }
+
+  Future<Map<String, dynamic>> _fetchReddit(Uri uri) async {
+    final jsonPath = NarrativeLinkReader.redditJsonPath(uri);
+    if (jsonPath == null) {
+      throw NarrativeLinkProxyException('invalid');
+    }
+
+    final jsonUri = uri.replace(path: jsonPath, query: '', fragment: '');
+    final res = await _client.get(
+      jsonUri,
+      headers: {
+        'User-Agent': 'Evolve/1.0 (narrative reader)',
+        'Accept': 'application/json',
+      },
+    );
+    if (res.statusCode == 401 || res.statusCode == 403 || res.statusCode == 429) {
+      throw NarrativeLinkProxyException('blocked', statusCode: res.statusCode);
+    }
+    if (res.statusCode != 200) {
+      throw NarrativeLinkProxyException('fetch', cause: res.body);
+    }
+
+    final decoded = jsonDecode(res.body);
+    if (decoded is! List || decoded.isEmpty) {
+      throw NarrativeLinkProxyException('empty');
+    }
+
+    final listing = decoded.first as Map<String, dynamic>;
+    final children = listing['data']?['children'];
+    if (children is! List || children.isEmpty) {
+      throw NarrativeLinkProxyException('empty');
+    }
+
+    final postData = (children.first as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
+    final title = '${postData?['title'] ?? ''}'.trim();
+    final selftext = '${postData?['selftext'] ?? ''}'.trim();
+    final author = '${postData?['author'] ?? ''}'.trim();
+
+    final parts = <String>[];
+    if (author.isNotEmpty) parts.add('u/$author');
+    if (title.isNotEmpty) parts.add(title);
+    if (selftext.isNotEmpty) parts.add(selftext);
+    final narrative = parts.join('\n\n').trim();
+    if (NarrativeLinkReader.meaningfulLength(narrative) <
+        NarrativeLinkReader.minMeaningfulCharsForUri(uri)) {
+      throw NarrativeLinkProxyException('empty');
+    }
+
+    return {
+      'url': uri.toString(),
+      'title': title.isEmpty ? 'Reddit post' : title,
+      'narrative': ScenarioInput.clamp(narrative),
+    };
+  }
+
+  Future<Map<String, dynamic>> _fetchMastodon(Uri uri) async {
+    final res = await _client.get(
+      uri,
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (compatible; Evolve/1.0; +https://github.com/rgsneddon/evolve)',
+        'Accept': 'application/json',
+      },
+    );
+    if (res.statusCode == 401 || res.statusCode == 403 || res.statusCode == 429) {
+      throw NarrativeLinkProxyException('blocked', statusCode: res.statusCode);
+    }
+    if (res.statusCode != 200) {
+      throw NarrativeLinkProxyException('fetch', cause: res.body);
+    }
+
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    final contentHtml = '${json['content'] ?? ''}'.trim();
+    if (contentHtml.isEmpty) {
+      throw NarrativeLinkProxyException('empty');
+    }
+
+    final text = NarrativeLinkReader.parseHtml(
+      '<body>$contentHtml</body>',
+      uri.toString(),
+    ).narrative;
+
+    var author = '';
+    final acct = json['account'] as Map<String, dynamic>?;
+    final username = '${acct?['username'] ?? ''}'.trim();
+    final domain = '${acct?['acct'] ?? username}'.trim();
+    if (domain.isNotEmpty) author = '@$domain';
+
+    final narrative = author.isEmpty ? text : '$author: $text';
+    if (NarrativeLinkReader.meaningfulLength(narrative) <
+        NarrativeLinkReader.minMeaningfulCharsForUri(uri)) {
+      throw NarrativeLinkProxyException('empty');
+    }
+
+    return {
+      'url': uri.toString(),
+      'title': 'Mastodon post',
       'narrative': ScenarioInput.clamp(narrative),
     };
   }

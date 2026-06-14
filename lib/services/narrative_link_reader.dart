@@ -21,6 +21,8 @@ class NarrativeLinkReader {
   const NarrativeLinkReader({http.Client? client}) : _client = client;
 
   static const minMeaningfulChars = 80;
+  static const minMeaningfulCharsShortForm = 20;
+  static const minMeaningfulCharsSocialOg = 30;
 
   final http.Client? _client;
 
@@ -39,7 +41,7 @@ class NarrativeLinkReader {
     if (uri == null) {
       throw NarrativeLinkException('invalid');
     }
-    if (_isAuthWalledHost(uri)) {
+    if (requiresProxyFetch(uri)) {
       throw NarrativeLinkException('blocked', cause: uri.host);
     }
 
@@ -116,7 +118,7 @@ class NarrativeLinkReader {
     }
 
     final narrative = '${json['narrative'] ?? ''}'.trim();
-    if (meaningfulLength(narrative) < minMeaningfulChars) {
+    if (meaningfulLength(narrative) < minMeaningfulCharsForUri(uri)) {
       throw NarrativeLinkException('empty');
     }
 
@@ -131,7 +133,91 @@ class NarrativeLinkReader {
 
   static bool isXUrl(String urlString) {
     final uri = normalizeUrl(urlString);
-    return uri != null && _isAuthWalledHost(uri);
+    return uri != null && _isXHost(uri);
+  }
+
+  /// True for X/Twitter and other social hosts that need the Grok proxy (or fail direct fetch).
+  static bool isSocialMediaUrl(String urlString) {
+    final uri = normalizeUrl(urlString);
+    return uri != null && requiresProxyFetch(uri);
+  }
+
+  static bool requiresProxyFetch(Uri uri) =>
+      _isXHost(uri) || _isSocialMediaHost(uri) || _isMastodonStatusUrl(uri);
+
+  static int minMeaningfulCharsForUri(Uri uri) {
+    if (_isXHost(uri) ||
+        _isBlueskyHost(uri) ||
+        _isMastodonStatusUrl(uri) ||
+        _redditPath(uri).isNotEmpty) {
+      return minMeaningfulCharsShortForm;
+    }
+    if (_isSocialMediaHost(uri)) {
+      return minMeaningfulCharsSocialOg;
+    }
+    return minMeaningfulChars;
+  }
+
+  static bool isYouTubeUrl(String urlString) {
+    final uri = normalizeUrl(urlString);
+    return uri != null && _isYouTubeHost(uri.host);
+  }
+
+  static bool isBlueskyUrl(String urlString) {
+    final uri = normalizeUrl(urlString);
+    return uri != null && _isBlueskyHost(uri);
+  }
+
+  static bool isRedditUrl(String urlString) {
+    final uri = normalizeUrl(urlString);
+    return uri != null && _isRedditHost(uri.host);
+  }
+
+  static bool isMastodonUrl(String urlString) {
+    final uri = normalizeUrl(urlString);
+    return uri != null && _isMastodonStatusUrl(uri);
+  }
+
+  static String? youtubeIdFromUri(Uri uri) {
+    final host = uri.host.toLowerCase();
+    if (host == 'youtu.be') {
+      final id = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
+      return id.isEmpty ? null : id.split('?').first;
+    }
+    if (_isYouTubeHost(host)) {
+      final v = uri.queryParameters['v']?.trim() ?? '';
+      if (v.isNotEmpty) return v;
+      if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'shorts') {
+        final id = uri.pathSegments.length > 1 ? uri.pathSegments[1] : '';
+        return id.isEmpty ? null : id;
+      }
+    }
+    return null;
+  }
+
+  static BlueskyPostRef? blueskyPostFromUri(Uri uri) {
+    if (!_isBlueskyHost(uri)) return null;
+    final segments = uri.pathSegments;
+    final profileIdx = segments.indexOf('profile');
+    if (profileIdx < 0 || profileIdx + 3 >= segments.length) return null;
+    if (segments[profileIdx + 2] != 'post') return null;
+    final handle = segments[profileIdx + 1].trim();
+    final rkey = segments[profileIdx + 3].trim();
+    if (handle.isEmpty || rkey.isEmpty) return null;
+    return BlueskyPostRef(handle: handle, rkey: rkey);
+  }
+
+  static String? redditJsonPath(Uri uri) {
+    if (!_isRedditHost(uri.host)) return null;
+    var path = uri.path;
+    if (path.isEmpty || path == '/') return null;
+    if (path.endsWith('.json')) return path;
+    return '$path.json';
+  }
+
+  static String? mastodonStatusPath(Uri uri) {
+    if (!_isMastodonStatusUrl(uri)) return null;
+    return uri.path;
   }
 
   static String? tweetIdFromUri(Uri uri) {
@@ -140,6 +226,30 @@ class NarrativeLinkReader {
     if (statusIdx < 0 || statusIdx + 1 >= segments.length) return null;
     final id = segments[statusIdx + 1].replaceAll(RegExp(r'\D'), '');
     return id.isEmpty ? null : id;
+  }
+
+  /// Tweet body from X publish.oembed HTML (`blockquote` → `p`).
+  static String? parseOembedTweetHtml(String html) {
+    final trimmed = html.trim();
+    if (trimmed.isEmpty) return null;
+    final pMatch = RegExp(
+      r'<p[^>]*>([\s\S]*?)</p>',
+      caseSensitive: false,
+    ).firstMatch(trimmed);
+    if (pMatch != null) {
+      final text = _decodeEntities(_stripTags(pMatch.group(1) ?? '')).trim();
+      if (text.isNotEmpty) return text;
+    }
+    final fallback = _stripHtml(trimmed);
+    return fallback.isEmpty ? null : fallback;
+  }
+
+  static String? authorHandleFromOembed(Map<String, dynamic> json) {
+    final authorUrl = '${json['author_url'] ?? ''}'.trim();
+    final uri = Uri.tryParse(authorUrl);
+    if (uri == null || uri.pathSegments.isEmpty) return null;
+    final handle = uri.pathSegments.last.trim();
+    return handle.isEmpty ? null : handle;
   }
 
   /// Server-side HTML fetch (Grok proxy) — no browser CORS limits.
@@ -208,13 +318,88 @@ class NarrativeLinkReader {
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
 
-  static bool _isAuthWalledHost(Uri uri) {
+  static bool _isXHost(Uri uri) {
     final h = uri.host.toLowerCase();
     return h == 'x.com' ||
         h == 'twitter.com' ||
         h == 'mobile.twitter.com' ||
         h.endsWith('.x.com') ||
         h.endsWith('.twitter.com');
+  }
+
+  static bool _isBlueskyHost(Uri uri) {
+    final h = uri.host.toLowerCase();
+    return h == 'bsky.app' ||
+        h.endsWith('.bsky.app') ||
+        h == 'bsky.social' ||
+        h.endsWith('.bsky.social');
+  }
+
+  static bool _isYouTubeHost(String host) {
+    final h = host.toLowerCase();
+    return h == 'youtube.com' ||
+        h == 'www.youtube.com' ||
+        h == 'm.youtube.com' ||
+        h == 'youtu.be' ||
+        h.endsWith('.youtube.com');
+  }
+
+  static bool _isRedditHost(String host) {
+    final h = host.toLowerCase();
+    return h == 'reddit.com' ||
+        h == 'www.reddit.com' ||
+        h == 'old.reddit.com' ||
+        h.endsWith('.reddit.com');
+  }
+
+  static bool _isSocialMediaHost(Uri uri) {
+    final h = uri.host.toLowerCase();
+    if (_isYouTubeHost(h) || _isRedditHost(h) || _isBlueskyHost(uri)) return true;
+
+    const hosts = {
+      'facebook.com',
+      'www.facebook.com',
+      'm.facebook.com',
+      'fb.com',
+      'www.fb.com',
+      'instagram.com',
+      'www.instagram.com',
+      'threads.net',
+      'www.threads.net',
+      'linkedin.com',
+      'www.linkedin.com',
+      'tiktok.com',
+      'www.tiktok.com',
+      'vm.tiktok.com',
+      'pinterest.com',
+      'www.pinterest.com',
+      't.co',
+    };
+
+    if (hosts.contains(h)) return true;
+
+    const suffixes = [
+      '.facebook.com',
+      '.instagram.com',
+      '.threads.net',
+      '.linkedin.com',
+      '.tiktok.com',
+    ];
+    return suffixes.any(h.endsWith);
+  }
+
+  static String _redditPath(Uri uri) {
+    if (!_isRedditHost(uri.host)) return '';
+    final path = uri.path;
+    if (!path.contains('/comments/')) return '';
+    return path;
+  }
+
+  static bool _isMastodonStatusUrl(Uri uri) {
+    final path = uri.path;
+    if (path.contains('/statuses/')) return true;
+    final statusMatch = RegExp(r'^/@[^/]+/\d+').hasMatch(path);
+    return statusMatch;
   }
 
   static List<Uri> _fetchCandidates(Uri uri) {
@@ -471,6 +656,13 @@ class NarrativeLinkReader {
     if (t.length <= max) return t;
     return '${t.substring(0, max - 1)}…';
   }
+}
+
+class BlueskyPostRef {
+  const BlueskyPostRef({required this.handle, required this.rkey});
+
+  final String handle;
+  final String rkey;
 }
 
 class NarrativeLinkException implements Exception {

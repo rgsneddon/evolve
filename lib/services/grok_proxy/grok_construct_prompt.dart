@@ -23,17 +23,26 @@ CRITICAL RULES:
 
   static String userMessage(Map<String, dynamic> payload) {
     final question = '${payload['posedQuestion'] ?? ''}'.trim();
+    final narrative = '${payload['narrativeText'] ?? ''}'.trim();
     final region = '${payload['regionLabel'] ?? payload['regionId'] ?? 'global'}';
     final topic = '${payload['topic'] ?? ''}'.trim();
     final sourceUrl = '${payload['sourceUrl'] ?? ''}'.trim();
 
+    final narrativeBlock = narrative.isNotEmpty
+        ? '''
+
+LINKED NARRATIVE TEXT (ground every field in this article — cite specific actors, quotes, and facts from here):
+"$narrative"
+'''
+        : '';
+
     return '''
 POSED SCENARIO QUESTION (context only — do NOT copy into output fields):
 "$question"
-
+$narrativeBlock
 Region focus: $region
 ${topic.isNotEmpty ? 'Topic tag: $topic\n' : ''}${sourceUrl.isNotEmpty ? 'Narrative source: $sourceUrl\n' : ''}
-Fill ONLY blank construct fields. Each must be a distinct, weight-bearing variable statement:
+Fill ONLY blank construct fields. Each must be a distinct, weight-bearing variable statement grounded in the linked narrative when provided:
 
 ω (vortexText) — authority circulation: how elites, officials, and establishment media
 frame or spin the scenario; named institutions or spokespersons when findable.
