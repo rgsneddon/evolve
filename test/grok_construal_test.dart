@@ -106,7 +106,7 @@ void main() {
 
     expect(merged.shearText, 'User supplied shear bias.');
     expect(merged.resistanceText, contains('Iτ (resistance)'));
-    expect(merged.resistanceText, contains('UK & Ireland'));
+    expect(merged.resistanceText, isNot(contains('UK & Ireland')));
     expect(merged.resistanceText, isNot(contains('"')));
     expect(merged.shearText, isNot(contains('What is the chance')));
   });

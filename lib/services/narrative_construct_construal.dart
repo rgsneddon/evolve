@@ -195,7 +195,7 @@ class NarrativeConstructConstrual {
       final party = q.party.trim();
       final excerpt = q.excerpt.trim();
       if (party.isNotEmpty && excerpt.isNotEmpty) {
-        return 'ω (vortex): Authority-framing lever via $party in $region — $excerpt';
+        return 'ω (vortex): Authority-framing lever via $party — $excerpt';
       }
     }
     return _bestSentence(

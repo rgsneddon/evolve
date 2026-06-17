@@ -27,6 +27,8 @@ void main() {
     expect(shear, isNot(contains('"')));
     expect(vortex.toLowerCase(), contains('lever'));
     expect(shear.toLowerCase(), contains('lever'));
+    expect(vortex.toLowerCase(), isNot(contains('uk & ireland')));
+    expect(shear.toLowerCase(), isNot(contains('uk & ireland')));
     expect(vortex, isNot(equals(shear)));
   });
 }

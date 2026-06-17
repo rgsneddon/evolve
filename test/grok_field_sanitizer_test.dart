@@ -32,6 +32,16 @@ void main() {
     expect(cleaned, startsWith('ω (vortex)'));
   });
 
+  test('strips in-region phrasing from live Grok-style output', () {
+    final cleaned = GrokFieldSanitizer.sanitizeField(
+      'σ (shear): Grievance levers in UK & Ireland sharpen partisan split.',
+      regionLabel: 'UK & Ireland',
+    );
+
+    expect(cleaned.toLowerCase(), isNot(contains('uk & ireland')));
+    expect(cleaned, contains('σ (shear)'));
+  });
+
   test('sanitizeFieldMap removes echoed posed question payloads', () {
     final cleaned = GrokFieldSanitizer.sanitizeFieldMap(
       {

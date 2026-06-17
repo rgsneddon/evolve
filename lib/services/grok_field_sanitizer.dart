@@ -34,24 +34,28 @@ class GrokFieldSanitizer {
         posedQuestion: question,
         displaySubject: sem.displaySubject,
         rawSubject: sem.subject,
+        regionLabel: region,
       ),
       shearText: sanitizeField(
         raw.shearText,
         posedQuestion: question,
         displaySubject: sem.displaySubject,
         rawSubject: sem.subject,
+        regionLabel: region,
       ),
       resistanceText: sanitizeField(
         raw.resistanceText,
         posedQuestion: question,
         displaySubject: sem.displaySubject,
         rawSubject: sem.subject,
+        regionLabel: region,
       ),
       flowText: sanitizeField(
         raw.flowText,
         posedQuestion: question,
         displaySubject: sem.displaySubject,
         rawSubject: sem.subject,
+        regionLabel: region,
       ),
       provenance: raw.provenance,
     );
@@ -62,6 +66,7 @@ class GrokFieldSanitizer {
     String posedQuestion, {
     String displaySubject = '',
     String rawSubject = '',
+    String regionLabel = '',
   }) {
     final question = posedQuestion.trim();
     String clean(String key, String construct) {
@@ -72,6 +77,7 @@ class GrokFieldSanitizer {
         posedQuestion: question,
         displaySubject: displaySubject,
         rawSubject: rawSubject,
+        regionLabel: regionLabel,
       );
       if (stripped.isEmpty) return '';
       if (question.isNotEmpty && GrokConstructPrompt.isQuestionEcho(stripped, question)) {
@@ -93,6 +99,7 @@ class GrokFieldSanitizer {
     String posedQuestion = '',
     String displaySubject = '',
     String rawSubject = '',
+    String regionLabel = '',
   }) {
     var t = field.trim();
     if (t.isEmpty) return t;
@@ -104,8 +111,29 @@ class GrokFieldSanitizer {
     if (posedQuestion.trim().isNotEmpty) {
       t = _stripSubjectEcho(t, posedQuestion.trim());
     }
+    t = _stripRegionEcho(t, regionLabel);
     t = _tidyPunctuation(t);
     return t.trim();
+  }
+
+  static String _stripRegionEcho(String text, String regionLabel) {
+    final region = regionLabel.trim();
+    if (region.isEmpty) return text;
+    var t = text;
+    final escaped = RegExp.escape(region);
+    t = t.replaceAll(
+      RegExp('\\bin\\s+$escaped\\b', caseSensitive: false),
+      '',
+    );
+    t = t.replaceAll(
+      RegExp('$escaped\\s+audiences', caseSensitive: false),
+      'audiences',
+    );
+    t = t.replaceAll(
+      RegExp('\\b$escaped\\b', caseSensitive: false),
+      '',
+    );
+    return t;
   }
 
   static String _stripQuotedSpans(String text) {

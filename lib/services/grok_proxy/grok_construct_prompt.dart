@@ -15,6 +15,7 @@ is about current or recent events.
 CRITICAL RULES:
 - NEVER repeat or paraphrase the full posed question in any field.
 - NEVER wrap the question or subject in quotation marks — no quoted parameters.
+- Do NOT name the region in field text — region is already selected in the app UI.
 - Each field is ONE lever-only variable statement (max 400 characters).
 - Begin each non-empty field with its symbol label: "ω (vortex):", "σ (shear):", "Iτ (resistance):", or "Jμ (flow):".
 - Detail ONLY the levers entailed by that construct:
@@ -50,7 +51,7 @@ $narrativeBlock
 Region focus: $region
 ${topic.isNotEmpty ? 'Topic tag: $topic\n' : ''}${sourceUrl.isNotEmpty ? 'Narrative source: $sourceUrl\n' : ''}
 Fill ONLY blank construct fields. Each must be a lever-only variable statement (no quoted
-question or subject parameters) grounded in the linked narrative when provided:
+question or subject parameters; no "in [region]" phrasing) grounded in the linked narrative when provided:
 
 ω (vortexText) — authority-circulation levers: elite briefings, spokesperson lanes,
 establishment framing; named institutions when findable.
@@ -78,12 +79,14 @@ Existing user inputs (leave corresponding outputs as ""):
     String posedQuestion, {
     String displaySubject = '',
     String rawSubject = '',
+    String regionLabel = '',
   }) =>
       GrokFieldSanitizer.sanitizeFieldMap(
         parsed,
         posedQuestion,
         displaySubject: displaySubject,
         rawSubject: rawSubject,
+        regionLabel: regionLabel,
       );
 
   static bool isQuestionEcho(String field, String question) {

@@ -15,9 +15,12 @@ class GrokConstructDiscourse {
   }) {
     final obs = observationalNarrative?.trim() ?? '';
     if (obs.isNotEmpty && !obs.toLowerCase().startsWith('posed question:')) {
-      return _clamp(GrokFieldSanitizer.sanitizeField(obs), 500);
+      return _clamp(
+        GrokFieldSanitizer.sanitizeField(obs, regionLabel: region),
+        500,
+      );
     }
-    return _clamp(_line(construct, region, hintSignals), 500);
+    return _clamp(_line(construct, hintSignals), 500);
   }
 
   static String fromQuestion({
@@ -41,70 +44,66 @@ class GrokConstructDiscourse {
     );
   }
 
-  static String _line(
-    String construct,
-    String region,
-    List<String> hints,
-  ) {
+  static String _line(String construct, List<String> hints) {
     final hint = hints.isNotEmpty ? hints.first.toLowerCase() : '';
     return switch (construct) {
-      'vortex' => _vortex(region, hint),
-      'shear' => _shear(region, hint),
-      'resistance' => _resistance(region, hint),
-      'flow' => _flow(region, hint),
-      _ => 'Chronoflux lever channel in $region.',
+      'vortex' => _vortex(hint),
+      'shear' => _shear(hint),
+      'resistance' => _resistance(hint),
+      'flow' => _flow(hint),
+      _ => 'Chronoflux lever channel active.',
     };
   }
 
-  static String _vortex(String region, String hint) {
+  static String _vortex(String hint) {
     if (hint.contains('electoral')) {
-      return 'ω (vortex): Incumbent and party machines in $region compress turnout '
+      return 'ω (vortex): Incumbent and party machines compress turnout '
           'and mandate levers through establishment briefings and headline framing.';
     }
     if (hint.contains('institutional')) {
-      return 'ω (vortex): Senior officials and legacy outlets in $region steer '
+      return 'ω (vortex): Senior officials and legacy outlets steer '
           'procedural framing levers that privilege institutional credibility.';
     }
-    return 'ω (vortex): Authority-circulation levers in $region — elite briefings, '
+    return 'ω (vortex): Authority-circulation levers — elite briefings, '
         'spokesperson lanes, and official story arcs set the ω compression field.';
   }
 
-  static String _shear(String region, String hint) {
+  static String _shear(String hint) {
     if (hint.contains('disorder') || hint.contains('collective')) {
-      return 'σ (shear): Street-level and X discourse levers in $region sharpen '
+      return 'σ (shear): Street-level and X discourse levers sharpen '
           'grievance layers between security hawks and civil-liberty voices.';
     }
     if (hint.contains('narrative')) {
-      return 'σ (shear): Polarized public-thread levers split $region audiences '
+      return 'σ (shear): Polarized public-thread levers split audiences '
           'between trust-the-lens and challenge-the-frame camps.';
     }
-    return 'σ (shear): Partisan shear levers in $region — bottom-up anger and '
+    return 'σ (shear): Partisan shear levers — bottom-up anger and '
         'top-down dismissal coexisting across open discussion channels.';
   }
 
-  static String _resistance(String region, String hint) {
+  static String _resistance(String hint) {
     if (hint.contains('economic') || hint.contains('macro')) {
-      return 'Iτ (resistance): Fiscal and regulatory guardrail levers in $region '
+      return 'Iτ (resistance): Fiscal and regulatory guardrail levers '
           'dampen rapid movement — stability data cited to slow escalation.';
     }
     if (hint.contains('institutional')) {
       return 'Iτ (resistance): Courts, regulators, and civil-service inertia levers '
-          'in $region push back on rapid institutional change.';
+          'push back on rapid institutional change.';
     }
-    return 'Iτ (resistance): Drag levers in $region — official denials, procedural '
+    return 'Iτ (resistance): Drag levers — official denials, procedural '
         'delay, and compliance checks absorb activist pressure.';
   }
 
-  static String _flow(String region, String hint) {
+  static String _flow(String hint) {
     if (hint.contains('narrative')) {
-      return 'Jμ (flow): Trust-transport levers in $region compress nuance into '
+      return 'Jμ (flow): Trust-transport levers compress nuance into '
           'shareable clips — detail thins as stories cross platforms.';
     }
     if (hint.contains('probability')) {
       return 'Jμ (flow): Probability-talk levers shuttle between expert caveats '
-          'and headline certainty, thinning middle-ground trust in $region.';
+          'and headline certainty, thinning middle-ground trust.';
     }
-    return 'Jμ (flow): Channel-reach levers in $region move nuance unevenly — '
+    return 'Jμ (flow): Channel-reach levers move nuance unevenly — '
         'local testimony travels while establishment statements dominate broadcast reach.';
   }
 

@@ -606,6 +606,7 @@ class GrokProxyStore {
       question,
       displaySubject: sem?.displaySubject ?? '',
       rawSubject: sem?.subject ?? '',
+      regionLabel: regionLabel.isNotEmpty ? regionLabel : '${payload['regionLabel'] ?? ''}',
     );
 
     final hasAny = fields.values.any((v) => v.isNotEmpty);
