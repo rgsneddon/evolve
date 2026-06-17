@@ -1,6 +1,6 @@
 # Evolve — Social Science Chronoflux Framework
 
-**Version 2.0.1** — [Live web app](https://rgsneddon.github.io/evolve/) · [GitHub Releases](https://github.com/rgsneddon/evolve/releases)
+**Version 1.0.7** — [Live web app](https://rgsneddon.github.io/evolve/) · [GitHub Releases](https://github.com/rgsneddon/evolve/releases)
 
 Evolve is a cross-platform app for analysing social and political scenarios using the **Chronoflux** hydrodynamic framework. It produces:
 
@@ -13,13 +13,21 @@ All core Chronoflux calculations run **locally** on your device. Optional **Grok
 
 The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechanical foundation of the Evolve analysis engine (see [License](#license)).
 
-### What's new in 2.0.1
+### What's new in 1.0.7
 
-| Fix | What changed |
-|-----|----------------|
-| **Android Grok** | Release APK now includes `INTERNET` permission and loopback cleartext for the embedded proxy; Grok construal connects as `@evolve_mock` (or `@evolve_android` heuristic fallback) |
+| Change | What you get |
+|--------|----------------|
+| **Sentience/salience reverted** | Experimental σ/Iτ awareness reaction layer removed from the hydrodynamic core; PART TWO again cites scenario **weight % salience** on σ and Iτ |
+| **Retained from 1.0.6** | Social narrative links and calibrated cohesion headline % under `~XX/100` unchanged |
 
-### What's new in 2.0
+### What's new in 1.0.6
+
+| Feature | What you get |
+|---------|----------------|
+| **Social narrative links** | Paste X, YouTube, Bluesky, Reddit, or Mastodon URLs in Social Cohesion mode — text fetched via Grok proxy (oEmbed / syndication) for party-response scoring |
+| **Cohesion headline %** | SCS panel shows calibrated percent-chance under `~XX/100` (not the raw THE CONTINUUM regressive/progressive split) |
+
+### Core features (1.0+)
 
 | Feature | What you get |
 |---------|----------------|
@@ -27,6 +35,7 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 | **PART THREE (5 actions)** | Five progressive actions for the accountable establishment figurehead — each with a data-driven rationale (ω/σ/Iτ/Jμ weights, continuum lean, registry base rate, lever projections) |
 | **Synopsis export** | After Calculate: **PDF**, **Text (.md)**, **View in browser**, or **Copy to clipboard** — full MarkdownBin-style report including PART THREE actions |
 | **Web Grok heuristic** | [GitHub Pages](https://rgsneddon.github.io/evolve/) uses `@evolve_web` in-browser construal — no local proxy, no X sign-in, no “proxy not found” error |
+| **Android Grok** | Release APK includes `INTERNET` permission and loopback cleartext for the embedded proxy; Grok construal connects as `@evolve_mock` (or `@evolve_android` heuristic fallback) |
 
 ---
 
@@ -119,7 +128,7 @@ When connected, the bar shows e.g. `Connected @your_username` (desktop) or `Conn
 
 **Social Cohesion mode only:**
 
-- **Narrative link** — paste a URL (e.g. news article or X post) and fetch text into the scenario.
+- **Narrative link** — paste a URL (news article, X post, YouTube, Bluesky, Reddit, Mastodon, etc.) and fetch text into the scenario via the Grok proxy.
 - If the narrative relies on **attributed party responses**, Evolve scores each quote individually and blends them into the overall SCS.
 
 ### 5. Calculate
