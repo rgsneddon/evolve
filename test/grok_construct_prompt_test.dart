@@ -37,13 +37,31 @@ void main() {
     expect(cleaned['flowText'], contains('Jμ (flow)'));
   });
 
-  test('userMessage instructs discourse grounding not question repeat', () {
+  test('sanitizeFields strips quoted question parameters from lever lines', () {
+    final cleaned = GrokConstructPrompt.sanitizeFields({
+      'vortexText':
+          'ω (vortex): Elite briefings on "$question" compress authority circulation.',
+      'shearText':
+          'σ (shear): Grievance-layer levers sharpen partisan split in open channels.',
+      'resistanceText': '',
+      'flowText': '',
+    }, question);
+
+    expect(cleaned['vortexText'], isNot(contains('"')));
+    expect(cleaned['vortexText'], contains('ω (vortex)'));
+    expect(cleaned['shearText'], contains('lever'));
+  });
+
+  test('userMessage instructs lever-only fields not question repeat', () {
     final msg = GrokConstructPrompt.userMessage({
       'posedQuestion': question,
       'regionLabel': 'UK & Ireland',
     });
     expect(msg, contains('do NOT copy'));
+    expect(msg, contains('lever-only'));
+    expect(msg, contains('no quoted'));
     expect(msg, contains('ω (vortexText)'));
     expect(msg, contains('σ (shearText)'));
+    expect(GrokConstructPrompt.systemMessage, contains('lever-only'));
   });
 }

@@ -29,6 +29,8 @@ void main() {
     expect(provider.input.resistanceText, startsWith('Iτ (resistance):'));
     expect(provider.input.flowText, startsWith('Jμ (flow):'));
     expect(provider.input.vortexText.toLowerCase(), isNot(contains(question.toLowerCase())));
+    expect(provider.input.vortexText, isNot(contains('"')));
+    expect(provider.input.shearText.toLowerCase(), contains('lever'));
     expect(provider.grokFilledFields.length, 4);
   });
 

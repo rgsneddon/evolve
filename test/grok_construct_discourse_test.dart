@@ -23,6 +23,10 @@ void main() {
     expect(shear, startsWith('σ (shear):'));
     expect(vortex.toLowerCase(), isNot(contains(question.toLowerCase())));
     expect(shear.toLowerCase(), isNot(contains(question.toLowerCase())));
+    expect(vortex, isNot(contains('"')));
+    expect(shear, isNot(contains('"')));
+    expect(vortex.toLowerCase(), contains('lever'));
+    expect(shear.toLowerCase(), contains('lever'));
     expect(vortex, isNot(equals(shear)));
   });
 }

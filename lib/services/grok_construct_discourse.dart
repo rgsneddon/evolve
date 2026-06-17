@@ -1,7 +1,7 @@
 import 'question_semantics.dart';
 import 'region_context.dart';
 
-/// Offline discourse-style construct lines — distinct per ω/σ/Iτ/Jμ, no question echo.
+/// Offline discourse-style construct lines — lever-only per ω/σ/Iτ/Jμ, no question echo.
 class GrokConstructDiscourse {
   const GrokConstructDiscourse._();
 
@@ -14,9 +14,9 @@ class GrokConstructDiscourse {
   }) {
     final obs = observationalNarrative?.trim() ?? '';
     if (obs.isNotEmpty && !obs.toLowerCase().startsWith('posed question:')) {
-      return _clamp(obs, 500);
+      return _clamp(_stripQuotedParameters(obs), 500);
     }
-    return _clamp(_line(construct, subject, region, hintSignals), 500);
+    return _clamp(_line(construct, region, hintSignals), 500);
   }
 
   static String fromQuestion({
@@ -42,70 +42,82 @@ class GrokConstructDiscourse {
 
   static String _line(
     String construct,
-    String subject,
     String region,
     List<String> hints,
   ) {
     final hint = hints.isNotEmpty ? hints.first.toLowerCase() : '';
     return switch (construct) {
-      'vortex' => _vortex(subject, region, hint),
-      'shear' => _shear(subject, region, hint),
-      'resistance' => _resistance(subject, region, hint),
-      'flow' => _flow(subject, region, hint),
-      _ => 'Chronoflux variable on "$subject" in $region.',
+      'vortex' => _vortex(region, hint),
+      'shear' => _shear(region, hint),
+      'resistance' => _resistance(region, hint),
+      'flow' => _flow(region, hint),
+      _ => 'Chronoflux lever channel in $region.',
     };
   }
 
-  static String _vortex(String subject, String region, String hint) {
+  static String _vortex(String region, String hint) {
     if (hint.contains('electoral')) {
-      return 'ω (vortex): Incumbent and party machines in $region compress "$subject" '
-          'into turnout and mandate narratives ahead of establishment briefings.';
+      return 'ω (vortex): Incumbent and party machines in $region compress turnout '
+          'and mandate levers through establishment briefings and headline framing.';
     }
     if (hint.contains('institutional')) {
-      return 'ω (vortex): Senior officials and legacy outlets in $region steer "$subject" '
-          'through procedural framing that privileges institutional credibility.';
+      return 'ω (vortex): Senior officials and legacy outlets in $region steer '
+          'procedural framing levers that privilege institutional credibility.';
     }
-    return 'ω (vortex): Authority circulation in $region spins "$subject" via elite '
-        'briefings and headline framing that set the official story arc.';
+    return 'ω (vortex): Authority-circulation levers in $region — elite briefings, '
+        'spokesperson lanes, and official story arcs set the ω compression field.';
   }
 
-  static String _shear(String subject, String region, String hint) {
+  static String _shear(String region, String hint) {
     if (hint.contains('disorder') || hint.contains('collective')) {
-      return 'σ (shear): Street-level and X discourse on "$subject" in $region shows '
-          'grievance layers sharpening between security hawks and civil-liberty voices.';
+      return 'σ (shear): Street-level and X discourse levers in $region sharpen '
+          'grievance layers between security hawks and civil-liberty voices.';
     }
     if (hint.contains('narrative')) {
-      return 'σ (shear): Polarized public threads on "$subject" split $region audiences '
+      return 'σ (shear): Polarized public-thread levers split $region audiences '
           'between trust-the-lens and challenge-the-frame camps.';
     }
-    return 'σ (shear): Open discussion on "$subject" in $region carries partisan shear — '
-        'bottom-up anger and top-down dismissal coexisting in the same feed.';
+    return 'σ (shear): Partisan shear levers in $region — bottom-up anger and '
+        'top-down dismissal coexisting across open discussion channels.';
   }
 
-  static String _resistance(String subject, String region, String hint) {
+  static String _resistance(String region, String hint) {
     if (hint.contains('economic') || hint.contains('macro')) {
-      return 'Iτ (resistance): Fiscal and regulatory guardrails in $region dampen rapid '
-          'movement on "$subject" — institutions cite stability data to slow escalation.';
+      return 'Iτ (resistance): Fiscal and regulatory guardrail levers in $region '
+          'dampen rapid movement — stability data cited to slow escalation.';
     }
     if (hint.contains('institutional')) {
-      return 'Iτ (resistance): Courts, regulators, and civil-service inertia in $region '
-          'push back on rapid change around "$subject".';
+      return 'Iτ (resistance): Courts, regulators, and civil-service inertia levers '
+          'in $region push back on rapid institutional change.';
     }
-    return 'Iτ (resistance): Institutional pushback on "$subject" in $region — official '
-        'denials, procedural delay, and compliance checks absorb activist pressure.';
+    return 'Iτ (resistance): Drag levers in $region — official denials, procedural '
+        'delay, and compliance checks absorb activist pressure.';
   }
 
-  static String _flow(String subject, String region, String hint) {
+  static String _flow(String region, String hint) {
     if (hint.contains('narrative')) {
-      return 'Jμ (flow): Trust transport on "$subject" in $region compresses nuance into '
-          'shareable clips — detail thins as the story crosses platforms.';
+      return 'Jμ (flow): Trust-transport levers in $region compress nuance into '
+          'shareable clips — detail thins as stories cross platforms.';
     }
     if (hint.contains('probability')) {
-      return 'Jμ (flow): Probability talk on "$subject" in $region shuttles between '
-          'expert caveats and headline certainty, thinning middle-ground trust.';
+      return 'Jμ (flow): Probability-talk levers shuttle between expert caveats '
+          'and headline certainty, thinning middle-ground trust in $region.';
     }
-    return 'Jμ (flow): Public channels on "$subject" in $region move nuance unevenly — '
-        'local testimony travels, but establishment statements dominate reach.';
+    return 'Jμ (flow): Channel-reach levers in $region move nuance unevenly — '
+        'local testimony travels while establishment statements dominate broadcast reach.';
+  }
+
+  /// Removes quoted question/subject parameters Grok may echo into fields.
+  static String stripQuotedParameters(String text) => _stripQuotedParameters(text);
+
+  static String _stripQuotedParameters(String text) {
+    var t = text.trim();
+    if (t.isEmpty) return t;
+    t = t.replaceAll(RegExp(r'[""][^""]+[""]'), '');
+    t = t.replaceAll(RegExp(r'«[^»]+»'), '');
+    t = t.replaceAll(RegExp(r'\s{2,}'), ' ');
+    t = t.replaceAll(RegExp(r'\s+([,.;:])'), r'$1');
+    return t.trim();
   }
 
   static String _clamp(String text, int maxLen) {

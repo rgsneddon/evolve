@@ -20,6 +20,8 @@ void main() {
     expect(suggestions.resistanceText, startsWith('Iτ (resistance):'));
     expect(suggestions.flowText, startsWith('Jμ (flow):'));
     expect(suggestions.vortexText.toLowerCase(), isNot(contains(fullQuestion.toLowerCase())));
+    expect(suggestions.vortexText, isNot(contains('"')));
+    expect(suggestions.resistanceText.toLowerCase(), contains('lever'));
     expect(suggestions.provenance, 'grok-heuristic-web');
   });
 }

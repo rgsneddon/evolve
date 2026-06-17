@@ -12,9 +12,14 @@ is about current or recent events.
 
 CRITICAL RULES:
 - NEVER repeat or paraphrase the full posed question in any field.
-- Each field is ONE distinct variable statement (max 400 characters).
+- NEVER wrap the question or subject in quotation marks — no quoted parameters.
+- Each field is ONE lever-only variable statement (max 400 characters).
 - Begin each non-empty field with its symbol label: "ω (vortex):", "σ (shear):", "Iτ (resistance):", or "Jμ (flow):".
-- Reference the scenario subject briefly (a short noun phrase), not the entire question sentence.
+- Detail ONLY the levers entailed by that construct:
+  ω = authority-circulation levers (briefings, elite framing, spokesperson lanes);
+  σ = polarisation/shear levers (grievance layers, partisan split, street discourse);
+  Iτ = resistance/drag levers (regulatory guardrails, procedural delay, official denial);
+  Jμ = trust-transport levers (nuance compression, channel reach, credibility flow).
 - No betting odds, poll percentages, or prediction-market figures.
 - No generic filler ("it depends", "many factors", "complex situation").
 - Use "" for fields the user already filled (non-empty in the payload).
@@ -42,20 +47,20 @@ POSED SCENARIO QUESTION (context only — do NOT copy into output fields):
 $narrativeBlock
 Region focus: $region
 ${topic.isNotEmpty ? 'Topic tag: $topic\n' : ''}${sourceUrl.isNotEmpty ? 'Narrative source: $sourceUrl\n' : ''}
-Fill ONLY blank construct fields. Each must be a distinct, weight-bearing variable statement grounded in the linked narrative when provided:
+Fill ONLY blank construct fields. Each must be a lever-only variable statement (no quoted
+question or subject parameters) grounded in the linked narrative when provided:
 
-ω (vortexText) — authority circulation: how elites, officials, and establishment media
-frame or spin the scenario; named institutions or spokespersons when findable.
+ω (vortexText) — authority-circulation levers: elite briefings, spokesperson lanes,
+establishment framing; named institutions when findable.
 
-σ (shearText) — polarized discourse: live public sentiment, grievance layers, partisan
-split, protest rhetoric, or bottom-up anger/fear visible in X and open discussion.
+σ (shearText) — polarisation/shear levers: grievance layers, partisan split, street
+discourse, protest rhetoric visible in X and open discussion.
 
-Iτ (resistanceText) — structural pushback: institutional inertia, legal/regulatory
-barriers, official denials, procedural delay, or hard constraints blocking the outcome.
+Iτ (resistanceText) — resistance/drag levers: regulatory guardrails, procedural delay,
+official denials, institutional inertia blocking rapid change.
 
-Jμ (flowText) — trust transport: how nuance travels or compresses across channels;
-consensus vs distrust dynamics; cite hard data (counts, rates, dates) only if directly
-pertinent to this question.
+Jμ (flowText) — trust-transport levers: nuance compression, channel reach, credibility
+flow across platforms; hard data only when directly pertinent.
 
 Existing user inputs (leave corresponding outputs as ""):
 - vortex: ${payload['vortexText'] ?? ''}
@@ -74,8 +79,10 @@ Existing user inputs (leave corresponding outputs as ""):
     String clean(String key) {
       final raw = '${parsed[key] ?? ''}'.trim();
       if (raw.isEmpty) return '';
-      if (question.isNotEmpty && isQuestionEcho(raw, question)) return '';
-      return _clamp(raw, 400);
+      final stripped = _stripQuotedParameters(raw);
+      if (stripped.isEmpty) return '';
+      if (question.isNotEmpty && isQuestionEcho(stripped, question)) return '';
+      return _clamp(stripped, 400);
     }
 
     return {
@@ -97,6 +104,16 @@ Existing user inputs (leave corresponding outputs as ""):
     if (qWords.isEmpty) return false;
     final matched = qWords.where((w) => f.contains(w)).length;
     return matched / qWords.length > 0.65;
+  }
+
+  static String _stripQuotedParameters(String text) {
+    var t = text.trim();
+    if (t.isEmpty) return t;
+    t = t.replaceAll(RegExp(r'[""][^""]+[""]'), '');
+    t = t.replaceAll(RegExp(r'«[^»]+»'), '');
+    t = t.replaceAll(RegExp(r'\s{2,}'), ' ');
+    t = t.replaceAll(RegExp(r'\s+([,.;:])'), r'$1');
+    return t.trim();
   }
 
   static String _clamp(String text, int maxLen) {
