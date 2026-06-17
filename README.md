@@ -1,41 +1,12 @@
 # Evolve — Social Science Chronoflux Framework
 
-**Version 1.0.7** — [Live web app](https://rgsneddon.github.io/evolve/) · [GitHub Releases](https://github.com/rgsneddon/evolve/releases)
+[Live web app](https://rgsneddon.github.io/evolve/) · [GitHub Releases](https://github.com/rgsneddon/evolve/releases)
 
-Evolve is a cross-platform app for analysing social and political scenarios using the **Chronoflux** hydrodynamic framework. It produces:
-
-- **Percent Chance** — an @grok-style observational probability reply for a posed question (ω)
-- **Social Cohesion Score (SCS)** — a three-part cohesion report (PART ONE / TWO / THREE) with **five** establishment-facing agent actions
-- **How to read this conclusion** — an explainer under each result showing construal data points and matched historical registry cases (`OR-xxxx`)
-- **Complete synopsis export** — PDF, Markdown text, in-browser view, or clipboard after each successful run
+Evolve is a cross-platform app for analysing social and political scenarios using the **Chronoflux** hydrodynamic framework.
 
 All core Chronoflux calculations run **locally** on your device. Optional **Grok construal** can fill blank σ / Iτ / Jμ / ω fields before each Calculate — behaviour depends on platform (see [Grok construal](#2-grok-construal-optional)).
 
 The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechanical foundation of the Evolve analysis engine (see [License](#license)).
-
-### What's new in 1.0.7
-
-| Change | What you get |
-|--------|----------------|
-| **Sentience/salience reverted** | Experimental σ/Iτ awareness reaction layer removed from the hydrodynamic core; PART TWO again cites scenario **weight % salience** on σ and Iτ |
-| **Retained from 1.0.6** | Social narrative links and calibrated cohesion headline % under `~XX/100` unchanged |
-
-### What's new in 1.0.6
-
-| Feature | What you get |
-|---------|----------------|
-| **Social narrative links** | Paste X, YouTube, Bluesky, Reddit, or Mastodon URLs in Social Cohesion mode — text fetched via Grok proxy (oEmbed / syndication) for party-response scoring |
-| **Cohesion headline %** | SCS panel shows calibrated percent-chance under `~XX/100` (not the raw THE CONTINUUM regressive/progressive split) |
-
-### Core features (1.0+)
-
-| Feature | What you get |
-|---------|----------------|
-| **Conclusion explainer** | Below each Percent Chance or SCS conclusion: momentum, σ/continuum scores, registry filter, and bullet list of exact `OR-xxxx` cases used in calibration |
-| **PART THREE (5 actions)** | Five progressive actions for the accountable establishment figurehead — each with a data-driven rationale (ω/σ/Iτ/Jμ weights, continuum lean, registry base rate, lever projections) |
-| **Synopsis export** | After Calculate: **PDF**, **Text (.md)**, **View in browser**, or **Copy to clipboard** — full MarkdownBin-style report including PART THREE actions |
-| **Web Grok heuristic** | [GitHub Pages](https://rgsneddon.github.io/evolve/) uses `@evolve_web` in-browser construal — no local proxy, no X sign-in, no “proxy not found” error |
-| **Android Grok** | Release APK includes `INTERNET` permission and loopback cleartext for the embedded proxy; Grok construal connects as `@evolve_mock` (or `@evolve_android` heuristic fallback) |
 
 ---
 
@@ -43,27 +14,15 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ### Windows (easiest)
 
-1. Run the release build:
-
-   ```
-   build\windows\x64\runner\Release\evolve.exe
-   ```
-
-2. Or double-click the **Evolve** desktop shortcut if you created one.
+Download the latest **Windows** zip from [GitHub Releases](https://github.com/rgsneddon/evolve/releases), extract, and run `evolve.exe`.
 
 ### Web
 
 Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evolve/)
 
-Or open `build\web\index.html` via a local server after building. To publish updates, deploy the contents of `build\web` to GitHub Pages (see [Deploying the web build](#deploying-the-web-build)).
-
 ### Android
 
-Install:
-
-```
-build\app\outputs\flutter-apk\app-release.apk
-```
+Download the latest **Android APK** from [GitHub Releases](https://github.com/rgsneddon/evolve/releases) and install on your device.
 
 ---
 
@@ -147,13 +106,14 @@ With **Grok construal on**, Grok suggestions are applied to empty fields first, 
 
 **Percent Chance panel**
 
-- @grok-style reply with continuum conclusion
+- Calibrated ~% headline with REGRESSIVE / PROGRESSIVE lean and continuum conclusion
 - **How to read this conclusion** — explains the ~% headline, regressive/progressive momentum, σ and strain scores, registry filter (event class, region, horizon), and lists each historical `OR-xxxx` case used in the base rate
 
 **Social Cohesion panel**
 
 - Full PART ONE / TWO / THREE report
 - Party-response refinement when a linked narrative relies on attributed quotes
+- Calibrated headline % under `~XX/100` (not the raw THE CONTINUUM regressive/progressive split)
 - Same **How to read this conclusion** explainer (refined SCS delta, continuum split, lever projections)
 
 **PART THREE actions** (both modes)
@@ -179,6 +139,20 @@ Scroll to the bottom of the app and expand **License & Chronoflux attribution** 
 
 ---
 
+## Features
+
+| Feature | What you get |
+|---------|----------------|
+| **Percent Chance** | Observational probability output for a posed question (ω) |
+| **Social Cohesion Score** | Three-part cohesion report (PART ONE / TWO / THREE) with **five** establishment-facing agent actions |
+| **Conclusion explainer** | Below each result: momentum, σ/continuum scores, registry filter, and bullet list of exact `OR-xxxx` cases used in calibration |
+| **Synopsis export** | After Calculate: **PDF**, **Text (.md)**, **View in browser**, or **Copy to clipboard** — full MarkdownBin-style report including PART THREE actions |
+| **Social narrative links** | Paste X, YouTube, Bluesky, Reddit, or Mastodon URLs in Social Cohesion mode — text fetched via Grok proxy for party-response scoring |
+| **Web Grok heuristic** | [GitHub Pages](https://rgsneddon.github.io/evolve/) uses `@evolve_web` in-browser construal — no local proxy, no X sign-in |
+| **Android Grok** | Release APK includes `INTERNET` permission and loopback cleartext for the embedded proxy; Grok construal connects as `@evolve_mock` (or `@evolve_android` heuristic fallback) |
+
+---
+
 ## The five constructs
 
 Chronoflux uses five hydrodynamic constructs:
@@ -192,70 +166,6 @@ Chronoflux uses five hydrodynamic constructs:
 | ω | Vortex | Question-anchored circulation |
 
 Weights are ascertained from your inputs (and Grok suggestions when enabled), then normalised before the hydrodynamic core runs.
-
----
-
-## Building from source
-
-Requires [Flutter](https://docs.flutter.dev/get-started/install) (SDK ≥ 3.2).
-
-```powershell
-cd evolve
-flutter pub get
-flutter test
-```
-
-**All platforms (Windows host):**
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_all.ps1
-```
-
-Outputs:
-
-| Platform | Path |
-|----------|------|
-| Web | `build\web\` |
-| Windows | `build\windows\x64\runner\Release\evolve.exe` |
-| Android | `build\app\outputs\flutter-apk\app-release.apk` |
-
-Close a running `evolve.exe` before rebuilding Windows, or the linker may fail because the file is locked.
-
-**Web only, with GitHub Pages base path** (repo name must match exactly — lowercase `Evolve`):
-
-```powershell
-flutter build web --release --base-href /evolve/
-```
-
-Optional remote Grok proxy for web (live X OAuth instead of heuristic mode):
-
-```powershell
-flutter build web --release --base-href /evolve/ --dart-define=GROK_PROXY_URL=https://your-proxy.example.com
-```
-
-Or use the deploy helper (builds, checks `assets/` + `canvaskit/` + `icons/`, copies `LICENSE`, creates a zip):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\deploy_web_github.ps1
-```
-
----
-
-## Deploying the web build
-
-Upload **everything inside** `build\web\` to the GitHub Pages repo root (not the full Flutter source tree).
-
-Live site: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evolve/)
-
-1. Run `.\scripts\deploy_web_github.ps1` (or build with `--base-href /evolve/` as above).
-2. Open [rgsneddon/Evolve](https://github.com/rgsneddon/Evolve) and upload **all** files **and** folders from `build\web\`:
-   - **Required folders:** `assets/`, `canvaskit/`, `icons/` (a blank page usually means one of these is missing).
-   - **Required files:** `index.html`, `main.dart.js`, `flutter_bootstrap.js`, etc.
-3. Confirm `index.html` contains `<base href="/evolve/">` — must match the repo name **exactly** (lowercase).
-4. **Settings → Pages →** deploy from `main` branch, `/ (root)`.
-5. After 1–2 minutes, verify [canvaskit.js](https://rgsneddon.github.io/evolve/canvaskit/canvaskit.js) loads (HTTP 200, not 404).
-
-If you only upload loose files (`index.html`, `main.dart.js`, …) without the three folders, the page stays blank.
 
 ---
 
@@ -300,7 +210,7 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 - Leave bias fields blank to let the engine infer observational values relative to your ω question and selected region.
 - **Don't use** Grok for reproducible, fully local analysis with no network dependency.
 - On **web**, Grok heuristic mode (`@evolve_web`) needs no X account; use **Windows/Android** for live Premium Grok.
-- After deploying to GitHub Pages, always use the lowercase URL: `https://rgsneddon.github.io/evolve/` (not `/Evolve/`).
+- Use the lowercase web URL: `https://rgsneddon.github.io/evolve/` (not `/Evolve/`).
 
 ---
 
@@ -309,10 +219,9 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 ```
 lib/           Application source
 assets/data/   Outcome registry (base rates)
-scripts/       Build and tooling (build_all.ps1, build.ps1)
+scripts/       Tooling
 tool/          Optional Grok proxy CLI
 test/          Unit and widget tests
-build/         Release outputs (after build)
 ```
 
 ---
