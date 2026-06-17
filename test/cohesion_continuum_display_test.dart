@@ -3,7 +3,6 @@ import 'package:evolve/models/analysis_mode.dart';
 import 'package:evolve/models/locale_config.dart';
 import 'package:evolve/l10n/localized_output.dart';
 import 'package:evolve/services/evolve_engine.dart';
-import 'package:evolve/services/sentience_salience_construal.dart';
 import 'package:evolve/models/scenario_input.dart';
 
 void main() {
@@ -40,15 +39,10 @@ void main() {
     expect(headlinePct, inInclusiveRange(8, 92));
     expect(subtitle, '${out.leanLabel(cohesion.core.lean)} — $headlinePct%');
 
-    final shearReaction = SentienceSalienceConstrual.reactionFloor +
-        (SentienceSalienceConstrual.reactionCeiling -
-                SentienceSalienceConstrual.reactionFloor) *
-            (cohesion.core.sentiencePct / 100);
-    final reactedShear = cohesion.core.shearScs * shearReaction;
     final heuristic = EvolveEngine.heuristicPercentChance(
       regressivePct: cohesion.partTwo.regressivePct,
       refinedScs: cohesion.partTwo.refinedScs,
-      shearScs: reactedShear,
+      shearScs: cohesion.core.shearScs,
     );
     expect(cohesion.forecast.heuristicPercent, closeTo(heuristic, 0.001));
     expect(

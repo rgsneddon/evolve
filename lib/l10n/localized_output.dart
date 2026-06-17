@@ -122,7 +122,7 @@ class LocalizedOutput {
   String partTwoShearRefinement({
     required String question,
     required String subject,
-    required int sentiencePct,
+    required int weightPct,
     required int scs,
     required QuestionFrame frame,
     required OutcomePolarity polarity,
@@ -132,7 +132,7 @@ class LocalizedOutput {
         .t('part_two_shear_question')
         .replaceAll('{question}', question)
         .replaceAll('{subject}', subject)
-        .replaceAll('{sentience}', '$sentiencePct')
+        .replaceAll('{weight}', '$weightPct')
         .replaceAll('{scs}', '$scs')
         .replaceAll('{frame}', _partTwoFrameLabel(frame))
         .replaceAll('{polarity}', _partTwoPolarityLabel(polarity));
@@ -145,7 +145,7 @@ class LocalizedOutput {
   String partTwoResistanceFlow({
     required String question,
     required String subject,
-    required int saliencePct,
+    required int resistanceWeightPct,
     required int flowWeightPct,
     required int resistanceScs,
     required int flowScs,
@@ -157,7 +157,7 @@ class LocalizedOutput {
         .t('part_two_resistance_flow_question')
         .replaceAll('{question}', question)
         .replaceAll('{subject}', subject)
-        .replaceAll('{salience}', '$saliencePct')
+        .replaceAll('{res_weight}', '$resistanceWeightPct')
         .replaceAll('{flow_weight}', '$flowWeightPct')
         .replaceAll('{res_scs}', '$resistanceScs')
         .replaceAll('{flow_scs}', '$flowScs')

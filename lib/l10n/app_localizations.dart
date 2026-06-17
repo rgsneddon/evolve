@@ -544,9 +544,9 @@ final _en = {
   'part_two_vortex_topic':
       'Continuum vortex on "{question}": elite framing of "{topic}" compresses "{subject}" into one narrative lane (ω {weight}% salience, SCS {scs}/100).',
   'part_two_shear_question':
-      'Shear on "{question}": {frame} polarisation on "{subject}" — {polarity} (σ {sentience}% sentience, SCS {scs}/100).',
+      'Shear on "{question}": {frame} polarisation on "{subject}" — {polarity} (σ {weight}% salience, SCS {scs}/100).',
   'part_two_resistance_flow_question':
-      'Resistance & flow for "{question}": Iτ drag ({salience}% salience, SCS {res_scs}/100) vs Jμ transport ({flow_weight}% weight, SCS {flow_scs}/100) — {transport}; net lean {lean}.',
+      'Resistance & flow for "{question}": Iτ drag ({res_weight}% salience, SCS {res_scs}/100) vs Jμ transport ({flow_weight}% salience, SCS {flow_scs}/100) — {transport}; net lean {lean}.',
   'part_two_hint_suffix': 'Scenario signal: {hint}.',
   'part_two_frame_probability': 'probability-frame',
   'part_two_frame_predictive': 'predictive-path',
@@ -581,7 +581,7 @@ final _en = {
   'continuum_conclusion_signals':
       'Construal data — posed question: "{question}"; {frame} frame, {polarity}, event class {event_class}, {horizon}-day horizon, region {region}{hints_clause}.',
   'continuum_conclusion_constructs':
-      'Question-inferred Chronoflux: ω {vortex_scs}/100 ({w_v}% w), σ {shear_scs}/100 ({sentience}% sentience), Iτ {res_scs}/100 ({salience}% salience), Jμ {flow_scs}/100 ({w_f}% w) → refined SCS {refined}/100; THE CONTINUUM {reg}% regressive / {prog}% progressive → {lean}.',
+      'Question-inferred Chronoflux: ω {vortex_scs}/100 ({w_v}% w), σ {shear_scs}/100 ({w_s}% w), Iτ {res_scs}/100 ({w_r}% w), Jμ {flow_scs}/100 ({w_f}% w) → refined SCS {refined}/100; THE CONTINUUM {reg}% regressive / {prog}% progressive → {lean}.',
   'continuum_conclusion_registry':
       'Outcome registry ({event_class}, {horizon}d): {base_rate}% from {n} cases ({year_min}–{year_max}); historical Wilson 95% CI {hist_ci_low}–{hist_ci_high}%; Brier {brier}; sources: {sources}.',
   'percent_outcome_subtitle': '{lean} — {qualifier}',
@@ -820,7 +820,7 @@ final _es = {
   'continuum_conclusion_signals':
       'Datos de construal — pregunta planteada: «{question}»; marco {frame}, {polarity}, clase {event_class}, horizonte {horizon} días, región {region}{hints_clause}.',
   'continuum_conclusion_constructs':
-      'Chronoflux inferido de la pregunta: ω {vortex_scs}/100 ({w_v}% p), σ {shear_scs}/100 ({sentience}% sentiencia), Iτ {res_scs}/100 ({salience}% saliencia), Jμ {flow_scs}/100 ({w_f}% p) → SCS refinado {refined}/100; EL CONTINUO {reg}% regresivo / {prog}% progresivo → {lean}.',
+      'Chronoflux inferido de la pregunta: ω {vortex_scs}/100 ({w_v}% p), σ {shear_scs}/100 ({w_s}% p), Iτ {res_scs}/100 ({w_r}% p), Jμ {flow_scs}/100 ({w_f}% p) → SCS refinado {refined}/100; EL CONTINUO {reg}% regresivo / {prog}% progresivo → {lean}.',
   'continuum_conclusion_registry':
       'Registro de resultados ({event_class}, {horizon}d): {base_rate}% de {n} casos ({year_min}–{year_max}); IC Wilson histórico 95% {hist_ci_low}–{hist_ci_high}%; Brier {brier}; fuentes: {sources}.',
   'percent_outcome_subtitle': '{lean} — {qualifier}',
@@ -924,9 +924,9 @@ final _es = {
   'part_two_vortex_topic':
       'Vórtice del continuo sobre «{question}»: el encuadre de «{topic}» comprime «{subject}» en un solo carril narrativo (ω {weight}% de saliencia, SCS {scs}/100).',
   'part_two_shear_question':
-      'Cizalla sobre «{question}»: polarización {frame} en «{subject}» — {polarity} (σ {sentience}% de sentiencia, SCS {scs}/100).',
+      'Cizalla sobre «{question}»: polarización {frame} en «{subject}» — {polarity} (σ {weight}% de saliencia, SCS {scs}/100).',
   'part_two_resistance_flow_question':
-      'Resistencia y flujo para «{question}»: arrastre Iτ ({salience}% de saliencia, SCS {res_scs}/100) frente a transporte Jμ ({flow_weight}% de peso, SCS {flow_scs}/100) — {transport}; inclinación neta {lean}.',
+      'Resistencia y flujo para «{question}»: arrastre Iτ ({res_weight}% de saliencia, SCS {res_scs}/100) frente a transporte Jμ ({flow_weight}% de saliencia, SCS {flow_scs}/100) — {transport}; inclinación neta {lean}.',
   'part_two_hint_suffix': 'Señal del escenario: {hint}.',
   'part_two_frame_probability': 'marco probabilístico',
   'part_two_frame_predictive': 'trayectoria predictiva',

@@ -29,7 +29,7 @@ class PartTwoNarrativeBuilder {
       shearRefinement: out.partTwoShearRefinement(
         question: question,
         subject: sem.displaySubject,
-        sentiencePct: core.sentiencePct.round(),
+        weightPct: wPct[2],
         scs: core.shearScs.round(),
         frame: sem.frame,
         polarity: sem.polarity,
@@ -38,7 +38,7 @@ class PartTwoNarrativeBuilder {
       resistanceFlow: out.partTwoResistanceFlow(
         question: question,
         subject: sem.displaySubject,
-        saliencePct: core.saliencePct.round(),
+        resistanceWeightPct: wPct[3],
         flowWeightPct: wPct[1],
         resistanceScs: core.resistanceScs.round(),
         flowScs: core.flowScs.round(),
