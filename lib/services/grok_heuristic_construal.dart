@@ -3,6 +3,7 @@ import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
 import 'grok_construct_discourse.dart';
+import 'grok_field_sanitizer.dart';
 import 'question_semantics.dart';
 
 /// Discourse-style construct suggestions when no live Grok proxy is reachable.
@@ -35,12 +36,18 @@ class GrokHeuristicConstrual {
       );
     }
 
-    return GrokConstrualResult(
+    final result = GrokConstrualResult(
       vortexText: pick(input.vortexText, 'vortex'),
       shearText: pick(input.shearText, 'shear'),
       resistanceText: pick(input.resistanceText, 'resistance'),
       flowText: pick(input.flowText, 'flow'),
       provenance: 'grok-heuristic-web',
+    );
+    return GrokFieldSanitizer.sanitizeResult(
+      raw: result,
+      input: input,
+      locale: locale,
+      output: out,
     );
   }
 }

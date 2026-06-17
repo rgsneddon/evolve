@@ -1,3 +1,5 @@
+import '../grok_field_sanitizer.dart';
+
 /// Prompt + parsing for Grok Chronoflux construct fields (ω/σ/Iτ/Jμ).
 class GrokConstructPrompt {
   const GrokConstructPrompt._();
@@ -73,25 +75,16 @@ Existing user inputs (leave corresponding outputs as ""):
   /// Reject fields that mostly echo the posed question.
   static Map<String, String> sanitizeFields(
     Map<String, dynamic> parsed,
-    String posedQuestion,
-  ) {
-    final question = posedQuestion.trim();
-    String clean(String key) {
-      final raw = '${parsed[key] ?? ''}'.trim();
-      if (raw.isEmpty) return '';
-      final stripped = _stripQuotedParameters(raw);
-      if (stripped.isEmpty) return '';
-      if (question.isNotEmpty && isQuestionEcho(stripped, question)) return '';
-      return _clamp(stripped, 400);
-    }
-
-    return {
-      'vortexText': clean('vortexText'),
-      'shearText': clean('shearText'),
-      'resistanceText': clean('resistanceText'),
-      'flowText': clean('flowText'),
-    };
-  }
+    String posedQuestion, {
+    String displaySubject = '',
+    String rawSubject = '',
+  }) =>
+      GrokFieldSanitizer.sanitizeFieldMap(
+        parsed,
+        posedQuestion,
+        displaySubject: displaySubject,
+        rawSubject: rawSubject,
+      );
 
   static bool isQuestionEcho(String field, String question) {
     final f = field.trim().toLowerCase();
@@ -106,22 +99,4 @@ Existing user inputs (leave corresponding outputs as ""):
     return matched / qWords.length > 0.65;
   }
 
-  static String _stripQuotedParameters(String text) {
-    var t = text.trim();
-    if (t.isEmpty) return t;
-    t = t.replaceAll(RegExp(r'[""][^""]+[""]'), '');
-    t = t.replaceAll(RegExp(r'«[^»]+»'), '');
-    t = t.replaceAll(RegExp(r'\s{2,}'), ' ');
-    t = t.replaceAll(RegExp(r'\s+([,.;:])'), r'$1');
-    return t.trim();
-  }
-
-  static String _clamp(String text, int maxLen) {
-    final t = text.trim();
-    if (t.length <= maxLen) return t;
-    final cut = t.substring(0, maxLen - 1).trimRight();
-    final lastSpace = cut.lastIndexOf(' ');
-    final body = lastSpace > maxLen ~/ 2 ? cut.substring(0, lastSpace) : cut;
-    return '$body…';
-  }
 }

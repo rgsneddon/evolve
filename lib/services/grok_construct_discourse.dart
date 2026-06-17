@@ -1,3 +1,4 @@
+import 'grok_field_sanitizer.dart';
 import 'question_semantics.dart';
 import 'region_context.dart';
 
@@ -14,7 +15,7 @@ class GrokConstructDiscourse {
   }) {
     final obs = observationalNarrative?.trim() ?? '';
     if (obs.isNotEmpty && !obs.toLowerCase().startsWith('posed question:')) {
-      return _clamp(_stripQuotedParameters(obs), 500);
+      return _clamp(GrokFieldSanitizer.sanitizeField(obs), 500);
     }
     return _clamp(_line(construct, region, hintSignals), 500);
   }
@@ -105,19 +106,6 @@ class GrokConstructDiscourse {
     }
     return 'Jμ (flow): Channel-reach levers in $region move nuance unevenly — '
         'local testimony travels while establishment statements dominate broadcast reach.';
-  }
-
-  /// Removes quoted question/subject parameters Grok may echo into fields.
-  static String stripQuotedParameters(String text) => _stripQuotedParameters(text);
-
-  static String _stripQuotedParameters(String text) {
-    var t = text.trim();
-    if (t.isEmpty) return t;
-    t = t.replaceAll(RegExp(r'[""][^""]+[""]'), '');
-    t = t.replaceAll(RegExp(r'«[^»]+»'), '');
-    t = t.replaceAll(RegExp(r'\s{2,}'), ' ');
-    t = t.replaceAll(RegExp(r'\s+([,.;:])'), r'$1');
-    return t.trim();
   }
 
   static String _clamp(String text, int maxLen) {

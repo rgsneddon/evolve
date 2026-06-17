@@ -54,12 +54,14 @@ void main() {
       } else if (path == '/construe' && request.method == 'POST') {
         final body = await utf8.decoder.bind(request).join();
         final payload = jsonDecode(body) as Map<String, dynamic>;
+        final question = '${payload['posedQuestion'] ?? ''}';
         request.response
           ..statusCode = 200
           ..write(jsonEncode({
             'vortexText': '',
-            'shearText': 'Grok σ for ${payload['regionLabel']}',
-            'resistanceText': 'Grok Iτ for ${payload['regionLabel']}',
+            'shearText':
+                'σ (shear): Grievance levers on "$question" in ${payload['regionLabel']}.',
+            'resistanceText': 'Iτ (resistance): Drag levers in ${payload['regionLabel']}.',
             'flowText': '',
             'provenance': 'test',
           }));
@@ -103,8 +105,10 @@ void main() {
     final merged = service.applySuggestions(input, suggestions);
 
     expect(merged.shearText, 'User supplied shear bias.');
-    expect(merged.resistanceText, contains('Grok Iτ'));
+    expect(merged.resistanceText, contains('Iτ (resistance)'));
     expect(merged.resistanceText, contains('UK & Ireland'));
+    expect(merged.resistanceText, isNot(contains('"')));
+    expect(merged.shearText, isNot(contains('What is the chance')));
   });
 
   test('embedded GrokProxyLauncher completes mock OAuth in-process', () async {

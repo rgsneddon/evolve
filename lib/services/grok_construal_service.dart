@@ -7,6 +7,8 @@ import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
 import 'grok_auth_client.dart';
+import 'grok_field_sanitizer.dart';
+import 'grok_heuristic_construal.dart';
 import 'narrative_construct_construal.dart';
 
 /// Applies live Grok suggestions to blank construct fields (never overwrites user bias).
@@ -46,8 +48,51 @@ class GrokConstrualService {
       throw GrokAuthException('construe', message: res.body);
     }
 
-    return GrokConstrualResult.fromJson(
+    final raw = GrokConstrualResult.fromJson(
       jsonDecode(res.body) as Map<String, dynamic>,
+    );
+    final sanitized = GrokFieldSanitizer.sanitizeResult(
+      raw: raw,
+      input: input,
+      locale: locale,
+      output: out,
+    );
+    return _backfillBlankFields(
+      input: input,
+      partial: sanitized,
+      locale: locale,
+      out: out,
+    );
+  }
+
+  /// After sanitization, refill any stripped-empty slots with lever-only discourse lines.
+  GrokConstrualResult _backfillBlankFields({
+    required ScenarioInput input,
+    required GrokConstrualResult partial,
+    required LocaleConfig locale,
+    required LocalizedOutput out,
+  }) {
+    final fallback = NarrativeConstructConstrual.isNarrativeLinked(input)
+        ? NarrativeConstructConstrual.suggest(
+            input: input,
+            locale: locale,
+            output: out,
+          )
+        : GrokHeuristicConstrual.suggest(
+            input: input,
+            locale: locale,
+            output: out,
+          );
+
+    String pick(String primary, String secondary) =>
+        primary.trim().isNotEmpty ? primary.trim() : secondary.trim();
+
+    return GrokConstrualResult(
+      vortexText: pick(partial.vortexText, fallback.vortexText),
+      shearText: pick(partial.shearText, fallback.shearText),
+      resistanceText: pick(partial.resistanceText, fallback.resistanceText),
+      flowText: pick(partial.flowText, fallback.flowText),
+      provenance: partial.provenance,
     );
   }
 

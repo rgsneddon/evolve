@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../../models/scenario_input.dart';
 import '../narrative_link_reader.dart';
+import '../question_semantics.dart';
 import 'grok_construct_prompt.dart';
 import 'grok_proxy_config.dart';
 import 'grok_proxy_heuristic.dart';
@@ -591,7 +592,21 @@ class GrokProxyStore {
     }
     final parsed = jsonDecode(content.substring(start, end + 1)) as Map<String, dynamic>;
     final question = '${payload['posedQuestion'] ?? ''}';
-    final fields = GrokConstructPrompt.sanitizeFields(parsed, question);
+    final regionId = '${payload['regionId'] ?? 'global'}';
+    final regionLabel = '${payload['regionLabel'] ?? ''}';
+    final sem = question.trim().isNotEmpty
+        ? QuestionSemantics.fromText(
+            question,
+            regionId: regionId,
+            regionLabel: regionLabel.isNotEmpty ? regionLabel : null,
+          )
+        : null;
+    final fields = GrokConstructPrompt.sanitizeFields(
+      parsed,
+      question,
+      displaySubject: sem?.displaySubject ?? '',
+      rawSubject: sem?.subject ?? '',
+    );
 
     final hasAny = fields.values.any((v) => v.isNotEmpty);
     if (!hasAny) {

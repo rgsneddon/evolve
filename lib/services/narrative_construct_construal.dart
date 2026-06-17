@@ -3,6 +3,7 @@ import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
 import 'grok_construct_discourse.dart';
+import 'grok_field_sanitizer.dart';
 import 'party_response_extractor.dart';
 import 'question_semantics.dart';
 /// Narrative-link construal — grounds ω/σ/Iτ/Jμ in linked article text (SCS mode).
@@ -83,7 +84,7 @@ class NarrativeConstructConstrual {
       );
     }
 
-    return GrokConstrualResult(
+    final result = GrokConstrualResult(
       vortexText: pick(
         input.vortexText,
         'vortex',
@@ -158,6 +159,12 @@ class NarrativeConstructConstrual {
         ),
       ),
       provenance: 'narrative-construal',
+    );
+    return GrokFieldSanitizer.sanitizeResult(
+      raw: result,
+      input: input,
+      locale: locale,
+      output: out,
     );
   }
 
@@ -255,7 +262,8 @@ class NarrativeConstructConstrual {
       'flow' => 'Jμ (flow):',
       _ => '',
     };
-    final body = text.trim();
+    final body = GrokFieldSanitizer.sanitizeField(text.trim());
+    if (body.isEmpty) return '';
     if (body.toLowerCase().startsWith(prefix.toLowerCase())) return body;
     return '$prefix $body';
   }
