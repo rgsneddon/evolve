@@ -1,10 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/data/outcome_registry.dart';
 import 'package:evolve/l10n/localized_output.dart';
 import 'package:evolve/models/locale_config.dart';
 import 'package:evolve/models/scenario_input.dart';
 import 'package:evolve/services/evolve_engine.dart';
 
 void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    OutcomeRegistry.resetForTests();
+    await OutcomeRegistry.ensureLoaded();
+  });
+
   const engine = EvolveEngine();
 
   test('continuum conclusion cites posed question and registry data points', () {
@@ -17,8 +24,10 @@ void main() {
 
     expect(conclusion, contains('posed question'));
     expect(conclusion, contains('civil unrest'));
-    expect(conclusion, contains('90-day horizon'));
+    expect(conclusion, contains('180-day horizon'));
     expect(conclusion, contains('Outcome registry'));
+    expect(conclusion, contains('Exact historical cases underpinning'));
+    expect(conclusion, contains('OR-'));
     expect(conclusion, contains('Wilson'));
     expect(conclusion, contains('Brier'));
     expect(conclusion, contains('ω'));

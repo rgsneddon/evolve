@@ -350,7 +350,8 @@ final _en = {
       'Sign in with X in your browser. Evolve verifies Premium before Grok can construe live context. Chronoflux still runs locally.',
   'grok_starting_proxy': 'Starting Grok proxy…',
   'grok_proxy_start_failed': 'Could not start the Grok proxy on this device.',
-  'grok_connecting': 'X sign-in opened in a new browser tab — complete login there, then return here.',
+  'grok_connecting':
+      'Complete X sign-in in your browser. This window and the browser tab will close automatically when you are connected.',
   'grok_connect_failed': 'X connection failed — try again or leave Grok construe off.',
   'grok_connect_cancelled': 'X connection cancelled.',
   'grok_premium_required':
@@ -400,7 +401,20 @@ final _en = {
   'posed_question_section': 'YOUR QUESTION',
   'posed_question_label': 'POSE YOUR QUESTION HERE',
   'posed_question_label_cohesion': 'POSE YOUR QUESTION HERE (optional)',
-  'posed_question_hint': 'Your base scenario question — e.g. What is the chance of civil unrest near-term?',
+  'posed_question_hint': 'Your scenario question for this analysis.',
+  'outcome_part_enable_multi': 'Use multi-part pathways',
+  'outcome_part_enable_hint':
+      'Check to list separate percent chances per pathway. Unchecked uses your main question as a single outcome.',
+  'outcome_parts_section': 'Outcome pathways',
+  'outcome_parts_hint':
+      'Enter each pathway below for a listed percent-chance breakdown (minimum two).',
+  'outcome_context_label': 'Shared outcome (optional)',
+  'outcome_context_hint': 'e.g. to end the recession, to win the election',
+  'outcome_part_label': 'Pathway {n}',
+  'outcome_part_hint': 'e.g. austerity, stimulus, status quo',
+  'outcome_part_add': 'Add pathway field',
+  'outcome_part_remove': 'Remove',
+  'outcome_part_include_others': 'Include Others (non-exhaustive)',
   'posed_question_hint_cohesion':
       'Optional on Social Cohesion — use narrative link or ω/σ/Iτ/Jμ below instead.',
   'status_need_posed_question': 'Pose your scenario question in POSE YOUR QUESTION HERE.',
@@ -486,31 +500,7 @@ final _en = {
   'part3_action_3':
       '{agent}: Announce time-bound deliverable steps on {subject}{topic_suffix} with a public tracker. {flow_hook}',
   'topic_hint': 'Topic / headline (optional)',
-  'vortex_hint': 'Any ω question or scenario worldwide…',
   'region_focus_banner': '{region} focus — pose your scenario question for this region',
-  'vortex_focus_hint': 'ω variable relative to your posed question for {region}',
-  'vortex_example_global':
-      'What is the chance of social tension escalating near-term?',
-  'vortex_example_uk_ireland':
-      'What is the chance of sporadic civil unrest in the UK near-term?',
-  'vortex_example_usa':
-      'What is the chance of federal policy backlash in the United States near-term?',
-  'vortex_example_americas':
-      'What is the chance of polarized protests in major cities near-term?',
-  'vortex_example_europe':
-      'What is the chance of policy backlash across Europe near-term?',
-  'vortex_example_mena':
-      'What is the chance of regional instability near-term?',
-  'vortex_example_sub_saharan_africa':
-      'What is the chance of civil disorder in capital cities near-term?',
-  'vortex_example_south_asia':
-      'What is the chance of public unrest over policy reforms near-term?',
-  'vortex_example_east_asia':
-      'What is the chance of social friction in major metropolitan areas near-term?',
-  'vortex_example_southeast_asia':
-      'What is the chance of political protests near-term?',
-  'vortex_example_oceania':
-      'What is the chance of community tensions near-term?',
   'grok_conclusion_marker': 'CONCLUSION - THE CONTINUUM:',
   'cohesion_final_summary': 'Final Summary:',
   'cohesion_cycle_complete': '🌀 Evolve Cycle Complete.',
@@ -564,7 +554,7 @@ final _en = {
   'part_two_transport_contested':
       'contested transport — neither drag nor flow clearly dominates',
   'grok_reply':
-      'Chronoflux calculation (no polls/odds): {weight_construal} Weights {weights} — SCS: Continuum {continuum}, Flow {flow}, Shear {shear}, Resistance {resistance}, Vortex {vortex} PART ONE: Overall SCS {overall}/100 PART TWO: Refined SCS {refined}/100 — {regressive}% regressive / {progressive}% progressive on THE CONTINUUM Net momentum {momentum} → leans {lean}. {marker} {conclusion}',
+      '{regressive}% regressive / {progressive}% progressive on THE CONTINUUM. Net momentum {momentum} → leans {lean}. {marker} {conclusion}',
   'recurrence_high': 'HIGH — cohesion collapse risk without targeted interventions.',
   'recurrence_moderate': 'MODERATE — recurrence possible if narrative compression persists.',
   'intervention_1':
@@ -576,7 +566,7 @@ final _en = {
   'intervention_4':
       'Policy adjustments — review programmes with local input.',
   'forecast_line':
-      'Calibrated forecast: {pct}% (95% CI: {ci_low}–{ci_high}%) for {subject} within {horizon} days. Based on {sample} historical cases ({year_min}–{year_max}), Brier={brier}. Chronoflux refined SCS {refined}/100; regressive continuum {regressive}%. Sources: {provenance}. No betting markets.',
+      'Calibrated forecast: {pct}% (95% CI: {ci_low}–{ci_high}%) for {subject} over a {horizon}-day horizon. Based on {sample} historical cases ({year_min}–{year_max}), Brier={brier}. Chronoflux refined SCS {refined}/100; regressive continuum {regressive}%. Sources: {provenance}. No betting markets.',
   'continuum_hints_clause': '; discourse signals from question: {hints}',
   'continuum_conclusion_signals':
       'Construal data — posed question: "{question}"; {frame} frame, {polarity}, event class {event_class}, {horizon}-day horizon, region {region}{hints_clause}.',
@@ -584,6 +574,8 @@ final _en = {
       'Question-inferred Chronoflux: ω {vortex_scs}/100 ({w_v}% w), σ {shear_scs}/100 ({w_s}% w), Iτ {res_scs}/100 ({w_r}% w), Jμ {flow_scs}/100 ({w_f}% w) → refined SCS {refined}/100; THE CONTINUUM {reg}% regressive / {prog}% progressive → {lean}.',
   'continuum_conclusion_registry':
       'Outcome registry ({event_class}, {horizon}d): {base_rate}% from {n} cases ({year_min}–{year_max}); historical Wilson 95% CI {hist_ci_low}–{hist_ci_high}%; Brier {brier}; sources: {sources}.',
+  'continuum_registry_cases_elaboration':
+      'Exact historical cases underpinning the {n}-case base rate ({successes} outcomes observed): {cases}.',
   'percent_outcome_subtitle': '{lean} — {qualifier}',
   'percent_outcome_phrase': '{phrase} — {qualifier}',
   'continuum_outcome_lead':
@@ -687,6 +679,17 @@ final _en = {
   'party_response_refined':
       'Refined narrative SCS (party-weighted): ~{before}/100 → ~{after}/100',
   'explainer_how_read': 'How to read this conclusion',
+  'part_breakdown_title': 'Per-pathway percent chances',
+  'part_breakdown_outcome': 'Toward: {outcome}',
+  'part_breakdown_others': 'Others (non-exhaustive)',
+  'part_breakdown_note':
+      'Shares partition the outcome across pathways (total 100%). Lean is relative to sibling pathways on THE CONTINUUM.',
+  'part_breakdown_total': 'Outcome partition total: {total}%',
+  'part_breakdown_share_phrase':
+      '~{n}% share via {pathway} toward {outcome}',
+  'part_breakdown_share_only': '~{n}% share via {pathway}',
+  'part_breakdown_lean_line': '{lean} — {qualifier} (continuum {reg}% / {prog}%)',
+  'synopsis_part_breakdown_header': '## Per-pathway breakdown (partition = 100%)',
   'cohesion_refined_panel':
       'Refined cohesion score\nPART ONE / TWO / THREE complete (~{scs}/100)',
   'cohesion_continuum_subtitle': '{lean} — {pct}%',
@@ -744,7 +747,8 @@ final _es = {
       'Inicie sesión con X en el navegador. Evolve verifica Premium antes de construir en vivo.',
   'grok_starting_proxy': 'Iniciando proxy Grok…',
   'grok_proxy_start_failed': 'No se pudo iniciar el proxy Grok en este dispositivo.',
-  'grok_connecting': 'Esperando autorización de X en el navegador…',
+  'grok_connecting':
+      'Complete el inicio de sesión de X en su navegador. Esta ventana y la pestaña del navegador se cerrarán automáticamente al conectarse.',
   'grok_connect_failed': 'Falló la conexión con X.',
   'grok_connect_cancelled': 'Conexión con X cancelada.',
   'grok_premium_required': 'Se requiere X Premium para construir con Grok.',
@@ -774,8 +778,7 @@ final _es = {
   'posed_question_label_cohesion': 'PLANTEE SU PREGUNTA AQUÍ (opcional)',
   'posed_question_hint_cohesion':
       'Opcional en cohesión social — use el enlace narrativo o ω/σ/Iτ/Jμ abajo.',
-  'posed_question_hint':
-      'Su pregunta base del escenario — ej. ¿Cuál es la probabilidad de disturbios a corto plazo?',
+  'posed_question_hint': 'Su pregunta de escenario para este análisis.',
   'status_need_posed_question': 'Plantee su pregunta en PLANTEE SU PREGUNTA AQUÍ.',
   'region_label': 'Región',
   'language_label': 'Idioma',
@@ -799,23 +802,14 @@ final _es = {
   'part3_impact_scs':
       'Estos pasos pueden elevar la cohesión de ~{current}/100 hacia {min}–{max}/100 en 3 meses.',
   'region_focus_banner': 'Enfoque ω: {region} — plantee su pregunta para esta región',
-  'vortex_focus_hint': 'Pregunta ω para {region} — ej. {example}',
   'region_usa': 'Estados Unidos',
-  'vortex_example_uk_ireland':
-      '¿Cuál es la probabilidad de disturbios civiles esporádicos en el Reino Unido a corto plazo?',
-  'vortex_example_usa':
-      '¿Cuál es la probabilidad de rechazo a la política federal en Estados Unidos a corto plazo?',
-  'vortex_example_americas':
-      '¿Cuál es la probabilidad de protestas polarizadas en las principales ciudades a corto plazo?',
-  'vortex_example_europe':
-      '¿Cuál es la probabilidad de rechazo político en Europa a corto plazo?',
   'grok_conclusion_marker': 'CONCLUSIÓN - EL CONTINUUM:',
   'pct_probability': '~{n}% de probabilidad de {subject}',
   'pct_predictive': '~{n}% de probabilidad de que {subject}',
   'cohesion_final_summary': 'Resumen final:',
   'cohesion_cycle_complete': '🌀 Ciclo Evolve completo.',
   'grok_reply':
-      'Cálculo Chronoflux (sin encuestas/apuestas): {weight_construal} Pesos {weights} — SCS: Continuum {continuum}, Flujo {flow}, Cizalla {shear}, Resistencia {resistance}, Vórtice {vortex} PARTE UNO: SCS global {overall}/100 PARTE DOS: SCS refinado {refined}/100 — {regressive}% regresivo / {progressive}% progresivo en EL CONTINUO Momento neto {momentum} → inclina {lean}. {marker} {conclusion}',
+      '{regressive}% regresivo / {progressive}% progresivo en EL CONTINUO. Momento neto {momentum} → inclina {lean}. {marker} {conclusion}',
   'continuum_hints_clause': '; señales discursivas de la pregunta: {hints}',
   'continuum_conclusion_signals':
       'Datos de construal — pregunta planteada: «{question}»; marco {frame}, {polarity}, clase {event_class}, horizonte {horizon} días, región {region}{hints_clause}.',
@@ -823,6 +817,8 @@ final _es = {
       'Chronoflux inferido de la pregunta: ω {vortex_scs}/100 ({w_v}% p), σ {shear_scs}/100 ({w_s}% p), Iτ {res_scs}/100 ({w_r}% p), Jμ {flow_scs}/100 ({w_f}% p) → SCS refinado {refined}/100; EL CONTINUO {reg}% regresivo / {prog}% progresivo → {lean}.',
   'continuum_conclusion_registry':
       'Registro de resultados ({event_class}, {horizon}d): {base_rate}% de {n} casos ({year_min}–{year_max}); IC Wilson histórico 95% {hist_ci_low}–{hist_ci_high}%; Brier {brier}; fuentes: {sources}.',
+  'continuum_registry_cases_elaboration':
+      'Casos históricos exactos que sustentan la tasa base de {n} casos ({successes} resultados observados): {cases}.',
   'percent_outcome_subtitle': '{lean} — {qualifier}',
   'percent_outcome_phrase': '{phrase} — {qualifier}',
   'continuum_outcome_lead':

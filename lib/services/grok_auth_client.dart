@@ -114,6 +114,7 @@ class GrokAuthClient {
     GrokSession last = const GrokSession();
     while (DateTime.now().isBefore(deadline)) {
       last = await fetchStatus();
+      if (last.oauthError.isNotEmpty) return last;
       if (last.connected && (!requirePremium || last.premium)) return last;
       await Future<void>.delayed(interval);
     }

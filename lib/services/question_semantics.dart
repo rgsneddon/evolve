@@ -277,6 +277,13 @@ class QuestionSemantics {
     if (RegExp(r'\b(government|minister|institution|policy|official)\b').hasMatch(lower)) {
       add('institutional framing', r: 6);
     }
+    if (RegExp(r'\b(mayor|resign|cabinet|parliament|senator|governor)\b').hasMatch(lower)) {
+      add('electoral vortex', v: 5, s: 4);
+    }
+    if (RegExp(r'\b(housing|health|transport|rail|energy|climate|asteroid|impact)\b')
+        .hasMatch(lower)) {
+      add('open-scenario pressure', v: 3, s: 3, f: 2);
+    }
     if (!region.isGlobal && region.textMatchesRegion(lower)) {
       add('regional ω anchor (${region.regionId})', v: 2);
     }

@@ -122,9 +122,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   : s.t('posed_question_label'),
                               posedQuestionHint: provider.mode == AnalysisMode.cohesionScore
                                   ? s.t('posed_question_hint_cohesion')
-                                  : provider.posedQuestionHint,
+                                  : s.t('posed_question_hint'),
                               topicHint: s.t('topic_hint'),
                               regionFocusBanner: provider.regionFocusBanner,
+                              showOutcomeParts:
+                                  provider.mode == AnalysisMode.percentChance,
+                              strings: s,
                             ),
                           ),
                         ),

@@ -70,7 +70,7 @@ Future<void> handleGrokProxyRequest(HttpRequest request, GrokProxyStore store) a
     return _text(
       request,
       200,
-      '<html><body><h2>X connected — return to Evolve Chronoflux.</h2></body></html>',
+      _oauthSuccessHtml(),
       contentType: 'text/html',
     );
   }
@@ -101,6 +101,36 @@ Future<void> handleGrokProxyRequest(HttpRequest request, GrokProxyStore store) a
 
   _json(request, 404, {'error': 'not_found'});
 }
+
+String _oauthSuccessHtml() => '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>X connected</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; color: #111; }
+    p { color: #444; }
+  </style>
+  <script>
+    (function () {
+      try {
+        if (window.opener) {
+          window.opener.postMessage('evolve-x-oauth-complete', '*');
+        }
+      } catch (e) {}
+      setTimeout(function () {
+        try { window.close(); } catch (e) {}
+      }, 600);
+    })();
+  </script>
+</head>
+<body>
+  <h2>X connected</h2>
+  <p>Return to Evolve Chronoflux — this tab will close automatically.</p>
+</body>
+</html>
+''';
 
 void _cors(HttpRequest request) {
   request.response.headers

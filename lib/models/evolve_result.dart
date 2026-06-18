@@ -1,5 +1,6 @@
 import 'conclusion_explainer_data.dart';
 import 'forecast_result.dart';
+import 'part_percent_breakdown.dart';
 import 'part_three_conclusion.dart';
 import 'party_response_scs.dart';
 
@@ -112,6 +113,7 @@ class EvolveResult {
     required this.forecast,
     required this.explainerData,
     this.partyRefinement,
+    this.partBreakdown,
     this.partTwoRan = true,
   });
 
@@ -129,4 +131,5 @@ class EvolveResult {
   final ForecastResult forecast;
   final ConclusionExplainerData explainerData;
   final NarrativePartyRefinement? partyRefinement;
+  final PartPercentBreakdown? partBreakdown;
 }

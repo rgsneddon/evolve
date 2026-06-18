@@ -1,4 +1,5 @@
 import 'construct_input.dart';
+import 'pathway_construct_texts.dart';
 
 const int kFieldMaxLength = 5000;
 const String kPartTwoCommand = 'RUN PART TWO';
@@ -9,6 +10,13 @@ class ScenarioInput {
     this.topic = '',
     this.sourceUrl = '',
     this.posedQuestion = '',
+    this.outcomeContext = '',
+    this.outcomeParts = const [],
+    this.multiPartOutcomeEnabled = false,
+    this.activePathwayLabel = '',
+    this.siblingPathwayLabels = const [],
+    this.parentPosedQuestion = '',
+    this.pathwayConstruals = const {},
     this.vortexText = '',
     this.shearText = '',
     this.resistanceText = '',
@@ -25,6 +33,20 @@ class ScenarioInput {
   final String sourceUrl;
   /// Base scenario query — anchors semantics, outputs, and ω inference.
   final String posedQuestion;
+  /// Shared outcome clause for multi-part breakdown (e.g. "to end the recession").
+  final String outcomeContext;
+  /// User-entered pathway labels — one percent chance per non-empty part.
+  final List<String> outcomeParts;
+  /// When true, pathway fields and multi-part parsing produce a listed breakdown.
+  final bool multiPartOutcomeEnabled;
+  /// Active pathway label during per-pathway Grok construal (transient).
+  final String activePathwayLabel;
+  /// Sibling pathway labels for contrast during per-pathway Grok construal.
+  final List<String> siblingPathwayLabels;
+  /// Parent posed question before per-pathway sub-question substitution.
+  final String parentPosedQuestion;
+  /// Per-pathway ω/σ/Iτ/Jμ from individual Grok construal runs.
+  final Map<String, PathwayConstructTexts> pathwayConstruals;
   final String vortexText;
   final String shearText;
   final String resistanceText;
@@ -42,7 +64,16 @@ class ScenarioInput {
   static const constructKeys = ['vortex', 'shear', 'resistance', 'flow'];
 
   /// True when the user has posed the base scenario question.
-  bool get hasQuestion => posedQuestion.trim().isNotEmpty;
+  bool get hasQuestion =>
+      posedQuestion.trim().isNotEmpty ||
+      (multiPartOutcomeEnabled && filledOutcomeParts.length >= 2);
+
+  /// Non-empty pathway labels entered under the posed question.
+  List<String> get filledOutcomeParts =>
+      outcomeParts.map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
+
+  bool get hasMultiPartOutcomeFields =>
+      multiPartOutcomeEnabled && filledOutcomeParts.length >= 2;
 
   /// Enough scenario material for cohesion analysis (posed question is optional).
   bool get hasCohesionScenario =>
@@ -77,10 +108,16 @@ class ScenarioInput {
         _ => '',
       };
 
-  /// Primary query text — posed question, with legacy vortex fallback.
+  /// Primary query text — posed question, multi-part fields, or legacy vortex.
   String get scenarioQuery {
     final posed = posedQuestion.trim();
     if (posed.isNotEmpty) return posed;
+    if (hasMultiPartOutcomeFields) {
+      // Deferred import avoided — inline synthetic framing for display/engine.
+      final list = filledOutcomeParts.join(', ');
+      final toward = outcomeContext.trim().isNotEmpty ? ' ${outcomeContext.trim()}' : '';
+      return 'Give the percent chances of each $list$toward?';
+    }
     return vortexText.trim();
   }
 
@@ -93,6 +130,13 @@ class ScenarioInput {
     String? topic,
     String? sourceUrl,
     String? posedQuestion,
+    String? outcomeContext,
+    List<String>? outcomeParts,
+    bool? multiPartOutcomeEnabled,
+    String? activePathwayLabel,
+    List<String>? siblingPathwayLabels,
+    String? parentPosedQuestion,
+    Map<String, PathwayConstructTexts>? pathwayConstruals,
     String? vortexText,
     String? shearText,
     String? resistanceText,
@@ -108,6 +152,14 @@ class ScenarioInput {
         topic: topic ?? this.topic,
         sourceUrl: sourceUrl ?? this.sourceUrl,
         posedQuestion: posedQuestion ?? this.posedQuestion,
+        outcomeContext: outcomeContext ?? this.outcomeContext,
+        outcomeParts: outcomeParts ?? this.outcomeParts,
+        multiPartOutcomeEnabled:
+            multiPartOutcomeEnabled ?? this.multiPartOutcomeEnabled,
+        activePathwayLabel: activePathwayLabel ?? this.activePathwayLabel,
+        siblingPathwayLabels: siblingPathwayLabels ?? this.siblingPathwayLabels,
+        parentPosedQuestion: parentPosedQuestion ?? this.parentPosedQuestion,
+        pathwayConstruals: pathwayConstruals ?? this.pathwayConstruals,
         vortexText: vortexText ?? this.vortexText,
         shearText: shearText ?? this.shearText,
         resistanceText: resistanceText ?? this.resistanceText,

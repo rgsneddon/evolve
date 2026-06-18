@@ -6,6 +6,7 @@ import '../models/evolve_result.dart';
 import 'chronoflux_weight_construal.dart';
 import 'event_classifier.dart';
 import 'question_semantics.dart';
+import 'question_relevance_filter.dart';
 import 'scenario_calculation_context.dart';
 
 /// CONCLUSION — THE CONTINUUM: question-specific data points used to construe.
@@ -51,9 +52,10 @@ class ContinuumConclusionBuilder {
     final resistanceScs = sem.resistanceOffset.clamp(40, 74).round();
     final flowScs = sem.flowOffset.clamp(32, 68).round();
 
-    final hints = sem.hintSignals.isEmpty
+    final questionHints = QuestionRelevanceFilter.questionDerivedHints(sem.hintSignals);
+    final hints = questionHints.isEmpty
         ? ''
-        : output.continuumHintsClause(sem.hintSignals.join(', '));
+        : output.continuumHintsClause(questionHints.join(', '));
 
     return output.continuumConclusion(
       percentPhrase: percentPhrase,
@@ -91,6 +93,8 @@ class ContinuumConclusionBuilder {
       baseWeightPct: (baseWeight * 100).round(),
       heuristicWeightPct: (heuristicWeight * 100).round(),
       regressive: core.lean == 'REGRESSIVE',
+      successCount: forecast.successCount,
+      matchedCaseLines: forecast.matchedCaseLines,
     );
   }
 }

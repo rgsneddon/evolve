@@ -8,13 +8,15 @@ import 'package:evolve/providers/evolve_provider.dart';
 import 'package:evolve/services/evolve_engine.dart';
 
 void main() {
-  test('region change pre-fills posed question when empty', () {
+  test('region change does not pre-fill posed question', () {
     final provider = EvolveProvider();
     expect(provider.input.posedQuestion, isEmpty);
 
     provider.setLocale(const LocaleConfig(regionId: 'uk_ireland', languageCode: 'en'));
-    expect(provider.input.posedQuestion.toLowerCase(), contains('uk'));
-    expect(provider.posedQuestionHint.toLowerCase(), contains('uk'));
+    expect(provider.input.posedQuestion, isEmpty);
+
+    provider.setLocale(const LocaleConfig(regionId: 'europe', languageCode: 'en'));
+    expect(provider.input.posedQuestion, isEmpty);
   });
 
   test('region anchors observations in outputs', () {

@@ -59,6 +59,7 @@ class GrokProxyLauncher {
 
     final config = GrokProxyConfig.fromEnvironment(port: port);
     _store = GrokProxyStore(config);
+    await _store!.restorePersistedSession();
     final server = await _tryBindServer(port);
     if (server == null) {
       _store = null;

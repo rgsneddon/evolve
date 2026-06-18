@@ -59,18 +59,19 @@ void main() {
     expect(sum, closeTo(1.0, 1e-9));
   });
 
-  test('grok reply states context construal and non-flat weights', () {
+  test('weight construal still applies non-flat weights in pipeline', () {
     const input = ScenarioInput(
       posedQuestion:
           'Calculate the percent chance of sporadic civil unrest in the UK please?',
     );
     final result = engine.analyze(input);
     final out = LocalizedOutput.of(LocaleConfig.defaults);
+    final construal = const ChronofluxWeightConstrual().construe(input);
 
-    expect(result.grokStyleReply, contains('context weights'));
-    expect(result.grokStyleReply, contains('σ='));
-    expect(result.grokStyleReply, contains('ω='));
-    expect(result.grokStyleReply, isNot(contains('w=0.2')));
+    expect(construal.summary, contains('σ='));
+    expect(construal.summary, contains('ω='));
+    expect(construal.summary, isNot(contains('w=0.2')));
     expect(result.grokStyleReply, contains(out.grokConclusionMarker));
+    expect(result.grokStyleReply, isNot(contains('context weights')));
   });
 }

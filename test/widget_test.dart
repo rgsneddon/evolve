@@ -12,7 +12,8 @@ void main() {
     final provider = EvolveProvider();
     await provider.initialize();
     await tester.pumpWidget(EvolveApp(evolveProvider: provider));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Evolve'), findsOneWidget);
     expect(find.byType(EvolveBanner), findsOneWidget);

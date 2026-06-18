@@ -22,7 +22,7 @@ const partThreeSlimEn = <String, String>{
   'part3_slim_intervention_4':
       'Target the highest-friction construct (σ or Iτ) with measurable de-escalation milestones on {subject}.',
   'part3_slim_intervention_5':
-      'Publish a 90-day PROGRESSIVE accountability review tying lever use to SCS gains on {subject}.',
+      'Publish a PROGRESSIVE accountability review with published milestones tying lever use to SCS gains on {subject}.',
   'part3_construct_action_sigma':
       '{agent}: Cut σ polarisation on {subject} — convene a multi-stakeholder forum within 14 days. {hook} (σ {scs}/100, {weight}% Chronoflux weight; {reg}% regressive continuum).',
   'part3_construct_action_resistance':
@@ -34,7 +34,7 @@ const partThreeSlimEn = <String, String>{
   'part3_vortex_hook': 'Anchor to supplied ω variable: "{text}".',
   'part3_vortex_observed': 'Inferred ω framing from posed question (SCS {scs}/100).',
   'part3_progressive_capstone':
-      '{agent}: Commit to a 90-day PROGRESSIVE accountability review for {subject} — shift THE CONTINUUM from {reg}% regressive / {prog}% progressive (refined SCS {refined}/100 → {min}–{max} with levers vs {without} without; calibrated {pct}%; {n} registry cases at {base}% base rate; momentum {momentum}).',
+      '{agent}: Commit to a PROGRESSIVE accountability review with published milestones for {subject} — shift THE CONTINUUM from {reg}% regressive / {prog}% progressive (refined SCS {refined}/100 → {min}–{max} with levers vs {without} without; calibrated {pct}%; {n} registry cases at {base}% base rate; momentum {momentum}).',
   'part3_rationale_theme':
       'Scenario discourse action — {theme} Targets {construct} to build PROGRESSIVE transport.',
   'part3_rationale_construct':
@@ -88,7 +88,7 @@ const partThreeSlimEs = <String, String>{
   'part3_slim_intervention_4':
       'Apuntar al constructo de mayor fricción (σ o Iτ) con hitos medibles de desescalada en {subject}.',
   'part3_slim_intervention_5':
-      'Publicar revisión de responsabilidad PROGRESIVA a 90 días vinculando palancas a ganancias de SCS en {subject}.',
+      'Publicar revisión de responsabilidad PROGRESIVA con hitos publicados vinculando palancas a ganancias de SCS en {subject}.',
   'part3_construct_action_sigma':
       '{agent}: Reducir polarización σ en {subject} — convocar foro multipartidista en 14 días. {hook} (σ {scs}/100, {weight}% peso Chronoflux; {reg}% continuo regresivo).',
   'part3_construct_action_resistance':
@@ -100,7 +100,7 @@ const partThreeSlimEs = <String, String>{
   'part3_vortex_hook': 'Anclar a variable ω suministrada: «{text}».',
   'part3_vortex_observed': 'Encuadre ω inferido de la pregunta planteada (SCS {scs}/100).',
   'part3_progressive_capstone':
-      '{agent}: Comprometer revisión de responsabilidad PROGRESIVA a 90 días para {subject} — mover EL CONTINUUM de {reg}% regresivo / {prog}% progresivo (SCS refinado {refined}/100 → {min}–{max} con palancas vs {without} sin; calibrado {pct}%; {n} casos de registro al {base}% tasa base; momento {momentum}).',
+      '{agent}: Comprometer revisión de responsabilidad PROGRESIVA con hitos publicados para {subject} — mover EL CONTINUUM de {reg}% regresivo / {prog}% progresivo (SCS refinado {refined}/100 → {min}–{max} con palancas vs {without} sin; calibrado {pct}%; {n} casos de registro al {base}% tasa base; momento {momentum}).',
   'part3_rationale_theme':
       'Acción de discurso del escenario — {theme} Apunta a {construct} para construir transporte PROGRESIVO.',
   'part3_rationale_construct':

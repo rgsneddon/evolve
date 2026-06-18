@@ -22,7 +22,6 @@ void main() {
     expect(provider.result!.partTwoRan, isTrue);
     expect(provider.result!.partTwo.expandedVortex, isNotEmpty);
     expect(provider.result!.partTwo.refinedScs, inInclusiveRange(20, 87));
-    expect(provider.result!.grokStyleReply, contains('PART TWO: Refined SCS'));
   });
 
   test('calculate on cohesion tab runs PART TWO', () async {

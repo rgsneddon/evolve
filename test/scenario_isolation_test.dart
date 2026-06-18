@@ -5,10 +5,30 @@ import 'package:evolve/models/scenario_input.dart';
 import 'package:evolve/l10n/localized_output.dart';
 import 'package:evolve/providers/evolve_provider.dart';
 import 'package:evolve/services/grok_construal_service.dart';
+import 'package:evolve/services/input_edit_guard.dart';
 
 import 'test_helpers.dart';
 
 void main() {
+  test('incremental posed-question typing does not reset scenario', () {
+    const before = ScenarioInput(
+      posedQuestion: 'What is the chance of unrest?',
+      sourceUrl: 'https://example.com/story',
+    );
+    const after = ScenarioInput(
+      posedQuestion: 'What is the chance of unrest near-term?',
+      sourceUrl: 'https://example.com/story',
+    );
+
+    expect(InputEditGuard.isPosedScenarioReset(before.posedQuestion, after.posedQuestion), isFalse);
+
+    final provider = EvolveProvider();
+    provider.updateInput(before);
+    provider.updateInput(after);
+
+    expect(provider.input.sourceUrl, 'https://example.com/story');
+  });
+
   test('new posed question clears prior result and narrative sourceUrl', () async {
     final provider = EvolveProvider();
 

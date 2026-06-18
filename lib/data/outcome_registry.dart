@@ -52,7 +52,7 @@ class OutcomeRegistry {
             id: 'FB-${id.toString().padLeft(4, '0')}',
             eventClass: cls,
             regionId: i.isEven ? 'global' : 'uk_ireland',
-            horizonDays: [30, 90, 180, 365][i % 4],
+            horizonDays: [30, 60, 180, 365][i % 4],
             yearPosed: year,
             occurred: occurred,
             source: 'ACLED',

@@ -66,15 +66,10 @@ class EventClassifier {
       return 365;
     }
     if (RegExp(
-      r'\b(medium[- ]term|6 months|half year|180 days|medio plazo|6 meses)\b',
+      r'\b(medium[- ]term|near[- ]term|soon|short[- ]term|this quarter|6 months|half year|180 days|medio plazo|6 meses|corto plazo|próximamente)\b',
     ).hasMatch(lower)) {
       return 180;
     }
-    if (RegExp(
-      r'\b(near[- ]term|soon|short[- ]term|this quarter|90 days|corto plazo|próximamente)\b',
-    ).hasMatch(lower)) {
-      return 90;
-    }
-    return 90;
+    return 180;
   }
 }

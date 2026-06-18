@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/localized_output.dart';
 import '../models/evolve_result.dart';
+import '../models/part_percent_breakdown.dart';
 import '../providers/evolve_provider.dart';
 import '../services/conclusion_explainer.dart';
 import '../services/question_semantics.dart';
@@ -114,14 +116,16 @@ class PercentChancePanel extends StatelessWidget {
               outcomePhrase,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 14),
-            if (split.body.isNotEmpty) ...[
-              SelectableText(
-                split.body,
-                style: const TextStyle(fontSize: 13, height: 1.55, color: Color(0xFFB8BFD0)),
+            if (result.partBreakdown != null &&
+                result.partBreakdown!.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              PartBreakdownSection(
+                breakdown: result.partBreakdown!,
+                output: provider.output,
+                compact: compact,
               ),
-              const SizedBox(height: 14),
             ],
+            const SizedBox(height: 14),
             ConclusionBlock(
               text: split.conclusion.isNotEmpty
                   ? split.conclusion
@@ -140,6 +144,131 @@ class PercentChancePanel extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class PartBreakdownSection extends StatelessWidget {
+  const PartBreakdownSection({
+    super.key,
+    required this.breakdown,
+    required this.output,
+    required this.compact,
+  });
+
+  final PartPercentBreakdown breakdown;
+  final LocalizedOutput output;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          output.partBreakdownTitle(),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        if (breakdown.outcomeContext.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            output.partBreakdownOutcome(breakdown.outcomeContext),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Text(
+          output.partBreakdownNote(),
+          style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+        ),
+        const SizedBox(height: 12),
+        ...breakdown.parts.map(
+          (part) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _PartBreakdownRow(part: part, output: output, compact: compact),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          output.partBreakdownTotal(breakdown.partitionTotal),
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF00D9C0),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PartBreakdownRow extends StatelessWidget {
+  const _PartBreakdownRow({
+    required this.part,
+    required this.output,
+    required this.compact,
+  });
+
+  final PartPercentResult part;
+  final LocalizedOutput output;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final regressive = part.isRegressive;
+    final lean = output.leanLabel(part.lean);
+    final leanLine = output.partBreakdownLeanLine(
+      lean: lean,
+      regressive: regressive,
+      regressivePct: part.regressivePct.round(),
+      progressivePct: part.progressivePct.round(),
+    );
+    final accent = regressive ? const Color(0xFFFF8A7A) : const Color(0xFF7AE582);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(compact ? 10 : 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1F2E),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: accent.withOpacity(0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  part.label,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  part.percentPhrase,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFFB8B5C8)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  leanLine,
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: accent),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            '${part.percentChance.round()}%',
+            style: TextStyle(
+              fontSize: compact ? 28 : 32,
+              fontWeight: FontWeight.w800,
+              color: accent,
+              height: 1,
+            ),
+          ),
+        ],
       ),
     );
   }

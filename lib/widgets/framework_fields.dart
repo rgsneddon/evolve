@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/construct_meta.dart';
 import '../models/scenario_input.dart';
+import 'outcome_part_fields.dart';
 
 /// Holds shared controllers for posed-question and construct fields.
 class FrameworkFieldsHost extends StatefulWidget {
@@ -33,60 +35,186 @@ class FrameworkFieldsHost extends StatefulWidget {
 
 class _FrameworkFieldsHostState extends State<FrameworkFieldsHost> {
   late final TextEditingController _posedQuestion;
+  late final TextEditingController _outcomeContext;
   late final TextEditingController _topic;
   late final TextEditingController _vortex;
   late final TextEditingController _shear;
   late final TextEditingController _resistance;
   late final TextEditingController _flow;
-  late final FocusNode _posedQuestionFocus;
+  List<TextEditingController> _outcomePartControllers = [];
+  bool _multiPartOutcomeEnabled = false;
   Timer? _debounce;
-  String? _regionFocusBanner;
 
   @override
   void initState() {
     super.initState();
     _posedQuestion = TextEditingController(text: widget.input.posedQuestion);
+    _outcomeContext = TextEditingController(text: widget.input.outcomeContext);
+    _multiPartOutcomeEnabled = widget.input.multiPartOutcomeEnabled;
+    _outcomePartControllers = _controllersForParts(widget.input.outcomeParts);
     _topic = TextEditingController(text: widget.input.topic);
     _vortex = TextEditingController(text: widget.input.vortexText);
     _shear = TextEditingController(text: widget.input.shearText);
     _resistance = TextEditingController(text: widget.input.resistanceText);
     _flow = TextEditingController(text: widget.input.flowText);
-    _posedQuestionFocus = FocusNode();
     widget.onRegisterFlush?.call(_push);
   }
+
+  List<TextEditingController> _controllersForParts(List<String> parts) {
+    if (parts.isEmpty) return [];
+    return parts.map((p) => TextEditingController(text: p)).toList();
+  }
+
+  /// Keeps local controllers authoritative while typing; only resets on external edits.
+  void _syncOutcomePartControllers(List<String> next, List<String> prev) {
+    final local = _outcomePartControllers.map((c) => c.text).toList();
+
+    // Debounced provider echo — controllers already hold the latest text.
+    if (_listsEqual(next, local)) return;
+
+    // User added pathway rows locally; provider has not caught up yet.
+    if (local.length > next.length && _prefixEqual(next, local)) return;
+
+    // startFresh / external clear.
+    if (next.isEmpty && (prev.isNotEmpty || local.any((s) => s.isNotEmpty))) {
+      _disposeOutcomePartControllers();
+      return;
+    }
+
+    // Same row count — patch in place; never truncate text the user is ahead of.
+    if (next.length == local.length) {
+      for (var i = 0; i < next.length; i++) {
+        final controller = _outcomePartControllers[i];
+        final localText = controller.text;
+        final incoming = next[i];
+        if (incoming == localText) continue;
+        if (localText.startsWith(incoming) && localText.length > incoming.length) {
+          continue;
+        }
+        controller.text = incoming;
+      }
+      return;
+    }
+
+    // Row count changed externally — rebuild controllers.
+    if (!_listsEqual(next, prev) && !_listsEqual(next, local)) {
+      _disposeOutcomePartControllers();
+      _outcomePartControllers = _controllersForParts(next);
+    }
+  }
+
+  void _disposeOutcomePartControllers() {
+    for (final c in _outcomePartControllers) {
+      c.dispose();
+    }
+    _outcomePartControllers = [];
+  }
+
+  bool _listsEqual(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  bool _prefixEqual(List<String> prefix, List<String> full) {
+    if (prefix.length > full.length) return false;
+    for (var i = 0; i < prefix.length; i++) {
+      if (prefix[i] != full[i]) return false;
+    }
+    return true;
+  }
+
+  void addOutcomePartField() {
+    setState(() {
+      _outcomePartControllers.add(TextEditingController());
+    });
+    schedulePush();
+  }
+
+  void removeOutcomePartField(int index) {
+    if (index < 0 || index >= _outcomePartControllers.length) return;
+    setState(() {
+      _outcomePartControllers[index].dispose();
+      _outcomePartControllers.removeAt(index);
+    });
+    _push();
+  }
+
+  void setMultiPartOutcomeEnabled(bool value) {
+    setState(() {
+      _multiPartOutcomeEnabled = value;
+      if (value && _outcomePartControllers.isEmpty) {
+        _outcomePartControllers = [
+          TextEditingController(),
+          TextEditingController(),
+        ];
+      }
+    });
+    schedulePush();
+  }
+
+  TextEditingController get outcomeContextController => _outcomeContext;
+
+  List<TextEditingController> get outcomePartControllers => _outcomePartControllers;
+
+  bool get multiPartOutcomeEnabled => _multiPartOutcomeEnabled;
 
   @override
   void didUpdateWidget(FrameworkFieldsHost oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _syncController(_posedQuestion, widget.input.posedQuestion, oldWidget.input.posedQuestion);
-    _syncController(_topic, widget.input.topic, oldWidget.input.topic);
-    _syncController(_vortex, widget.input.vortexText, oldWidget.input.vortexText);
-    _syncController(_shear, widget.input.shearText, oldWidget.input.shearText);
-    _syncController(_resistance, widget.input.resistanceText, oldWidget.input.resistanceText);
-    _syncController(_flow, widget.input.flowText, oldWidget.input.flowText);
+    _syncTextController(
+      _posedQuestion,
+      widget.input.posedQuestion,
+      oldWidget.input.posedQuestion,
+    );
+    _syncTextController(
+      _outcomeContext,
+      widget.input.outcomeContext,
+      oldWidget.input.outcomeContext,
+    );
+    if (widget.input.multiPartOutcomeEnabled != oldWidget.input.multiPartOutcomeEnabled) {
+      _multiPartOutcomeEnabled = widget.input.multiPartOutcomeEnabled;
+    }
+    _syncOutcomePartControllers(
+      widget.input.outcomeParts,
+      oldWidget.input.outcomeParts,
+    );
+    _syncTextController(_topic, widget.input.topic, oldWidget.input.topic);
+    _syncTextController(_vortex, widget.input.vortexText, oldWidget.input.vortexText);
+    _syncTextController(_shear, widget.input.shearText, oldWidget.input.shearText);
+    _syncTextController(
+      _resistance,
+      widget.input.resistanceText,
+      oldWidget.input.resistanceText,
+    );
+    _syncTextController(_flow, widget.input.flowText, oldWidget.input.flowText);
   }
 
-  void _syncController(TextEditingController c, String next, String prev) {
-    if (next != prev && next != c.text) {
+  /// Never overwrite local text while the user is ahead of a debounced provider echo.
+  void _syncTextController(TextEditingController c, String next, String prev) {
+    final local = c.text;
+    if (next == local) return;
+    if (local.startsWith(next) && local.length > next.length) return;
+    if (next.startsWith(local) && next.length > local.length) {
+      c.text = next;
+      return;
+    }
+    if (next != prev) {
       c.text = next;
     }
-  }
-
-  void focusPosedQuestionIfBannerChanged(String? banner) {
-    if (banner == null || banner.isEmpty || banner == _regionFocusBanner) return;
-    _regionFocusBanner = banner;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _posedQuestionFocus.requestFocus();
-    });
   }
 
   @override
   void dispose() {
     widget.onRegisterFlush?.call(null);
     _debounce?.cancel();
-    _posedQuestionFocus.dispose();
     _posedQuestion.dispose();
+    _outcomeContext.dispose();
+    for (final c in _outcomePartControllers) {
+      c.dispose();
+    }
     _topic.dispose();
     _vortex.dispose();
     _shear.dispose();
@@ -103,10 +231,14 @@ class _FrameworkFieldsHostState extends State<FrameworkFieldsHost> {
   void _push() {
     _debounce?.cancel();
     widget.onChanged(
-      ScenarioInput(
+      widget.input.copyWith(
         posedQuestion: ScenarioInput.clamp(_posedQuestion.text),
+        outcomeContext: ScenarioInput.clamp(_outcomeContext.text),
+        outcomeParts: _outcomePartControllers
+            .map((c) => ScenarioInput.clamp(c.text))
+            .toList(),
+        multiPartOutcomeEnabled: _multiPartOutcomeEnabled,
         topic: ScenarioInput.clamp(_topic.text),
-        sourceUrl: widget.input.sourceUrl,
         vortexText: ScenarioInput.clamp(_vortex.text),
         shearText: ScenarioInput.clamp(_shear.text),
         resistanceText: ScenarioInput.clamp(_resistance.text),
@@ -144,28 +276,22 @@ class PosedQuestionFields extends StatefulWidget {
     this.posedQuestionHint,
     this.topicHint,
     this.regionFocusBanner,
+    this.showOutcomeParts = false,
+    this.strings,
   });
 
   final String? posedQuestionLabel;
   final String? posedQuestionHint;
   final String? topicHint;
   final String? regionFocusBanner;
+  final bool showOutcomeParts;
+  final AppLocalizations? strings;
 
   @override
   State<PosedQuestionFields> createState() => _PosedQuestionFieldsState();
 }
 
 class _PosedQuestionFieldsState extends State<PosedQuestionFields> {
-  @override
-  void didUpdateWidget(PosedQuestionFields oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.regionFocusBanner != oldWidget.regionFocusBanner) {
-      FrameworkFieldsHost.of(context).host.focusPosedQuestionIfBannerChanged(
-        widget.regionFocusBanner,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final host = FrameworkFieldsHost.of(context).host;
@@ -176,7 +302,6 @@ class _PosedQuestionFieldsState extends State<PosedQuestionFields> {
       children: [
         TextFormField(
           controller: host._posedQuestion,
-          focusNode: host._posedQuestionFocus,
           minLines: 2,
           maxLines: null,
           maxLength: kFieldMaxLength,
@@ -210,6 +335,8 @@ class _PosedQuestionFieldsState extends State<PosedQuestionFields> {
           style: const TextStyle(fontSize: 14, height: 1.45, fontWeight: FontWeight.w600),
           onChanged: (_) => host.schedulePush(),
         ),
+        if (widget.showOutcomeParts && widget.strings != null)
+          OutcomePartFields(strings: widget.strings!),
         const SizedBox(height: 12),
         TextFormField(
           controller: host._topic,

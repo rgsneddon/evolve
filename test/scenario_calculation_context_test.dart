@@ -118,8 +118,8 @@ void main() {
           'What is the chance of sporadic civil unrest in the UK near-term?',
     ));
 
-    expect(result.grokStyleReply, contains('lean-driven'));
-    expect(result.grokStyleReply, contains('REGRESSIVE lean — σ/Iτ friction weighted'));
+    expect(result.grokStyleReply, contains('leans'));
+    expect(result.continuumConclusion, contains('REGRESSIVE'));
   });
 
   test('regional context shifts weights without field content', () {

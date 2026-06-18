@@ -8,7 +8,7 @@ void main() {
 
   test('strips straight and curly quoted question parameters', () {
     final cleaned = GrokFieldSanitizer.sanitizeField(
-      'σ (shear): Polarisation on "$subject" sharpens grievance layers.',
+      'σ (shear): Polarisation on Glasgow unrest sharpens grievance layers.',
       posedQuestion: question,
       displaySubject: subject,
     );
@@ -20,7 +20,7 @@ void main() {
 
   test('strips Unicode curly quotes from live Grok-style output', () {
     final raw =
-        'ω (vortex): Elite briefings on \u201C$subject\u201D compress authority lanes.';
+        'ω (vortex): Glasgow elite briefings on \u201Cnear-term escalation\u201D compress authority lanes.';
     final cleaned = GrokFieldSanitizer.sanitizeField(
       raw,
       posedQuestion: question,
@@ -47,7 +47,7 @@ void main() {
       {
         'vortexText': 'Posed question: "$question"',
         'shearText':
-            'σ (shear): Grievance-layer levers sharpen partisan split in open channels.',
+            'σ (shear): Grievance-layer levers on Glasgow unrest sharpen partisan split.',
         'resistanceText': '',
         'flowText': '',
       },

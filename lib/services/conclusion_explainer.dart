@@ -84,16 +84,13 @@ class ConclusionExplainer {
       data.calibrationSummary,
     ];
 
-    if (data.sampleSize > 0) {
-      sections.add(
-        out.strings
-            .t('explainer_registry_cases_intro')
-            .replaceAll('{n}', '${data.sampleSize}')
-            .replaceAll('{successes}', '${data.successCount}'),
-      );
-    } else {
-      sections.add(out.strings.t('explainer_registry_cases_empty'));
-    }
+    sections.add(
+      out.registryCasesElaboration(
+        sampleSize: data.sampleSize,
+        successCount: data.successCount,
+        caseLines: data.matchedCaseLines,
+      ),
+    );
 
     return sections.join('\n\n');
   }
@@ -155,14 +152,13 @@ class ConclusionExplainer {
       data.calibrationSummary,
     ];
 
-    if (data.sampleSize > 0) {
-      sections.add(
-        out.strings
-            .t('explainer_registry_cases_intro')
-            .replaceAll('{n}', '${data.sampleSize}')
-            .replaceAll('{successes}', '${data.successCount}'),
-      );
-    }
+    sections.add(
+      out.registryCasesElaboration(
+        sampleSize: data.sampleSize,
+        successCount: data.successCount,
+        caseLines: data.matchedCaseLines,
+      ),
+    );
 
     return sections.join('\n\n');
   }

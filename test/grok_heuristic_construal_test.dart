@@ -22,6 +22,7 @@ void main() {
     expect(suggestions.vortexText.toLowerCase(), isNot(contains(fullQuestion.toLowerCase())));
     expect(suggestions.vortexText, isNot(contains('"')));
     expect(suggestions.resistanceText.toLowerCase(), contains('lever'));
+    expect(suggestions.vortexText.toLowerCase(), contains('unrest'));
     expect(suggestions.provenance, 'grok-heuristic-web');
   });
 }

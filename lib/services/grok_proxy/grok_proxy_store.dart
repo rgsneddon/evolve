@@ -1,15 +1,20 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 
+import '../../models/grok_session.dart';
+import '../../models/locale_config.dart';
 import '../../models/scenario_input.dart';
+import '../construal_grounding.dart';
 import '../narrative_link_reader.dart';
 import '../question_semantics.dart';
 import 'grok_construct_prompt.dart';
 import 'grok_proxy_config.dart';
 import 'grok_proxy_heuristic.dart';
+import 'grok_session_persistence.dart';
 
 /// OAuth session + construal logic shared by CLI proxy and embedded server.
 class GrokProxyStore {
@@ -19,12 +24,14 @@ class GrokProxyStore {
   final http.Client _client;
 
   String? _accessToken;
+  String? _refreshToken;
   String? _screenName;
   String? _displayName;
   bool _premium = false;
   String? _codeVerifier;
   String? _oauthState;
   String? _lastOAuthError;
+  final GrokSessionPersistence _sessionPersistence = const GrokSessionPersistence();
 
   bool get mock => config.mock;
 
@@ -47,9 +54,69 @@ class GrokProxyStore {
 
   void logout() {
     _accessToken = null;
+    _refreshToken = null;
     _screenName = null;
     _displayName = null;
     _premium = false;
+    unawaited(_sessionPersistence.clear());
+  }
+
+  /// Reload a saved X session after app restart (desktop embedded proxy).
+  Future<void> restorePersistedSession() async {
+    if (config.mock) return;
+    final saved = await _sessionPersistence.load();
+    if (saved == null) return;
+
+    _accessToken = '${saved['accessToken'] ?? ''}'.trim().isEmpty
+        ? null
+        : '${saved['accessToken']}';
+    _refreshToken = '${saved['refreshToken'] ?? ''}'.trim().isEmpty
+        ? null
+        : '${saved['refreshToken']}';
+    _screenName = '${saved['screenName'] ?? ''}';
+    _displayName = '${saved['displayName'] ?? ''}';
+    _premium = saved['premium'] == true;
+
+    if (_accessToken == null) {
+      _clearSessionState();
+      return;
+    }
+
+    const restoreTimeout = Duration(seconds: 8);
+    try {
+      await _loadUserProfile().timeout(restoreTimeout);
+    } catch (_) {
+      if (_refreshToken != null) {
+        try {
+          await _refreshAccessToken().timeout(restoreTimeout);
+          await _loadUserProfile().timeout(restoreTimeout);
+        } catch (_) {
+          _clearSessionState();
+        }
+      } else {
+        _clearSessionState();
+      }
+    }
+  }
+
+  void _clearSessionState() {
+    _accessToken = null;
+    _refreshToken = null;
+    _screenName = null;
+    _displayName = null;
+    _premium = false;
+    unawaited(_sessionPersistence.clear());
+  }
+
+  Future<void> _persistSession() async {
+    if (_accessToken == null || config.mock) return;
+    await _sessionPersistence.save({
+      'accessToken': _accessToken,
+      if (_refreshToken != null) 'refreshToken': _refreshToken,
+      'screenName': _screenName ?? '',
+      'displayName': _displayName ?? '',
+      'premium': _premium,
+    });
   }
 
   Future<String> authorizeUrl() async {
@@ -76,6 +143,7 @@ class GrokProxyStore {
   Future<void> completeOAuth(String code, String? state) async {
     if (config.mock || code == 'mock') {
       _accessToken = 'mock-token';
+      _refreshToken = null;
       _screenName = 'evolve_mock';
       _displayName = 'Evolve Mock User';
       _premium = true;
@@ -108,12 +176,53 @@ class GrokProxyStore {
 
     final tokenJson = jsonDecode(tokenRes.body) as Map<String, dynamic>;
     _accessToken = tokenJson['access_token'] as String?;
+    _refreshToken = tokenJson['refresh_token'] as String?;
+
+    await _loadUserProfile();
+    await _persistSession();
+  }
+
+  Future<void> _refreshAccessToken() async {
+    final refresh = _refreshToken;
+    if (refresh == null || refresh.isEmpty) {
+      throw StateError('Missing refresh token');
+    }
+
+    final clientId = config.xClientId!;
+    final clientSecret = config.xClientSecret ?? '';
+    final tokenRes = await _client.post(
+      Uri.parse('https://api.x.com/2/oauth2/token'),
+      headers: tokenExchangeHeaders(clientId, clientSecret),
+      body: {
+        'grant_type': 'refresh_token',
+        'refresh_token': refresh,
+        if (clientSecret.isEmpty) 'client_id': clientId,
+      },
+    );
+
+    if (tokenRes.statusCode != 200) {
+      throw StateError('Token refresh failed: ${tokenRes.body}');
+    }
+
+    final tokenJson = jsonDecode(tokenRes.body) as Map<String, dynamic>;
+    _accessToken = tokenJson['access_token'] as String?;
+    final nextRefresh = tokenJson['refresh_token'] as String?;
+    if (nextRefresh != null && nextRefresh.isNotEmpty) {
+      _refreshToken = nextRefresh;
+    }
+  }
+
+  Future<void> _loadUserProfile() async {
+    final token = _accessToken;
+    if (token == null || token.isEmpty) {
+      throw StateError('Missing access token');
+    }
 
     final meRes = await _client.get(
       Uri.parse(
         'https://api.x.com/2/users/me?user.fields=subscription_type,verified_type,name,username',
       ),
-      headers: {'Authorization': 'Bearer $_accessToken'},
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (meRes.statusCode != 200) {
@@ -573,7 +682,7 @@ class GrokProxyStore {
         'temperature': 0.35,
         'search_parameters': {
           'mode': 'on',
-          'max_search_results': 10,
+          'max_search_results': 30,
           'return_citations': false,
         },
       }),
@@ -601,22 +710,61 @@ class GrokProxyStore {
             regionLabel: regionLabel.isNotEmpty ? regionLabel : null,
           )
         : null;
+    final topic = '${payload['topic'] ?? ''}';
     final fields = GrokConstructPrompt.sanitizeFields(
       parsed,
       question,
       displaySubject: sem?.displaySubject ?? '',
       rawSubject: sem?.subject ?? '',
       regionLabel: regionLabel.isNotEmpty ? regionLabel : '${payload['regionLabel'] ?? ''}',
+      topic: topic,
     );
 
-    final hasAny = fields.values.any((v) => v.isNotEmpty);
+    final heuristic = _heuristicPayload(payload);
+    final merged = <String, String>{
+      for (final key in ['vortexText', 'shearText', 'resistanceText', 'flowText'])
+        key: () {
+          final live = fields[key] ?? '';
+          if (live.trim().isNotEmpty) return live;
+          return '${heuristic[key] ?? ''}';
+        }(),
+    };
+
+    final hasAny = merged.values.any((v) => v.trim().isNotEmpty);
     if (!hasAny) {
-      throw StateError('Grok returned only question echoes — retry or check search access');
+      return heuristic;
     }
 
+    final input = ScenarioInput(
+      posedQuestion: question,
+      topic: topic,
+      sourceUrl: '${payload['sourceUrl'] ?? ''}',
+      vortexText: '${payload['vortexText'] ?? ''}',
+      shearText: '${payload['shearText'] ?? ''}',
+      resistanceText: '${payload['resistanceText'] ?? ''}',
+      flowText: '${payload['flowText'] ?? ''}',
+    );
+    final grounded = ConstrualGrounding.ensureResult(
+      result: GrokConstrualResult(
+        vortexText: merged['vortexText'] ?? '',
+        shearText: merged['shearText'] ?? '',
+        resistanceText: merged['resistanceText'] ?? '',
+        flowText: merged['flowText'] ?? '',
+        provenance: fields.values.any((v) => v.trim().isNotEmpty)
+            ? 'grok-live'
+            : '${heuristic['provenance'] ?? 'grok-heuristic-proxy'}',
+      ),
+      input: input,
+      locale: LocaleConfig(regionId: regionId, languageCode: 'en'),
+      relevanceQuestion: question,
+    );
+
     return {
-      ...fields,
-      'provenance': 'grok-live',
+      'vortexText': grounded.vortexText,
+      'shearText': grounded.shearText,
+      'resistanceText': grounded.resistanceText,
+      'flowText': grounded.flowText,
+      'provenance': grounded.provenance,
     };
   }
 

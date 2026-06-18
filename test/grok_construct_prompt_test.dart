@@ -29,7 +29,7 @@ void main() {
           'σ (shear): Street discourse in Glasgow shows grievance layers sharpening after council statements.',
       'resistanceText': '',
       'flowText':
-          'Jμ (flow): Local testimony travels on community pages while official briefings dominate broadcast reach.',
+          'Jμ (flow): Glasgow community testimony travels on local pages while official briefings dominate broadcast reach.',
     }, question);
 
     expect(cleaned['vortexText'], isEmpty);
@@ -40,9 +40,9 @@ void main() {
   test('sanitizeFields strips quoted question parameters from lever lines', () {
     final cleaned = GrokConstructPrompt.sanitizeFields({
       'vortexText':
-          'ω (vortex): Elite briefings on "$question" compress authority circulation.',
+          'ω (vortex): Elite briefings on Glasgow unrest compress authority circulation.',
       'shearText':
-          'σ (shear): Grievance-layer levers sharpen partisan split in open channels.',
+          'σ (shear): Grievance-layer levers on Glasgow unrest sharpen partisan split.',
       'resistanceText': '',
       'flowText': '',
     }, question);
@@ -63,5 +63,37 @@ void main() {
     expect(msg, contains('ω (vortexText)'));
     expect(msg, contains('σ (shearText)'));
     expect(GrokConstructPrompt.systemMessage, contains('lever-only'));
+    expect(GrokConstructPrompt.systemMessage, contains('WHOLLY RELEVANT'));
+    expect(GrokConstructPrompt.systemMessage, contains('DISCOURSE AUDIT'));
+  });
+
+  test('userMessage includes discourse audit checklist', () {
+    final msg = GrokConstructPrompt.userMessage({
+      'posedQuestion': question,
+      'regionLabel': 'UK & Ireland',
+    });
+    expect(msg, contains('DISCOURSE AUDIT CHECKLIST'));
+    expect(msg, contains('Search X and open discourse'));
+    expect(msg, contains('Every non-empty field must name'));
+  });
+
+  test('userMessage includes sibling pathway contrast for multi-part construal', () {
+    final msg = GrokConstructPrompt.userMessage({
+      'posedQuestion':
+          'What is the percent chance of austerity to end the recession?',
+      'parentPosedQuestion':
+          'Percent chances of each austerity, stimulus to end recession?',
+      'pathwayLabel': 'austerity',
+      'siblingPathwayLabels': ['stimulus'],
+      'outcomeContext': 'to end the recession',
+      'multiPartPathway': true,
+      'regionLabel': 'UK & Ireland',
+    });
+
+    expect(msg, contains('PATHWAY FOCUS'));
+    expect(msg, contains('austerity'));
+    expect(msg, contains('stimulus'));
+    expect(msg, contains('Sibling pathways'));
+    expect(msg, contains('Do not assign equal weight'));
   });
 }

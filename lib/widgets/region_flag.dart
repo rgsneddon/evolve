@@ -16,6 +16,7 @@ class RegionFlag extends StatelessWidget {
   static const _imageFlags = {
     'uk_ireland': 'assets/flags/gb.png',
     'usa': 'assets/flags/us.png',
+    'europe': 'assets/flags/eu.png',
   };
 
   @override

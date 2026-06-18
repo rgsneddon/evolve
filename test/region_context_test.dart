@@ -63,7 +63,7 @@ void main() {
     final ukHits = registry.matching(
       eventClass: 'civil_unrest',
       regionId: 'uk_ireland',
-      horizonDays: 90,
+      horizonDays: 180,
     );
     expect(ukHits.every((r) => r.regionId == 'uk_ireland'), isTrue);
     expect(ukHits.any((r) => r.regionId == 'global'), isFalse);

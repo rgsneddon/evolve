@@ -21,7 +21,11 @@ import 'question_semantics.dart';
 import 'scenario_input_profile.dart';
 import 'social_discourse_construal.dart';
 import '../l10n/app_localizations.dart';
+import '../models/part_percent_breakdown.dart';
 import '../models/party_response_scs.dart';
+import 'multi_part_question_parser.dart';
+import 'part_percent_composer.dart';
+import 'part_pathway_weight_construal.dart';
 
 /// Evolve Chronoflux engine — faithful translation of `chronoflux_restore_sim.py`.
 /// Betting odds and polling are NEVER used.
@@ -91,11 +95,9 @@ class EvolveEngine {
     );
 
     final grokReply = const GrokStyleFormatter().format(
-      input: input,
       core: partTwo.core,
       continuumConclusion: continuumConclusion,
       output: out,
-      locale: locale,
     );
 
     final cohesionReport = CohesionReportFormatter().format(
@@ -120,6 +122,15 @@ class EvolveEngine {
       locale: locale,
     );
 
+    final partBreakdown = mode == AnalysisMode.percentChance
+        ? _computePartBreakdown(
+            base: raw,
+            enriched: input,
+            locale: locale,
+            output: out,
+          )
+        : null;
+
     return EvolveResult(
       core: partTwo.core,
       partOne: partOne,
@@ -134,8 +145,74 @@ class EvolveEngine {
       forecast: forecast,
       explainerData: explainerData,
       partyRefinement: partyRefinement,
+      partBreakdown: partBreakdown,
       partTwoRan: true,
     );
+  }
+
+  PartPercentBreakdown? _computePartBreakdown({
+    required ScenarioInput base,
+    required ScenarioInput enriched,
+    required LocaleConfig locale,
+    required LocalizedOutput output,
+  }) {
+    final multi = MultiPartQuestionParser.resolve(base);
+    if (multi == null || multi.parts.isEmpty) return null;
+
+    final drafts = <PartPercentDraft>[];
+    for (final item in multi.parts) {
+      final scoped = PartPathwayWeightConstrual.pathwayInput(
+        parent: enriched,
+        pathwayLabel: item.label,
+        subQuestion: item.subQuestion,
+        locale: locale,
+        output: output,
+      );
+      final input = parser.enrich(scoped, locale: locale, output: output);
+      final baseline = _hydrodynamicCore(input);
+      final partTwo = runPartTwo(input, baseline, output, locale);
+      final heuristicPct = _percentChance(partTwo, input);
+      final forecast = forecastCalibrator.calibrate(
+        input: input,
+        locale: locale,
+        heuristicPercent: heuristicPct,
+        core: partTwo.core,
+        output: output,
+      );
+      final reflectiveWeight = PartPathwayWeightConstrual.reflectivePartitionWeight(
+        pathwayInput: input,
+        pathwayLabel: item.label,
+        calibratedPercent: forecast.calibratedPercent,
+        core: partTwo.core,
+        locale: locale,
+        output: output,
+      );
+
+      drafts.add(
+        PartPercentDraft(
+          label: _titleCaseLabel(item.label),
+          subQuestion: item.subQuestion,
+          rawCalibrated: forecast.calibratedPercent,
+          partitionWeight: reflectiveWeight,
+          regressivePct: partTwo.regressivePct,
+          progressivePct: partTwo.progressivePct,
+          refinedScs: partTwo.refinedScs,
+          shearScs: input.shear.scs,
+        ),
+      );
+    }
+
+    return PartPercentComposer.compose(
+      drafts: drafts,
+      outcomeContext: multi.outcomeContext,
+      output: output,
+      locale: locale,
+    );
+  }
+
+  static String _titleCaseLabel(String label) {
+    if (label.isEmpty) return label;
+    return label[0].toUpperCase() + label.substring(1);
   }
 
   /// Scores a single attributed party response extracted from a linked narrative.

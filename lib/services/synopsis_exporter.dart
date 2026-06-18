@@ -86,8 +86,27 @@ class SynopsisExporter {
         ))
         ..writeln()
         ..writeln(result.forecast.forecastLine)
-        ..writeln()
-        ..writeln('${output.grokConclusionMarker} ${result.continuumConclusion}');
+        ..writeln();
+      final breakdown = result.partBreakdown;
+      if (breakdown != null && breakdown.isNotEmpty) {
+        buf
+          ..writeln(output.synopsisPartBreakdownHeader())
+          ..writeln();
+        if (breakdown.outcomeContext.isNotEmpty) {
+          buf.writeln(output.partBreakdownOutcome(breakdown.outcomeContext));
+        }
+        for (final part in breakdown.parts) {
+          buf.writeln(
+            '- **${part.label}**: ${part.percentChance.round()}% share — ${part.percentPhrase}',
+          );
+          buf.writeln(
+            '  ${output.partBreakdownLeanLine(lean: output.leanLabel(part.lean), regressive: part.isRegressive, regressivePct: part.regressivePct.round(), progressivePct: part.progressivePct.round())}',
+          );
+        }
+        buf.writeln(output.partBreakdownTotal(breakdown.partitionTotal));
+        buf.writeln();
+      }
+      buf.writeln('${output.grokConclusionMarker} ${result.continuumConclusion}');
       return buf.toString();
     }
 

@@ -4,7 +4,12 @@ import 'dart:html' as html;
 class GrokOAuthLauncher {
   const GrokOAuthLauncher._();
 
-  static OAuthLaunchHandle? prepareTab() => null;
+  /// Opens a blank tab during the user gesture so it can be closed after OAuth.
+  static OAuthLaunchHandle? prepareTab() {
+    final win = html.window.open('about:blank', '_blank');
+    if (win == null) return null;
+    return OAuthLaunchHandle(win);
+  }
 
   /// Synchronous link click — call directly from a button [onPressed].
   static bool openAuthorizeUrl(Uri url) {
@@ -17,12 +22,24 @@ class GrokOAuthLauncher {
     return true;
   }
 
-  static Future<bool> launch(Uri url, {OAuthLaunchHandle? handle}) async =>
-      openAuthorizeUrl(url);
+  static Future<bool> launch(Uri url, {OAuthLaunchHandle? handle}) async {
+    final tab = handle?._window;
+    if (tab != null) {
+      tab.location.href = url.toString();
+      return true;
+    }
+    return openAuthorizeUrl(url);
+  }
 }
 
 class OAuthLaunchHandle {
-  const OAuthLaunchHandle();
+  OAuthLaunchHandle(this._window);
 
-  void close() {}
+  final html.WindowBase? _window;
+
+  void close() {
+    try {
+      _window?.close();
+    } catch (_) {}
+  }
 }

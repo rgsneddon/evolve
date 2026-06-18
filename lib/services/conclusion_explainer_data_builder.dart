@@ -7,6 +7,7 @@ import '../models/evolve_result.dart';
 import 'chronoflux_weight_construal.dart';
 import 'event_classifier.dart';
 import 'question_semantics.dart';
+import 'question_relevance_filter.dart';
 import 'scenario_calculation_context.dart';
 
 /// Builds structured explainer data mirroring CONCLUSION — THE CONTINUUM.
@@ -51,9 +52,10 @@ class ConclusionExplainerDataBuilder {
     final resistanceScs = sem.resistanceOffset.clamp(40, 74).round();
     final flowScs = sem.flowOffset.clamp(32, 68).round();
 
-    final hints = sem.hintSignals.isEmpty
+    final questionHints = QuestionRelevanceFilter.questionDerivedHints(sem.hintSignals);
+    final hints = questionHints.isEmpty
         ? ''
-        : output.continuumHintsClause(sem.hintSignals.join(', '));
+        : output.continuumHintsClause(questionHints.join(', '));
 
     final eventLabel = output.eventClassLabel(classification.eventClass);
     final lean = output.leanLabel(core.lean);

@@ -2,9 +2,10 @@ import '../l10n/localized_output.dart';
 import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
-import 'grok_construct_discourse.dart';
 import 'grok_field_sanitizer.dart';
 import 'party_response_extractor.dart';
+import 'question_parameter_scraper.dart';
+import 'question_relevance_filter.dart';
 import 'question_semantics.dart';
 /// Narrative-link construal — grounds ω/σ/Iτ/Jμ in linked article text (SCS mode).
 class NarrativeConstructConstrual {
@@ -28,12 +29,29 @@ class NarrativeConstructConstrual {
 
   static String narrativeBody(ScenarioInput input) => input.posedQuestion.trim();
 
+  /// Extracts pathway label from per-pathway sub-questions.
+  static String _pathwayLabelFromQuestion(String posed) {
+    final match = RegExp(
+      r'percent chance of (.+?)(?:\s+to\b|\s+toward|\s+for\b|\?|$)',
+      caseSensitive: false,
+    ).firstMatch(posed.trim());
+    return match?.group(1)?.trim() ?? '';
+  }
+
   static Map<String, dynamic> grokPayload(
     ScenarioInput input,
     LocaleConfig locale,
     LocalizedOutput output,
   ) {
     final linked = isNarrativeLinked(input);
+    final pathwayLabel = input.activePathwayLabel.trim().isNotEmpty
+        ? input.activePathwayLabel.trim()
+        : _pathwayLabelFromQuestion(input.posedQuestion);
+    final siblings = input.siblingPathwayLabels
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final parentQuestion = input.parentPosedQuestion.trim();
     return {
       'posedQuestion': linked ? construalAnchor(input) : input.posedQuestion,
       'narrativeText': linked ? narrativeBody(input) : '',
@@ -41,6 +59,11 @@ class NarrativeConstructConstrual {
       'regionLabel': output.regionName(locale.regionId),
       'topic': input.topic,
       'sourceUrl': input.sourceUrl,
+      'outcomeContext': input.outcomeContext,
+      'pathwayLabel': pathwayLabel,
+      'parentPosedQuestion': parentQuestion,
+      'siblingPathwayLabels': siblings,
+      'multiPartPathway': pathwayLabel.isNotEmpty,
       'vortexText': input.vortexText,
       'shearText': input.shearText,
       'resistanceText': input.resistanceText,
@@ -67,34 +90,46 @@ class NarrativeConstructConstrual {
       regionLabel: region,
     );
     final subject = sem.displaySubject;
+    final relevanceQuestion = [
+      anchor,
+      input.topic.trim(),
+      _headline(narrative),
+    ].where((s) => s.isNotEmpty).join(' ');
+    final qTokens = QuestionRelevanceFilter.questionTokens(
+      posedQuestion: relevanceQuestion,
+      displaySubject: subject,
+      rawSubject: sem.subject,
+    );
     final sentences = _sentences(narrative);
     final quotes = const PartyResponseExtractor().extract(narrative);
+
+    final scraped = QuestionParameterScraper.scrape(
+      question: relevanceQuestion,
+      topic: input.topic,
+      sem: sem,
+    );
 
     String pick(String existing, String construct, String? excerpt) {
       if (existing.trim().isNotEmpty) return existing.trim();
       if (excerpt != null && excerpt.trim().isNotEmpty) {
         return _label(construct, _clamp(excerpt, 380));
       }
-      return GrokConstructDiscourse.forConstruct(
-        construct: construct,
-        subject: subject,
-        region: region,
-        hintSignals: _narrativeHints(narrative, sem.hintSignals),
-        observationalNarrative: null,
-      );
+      return scraped[construct]?.trim() ?? '';
     }
 
     final result = GrokConstrualResult(
       vortexText: pick(
         input.vortexText,
         'vortex',
-        _vortexExcerpt(sentences, quotes, subject, region),
+        _vortexExcerpt(sentences, quotes, qTokens),
       ),
       shearText: pick(
         input.shearText,
         'shear',
         _bestSentence(
           sentences,
+          qTokens,
+          narrativeMode: true,
           const [
             'protest',
             'unrest',
@@ -118,6 +153,8 @@ class NarrativeConstructConstrual {
         'resistance',
         _bestSentence(
           sentences,
+          qTokens,
+          narrativeMode: true,
           const [
             'court',
             'legal',
@@ -141,6 +178,8 @@ class NarrativeConstructConstrual {
         'flow',
         _bestSentence(
           sentences,
+          qTokens,
+          narrativeMode: true,
           const [
             'trust',
             'survey',
@@ -165,6 +204,7 @@ class NarrativeConstructConstrual {
       input: input,
       locale: locale,
       output: out,
+      relevanceQuestion: '$relevanceQuestion $narrative',
     );
   }
 
@@ -187,19 +227,21 @@ class NarrativeConstructConstrual {
   static String? _vortexExcerpt(
     List<String> sentences,
     List<ExtractedPartyResponse> quotes,
-    String subject,
-    String region,
+    Set<String> qTokens,
   ) {
     if (quotes.isNotEmpty) {
-      final q = quotes.first;
-      final party = q.party.trim();
-      final excerpt = q.excerpt.trim();
-      if (party.isNotEmpty && excerpt.isNotEmpty) {
-        return 'ω (vortex): Authority-framing lever via $party — $excerpt';
+      for (final q in quotes) {
+        final party = q.party.trim();
+        final excerpt = q.excerpt.trim();
+        if (party.isEmpty || excerpt.isEmpty) continue;
+        final line = 'ω (vortex): Authority-framing lever via $party — $excerpt';
+        return line;
       }
     }
     return _bestSentence(
       sentences,
+      qTokens,
+      narrativeMode: true,
       const [
         'said',
         'stated',
@@ -237,21 +279,50 @@ class NarrativeConstructConstrual {
         .toList();
   }
 
-  static String? _bestSentence(List<String> sentences, List<String> keywords) {
+  static String? _bestSentence(
+    List<String> sentences,
+    Set<String> qTokens,
+    List<String> keywords, {
+    bool narrativeMode = false,
+  }) {
     String? best;
     var bestScore = 0;
     for (final sentence in sentences) {
       final lower = sentence.toLowerCase();
-      var score = 0;
+      final questionOverlap =
+          QuestionRelevanceFilter.relevanceScore(sentence, qTokens: qTokens);
+      if (!narrativeMode && questionOverlap == 0) continue;
+
+      var keywordScore = 0;
       for (final keyword in keywords) {
-        if (lower.contains(keyword)) score += 2;
+        if (lower.contains(keyword)) keywordScore += 2;
       }
+      if (keywordScore == 0) continue;
+
+      var score = (narrativeMode ? 0 : questionOverlap * 3) + keywordScore;
       if (score > bestScore) {
         bestScore = score;
         best = sentence;
       }
     }
-    return bestScore > 0 ? best : null;
+    if (bestScore > 0) return best;
+
+    if (narrativeMode && sentences.isNotEmpty) {
+      String? relevanceBest;
+      var relevanceScore = 0;
+      for (final sentence in sentences) {
+        final overlap =
+            QuestionRelevanceFilter.relevanceScore(sentence, qTokens: qTokens);
+        if (overlap > relevanceScore) {
+          relevanceScore = overlap;
+          relevanceBest = sentence;
+        }
+      }
+      if (relevanceBest != null) return relevanceBest;
+      return sentences.first;
+    }
+
+    return null;
   }
 
   static String _label(String construct, String text) {

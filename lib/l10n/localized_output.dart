@@ -17,14 +17,6 @@ class LocalizedOutput {
 
   String regionName(String regionId) => strings.t('region_$regionId');
 
-  String vortexRegionExample(String regionId) =>
-      strings.t('vortex_example_$regionId');
-
-  String vortexFocusHint(String regionId) => strings
-      .t('vortex_focus_hint')
-      .replaceAll('{region}', regionName(regionId))
-      .replaceAll('{example}', vortexRegionExample(regionId));
-
   String regionFocusBanner(String regionId) => strings
       .t('region_focus_banner')
       .replaceAll('{region}', regionName(regionId));
@@ -243,15 +235,6 @@ class LocalizedOutput {
       strings.t('event_class_$eventClass');
 
   String grokReply({
-    required String weights,
-    required String weightConstrual,
-    required int continuum,
-    required int flow,
-    required int shear,
-    required int resistance,
-    required int vortex,
-    required double overallScs,
-    required double refinedScs,
     required double regressivePct,
     required double progressivePct,
     required String momentum,
@@ -260,15 +243,6 @@ class LocalizedOutput {
   }) =>
       strings
           .t('grok_reply')
-          .replaceAll('{weights}', weights)
-          .replaceAll('{weight_construal}', weightConstrual)
-          .replaceAll('{continuum}', '$continuum')
-          .replaceAll('{flow}', '$flow')
-          .replaceAll('{shear}', '$shear')
-          .replaceAll('{resistance}', '$resistance')
-          .replaceAll('{vortex}', '$vortex')
-          .replaceAll('{overall}', overallScs.toStringAsFixed(1))
-          .replaceAll('{refined}', refinedScs.toStringAsFixed(1))
           .replaceAll('{regressive}', regressivePct.toStringAsFixed(1))
           .replaceAll('{progressive}', progressivePct.toStringAsFixed(1))
           .replaceAll('{momentum}', momentum)
@@ -281,6 +255,22 @@ class LocalizedOutput {
 
   String continuumHintsClause(String hints) =>
       strings.t('continuum_hints_clause').replaceAll('{hints}', hints);
+
+  /// Lists each OR-xxxx registry row used in the base-rate calculation.
+  String registryCasesElaboration({
+    required int sampleSize,
+    required int successCount,
+    required List<String> caseLines,
+  }) {
+    if (sampleSize <= 0 || caseLines.isEmpty) {
+      return strings.t('explainer_registry_cases_empty');
+    }
+    return strings
+        .t('continuum_registry_cases_elaboration')
+        .replaceAll('{n}', '$sampleSize')
+        .replaceAll('{successes}', '$successCount')
+        .replaceAll('{cases}', caseLines.join('; '));
+  }
 
   String continuumOutcomeQualifier(bool regressive) => strings.t(
         regressive ? 'continuum_outcome_regressive' : 'continuum_outcome_progressive',
@@ -314,6 +304,53 @@ class LocalizedOutput {
           .t('percent_outcome_phrase')
           .replaceAll('{phrase}', percentPhrase)
           .replaceAll('{qualifier}', continuumOutcomeQualifier(regressive));
+
+  String partBreakdownTitle() => strings.t('part_breakdown_title');
+
+  String partBreakdownOutcome(String outcome) =>
+      strings.t('part_breakdown_outcome').replaceAll('{outcome}', outcome);
+
+  String partBreakdownOthersLabel() => strings.t('part_breakdown_others');
+
+  String partBreakdownNote() => strings.t('part_breakdown_note');
+
+  String partBreakdownTotal(int total) =>
+      strings.t('part_breakdown_total').replaceAll('{total}', '$total');
+
+  String partBreakdownSharePhrase({
+    required int share,
+    required String pathway,
+    required String outcomeContext,
+    required QuestionFrame frame,
+    required String displaySubject,
+  }) {
+    if (outcomeContext.trim().isNotEmpty) {
+      return strings
+          .t('part_breakdown_share_phrase')
+          .replaceAll('{n}', '$share')
+          .replaceAll('{pathway}', pathway)
+          .replaceAll('{outcome}', outcomeContext.trim());
+    }
+    return strings
+        .t('part_breakdown_share_only')
+        .replaceAll('{n}', '$share')
+        .replaceAll('{pathway}', pathway);
+  }
+
+  String partBreakdownLeanLine({
+    required String lean,
+    required bool regressive,
+    required int regressivePct,
+    required int progressivePct,
+  }) =>
+      strings
+          .t('part_breakdown_lean_line')
+          .replaceAll('{lean}', lean)
+          .replaceAll('{qualifier}', continuumOutcomeQualifier(regressive))
+          .replaceAll('{reg}', '$regressivePct')
+          .replaceAll('{prog}', '$progressivePct');
+
+  String synopsisPartBreakdownHeader() => strings.t('synopsis_part_breakdown_header');
 
   String continuumOutcomeLead({
     required String percentPhrase,
@@ -364,6 +401,8 @@ class LocalizedOutput {
     required int baseWeightPct,
     required int heuristicWeightPct,
     required bool regressive,
+    required int successCount,
+    required List<String> matchedCaseLines,
   }) {
     final outcomeQualifier = continuumOutcomeQualifier(regressive);
     final outcomeLead = continuumOutcomeLead(
@@ -411,6 +450,12 @@ class LocalizedOutput {
         .replaceAll('{sources}', provenance)
         .replaceAll('{horizon}', '$horizonDays');
 
+    final casesElaboration = registryCasesElaboration(
+      sampleSize: sampleSize,
+      successCount: successCount,
+      caseLines: matchedCaseLines,
+    );
+
     final calibration = strings
         .t('continuum_conclusion_calibration')
         .replaceAll('{lean}', lean)
@@ -423,7 +468,7 @@ class LocalizedOutput {
         .replaceAll('{heur_w}', '$heuristicWeightPct')
         .replaceAll('{heuristic_pct}', heuristicPct);
 
-    return '$outcomeLead $signals $constructs $registry $calibration';
+    return '$outcomeLead $signals $constructs $registry $casesElaboration $calibration';
   }
 
   String partyRefinementSummary({

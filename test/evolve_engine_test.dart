@@ -16,8 +16,10 @@ void main() {
     final result = engine.analyze(input);
     final out = LocalizedOutput.of(LocaleConfig.defaults);
 
-    expect(result.grokStyleReply, contains('Chronoflux'));
+    expect(result.grokStyleReply, contains('regressive /'));
+    expect(result.grokStyleReply, contains('leans'));
     expect(result.grokStyleReply, contains(out.grokConclusionMarker));
+    expect(result.grokStyleReply, isNot(contains('Chronoflux calculation')));
     expect(result.percentPhrase.toLowerCase(), contains('chance'));
     expect(result.percentChance, inInclusiveRange(8, 92));
   });

@@ -6,10 +6,13 @@ import '../l10n/localized_output.dart';
 import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
+import 'construal_grounding.dart';
 import 'grok_auth_client.dart';
 import 'grok_field_sanitizer.dart';
 import 'grok_heuristic_construal.dart';
 import 'narrative_construct_construal.dart';
+import 'question_parameter_scraper.dart';
+import 'question_semantics.dart';
 
 /// Applies live Grok suggestions to blank construct fields (never overwrites user bias).
 class GrokConstrualService {
@@ -84,15 +87,41 @@ class GrokConstrualService {
             output: out,
           );
 
-    String pick(String primary, String secondary) =>
-        primary.trim().isNotEmpty ? primary.trim() : secondary.trim();
+    final question = input.scenarioQuery.trim();
+    final region = out.regionName(locale.regionId);
+    final sem = QuestionSemantics.parse(
+      input,
+      regionId: locale.regionId,
+      regionLabel: region,
+    );
+    final scraped = question.isNotEmpty
+        ? QuestionParameterScraper.scrape(
+            question: question,
+            topic: input.topic,
+            sem: sem,
+          )
+        : const <String, String>{};
 
-    return GrokConstrualResult(
-      vortexText: pick(partial.vortexText, fallback.vortexText),
-      shearText: pick(partial.shearText, fallback.shearText),
-      resistanceText: pick(partial.resistanceText, fallback.resistanceText),
-      flowText: pick(partial.flowText, fallback.flowText),
+    String pick(String primary, String secondary, String construct) {
+      if (primary.trim().isNotEmpty) return primary.trim();
+      if (secondary.trim().isNotEmpty) return secondary.trim();
+      return scraped[construct]?.trim() ?? '';
+    }
+
+    final merged = GrokConstrualResult(
+      vortexText: pick(partial.vortexText, fallback.vortexText, 'vortex'),
+      shearText: pick(partial.shearText, fallback.shearText, 'shear'),
+      resistanceText:
+          pick(partial.resistanceText, fallback.resistanceText, 'resistance'),
+      flowText: pick(partial.flowText, fallback.flowText, 'flow'),
       provenance: partial.provenance,
+    );
+
+    return ConstrualGrounding.ensureResult(
+      result: merged,
+      input: input,
+      locale: locale,
+      output: out,
     );
   }
 

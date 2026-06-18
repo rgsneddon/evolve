@@ -14,11 +14,14 @@ import '../services/grok_construal_service.dart';
 
 import '../services/grok_oauth_launcher.dart';
 import '../services/grok_proxy_launcher.dart';
+import '../widgets/x_oauth_connecting_dialog.dart';
 import '../services/grok_heuristic_construal.dart';
 import '../services/narrative_construct_construal.dart';
 import '../services/grok_service_config.dart';
 import '../services/narrative_link_reader.dart';
 import '../services/evolve_engine.dart';
+import '../services/input_edit_guard.dart';
+import '../services/pathway_construal_service.dart';
 
 class EvolveProvider extends ChangeNotifier {
   EvolveProvider({
@@ -103,6 +106,33 @@ class EvolveProvider extends ChangeNotifier {
     await _ensureGrokProxyResolved();
     _grokConfigReady = true;
     notifyListeners();
+    unawaited(_restoreGrokSessionWhenReady());
+  }
+
+  Future<void> _restoreGrokSessionWhenReady() async {
+    if (kIsWeb) return;
+    try {
+      final ready = await _ensureGrokProxyReady();
+      if (!ready || _usesHeuristicConstrual || _grokProxyBaseUrl.isEmpty) return;
+      await _syncGrokSessionFromProxy().timeout(const Duration(seconds: 12));
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> _syncGrokSessionFromProxy() async {
+    try {
+      if (GrokProxyLauncher.instance.isEmbedded) {
+        final embedded = GrokProxyLauncher.instance.embeddedSession;
+        if (embedded.connected && embedded.premium) {
+          grokSession = embedded;
+          return;
+        }
+      }
+      final status = await _activeGrokAuth.fetchStatus();
+      if (status.connected && status.premium) {
+        grokSession = status;
+      }
+    } catch (_) {}
   }
 
   /// Re-probes / starts the Grok proxy. Safe to call before sign-in.
@@ -194,8 +224,6 @@ class EvolveProvider extends ChangeNotifier {
     return GrokConstrualService(baseUrl: base);
   }
 
-  String get vortexFocusHint => output.vortexFocusHint(locale.regionId);
-  String get posedQuestionHint => output.vortexRegionExample(locale.regionId);
   String get regionFocusBanner => output.regionFocusBanner(locale.regionId);
   List<String> get missingConstructLabels => _missingConstructLabels();
 
@@ -375,7 +403,7 @@ class EvolveProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (input.posedQuestion.trim().isEmpty) {
+    if (input.scenarioQuery.trim().isEmpty) {
       statusMessage = strings.t('status_need_posed_question');
       notifyListeners();
       return;
@@ -416,19 +444,13 @@ class EvolveProvider extends ChangeNotifier {
         grokPendingAuthorizeUrl = authorize.toString();
         notifyListeners();
         if (!context.mounted) return false;
-        final opened = await _promptOpenXSignIn(
-          context,
-          authorize,
-          redirectUri: login.redirectUri,
-        );
-        if (!opened) {
-          grokPendingAuthorizeUrl = null;
-          statusMessage = strings.t('grok_connect_cancelled');
-          return false;
-        }
         statusMessage = strings.t('grok_connecting');
         notifyListeners();
-        grokSession = await auth.waitForSession();
+        grokSession = await _awaitXOAuthConnection(
+          context,
+          authorize: authorize,
+          auth: auth,
+        );
       }
 
       final session = grokSession;
@@ -486,66 +508,33 @@ class EvolveProvider extends ChangeNotifier {
     }
   }
 
-  /// DuckDuckGo and other browsers block popups — user must tap to open the link.
-  Future<bool> _promptOpenXSignIn(
-    BuildContext context,
-    Uri authorize, {
-    required String redirectUri,
+  /// Opens X OAuth in the browser, polls the proxy, and auto-dismisses when connected.
+  Future<GrokSession> _awaitXOAuthConnection(
+    BuildContext context, {
+    required Uri authorize,
+    required GrokAuthClient auth,
   }) async {
-    var opened = false;
+    final sessionFuture = auth.waitForSession();
+    var result = const GrokSession();
+
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text(strings.t('grok_connect_title')),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(strings.t('grok_open_x_body')),
-              if (redirectUri.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  strings.t('grok_oauth_redirect_hint'),
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
-                ),
-                const SizedBox(height: 6),
-                SelectableText(
-                  redirectUri,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFE8ECF4),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              SelectableText(
-                authorize.toString(),
-                style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(strings.t('grok_dialog_cancel')),
-          ),
-          FilledButton.icon(
-            onPressed: () {
-              GrokOAuthLauncher.openAuthorizeUrl(authorize);
-              opened = true;
-              Navigator.of(ctx).pop();
-            },
-            icon: const Icon(Icons.open_in_new_rounded),
-            label: Text(strings.t('grok_open_x_tab')),
-          ),
-        ],
+      builder: (ctx) => XOAuthConnectingDialog(
+        authorize: authorize,
+        redirectUri: '',
+        sessionFuture: sessionFuture,
+        title: strings.t('grok_connect_title'),
+        body: strings.t('grok_connecting'),
+        cancelLabel: strings.t('grok_dialog_cancel'),
+        onFinished: (session, tab) {
+          result = session;
+          tab?.close();
+        },
       ),
     );
-    return opened;
+
+    return result;
   }
 
   Future<void> _showGrokDialog(
@@ -590,17 +579,6 @@ class EvolveProvider extends ChangeNotifier {
     final regionChanged = config.regionId != locale.regionId;
     final languageChanged = config.languageCode != locale.languageCode;
 
-    if (regionChanged) {
-      final posed = input.posedQuestion.trim();
-      final oldExample = output.vortexRegionExample(locale.regionId).trim();
-      final newOut = LocalizedOutput.of(config);
-      if (posed.isEmpty || posed == oldExample) {
-        input = input.copyWith(
-          posedQuestion: newOut.vortexRegionExample(config.regionId),
-        );
-      }
-    }
-
     locale = config;
 
     if (result != null && (regionChanged || languageChanged)) {
@@ -614,7 +592,9 @@ class EvolveProvider extends ChangeNotifier {
   }
 
   void updateInput(ScenarioInput i) {
-    final posedChanged = i.posedQuestion.trim() != input.posedQuestion.trim();
+    final posedReset =
+        InputEditGuard.isPosedScenarioReset(input.posedQuestion, i.posedQuestion);
+    final pathwaysChanged = InputEditGuard.isPathwayStructureChanged(input, i);
     final clearedGrok = <String>{...grokFilledFields};
     for (final key in grokFilledFields) {
       if (i.constructText(key).trim() != input.constructText(key).trim()) {
@@ -623,12 +603,16 @@ class EvolveProvider extends ChangeNotifier {
     }
     grokFilledFields = clearedGrok;
 
-    if (posedChanged) {
+    if (posedReset) {
       // New scenario — drop narrative link and prior outcome tied to the old question.
-      input = i.copyWith(sourceUrl: '');
+      input = i.copyWith(sourceUrl: '', pathwayConstruals: {});
       result = null;
       grokFilledFields = {};
       statusMessage = null;
+    } else if (pathwaysChanged) {
+      input = i.copyWith(pathwayConstruals: {});
+      result = null;
+      grokFilledFields = {};
     } else {
       input = i;
     }
@@ -844,7 +828,7 @@ class EvolveProvider extends ChangeNotifier {
   }
 
   Future<void> _runConstrual() async {
-    if (!grokConstrualEnabled || input.posedQuestion.trim().isEmpty) return;
+    if (!grokConstrualEnabled || input.scenarioQuery.trim().isEmpty) return;
     if (!grokSession.canConstrue) return;
 
     final generation = ++_construeGeneration;
@@ -874,8 +858,45 @@ class EvolveProvider extends ChangeNotifier {
     ScenarioInput source, {
     required bool persistToForm,
   }) async {
-    final suggestions = await _fetchConstrualSuggestions(source);
+    if (PathwayConstrualService.shouldFetchPerPathway(source)) {
+      final multi = PathwayConstrualService.resolvePathways(source);
+      if (multi != null && multi.parts.isNotEmpty) {
+        final labels = multi.parts.map((p) => p.label).toList();
+        final parentQuestion = source.posedQuestion.trim().isNotEmpty
+            ? source.posedQuestion
+            : source.scenarioQuery;
+        final results = <GrokConstrualResult>[];
+        for (final item in multi.parts) {
+          final sub = source.copyWith(
+            posedQuestion: item.subQuestion,
+            parentPosedQuestion: parentQuestion,
+            activePathwayLabel: item.label,
+            siblingPathwayLabels:
+                labels.where((label) => label != item.label).toList(),
+            pathwayConstruals: const {},
+            vortexText: '',
+            shearText: '',
+            resistanceText: '',
+            flowText: '',
+          );
+          results.add(await _fetchConstrualSuggestions(sub));
+        }
+        final withPathways = PathwayConstrualService.applyPerPathwayResults(
+          source: source,
+          pathwayConstruals:
+              PathwayConstrualService.mapFromResults(labels, results),
+          labelsInOrder: labels,
+        );
+        if (persistToForm) {
+          grokFilledFields = _detectGrokFilled(source, withPathways);
+          input = withPathways;
+          _persistCurrentMode();
+        }
+        return withPathways;
+      }
+    }
 
+    final suggestions = await _fetchConstrualSuggestions(source);
     final merged = _grokConstrual.applySuggestions(source, suggestions);
     if (persistToForm) {
       grokFilledFields = _detectGrokFilled(source, merged);

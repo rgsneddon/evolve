@@ -36,7 +36,8 @@ void main() {
     expect(explainer, contains('Data points used to construe'));
     expect(explainer, contains('Construal data'));
     expect(explainer, contains('Outcome registry filter'));
-    expect(explainer, contains('Exact historical registry cases'));
+    expect(explainer, contains('Exact historical cases underpinning'));
+    expect(explainer, contains('OR-'));
     expect(bullets, isNotEmpty);
     expect(
       bullets.any((b) => b.startsWith('OR-') || b.startsWith('FB-')),

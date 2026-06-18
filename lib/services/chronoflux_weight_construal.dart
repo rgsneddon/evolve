@@ -176,7 +176,7 @@ class ChronofluxWeightConstrual {
     if (horizonDays <= 30) {
       w[2] += 0.45;
       reasons.add('weight_reason_context_immediate');
-    } else if (horizonDays <= 90) {
+    } else if (horizonDays <= 180) {
       w[4] += 0.25;
       reasons.add('weight_reason_context_near_term');
     } else if (horizonDays >= 365) {

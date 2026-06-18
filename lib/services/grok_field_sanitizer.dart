@@ -2,7 +2,9 @@ import '../l10n/localized_output.dart';
 import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
+import 'construal_grounding.dart';
 import 'grok_proxy/grok_construct_prompt.dart';
+import 'question_relevance_filter.dart';
 import 'question_semantics.dart';
 
 /// Normalizes Grok-construe field text — lever-only, no quoted question/subject parameters.
@@ -16,9 +18,10 @@ class GrokFieldSanitizer {
     required ScenarioInput input,
     required LocaleConfig locale,
     LocalizedOutput? output,
+    String? relevanceQuestion,
   }) {
     final out = output ?? LocalizedOutput.of(locale);
-    final question = input.posedQuestion.trim();
+    final question = (relevanceQuestion ?? input.scenarioQuery).trim();
     if (question.isEmpty) return raw;
 
     final region = out.regionName(locale.regionId);
@@ -28,13 +31,14 @@ class GrokFieldSanitizer {
       regionLabel: region,
     );
 
-    return GrokConstrualResult(
+    final sanitized = GrokConstrualResult(
       vortexText: sanitizeField(
         raw.vortexText,
         posedQuestion: question,
         displaySubject: sem.displaySubject,
         rawSubject: sem.subject,
         regionLabel: region,
+        topic: input.topic,
       ),
       shearText: sanitizeField(
         raw.shearText,
@@ -42,6 +46,7 @@ class GrokFieldSanitizer {
         displaySubject: sem.displaySubject,
         rawSubject: sem.subject,
         regionLabel: region,
+        topic: input.topic,
       ),
       resistanceText: sanitizeField(
         raw.resistanceText,
@@ -49,6 +54,7 @@ class GrokFieldSanitizer {
         displaySubject: sem.displaySubject,
         rawSubject: sem.subject,
         regionLabel: region,
+        topic: input.topic,
       ),
       flowText: sanitizeField(
         raw.flowText,
@@ -56,8 +62,17 @@ class GrokFieldSanitizer {
         displaySubject: sem.displaySubject,
         rawSubject: sem.subject,
         regionLabel: region,
+        topic: input.topic,
       ),
       provenance: raw.provenance,
+    );
+
+    return ConstrualGrounding.ensureResult(
+      result: sanitized,
+      input: input,
+      locale: locale,
+      output: out,
+      relevanceQuestion: relevanceQuestion,
     );
   }
 
@@ -67,6 +82,7 @@ class GrokFieldSanitizer {
     String displaySubject = '',
     String rawSubject = '',
     String regionLabel = '',
+    String topic = '',
   }) {
     final question = posedQuestion.trim();
     String clean(String key, String construct) {
@@ -78,6 +94,7 @@ class GrokFieldSanitizer {
         displaySubject: displaySubject,
         rawSubject: rawSubject,
         regionLabel: regionLabel,
+        topic: topic,
       );
       if (stripped.isEmpty) return '';
       if (question.isNotEmpty && GrokConstructPrompt.isQuestionEcho(stripped, question)) {
@@ -100,20 +117,37 @@ class GrokFieldSanitizer {
     String displaySubject = '',
     String rawSubject = '',
     String regionLabel = '',
+    String topic = '',
   }) {
     var t = field.trim();
     if (t.isEmpty) return t;
 
     t = t.replaceFirst(RegExp(r'^posed question:\s*', caseSensitive: false), '');
     t = _stripQuotedSpans(t);
-    t = _stripSubjectEcho(t, displaySubject);
-    t = _stripSubjectEcho(t, rawSubject);
-    if (posedQuestion.trim().isNotEmpty) {
-      t = _stripSubjectEcho(t, posedQuestion.trim());
-    }
     t = _stripRegionEcho(t, regionLabel);
+    final isConstrual = _isGrokConstrualField(t);
+    if (isConstrual) {
+      t = QuestionRelevanceFilter.enforceConstrualRelevance(
+        t,
+        posedQuestion: posedQuestion,
+        displaySubject: displaySubject,
+        rawSubject: rawSubject,
+      );
+    }
+    // Keep subject anchors on ω/σ/Iτ/Jμ lines — grounding requires question tokens.
+    if (!isConstrual) {
+      t = _stripSubjectEcho(t, displaySubject);
+      t = _stripSubjectEcho(t, rawSubject);
+    }
     t = _tidyPunctuation(t);
     return t.trim();
+  }
+
+  static bool _isGrokConstrualField(String text) {
+    final t = text.trim();
+    if (t.isEmpty) return false;
+    return RegExp(r'^(?:ω|σ|Iτ|Jμ)\s*\(', caseSensitive: false).hasMatch(t) ||
+        QuestionRelevanceFilter.containsExternalData(t);
   }
 
   static String _stripRegionEcho(String text, String regionLabel) {

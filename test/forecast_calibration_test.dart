@@ -22,14 +22,14 @@ void main() {
     );
     final c = const EventClassifier().classify(input);
     expect(c.eventClass, 'civil_unrest');
-    expect(c.horizonDays, 90);
+    expect(c.horizonDays, 180);
   });
 
   test('base rate lookup returns sample size and bounded CI', () {
     final lookup = const BaseRateService().lookup(
       eventClass: 'civil_unrest',
       regionId: 'uk_ireland',
-      horizonDays: 90,
+      horizonDays: 180,
     );
     expect(lookup.sampleSize, greaterThan(0));
     expect(lookup.matchedRecords.length, lookup.sampleSize);

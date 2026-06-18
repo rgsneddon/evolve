@@ -1,4 +1,5 @@
 import 'grok_field_sanitizer.dart';
+import 'question_parameter_scraper.dart';
 import 'question_semantics.dart';
 import 'region_context.dart';
 
@@ -29,23 +30,34 @@ class GrokConstructDiscourse {
     required String regionId,
     String? regionLabel,
     String? observationalNarrative,
+    String topic = '',
   }) {
+    final obs = observationalNarrative?.trim() ?? '';
+    if (obs.isNotEmpty && !obs.toLowerCase().startsWith('posed question:')) {
+      return forConstruct(
+        construct: construct,
+        subject: '',
+        region: regionLabel ?? RegionContext.englishLabel(regionId),
+        hintSignals: const [],
+        observationalNarrative: obs,
+      );
+    }
+
     final sem = QuestionSemantics.fromText(
       posedQuestion,
       regionId: regionId,
       regionLabel: regionLabel,
     );
-    return forConstruct(
-      construct: construct,
-      subject: sem.displaySubject,
-      region: regionLabel ?? RegionContext.englishLabel(regionId),
-      hintSignals: sem.hintSignals,
-      observationalNarrative: observationalNarrative,
+    final scraped = QuestionParameterScraper.scrape(
+      question: posedQuestion,
+      topic: topic,
+      sem: sem,
     );
+    return _clamp(scraped[construct]?.trim() ?? '', 500);
   }
 
   static String _line(String construct, List<String> hints) {
-    final hint = hints.isNotEmpty ? hints.first.toLowerCase() : '';
+    final hint = hints.isNotEmpty ? hints.join(' ').toLowerCase() : '';
     return switch (construct) {
       'vortex' => _vortex(hint),
       'shear' => _shear(hint),
