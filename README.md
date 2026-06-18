@@ -14,27 +14,15 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ### Windows (easiest)
 
-1. Run the release build:
-
-   ```
-   build\windows\x64\runner\Release\evolve.exe
-   ```
-
-2. Or double-click the **Evolve** desktop shortcut if you created one.
+Download the latest **Windows** zip from [GitHub Releases](https://github.com/rgsneddon/evolve/releases), extract, and run `evolve.exe`.
 
 ### Web
 
 Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evolve/)
 
-Or open `build\web\index.html` via a local server after building. To publish updates, deploy the contents of `build\web` to GitHub Pages (see [Deploying the web build](#deploying-the-web-build)).
-
 ### Android
 
-Install:
-
-```
-build\app\outputs\flutter-apk\app-release.apk
-```
+Download the latest **Android APK** from [GitHub Releases](https://github.com/rgsneddon/evolve/releases) and install on your device.
 
 ---
 
@@ -181,70 +169,6 @@ Weights are ascertained from your inputs (and Grok suggestions when enabled), th
 
 ---
 
-## Building from source
-
-Requires [Flutter](https://docs.flutter.dev/get-started/install) (SDK ≥ 3.2).
-
-```powershell
-cd evolve
-flutter pub get
-flutter test
-```
-
-**All platforms (Windows host):**
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_all.ps1
-```
-
-Outputs:
-
-| Platform | Path |
-|----------|------|
-| Web | `build\web\` |
-| Windows | `build\windows\x64\runner\Release\evolve.exe` |
-| Android | `build\app\outputs\flutter-apk\app-release.apk` |
-
-Close a running `evolve.exe` before rebuilding Windows, or the linker may fail because the file is locked.
-
-**Web only, with GitHub Pages base path** (repo name must match exactly — lowercase `Evolve`):
-
-```powershell
-flutter build web --release --base-href /evolve/
-```
-
-Optional remote Grok proxy for web (live X OAuth instead of heuristic mode):
-
-```powershell
-flutter build web --release --base-href /evolve/ --dart-define=GROK_PROXY_URL=https://your-proxy.example.com
-```
-
-Or use the deploy helper (builds, checks `assets/` + `canvaskit/` + `icons/`, copies `LICENSE`, creates a zip):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\deploy_web_github.ps1
-```
-
----
-
-## Deploying the web build
-
-Upload **everything inside** `build\web\` to the GitHub Pages repo root (not the full Flutter source tree).
-
-Live site: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evolve/)
-
-1. Run `.\scripts\deploy_web_github.ps1` (or build with `--base-href /evolve/` as above).
-2. Open [rgsneddon/Evolve](https://github.com/rgsneddon/Evolve) and upload **all** files **and** folders from `build\web\`:
-   - **Required folders:** `assets/`, `canvaskit/`, `icons/` (a blank page usually means one of these is missing).
-   - **Required files:** `index.html`, `main.dart.js`, `flutter_bootstrap.js`, etc.
-3. Confirm `index.html` contains `<base href="/evolve/">` — must match the repo name **exactly** (lowercase).
-4. **Settings → Pages →** deploy from `main` branch, `/ (root)`.
-5. After 1–2 minutes, verify [canvaskit.js](https://rgsneddon.github.io/evolve/canvaskit/canvaskit.js) loads (HTTP 200, not 404).
-
-If you only upload loose files (`index.html`, `main.dart.js`, …) without the three folders, the page stays blank.
-
----
-
 ## Grok / X configuration (production)
 
 ### Windows / Android (embedded proxy)
@@ -286,7 +210,7 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 - Leave bias fields blank to let the engine infer observational values relative to your ω question and selected region.
 - **Don't use** Grok for reproducible, fully local analysis with no network dependency.
 - On **web**, Grok heuristic mode (`@evolve_web`) needs no X account; use **Windows/Android** for live Premium Grok.
-- After deploying to GitHub Pages, always use the lowercase URL: `https://rgsneddon.github.io/evolve/` (not `/Evolve/`).
+- Use the lowercase web URL: `https://rgsneddon.github.io/evolve/` (not `/Evolve/`).
 
 ---
 
@@ -295,10 +219,9 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 ```
 lib/           Application source
 assets/data/   Outcome registry (base rates)
-scripts/       Build and tooling (build_all.ps1, build.ps1)
+scripts/       Tooling
 tool/          Optional Grok proxy CLI
 test/          Unit and widget tests
-build/         Release outputs (after build)
 ```
 
 ---
