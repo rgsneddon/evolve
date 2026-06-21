@@ -46,10 +46,15 @@ class PartPercentComposer {
       return PartPercentBreakdown(outcomeContext: outcomeContext, parts: const []);
     }
 
+    // Anchor shares to per-pathway calibrated forecasts; reflective weight
+    // only nudges tie-breaks so magnitudes stay faithful to the engine.
     final weights = drafts
-        .map((d) => d.partitionWeight.clamp(1.0, 100.0))
+        .map((d) => _blendPartitionSignal(
+              calibrated: d.rawCalibrated,
+              reflective: d.partitionWeight,
+            ))
         .toList(growable: false);
-    final shares = _normalizeTo100(_amplifyPartitionSpread(weights));
+    final shares = _normalizeTo100(_calibratedPartitionWeights(weights));
 
     final momenta = drafts.map((d) => d.continuumMomentum).toList();
     final meanMomentum =
@@ -115,33 +120,45 @@ class PartPercentComposer {
 
   @visibleForTesting
   static List<int> normalizeTo100ForTest(List<double> weights) =>
-      _normalizeTo100(_amplifyPartitionSpread(weights));
+      _normalizeTo100(_calibratedPartitionWeights(weights));
 
   @visibleForTesting
-  static List<double> amplifyPartitionSpreadForTest(List<double> weights) =>
-      _amplifyPartitionSpread(weights);
+  static List<double> calibratedPartitionWeightsForTest(List<double> weights) =>
+      _calibratedPartitionWeights(weights);
 
-  /// Widens near-equal partition weights so shares reflect pathway divergence.
-  static List<double> _amplifyPartitionSpread(List<double> weights) {
+  /// Calibrated forecast dominates; reflective construal nudges close calls only.
+  static double _blendPartitionSignal({
+    required double calibrated,
+    required double reflective,
+  }) {
+    final cal = calibrated.clamp(1.0, 100.0);
+    final ref = reflective.clamp(1.0, 100.0);
+    return (cal * 0.88 + ref * 0.12).clamp(1.0, 100.0);
+  }
+
+  /// Keeps partition ratios close to calibrated forecasts; only mild rank nudges
+  /// when pathways cluster so order is visible without wild distortion.
+  static List<double> _calibratedPartitionWeights(List<double> weights) {
     if (weights.length < 2) return weights;
 
-    final minW = weights.reduce((a, b) => a < b ? a : b);
-    final maxW = weights.reduce((a, b) => a > b ? a : b);
-    if (maxW - minW < 5) {
-      final ranked = weights.asMap().entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
-      final n = weights.length;
-      final spread = List<double>.filled(n, 1);
-      for (var r = 0; r < n; r++) {
-        spread[ranked[r].key] = (n - r) * (n - r).toDouble();
-      }
-      return spread;
-    }
+    final clamped = weights.map((w) => w.clamp(1.0, 100.0)).toList();
+    final minW = clamped.reduce((a, b) => a < b ? a : b);
+    final maxW = clamped.reduce((a, b) => a > b ? a : b);
+    final range = maxW - minW;
 
-    final mean = weights.fold(0.0, (a, b) => a + b) / weights.length;
-    return weights
-        .map((w) => (mean + (w - mean) * 1.9).clamp(1.0, 100.0))
-        .toList(growable: false);
+    if (range >= 10) return clamped;
+
+    final ranked = clamped.asMap().entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final n = clamped.length;
+    final nudge = (10 - range).clamp(0.0, 8.0) * 0.35;
+    final nudged = List<double>.from(clamped);
+    for (var r = 0; r < n; r++) {
+      final idx = ranked[r].key;
+      final center = (n - 1) / 2.0;
+      nudged[idx] = (nudged[idx] + (center - r) * nudge).clamp(1.0, 100.0);
+    }
+    return nudged;
   }
 
   /// Largest-remainder method — integer shares sum exactly to 100.

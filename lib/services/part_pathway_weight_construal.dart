@@ -104,11 +104,11 @@ class PartPathwayWeightConstrual {
     );
 
     return (
-      calibratedPercent * 0.48 +
-      discourse * 0.24 +
-      construal * 0.16 +
-      pathwaySignal * 0.12 +
-      constructSpread * 0.10
+      calibratedPercent * 0.82 +
+      discourse * 0.08 +
+      construal * 0.05 +
+      pathwaySignal * 0.03 +
+      constructSpread * 0.02
     ).clamp(1.0, 100.0);
   }
 

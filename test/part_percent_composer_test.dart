@@ -16,10 +16,19 @@ void main() {
     expect(shares.length, 3);
   });
 
-  test('amplifyPartitionSpread widens near-equal weights', () {
-    final spread = PartPercentComposer.amplifyPartitionSpreadForTest([48, 49, 50]);
-    expect(spread.reduce((a, b) => a > b ? a : b) - spread.reduce((a, b) => a < b ? a : b),
-        greaterThan(5));
+  test('calibratedPartitionWeights nudges clustered forecasts without wild spread', () {
+    final refined = PartPercentComposer.calibratedPartitionWeightsForTest([48, 49, 50]);
+    final shares = PartPercentComposer.normalizeTo100ForTest([48, 49, 50]);
+    final spread = shares.reduce((a, b) => a > b ? a : b) -
+        shares.reduce((a, b) => a < b ? a : b);
+    expect(spread, lessThan(12));
+    expect(refined[0], closeTo(48, 3));
+    expect(refined[2], closeTo(50, 3));
+  });
+
+  test('shares track calibrated proportions for separated forecasts', () {
+    final shares = PartPercentComposer.normalizeTo100ForTest([62, 38]);
+    expect(shares, [62, 38]);
   });
 
   test('compose assigns relative leans from continuum momentum', () {
@@ -55,6 +64,8 @@ void main() {
     expect(breakdown.parts.first.lean, 'REGRESSIVE');
     expect(breakdown.parts.last.lean, 'PROGRESSIVE');
     expect(breakdown.parts.first.percentChance, greaterThan(breakdown.parts.last.percentChance));
+    expect(breakdown.parts.first.percentChance, closeTo(62, 2));
+    expect(breakdown.parts.last.percentChance, closeTo(38, 2));
   });
 
   test('compose orders pathways highest to lowest share', () {
