@@ -1,6 +1,6 @@
 enum AnalysisMode {
-  percentChance,
   cohesionScore,
+  percentChance,
 }
 
 extension AnalysisModeLabel on AnalysisMode {

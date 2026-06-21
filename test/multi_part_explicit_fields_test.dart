@@ -63,6 +63,7 @@ void main() {
 
   test('provider calculate accepts two pathway fields without posed question', () async {
     final provider = EvolveProvider();
+    provider.mode = AnalysisMode.percentChance;
     provider.updateInput(const ScenarioInput(
       multiPartOutcomeEnabled: true,
       outcomeContext: 'to avoid recession',

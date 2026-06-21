@@ -33,6 +33,7 @@ void main() {
 
   test('percent chance accepts explicit pathway fields without posed question', () async {
     final provider = EvolveProvider();
+    provider.mode = AnalysisMode.percentChance;
     provider.updateInput(const ScenarioInput(
       multiPartOutcomeEnabled: true,
       outcomeParts: ['austerity', 'stimulus'],
@@ -50,6 +51,7 @@ void main() {
 
   test('pathway fields alone do not satisfy question when multi-part disabled', () async {
     final provider = EvolveProvider();
+    provider.mode = AnalysisMode.percentChance;
     provider.updateInput(const ScenarioInput(
       outcomeParts: ['austerity', 'stimulus'],
       vortexText: 'Regional rail strike escalating through December.',
@@ -66,6 +68,7 @@ void main() {
 
   test('percent chance still requires posed question or pathways', () async {
     final provider = EvolveProvider();
+    provider.mode = AnalysisMode.percentChance;
     provider.updateInput(const ScenarioInput(
       vortexText: 'Regional rail strike escalating through December.',
       shearText: 'Union and management narratives diverge.',

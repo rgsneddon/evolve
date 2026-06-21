@@ -14,11 +14,11 @@ void main() {
     ));
     await provider.calculate();
 
-    expect(provider.mode, AnalysisMode.percentChance);
+    expect(provider.mode, AnalysisMode.cohesionScore);
     expect(provider.input.posedQuestion, contains('unrest'));
     expect(provider.result, isNotNull);
 
-    provider.setMode(AnalysisMode.cohesionScore);
+    provider.setMode(AnalysisMode.percentChance);
     expect(provider.input.posedQuestion, isEmpty);
     expect(provider.result, isNull);
 
@@ -29,12 +29,12 @@ void main() {
     ));
     await provider.calculate();
 
-    provider.setMode(AnalysisMode.percentChance);
+    provider.setMode(AnalysisMode.cohesionScore);
     expect(provider.input.posedQuestion, contains('unrest'));
     expect(provider.input.shearText, contains('polarisation'));
     expect(provider.result, isNotNull);
 
-    provider.setMode(AnalysisMode.cohesionScore);
+    provider.setMode(AnalysisMode.percentChance);
     expect(provider.input.topic, 'City protest response');
     expect(provider.input.posedQuestion, contains('Mayor'));
     expect(provider.input.resistanceText, contains('scepticism'));

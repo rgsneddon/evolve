@@ -20,7 +20,7 @@ void main() {
     expect(find.textContaining('SELECT THE REGION OR COUNTRY'), findsOneWidget);
     expect(find.text('YOUR SCENARIO'), findsOneWidget);
     expect(find.text('RESULTS'), findsOneWidget);
-    expect(find.text('POSE YOUR QUESTION HERE'), findsOneWidget);
+    expect(find.text('POSE YOUR QUESTION HERE (optional)'), findsOneWidget);
     expect(find.text('RUN ANALYSIS'), findsOneWidget);
     expect(find.byType(FilledButton), findsNWidgets(2));
   });

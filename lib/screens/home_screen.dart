@@ -208,12 +208,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return SegmentedButton<AnalysisMode>(
       segments: [
         ButtonSegment(
-          value: AnalysisMode.percentChance,
-          label: Text(s.t('mode_percent')),
-        ),
-        ButtonSegment(
           value: AnalysisMode.cohesionScore,
           label: Text(s.t('mode_cohesion')),
+        ),
+        ButtonSegment(
+          value: AnalysisMode.percentChance,
+          label: Text(s.t('mode_percent')),
         ),
       ],
       selected: {provider.mode},
@@ -377,15 +377,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       buildButton(
-                        mode: AnalysisMode.percentChance,
-                        label: percentLabel,
-                        icon: Icons.percent,
-                      ),
-                      const SizedBox(height: 10),
-                      buildButton(
                         mode: AnalysisMode.cohesionScore,
                         label: cohesionLabel,
                         icon: Icons.groups_outlined,
+                      ),
+                      const SizedBox(height: 10),
+                      buildButton(
+                        mode: AnalysisMode.percentChance,
+                        label: percentLabel,
+                        icon: Icons.percent,
                       ),
                     ],
                   );
@@ -394,17 +394,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Expanded(
                       child: buildButton(
-                        mode: AnalysisMode.percentChance,
-                        label: percentLabel,
-                        icon: Icons.percent,
+                        mode: AnalysisMode.cohesionScore,
+                        label: cohesionLabel,
+                        icon: Icons.groups_outlined,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: buildButton(
-                        mode: AnalysisMode.cohesionScore,
-                        label: cohesionLabel,
-                        icon: Icons.groups_outlined,
+                        mode: AnalysisMode.percentChance,
+                        label: percentLabel,
+                        icon: Icons.percent,
                       ),
                     ),
                   ],

@@ -39,7 +39,7 @@ class EvolveProvider extends ChangeNotifier {
   final GrokAuthClient _grokAuth;
   final GrokConstrualService _grokConstrual;
 
-  AnalysisMode mode = AnalysisMode.percentChance;
+  AnalysisMode mode = AnalysisMode.cohesionScore;
   LocaleConfig locale = LocaleConfig.defaults;
   ScenarioInput input = const ScenarioInput();
   EvolveResult? result;
@@ -235,7 +235,7 @@ class EvolveProvider extends ChangeNotifier {
     _construeDebounce?.cancel();
     _construeGeneration++;
 
-    mode = AnalysisMode.percentChance;
+    mode = AnalysisMode.cohesionScore;
     input = const ScenarioInput();
     result = null;
     _savedInputs.clear();

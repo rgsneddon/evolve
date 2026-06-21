@@ -20,7 +20,7 @@ void main() {
 
     provider.startFresh();
 
-    expect(provider.mode, AnalysisMode.percentChance);
+    expect(provider.mode, AnalysisMode.cohesionScore);
     expect(provider.input.posedQuestion, isEmpty);
     expect(provider.input.vortexText, isEmpty);
     expect(provider.input.shearText, isEmpty);
