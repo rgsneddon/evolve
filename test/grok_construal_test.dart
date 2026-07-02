@@ -33,7 +33,7 @@ void main() {
             'premium': true,
             'screenName': 'test_user',
             'displayName': 'Test User',
-            'mock': true,
+            'mock': false,
           }));
       } else if (path == '/auth/login') {
         request.response
@@ -84,11 +84,12 @@ void main() {
     expect(session.screenName, 'test_user');
   });
 
-  test('GrokAuthClient completeMockLogin returns premium session', () async {
+  test('GrokAuthClient completeMockLogin returns mock session not construable', () async {
     final auth = GrokAuthClient(baseUrl: baseUrl);
     final session = await auth.completeMockLogin();
-    expect(session.canConstrue, isTrue);
-    expect(session.screenName, 'test_user');
+    expect(session.connected, isTrue);
+    expect(session.premium, isTrue);
+    expect(session.canConstrue, isFalse);
     expect(session.mock, isTrue);
   });
 
@@ -118,7 +119,10 @@ void main() {
     expect(launcher.isEmbedded, isTrue);
 
     final session = await launcher.completeOAuthInProcess('mock', 'mock');
-    expect(session.canConstrue, isTrue);
+    expect(session.connected, isTrue);
+    expect(session.premium, isTrue);
+    expect(session.canConstrue, isFalse);
+    expect(session.mock, isTrue);
     expect(session.screenName, 'evolve_mock');
 
     await launcher.stop();

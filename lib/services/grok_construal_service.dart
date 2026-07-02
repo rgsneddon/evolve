@@ -30,11 +30,15 @@ class GrokConstrualService {
     required ScenarioInput input,
     required LocaleConfig locale,
     LocalizedOutput? output,
+    GrokSession? xSession,
   }) async {
     final out = output ?? LocalizedOutput.of(locale);
-    final body = jsonEncode(
-      NarrativeConstructConstrual.grokPayload(input, locale, out),
-    );
+    final payload = NarrativeConstructConstrual.grokPayload(input, locale, out);
+    if (xSession != null && xSession.canConstrue) {
+      payload['xScreenName'] = xSession.screenName;
+      payload['xUserConnected'] = true;
+    }
+    final body = jsonEncode(payload);
 
     final res = await _http
         .post(

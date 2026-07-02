@@ -19,6 +19,7 @@ class GrokProxyLauncher {
   HttpServer? _server;
   GrokProxyStore? _store;
   int _port = defaultPort;
+  Future<void> _startChain = Future<void>.value();
 
   bool get supportsEmbeddedProxy => true;
   bool get isRunning => _server != null;
@@ -41,7 +42,13 @@ class GrokProxyLauncher {
   }
 
   /// Bind localhost proxy, or reuse a healthy listener on [port].
-  Future<void> ensureRunning({int port = defaultPort}) async {
+  Future<void> ensureRunning({int port = defaultPort}) {
+    final next = _startChain.then((_) => _ensureRunningOnce(port));
+    _startChain = next.catchError((_) {});
+    return next;
+  }
+
+  Future<void> _ensureRunningOnce(int port) async {
     _port = port;
 
     if (_server != null && _store != null) {

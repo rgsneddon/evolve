@@ -57,7 +57,7 @@ void main() {
       connected: true,
       premium: true,
       screenName: 'test',
-      mock: true,
+      mock: false,
     );
 
     provider.updateInput(const ScenarioInput(
@@ -99,6 +99,7 @@ class _StubGrokConstrual extends GrokConstrualService {
     required ScenarioInput input,
     required LocaleConfig locale,
     LocalizedOutput? output,
+    GrokSession? xSession,
   }) async {
     lastApplied = true;
     return const GrokConstrualResult(

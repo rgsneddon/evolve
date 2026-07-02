@@ -93,22 +93,6 @@ class EvolveProvider extends ChangeNotifier {
   /// Grok construal can run (live proxy or heuristic mode).
   bool get grokConstrualAvailable => grokProxyConfigured || grokUsesHeuristicMode;
 
-  static const _heuristicWebSession = GrokSession(
-    connected: true,
-    premium: true,
-    screenName: '@evolve_web',
-    displayName: 'Evolve Web Heuristic',
-    mock: true,
-  );
-
-  static const _heuristicAndroidSession = GrokSession(
-    connected: true,
-    premium: true,
-    screenName: '@evolve_android',
-    displayName: 'Evolve Android Heuristic',
-    mock: true,
-  );
-
   /// Resolves web proxy URL (compile-time, asset config, or local proxy probe).
   Future<void> initialize() async {
     await _ensureGrokProxyResolved();
@@ -118,10 +102,11 @@ class EvolveProvider extends ChangeNotifier {
   }
 
   Future<void> _restoreGrokSessionWhenReady() async {
-    if (kIsWeb) return;
     try {
+      await _ensureGrokProxyResolved();
+      if (_grokProxyBaseUrl.isEmpty || _usesHeuristicConstrual) return;
       final ready = await _ensureGrokProxyReady();
-      if (!ready || _usesHeuristicConstrual || _grokProxyBaseUrl.isEmpty) return;
+      if (!ready) return;
       await _syncGrokSessionFromProxy().timeout(const Duration(seconds: 12));
       notifyListeners();
     } catch (_) {}
@@ -131,13 +116,13 @@ class EvolveProvider extends ChangeNotifier {
     try {
       if (GrokProxyLauncher.instance.isEmbedded) {
         final embedded = GrokProxyLauncher.instance.embeddedSession;
-        if (embedded.connected && embedded.premium) {
+        if (embedded.canConstrue) {
           grokSession = embedded;
           return;
         }
       }
       final status = await _activeGrokAuth.fetchStatus();
-      if (status.connected && status.premium) {
+      if (status.canConstrue) {
         grokSession = status;
       }
     } catch (_) {}
@@ -161,10 +146,7 @@ class EvolveProvider extends ChangeNotifier {
     await _ensureGrokProxyResolved();
     if (_usesInBrowserGrok) {
       _androidHeuristicFallback = false;
-      if (grokSession.canConstrue) return true;
-      grokSession = _heuristicWebSession;
-      notifyListeners();
-      return true;
+      return grokSession.canConstrue;
     }
 
     if (!kIsWeb) {
@@ -181,10 +163,16 @@ class EvolveProvider extends ChangeNotifier {
           return true;
         }
       } catch (_) {
+        if (await _activeGrokAuth.isProxyReachable()) {
+          return true;
+        }
         if (defaultTargetPlatform == TargetPlatform.android) {
           return _activateAndroidHeuristicFallback();
         }
         return false;
+      }
+      if (await _activeGrokAuth.isProxyReachable()) {
+        return true;
       }
     }
 
@@ -199,11 +187,8 @@ class EvolveProvider extends ChangeNotifier {
 
   bool _activateAndroidHeuristicFallback() {
     _androidHeuristicFallback = true;
-    if (!grokSession.canConstrue) {
-      grokSession = _heuristicAndroidSession;
-    }
     notifyListeners();
-    return true;
+    return false;
   }
 
   void _showGrokSnackBar(
@@ -259,10 +244,13 @@ class EvolveProvider extends ChangeNotifier {
   }
 
   Future<void> setGrokConstrual(bool enabled, BuildContext context) async {
-    if (enabled && kIsWeb) {
-      statusMessage = strings.t('web_grok_inactive_notice');
-      notifyListeners();
-      return;
+    if (enabled) {
+      await _ensureGrokProxyResolved();
+      if (kIsWeb && !grokProxyConfigured) {
+        statusMessage = strings.t('web_grok_inactive_notice');
+        notifyListeners();
+        return;
+      }
     }
 
     if (!enabled) {
@@ -302,12 +290,10 @@ class EvolveProvider extends ChangeNotifier {
     if (_usesHeuristicConstrual) {
       grokConstrualEnabled = true;
       isConnectingGrok = false;
-      statusMessage = _androidHeuristicFallback
-          ? strings.t('grok_android_heuristic_ready')
-          : strings.t('grok_web_heuristic_ready');
+      statusMessage = strings.t('grok_sign_in_x_required');
       notifyListeners();
       if (context.mounted) {
-        _showGrokSnackBar(context, statusMessage!);
+        _showGrokSnackBar(context, statusMessage!, isError: true);
       }
       return;
     }
@@ -365,13 +351,10 @@ class EvolveProvider extends ChangeNotifier {
 
     if (_usesHeuristicConstrual) {
       isConnectingGrok = false;
-      statusMessage = _androidHeuristicFallback
-          ? strings.t('grok_android_heuristic_ready')
-          : strings.t('grok_web_heuristic_ready');
-      grokConstrualEnabled = true;
+      statusMessage = strings.t('grok_sign_in_x_required');
       notifyListeners();
       if (context.mounted) {
-        _showGrokSnackBar(context, statusMessage!);
+        _showGrokSnackBar(context, statusMessage!, isError: true);
       }
       return;
     }
@@ -494,14 +477,24 @@ class EvolveProvider extends ChangeNotifier {
         }
         return false;
       }
+      if (session.mock) {
+        statusMessage = strings.t('grok_mock_mode_blocked');
+        await _activeGrokAuth.logout();
+        grokSession = const GrokSession();
+        if (context.mounted) {
+          _showGrokSnackBar(context, statusMessage!, isError: true);
+          await _showGrokDialog(
+            context,
+            title: strings.t('grok_connect_title'),
+            body: strings.t('grok_mock_mode_blocked'),
+          );
+        }
+        return false;
+      }
 
-      statusMessage = session.mock
-          ? strings
-              .t('grok_mock_signed_in')
-              .replaceAll('{user}', session.screenName)
-          : strings
-              .t('grok_connected_as')
-              .replaceAll('{user}', session.screenName);
+      statusMessage = strings
+          .t('grok_connected_as')
+          .replaceAll('{user}', session.screenName);
       return true;
     } on GrokAuthException {
       grokPendingAuthorizeUrl = null;
@@ -803,21 +796,20 @@ class EvolveProvider extends ChangeNotifier {
         // Heuristic construal does not require the proxy.
       }
 
-      if (_usesHeuristicConstrual || grokSession.canConstrue) {
-        await _fetchAndApplyConstrual(narrativeInput, persistToForm: true);
-      } else {
-        await _applyHeuristicConstrualToForm(narrativeInput);
+      if (!grokSession.canConstrue) {
+        if (generation != _construeGeneration) return;
+        statusMessage = strings.t('grok_sign_in_x_required');
+        return;
       }
+      await _fetchAndApplyConstrual(narrativeInput, persistToForm: true);
       if (generation != _construeGeneration) return;
       statusMessage = strings.t('grok_fields_populated');
     } on GrokAuthException {
       if (generation != _construeGeneration) return;
-      await _applyHeuristicConstrualToForm(narrativeInput);
-      statusMessage = strings.t('grok_fields_populated');
+      statusMessage = strings.t('grok_construal_failed');
     } catch (_) {
       if (generation != _construeGeneration) return;
-      await _applyHeuristicConstrualToForm(narrativeInput);
-      statusMessage = strings.t('grok_fields_populated');
+      statusMessage = strings.t('grok_construal_failed');
     } finally {
       if (generation == _construeGeneration) {
         isConstruing = false;
@@ -951,6 +943,7 @@ class EvolveProvider extends ChangeNotifier {
       input: source,
       locale: locale,
       output: output,
+      xSession: grokSession,
     );
   }
 

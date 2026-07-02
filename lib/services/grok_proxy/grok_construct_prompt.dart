@@ -65,6 +65,17 @@ CRITICAL RULES:
         .where((s) => s.isNotEmpty)
         .toList();
 
+    final xUser = '${payload['xScreenName'] ?? ''}'.trim();
+    final xAccountBlock = xUser.isNotEmpty
+        ? '''
+
+SIGNED-IN X ACCOUNT: @$xUser
+Observe live social discourse on X as this authenticated Premium user would —
+prioritise posts, replies, and threads from their timeline ecosystem and verified
+public discourse lanes relevant to the scenario.
+'''
+        : '';
+
     final pathwayBlock = multiPartPathway && pathwayLabel.isNotEmpty
         ? '''
 
@@ -90,6 +101,7 @@ LINKED NARRATIVE TEXT (ground every field in this article — cite specific acto
     return '''
 POSED SCENARIO QUESTION (context only — do NOT copy into output fields):
 "$question"
+$xAccountBlock
 $pathwayBlock
 $narrativeBlock
 Region focus: $region

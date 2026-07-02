@@ -477,8 +477,12 @@ final _en = {
   'license_view_full': 'View full license',
   'grok_construe_label': 'GROK CONSTRUE',
   'grok_bar_hint':
-      'Requires X Premium. Pose your full question, then tap BEGIN GROK CONSTRUE — Grok fills blank ω/σ/Iτ/Jμ from live discourse and data (not by repeating your question). Your field text is never overwritten.',
+      'Requires your actual X Premium account. Sign in with X first — Grok observes live social discourse from your authenticated session, then fills blank ω/σ/Iτ/Jμ from X posts, news, and data. Your field text is never overwritten.',
   'grok_sign_in_x': 'SIGN IN WITH X',
+  'grok_sign_in_x_required':
+      'Sign in with your X Premium account to enable Grok construal — live social discourse observation requires a real authenticated session.',
+  'grok_mock_mode_blocked':
+      'Mock sign-in is disabled. Set X_CLIENT_ID in grok_proxy.local.env and sign in with your real X Premium account.',
   'grok_preparing_sign_in': 'Preparing X sign-in…',
   'grok_open_x_tab': 'OPEN X SIGN-IN (NEW TAB)',
   'grok_open_x_body':
@@ -555,7 +559,7 @@ final _en = {
   'status_calc_grok_pipeline': 'Construing with Grok, then running Chronoflux…',
   'start_fresh': 'RESET',
   'web_grok_inactive_notice':
-      'Grok construe is not active on the web version of Evolve. Download the Windows or Android app for full capabilities, or run the calculation with manual inputs.',
+      'Grok construe on web requires a hosted Grok proxy (GROK_PROXY_URL) and your X Premium sign-in. Use the Windows desktop app with grok_proxy.local.env, or deploy the proxy and rebuild with --dart-define=GROK_PROXY_URL=…',
   'region_select_advice': 'SELECT THE REGION OR COUNTRY YOU WISH TO ANALYSE',
   'posed_question_section': 'YOUR QUESTION',
   'posed_question_label': 'POSE YOUR QUESTION HERE',

@@ -8,6 +8,10 @@ import 'package:evolve/services/grok_proxy_launcher.dart';
 import 'package:evolve/services/grok_service_config.dart';
 
 void main() {
+  tearDown(() async {
+    await GrokProxyLauncher.instance.stop();
+  });
+
   test('configured proxy URL enables live grok path', () {
     expect(GrokServiceConfig.usesInBrowserConstrual('http://127.0.0.1:8787'), isFalse);
   });
@@ -18,7 +22,11 @@ void main() {
     expect(provider.grokProxyConfigured, isTrue);
     final ready = await provider.refreshGrokProxy();
     expect(ready, isTrue);
-    await GrokProxyLauncher.instance.stop();
+    expect(
+      GrokProxyLauncher.instance.isRunning ||
+          await GrokAuthClient(baseUrl: 'http://127.0.0.1:8787').isProxyReachable(),
+      isTrue,
+    );
   });
 
   test('beginGrokConstrue rejects when premium session missing', () async {

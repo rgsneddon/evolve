@@ -16,7 +16,8 @@ class GrokSession {
   final bool mock;
   final String oauthError;
 
-  bool get canConstrue => connected && premium;
+  /// Live Grok construal requires a real X Premium session — not mock/heuristic placeholders.
+  bool get canConstrue => connected && premium && !mock;
 
   factory GrokSession.fromJson(Map<String, dynamic> json) => GrokSession(
         connected: json['connected'] == true,

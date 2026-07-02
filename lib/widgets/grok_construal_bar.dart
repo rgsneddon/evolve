@@ -178,7 +178,7 @@ class GrokConstrualBar extends StatelessWidget {
     bool enabled,
   ) {
     const inactiveLabel = Color(0xFF9BA3B8);
-    final webBlocked = kIsWeb;
+    final webBlocked = kIsWeb && !provider.grokProxyConfigured;
 
     final row = Row(
       mainAxisSize: MainAxisSize.min,

@@ -37,12 +37,14 @@ class GrokProxyStore {
 
   String get redirectUri => config.redirectUri;
 
+  bool get _usesMockToken => _accessToken == 'mock-token';
+
   Map<String, dynamic> statusJson() => {
         'connected': _accessToken != null,
         'premium': _premium,
         'screenName': _screenName ?? '',
         'displayName': _displayName ?? '',
-        'mock': config.mock,
+        'mock': config.mock || _usesMockToken,
         if (_lastOAuthError != null) 'oauthError': _lastOAuthError,
       };
 
@@ -50,7 +52,8 @@ class GrokProxyStore {
     _lastOAuthError = message;
   }
 
-  bool get canConstrue => _accessToken != null && _premium;
+  bool get canConstrue =>
+      _accessToken != null && _premium && !config.mock && !_usesMockToken;
 
   void logout() {
     _accessToken = null;

@@ -20,7 +20,7 @@ void main() {
       connected: true,
       premium: true,
       screenName: 'test',
-      mock: true,
+      mock: false,
     );
     provider.updateInput(const ScenarioInput(
       multiPartOutcomeEnabled: true,
@@ -78,6 +78,7 @@ class _HeuristicOnlyGrok extends GrokConstrualService {
     required ScenarioInput input,
     required LocaleConfig locale,
     LocalizedOutput? output,
+    GrokSession? xSession,
   }) async {
     return GrokHeuristicConstrual.suggest(
       input: input,

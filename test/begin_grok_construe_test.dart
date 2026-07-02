@@ -14,8 +14,8 @@ void main() {
     provider.grokSession = const GrokSession(
       connected: true,
       premium: true,
-      screenName: 'test',
-      mock: true,
+      screenName: '@test_user',
+      mock: false,
     );
 
     const question =
@@ -55,6 +55,7 @@ class _HeuristicOnlyGrok extends GrokConstrualService {
     required ScenarioInput input,
     required LocaleConfig locale,
     LocalizedOutput? output,
+    GrokSession? xSession,
   }) async =>
       GrokHeuristicConstrual.suggest(input: input, locale: locale, output: output);
 }
