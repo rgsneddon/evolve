@@ -8,6 +8,8 @@ import '../models/perc_transaction.dart';
 import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_faucet.dart';
+import '../services/perc_faucet_cooldown.dart';
+import 'blockchain_explorer_screen.dart';
 
 /// Evolve Wallet — PERC accounts, scenario-driven chain, send/receive.
 class WalletScreen extends StatefulWidget {
@@ -235,6 +237,8 @@ class _WalletScreenState extends State<WalletScreen> {
                 const SizedBox(height: 12),
                 _treasuryCard(wallet, strings),
                 const SizedBox(height: 12),
+                _explorerLink(context, wallet, strings),
+                const SizedBox(height: 12),
                 _faucetCard(wallet, strings),
                 const SizedBox(height: 12),
                 _addressCard(context, wallet, strings),
@@ -383,12 +387,6 @@ class _WalletScreenState extends State<WalletScreen> {
                   .replaceAll('{pct}', pct.toStringAsFixed(2)),
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
             ),
-            Text(
-              strings
-                  .t('wallet_block_height')
-                  .replaceAll('{height}', '${wallet.blockHeight}'),
-              style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
-            ),
             if (wallet.isTreasuryAccount)
               Text(
                 'Treasury pool: ${wallet.treasuryPool.displayFixed8} PERC',
@@ -400,8 +398,69 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
+  Widget _explorerLink(
+    BuildContext context,
+    PercWalletProvider wallet,
+    AppLocalizations strings,
+  ) {
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const BlockchainExplorerScreen(),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6C63FF).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.hub_outlined, color: Color(0xFF6C63FF)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.t('wallet_explorer_link'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF6C63FF),
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      strings
+                          .t('wallet_explorer_block_current')
+                          .replaceAll('{height}', '${wallet.blockHeight}'),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.open_in_new, size: 18, color: Color(0xFF9BA3B8)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _faucetCard(PercWalletProvider wallet, AppLocalizations strings) {
     final reward = wallet.lastReward;
+    final cooldown = wallet.faucetCooldownRemaining;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -423,6 +482,15 @@ class _WalletScreenState extends State<WalletScreen> {
               strings.t('wallet_faucet_note'),
               style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8), height: 1.45),
             ),
+            if (cooldown != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                strings
+                    .t('wallet_faucet_cooldown')
+                    .replaceAll('{wait}', PercFaucetCooldown.formatWait(cooldown)),
+                style: const TextStyle(fontSize: 12, color: Color(0xFFFF8A65)),
+              ),
+            ],
             if (reward != null) ...[
               const SizedBox(height: 12),
               _rewardRow(strings.t('wallet_faucet_base'), reward.base.displayFixed8),

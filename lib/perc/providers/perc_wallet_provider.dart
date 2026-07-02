@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/perc_amount.dart';
+import '../models/perc_block.dart';
+import '../models/perc_faucet_credit_result.dart';
 import '../models/perc_transaction.dart';
 import '../perc_chain_constants.dart';
 import '../services/perc_faucet.dart';
+import '../services/perc_faucet_cooldown.dart';
 import '../services/perc_ledger.dart';
 import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
@@ -18,6 +21,7 @@ class PercWalletProvider extends ChangeNotifier {
   PercFaucetReward? lastReward;
   String? statusMessage;
   String? errorMessage;
+  PercFaucetCreditResult? _pendingCooldownPopup;
 
   bool get isReady => _ready;
   bool get isLoggedIn => _ledger.isLoggedIn;
@@ -29,6 +33,7 @@ class PercWalletProvider extends ChangeNotifier {
   List<PercTransaction> get transactions =>
       List.unmodifiable(_ledger.sessionAccount?.transactions ?? const []);
   int get blockHeight => _ledger.blockHeight;
+  List<PercBlock> get blocks => _ledger.chainBlocks;
   double get treasuryProgress => _ledger.treasuryProgress;
   PercAmount get treasuryMinted => _ledger.cumulativeTreasuryMinted;
   PercAmount get treasuryRemaining => _ledger.treasuryRemaining;
@@ -36,6 +41,17 @@ class PercWalletProvider extends ChangeNotifier {
   bool get treasuryCapped => _ledger.treasuryCapped;
   bool get isTreasuryAccount =>
       loggedInUsername == PercChainConstants.treasuryUsername;
+
+  Duration? get faucetCooldownRemaining {
+    if (!isLoggedIn) return null;
+    return _ledger.faucetCooldownRemaining(_ledger.sessionUsername!);
+  }
+
+  PercFaucetCreditResult? takeCooldownPopup() {
+    final popup = _pendingCooldownPopup;
+    _pendingCooldownPopup = null;
+    return popup;
+  }
 
   Future<void> initialize() async {
     final loaded = await _store.load();
@@ -129,29 +145,42 @@ class PercWalletProvider extends ChangeNotifier {
     }
   }
 
-  Future<PercFaucetReward?> creditScenario({
+  Future<PercFaucetCreditResult?> creditScenario({
     required double percentChance,
     String? memo,
   }) async {
     if (!_ready || !isLoggedIn) return null;
     _clearMessages();
     try {
-      final reward = _ledger.creditScenario(
+      final result = _ledger.creditScenario(
         username: _ledger.sessionUsername!,
         percentChance: percentChance,
         scenarioLabel: memo,
       );
-      if (reward == null) {
-        statusMessage = 'Treasury empty — run another scenario later';
+
+      if (result.showCooldownPopup) {
+        _pendingCooldownPopup = result;
+        statusMessage = null;
         notifyListeners();
-        return null;
+        return result;
       }
-      lastReward = reward;
-      statusMessage =
-          '+${reward.total.displayFixed8} ${PercChainConstants.currencySymbol}';
+
+      if (result.status == PercFaucetCreditStatus.credited &&
+          result.reward != null) {
+        lastReward = result.reward;
+        statusMessage =
+            '+${result.reward!.total.displayFixed8} ${PercChainConstants.currencySymbol}';
+        notifyListeners();
+        await _persist();
+        return result;
+      }
+
+      if (result.status == PercFaucetCreditStatus.treasuryEmpty) {
+        statusMessage = 'Treasury empty — run another scenario later';
+      }
       notifyListeners();
       await _persist();
-      return reward;
+      return result;
     } catch (e) {
       statusMessage = 'Treasury cap reached';
       notifyListeners();

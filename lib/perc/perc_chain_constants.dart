@@ -22,4 +22,7 @@ class PercChainConstants {
 
   /// Faucet bonus scales with outcome percent chance (micro-units per 1% point).
   static const int faucetBonusMicroPerPercentPoint = 1;
+
+  /// Each wallet may draw the scenario faucet once per 450 minutes.
+  static const Duration faucetCooldown = Duration(minutes: 450);
 }

@@ -1,10 +1,12 @@
 import '../models/perc_account.dart';
 import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
+import '../models/perc_faucet_credit_result.dart';
 import '../models/perc_transaction.dart';
 import '../perc_chain_constants.dart';
 import 'perc_auth.dart';
 import 'perc_faucet.dart';
+import 'perc_faucet_cooldown.dart';
 import 'perc_treasury.dart';
 
 /// Local PERC ledger — blocks advance only on scenarios and transfers.
@@ -49,6 +51,17 @@ class PercLedger {
       sessionAccount?.balance ?? PercAmount.zero;
 
   int get blockHeight => blocks.length;
+
+  List<PercBlock> get chainBlocks => List.unmodifiable(blocks);
+
+  Duration? faucetCooldownRemaining(String username, [DateTime? now]) {
+    final acc = accounts[PercAuth.normalizeUsername(username)];
+    if (acc == null) return null;
+    return PercFaucetCooldown.remainingSince(
+      acc.lastFaucetDrawAt,
+      (now ?? DateTime.now()).toUtc(),
+    );
+  }
 
   double get treasuryProgress =>
       cumulativeTreasuryMinted.asPerc / PercChainConstants.maxSupply.asPerc;
@@ -216,16 +229,21 @@ class PercLedger {
     return tx;
   }
 
-  PercFaucetReward? creditScenario({
+  PercFaucetCreditResult creditScenario({
     required String username,
     required double percentChance,
     String? scenarioLabel,
   }) {
     final u = PercAuth.normalizeUsername(username);
     final user = accounts[u];
-    if (user == null) return null;
+    if (user == null) {
+      return const PercFaucetCreditResult(
+        status: PercFaucetCreditStatus.notLoggedIn,
+      );
+    }
 
     final now = DateTime.now().toUtc();
+    final cooldownLeft = PercFaucetCooldown.remainingSince(user.lastFaucetDrawAt, now);
     final treasury = _ensureTreasury();
     final emitted = _treasuryEmissionForScenario(now);
     final blockTxs = <PercTransaction>[];
@@ -250,9 +268,30 @@ class PercLedger {
 
     final reward = PercFaucet.computeScenarioReward(percentChance: percentChance);
     PercFaucetReward? credited;
+
+    if (cooldownLeft != null) {
+      if (blockTxs.isNotEmpty) {
+        _appendBlock(
+          timestamp: now,
+          txs: blockTxs,
+          treasuryEmitted: emitted,
+          scenarioLabel: scenarioLabel,
+          triggerUsername: u,
+        );
+        lastScenarioAt = now;
+      }
+      return PercFaucetCreditResult(
+        status: PercFaucetCreditStatus.onCooldown,
+        cooldownRemaining: cooldownLeft,
+        nextBlockEstimate: cooldownLeft,
+        blockIndex: blocks.isEmpty ? null : blocks.last.index,
+      );
+    }
+
     if (treasury.balance >= reward.total) {
       _debit(treasury, reward.total);
       _credit(user, reward.total);
+      user.lastFaucetDrawAt = now;
       final label = scenarioLabel?.trim().isNotEmpty == true
           ? scenarioLabel!.trim()
           : 'Scenario analysis reward';
@@ -284,7 +323,19 @@ class PercLedger {
     }
 
     lastScenarioAt = now;
-    return credited;
+
+    if (credited != null) {
+      return PercFaucetCreditResult(
+        status: PercFaucetCreditStatus.credited,
+        reward: credited,
+        blockIndex: blocks.isEmpty ? null : blocks.last.index,
+      );
+    }
+
+    return PercFaucetCreditResult(
+      status: PercFaucetCreditStatus.treasuryEmpty,
+      blockIndex: blocks.isEmpty ? null : blocks.last.index,
+    );
   }
 
   Map<String, dynamic> toJson() => {

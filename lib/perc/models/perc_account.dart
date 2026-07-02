@@ -9,6 +9,7 @@ class PercAccount {
     required this.address,
     this.passwordSet = true,
     this.balance = PercAmount.zero,
+    this.lastFaucetDrawAt,
     List<PercTransaction>? transactions,
   }) : transactions = transactions ?? [];
 
@@ -18,6 +19,7 @@ class PercAccount {
   final String address;
   bool passwordSet;
   PercAmount balance;
+  DateTime? lastFaucetDrawAt;
   final List<PercTransaction> transactions;
 
   Map<String, dynamic> toJson() => {
@@ -27,6 +29,8 @@ class PercAccount {
         'address': address,
         'passwordSet': passwordSet,
         'balance': balance.toJson(),
+        if (lastFaucetDrawAt != null)
+          'lastFaucetDrawAt': lastFaucetDrawAt!.toIso8601String(),
         'transactions': transactions.map((t) => t.toJson()).toList(),
       };
 
@@ -39,6 +43,9 @@ class PercAccount {
         balance: json['balance'] is Map
             ? PercAmount.fromJson(json['balance'] as Map<String, dynamic>)
             : PercAmount(json['balance'] as int? ?? 0),
+        lastFaucetDrawAt: json['lastFaucetDrawAt'] != null
+            ? DateTime.parse(json['lastFaucetDrawAt'] as String)
+            : null,
         transactions: (json['transactions'] as List<dynamic>? ?? [])
             .map((t) =>
                 PercTransaction.fromJson(Map<String, dynamic>.from(t as Map)))
