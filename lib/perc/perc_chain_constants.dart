@@ -1,6 +1,6 @@
 import 'models/perc_amount.dart';
 
-/// Perccent chain parameters — Beam-inspired treasury cap (~286M PERC).
+/// Perccent chain parameters — treasury cap 283M PERC; offline until scenarios run.
 class PercChainConstants {
   const PercChainConstants._();
 
@@ -11,11 +11,18 @@ class PercChainConstants {
   static const String centValueInPerc = '0.00000001';
   static const int centsPerPerc = 100000000;
 
-  /// Treasury holder — receives all scenario-driven emissions.
+  /// Treasury holder — offline wallet; no external chain until a user runs analysis.
   static const String treasuryUsername = 'rgsneddon';
+  static const bool treasuryRequiresExternalChain = false;
 
-  /// Max supply ~286 million PERC (user spec; Beam uses ~262.8M).
-  static final PercAmount maxSupply = PercAmount.fromPerc(286000000);
+  /// One block confirmation fully settles PERC.
+  static const int confirmationsRequired = 1;
+
+  /// Max supply / pool renewal mint — 283 million PERC.
+  static final PercAmount maxSupply = PercAmount.fromPerc(283000000);
+
+  /// Minimum treasury reserve — 1 cent (0.00000001 PERC); pool renews at this level.
+  static const PercAmount minimumTreasuryReserve = PercAmount(1);
 
   /// Treasury emits 1 PERC per second until max supply.
   static final PercAmount treasuryEmissionPerSecond = PercAmount.fromPerc(1);

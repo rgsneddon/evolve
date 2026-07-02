@@ -443,7 +443,19 @@ class _WalletScreenState extends State<WalletScreen> {
                   children: [
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed: () => _showSendDialog(context, wallet, strings),
+                        onPressed: wallet.canSendFromSession
+                            ? () => _showSendDialog(context, wallet, strings)
+                            : wallet.isTreasuryAccount && wallet.isTreasurySendLocked
+                                ? () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          strings.t('wallet_treasury_send_locked'),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                : null,
                         icon: const Icon(Icons.send_rounded, size: 18),
                         label: Text(strings.t('wallet_send')),
                       ),
@@ -675,6 +687,13 @@ class _WalletScreenState extends State<WalletScreen> {
                   .replaceAll('{pct}', pct.toStringAsFixed(2)),
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
             ),
+            if (wallet.isTreasurySendLocked) ...[
+              const SizedBox(height: 6),
+              Text(
+                strings.t('wallet_treasury_offline_note'),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8), height: 1.4),
+              ),
+            ],
             ..._treasuryRemainingLines(wallet, strings),
           ],
         ),

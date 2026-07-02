@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const UNITS_PER_PERC = 100_000_000;
-const MAX_SUPPLY = 286_000_000 * UNITS_PER_PERC;
+const MAX_SUPPLY = 283_000_000 * UNITS_PER_PERC;
 const EMISSION_PER_SECOND = UNITS_PER_PERC;
 const SCENARIO_BASE = 50; // 50 cent (0.00000050 PERC)
 

@@ -319,12 +319,12 @@ final _en = {
       'Any held PERC earns 5 cent each block (10% of the 50 cent base). 1 PERC = 100,000,000 cent (0.00000001 PERC each).',
   'wallet_staking_earned': 'Total staking earned: {amount} PERC',
   'wallet_tx_staking': 'Staking reward',
-  'wallet_tx_genesis': 'Genesis renewal (286M PERC Perccent)',
+  'wallet_tx_genesis': 'Genesis renewal (283M PERC Perccent)',
   'wallet_signed_in_as': 'Signed in as {user}',
   'wallet_logout': 'Sign out',
   'wallet_treasury_title': 'Treasury emission',
   'wallet_treasury_note':
-      'Perccent chain advances only when scenarios run. Treasury earns 1 PERC per elapsed second (first block: 1 PERC) until ~286M cap, then a new genesis block renews the cycle.',
+      'Perccent chain advances only when scenarios run. Treasury earns 1 PERC per elapsed second (first block: 1 PERC) until ~283M cap. Treasury wallet stays offline until any user runs analysis.',
   'wallet_treasury_cycle': 'Treasury cycle #{cycle}',
   'wallet_treasury_minted': '{minted} / {cap} PERC minted ({pct}%)',
   'wallet_treasury_remaining': 'Treasury remaining: {amount} PERC',
@@ -333,7 +333,11 @@ final _en = {
   'wallet_treasury_inflation_next': 'Time to next inflation: {wait}',
   'wallet_treasury_inflation_ready': 'Inflation ready — run a scenario',
   'wallet_treasury_inflation_critical':
-      'Treasury critical (5 cent left) — inflation on next scenario',
+      'Treasury at 1 cent reserve — 283M pool mint on next scenario',
+  'wallet_treasury_send_locked':
+      'Treasury rgsneddon is locked — manual sends disabled after blockchain launch',
+  'wallet_treasury_offline_note':
+      'Treasury is offline (no external chain) until a user runs analysis. Only staking drains the pool until 1 cent remains.',
   'wallet_block_height': 'Block height: {height}',
   'wallet_faucet_title': 'Analysis faucet',
   'wallet_faucet_note':
@@ -352,7 +356,9 @@ final _en = {
   'wallet_explorer_history': 'BLOCK HISTORY',
   'wallet_explorer_trigger': 'Triggered by {user}',
   'wallet_explorer_tx_count': '{count} transaction(s)',
-  'wallet_explorer_genesis_renewal': 'Genesis renewal — cycle #{cycle} (286M PERC Perccent)',
+  'wallet_explorer_genesis_renewal': 'Genesis renewal — cycle #{cycle} (283M PERC Perccent)',
+  'wallet_explorer_confirmations': '{count} confirmation(s) required — fully confirmed',
+  'wallet_explorer_confirmed': 'Fully confirmed (1 block)',
   'wallet_cooldown_popup_title': 'Treasury draw on cooldown',
   'wallet_cooldown_popup_body':
       'Your wallet already drew from treasury within the last 450 minutes. The Perccent chain advances on scenarios — your next eligible draw (and block) is in approximately {blockWait}. You can draw 50 cent again after {wait}.',
@@ -808,12 +814,12 @@ final _es = {
       'Cualquier PERC en cartera gana 5 cent por bloque (10% de la base de 50 cent). 1 PERC = 100.000.000 cent (0,00000001 PERC cada uno).',
   'wallet_staking_earned': 'Staking total ganado: {amount} PERC',
   'wallet_tx_staking': 'Recompensa de staking',
-  'wallet_tx_genesis': 'Renovación génesis (286M PERC Perccent)',
+  'wallet_tx_genesis': 'Renovación génesis (283M PERC Perccent)',
   'wallet_signed_in_as': 'Sesión: {user}',
   'wallet_logout': 'Cerrar sesión',
   'wallet_treasury_title': 'Emisión de tesorería',
   'wallet_treasury_note':
-      'La cadena Perccent avanza solo al ejecutar escenarios. Tesorería gana 1 PERC por segundo transcurrido (primer bloque: 1 PERC) hasta ~286M; luego un nuevo bloque génesis renueva el ciclo.',
+      'La cadena Perccent avanza solo al ejecutar escenarios. Tesorería gana 1 PERC por segundo transcurrido hasta ~283M. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
   'wallet_treasury_cycle': 'Ciclo de tesorería #{cycle}',
   'wallet_treasury_minted': '{minted} / {cap} PERC acuñados ({pct}%)',
   'wallet_treasury_remaining': 'Tesorería restante: {amount} PERC',
@@ -822,7 +828,11 @@ final _es = {
   'wallet_treasury_inflation_next': 'Tiempo hasta la próxima inflación: {wait}',
   'wallet_treasury_inflation_ready': 'Inflación lista — ejecute un escenario',
   'wallet_treasury_inflation_critical':
-      'Tesorería crítica (5 cent restantes) — inflación en el próximo escenario',
+      'Tesorería en reserva de 1 cent — acuñación de 283M en el próximo escenario',
+  'wallet_treasury_send_locked':
+      'Tesorería rgsneddon bloqueada — envíos manuales deshabilitados tras el lanzamiento',
+  'wallet_treasury_offline_note':
+      'La tesorería está offline (sin cadena externa) hasta que un usuario ejecute un análisis. Solo el staking reduce el fondo hasta 1 cent.',
   'wallet_block_height': 'Altura de bloque: {height}',
   'wallet_faucet_title': 'Grifo de análisis',
   'wallet_faucet_note':
@@ -841,7 +851,9 @@ final _es = {
   'wallet_explorer_history': 'HISTORIAL DE BLOQUES',
   'wallet_explorer_trigger': 'Activado por {user}',
   'wallet_explorer_tx_count': '{count} transacción(es)',
-  'wallet_explorer_genesis_renewal': 'Renovación génesis — ciclo #{cycle} (286M PERC Perccent)',
+  'wallet_explorer_genesis_renewal': 'Renovación génesis — ciclo #{cycle} (283M PERC Perccent)',
+  'wallet_explorer_confirmations': '{count} confirmación(es) requerida(s) — totalmente confirmado',
+  'wallet_explorer_confirmed': 'Totalmente confirmado (1 bloque)',
   'wallet_cooldown_popup_title': 'Retiro de tesorería en espera',
   'wallet_cooldown_popup_body':
       'Su monedero ya retiró de la tesorería en los últimos 450 minutos. La cadena avanza con escenarios — su próximo retiro (y bloque) es en aproximadamente {blockWait}. Puede retirar 0,00000050 PERC de nuevo tras {wait}.',

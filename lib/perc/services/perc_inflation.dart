@@ -1,16 +1,21 @@
 import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
+import '../perc_chain_constants.dart';
 import 'perc_staking.dart';
 
 /// Treasury inflation — epoch marks each emission block to rgsneddon.
 class PercInflation {
   const PercInflation._();
 
-  /// Pool at staking reserve only; next scenario should inflate treasury.
-  static PercAmount get criticalPoolThreshold => PercStaking.rewardPerBlock;
+  /// Pool at minimum reserve (1 cent); next scenario mints a fresh 283M allocation.
+  static PercAmount get criticalPoolThreshold =>
+      PercChainConstants.minimumTreasuryReserve;
 
   static bool isPoolCritical(PercAmount treasuryPool) =>
-      treasuryPool <= criticalPoolThreshold;
+      treasuryPool.microUnits == criticalPoolThreshold.microUnits;
+
+  static bool isPoolAtReserve(PercAmount treasuryPool) =>
+      isPoolCritical(treasuryPool);
 
   /// Last block that minted PERC to the treasury (inflationary epoch).
   static DateTime? lastInflationEpoch(List<PercBlock> blocks) {

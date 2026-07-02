@@ -1,3 +1,4 @@
+import '../perc_chain_constants.dart';
 import 'perc_amount.dart';
 
 enum PercTxKind {
@@ -20,6 +21,7 @@ class PercTransaction {
     this.scenarioLabel,
     this.percentChance,
     this.blockIndex,
+    this.confirmations = 0,
   });
 
   final String id;
@@ -32,6 +34,10 @@ class PercTransaction {
   final String? scenarioLabel;
   final double? percentChance;
   final int? blockIndex;
+  final int confirmations;
+
+  bool get isConfirmed =>
+      confirmations >= PercChainConstants.confirmationsRequired;
 
   bool get isIncoming =>
       kind == PercTxKind.scenarioReward ||
@@ -49,6 +55,7 @@ class PercTransaction {
         if (scenarioLabel != null) 'scenarioLabel': scenarioLabel,
         if (percentChance != null) 'percentChance': percentChance,
         if (blockIndex != null) 'blockIndex': blockIndex,
+        if (confirmations != 0) 'confirmations': confirmations,
       };
 
   factory PercTransaction.fromJson(Map<String, dynamic> json) => PercTransaction(
@@ -65,5 +72,6 @@ class PercTransaction {
         scenarioLabel: json['scenarioLabel'] as String?,
         percentChance: (json['percentChance'] as num?)?.toDouble(),
         blockIndex: json['blockIndex'] as int?,
+        confirmations: json['confirmations'] as int? ?? 0,
       );
 }

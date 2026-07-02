@@ -9,6 +9,8 @@ void main() {
     expect(PercChainConstants.currencySymbol, 'PERC');
     expect(PercChainConstants.centValueInPerc, '0.00000001');
     expect(PercChainConstants.centsPerPerc, 100000000);
+    expect(PercChainConstants.maxSupply.asPerc, 283000000);
+    expect(PercChainConstants.confirmationsRequired, 1);
   });
 
   test('1 cent equals 0.00000001 PERC', () {

@@ -101,6 +101,13 @@ class BlockchainExplorerScreen extends StatelessWidget {
               strings.t('wallet_explorer_subtitle'),
               style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
             ),
+            const SizedBox(height: 4),
+            Text(
+              strings
+                  .t('wallet_explorer_confirmations')
+                  .replaceAll('{count}', '${PercChainConstants.confirmationsRequired}'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
+            ),
           ],
         ),
       ),
@@ -242,6 +249,17 @@ class BlockchainExplorerScreen extends StatelessWidget {
                   .replaceAll('{count}', '${block.transactions.length}'),
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
             ),
+            if (block.isConfirmed) ...[
+              const SizedBox(height: 4),
+              Text(
+                strings.t('wallet_explorer_confirmed'),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF00D9C0),
+                ),
+              ),
+            ],
           ],
         ),
       ),

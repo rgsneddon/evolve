@@ -3,7 +3,7 @@ import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_inflation.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
-import 'package:evolve/perc/services/perc_staking.dart';
+import 'package:evolve/perc/perc_chain_constants.dart';
 
 void _seedLedger(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
@@ -13,12 +13,12 @@ void _seedLedger(PercLedger ledger) {
 }
 
 void main() {
-  test('critical pool threshold is 0.00000005 PERC', () {
+  test('critical pool threshold is 1 cent (0.00000001 PERC)', () {
     expect(
       PercInflation.criticalPoolThreshold,
-      PercStaking.rewardPerBlock,
+      PercChainConstants.minimumTreasuryReserve,
     );
-    expect(PercInflation.criticalPoolThreshold.displayFixed8, '0.00000005');
+    expect(PercInflation.criticalPoolThreshold.displayFixed8, '0.00000001');
   });
 
   test('last inflation epoch follows treasury emission blocks', () {
@@ -55,7 +55,7 @@ void main() {
     ledger.creditScenario(username: 'alice', percentChance: 10);
 
     final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
-    treasury.balance = PercInflation.criticalPoolThreshold;
+    treasury.balance = PercChainConstants.minimumTreasuryReserve;
 
     expect(ledger.treasuryPoolCritical, isTrue);
     expect(ledger.timeToNextInflation(), Duration.zero);

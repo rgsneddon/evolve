@@ -1,3 +1,4 @@
+import '../perc_chain_constants.dart';
 import 'perc_amount.dart';
 import 'perc_transaction.dart';
 
@@ -11,6 +12,7 @@ class PercBlock {
     this.triggerUsername,
     this.treasuryCycle = 1,
     this.isGenesisRenewal = false,
+    this.confirmations = PercChainConstants.confirmationsRequired,
   });
 
   final int index;
@@ -21,6 +23,10 @@ class PercBlock {
   final String? triggerUsername;
   final int treasuryCycle;
   final bool isGenesisRenewal;
+  final int confirmations;
+
+  bool get isConfirmed =>
+      confirmations >= PercChainConstants.confirmationsRequired;
 
   Map<String, dynamic> toJson() => {
         'index': index,
@@ -31,6 +37,8 @@ class PercBlock {
         if (triggerUsername != null) 'triggerUsername': triggerUsername,
         if (treasuryCycle != 1) 'treasuryCycle': treasuryCycle,
         if (isGenesisRenewal) 'isGenesisRenewal': isGenesisRenewal,
+        if (confirmations != PercChainConstants.confirmationsRequired)
+          'confirmations': confirmations,
       };
 
   factory PercBlock.fromJson(Map<String, dynamic> json) => PercBlock(
@@ -45,5 +53,7 @@ class PercBlock {
         triggerUsername: json['triggerUsername'] as String?,
         treasuryCycle: json['treasuryCycle'] as int? ?? 1,
         isGenesisRenewal: json['isGenesisRenewal'] as bool? ?? false,
+        confirmations: json['confirmations'] as int? ??
+            PercChainConstants.confirmationsRequired,
       );
 }

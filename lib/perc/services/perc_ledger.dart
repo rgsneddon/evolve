@@ -102,6 +102,12 @@ class PercLedger {
   bool get treasuryPoolCritical =>
       PercInflation.isPoolCritical(treasuryBalance);
 
+  bool get isTreasurySendLocked => blockchainLaunched;
+
+  bool get isTreasuryAtReserve =>
+      treasuryBalance.microUnits ==
+      PercChainConstants.minimumTreasuryReserve.microUnits;
+
   Duration? timeToNextInflation([DateTime? now]) =>
       PercInflation.timeToNextInflation(
         lastInflationEpoch: lastInflationEpoch,
@@ -148,13 +154,19 @@ class PercLedger {
     if (err != null) throw StateError(err);
   }
 
-  List<PercTransaction> _renewTreasuryCycleIfCapped(DateTime now) {
-    if (!treasuryCapped) return [];
+  bool _needsTreasuryPoolRenewal() =>
+      treasuryCapped || isTreasuryAtReserve;
+
+  List<PercTransaction> _renewTreasuryPoolIfNeeded(DateTime now) {
+    if (!_needsTreasuryPoolRenewal()) return [];
 
     treasuryCycle++;
     cumulativeTreasuryMinted = PercAmount.zero;
     treasuryGenesisDone = false;
     _genesisRenewalEventPending = true;
+
+    final treasury = _ensureTreasury();
+    _credit(treasury, PercChainConstants.maxSupply);
 
     return [
       PercTransaction(
@@ -164,10 +176,28 @@ class PercLedger {
         timestamp: now,
         toUsername: PercChainConstants.treasuryUsername,
         memo:
-            'Genesis block — treasury cycle $treasuryCycle (${PercChainConstants.maxSupply.display} ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName} allocation)',
+            'Treasury pool renewal — cycle $treasuryCycle (${PercChainConstants.maxSupply.display} ${PercChainConstants.currencySymbol} minted to ${PercChainConstants.treasuryUsername})',
         blockIndex: blocks.length,
+        confirmations: PercChainConstants.confirmationsRequired,
       ),
     ];
+  }
+
+  int get _txConfirmations => PercChainConstants.confirmationsRequired;
+
+  void _assertTreasuryCanSend(String from) {
+    if (from == PercChainConstants.treasuryUsername && isTreasurySendLocked) {
+      throw StateError(
+        'Treasury account locked — ${PercChainConstants.treasuryUsername} cannot send manually after blockchain launch',
+      );
+    }
+  }
+
+  bool _treasuryCanDebit(PercAmount amount) {
+    final treasury = _ensureTreasury();
+    final after = treasury.balance - amount;
+    return after.microUnits >=
+        PercChainConstants.minimumTreasuryReserve.microUnits;
   }
 
   PercAmount _treasuryEmissionForScenario(DateTime now) {
@@ -209,7 +239,7 @@ class PercLedger {
 
     for (final entry in holders.entries) {
       final reward = PercStaking.rewardForBalance(entry.value);
-      if (!reward.isPositive || treasury.balance < reward) continue;
+      if (!reward.isPositive || !_treasuryCanDebit(reward)) continue;
 
       final acc = accounts[entry.key]!;
       _debit(treasury, reward);
@@ -226,6 +256,7 @@ class PercLedger {
         memo:
             'Cumulative staking (${PercStaking.rewardPerBlock.centDisplay} per block)',
         blockIndex: blockIndex,
+        confirmations: _txConfirmations,
       );
       treasury.transactions.insert(0, tx);
       acc.transactions.insert(0, tx);
@@ -344,10 +375,11 @@ class PercLedger {
     if (sender == null || receiver == null) {
       throw StateError('Account not found');
     }
+    _assertTreasuryCanSend(from);
     _debit(sender, amount);
     _credit(receiver, amount);
     final now = DateTime.now().toUtc();
-    final renewalTxs = _renewTreasuryCycleIfCapped(now);
+    final renewalTxs = _renewTreasuryPoolIfNeeded(now);
     final tx = PercTransaction(
       id: _newTxId(),
       kind: PercTxKind.transfer,
@@ -357,6 +389,7 @@ class PercLedger {
       toUsername: to,
       memo: memo,
       blockIndex: blocks.length,
+      confirmations: _txConfirmations,
     );
     sender.transactions.insert(0, tx);
     receiver.transactions.insert(0, tx);
@@ -393,7 +426,7 @@ class PercLedger {
     final now = DateTime.now().toUtc();
     final cooldownLeft = PercFaucetCooldown.remainingSince(user.lastFaucetDrawAt, now);
     final treasury = _ensureTreasury();
-    final renewalTxs = _renewTreasuryCycleIfCapped(now);
+    final renewalTxs = _renewTreasuryPoolIfNeeded(now);
     final isGenesisRenewal = renewalTxs.isNotEmpty;
     final blockTxs = <PercTransaction>[...renewalTxs];
     final emitted = _treasuryEmissionForScenario(now);
@@ -409,6 +442,7 @@ class PercLedger {
         timestamp: now,
         toUsername: PercChainConstants.treasuryUsername,
         blockIndex: blocks.length,
+        confirmations: _txConfirmations,
       );
       treasury.transactions.insert(0, tx);
       blockTxs.add(tx);
@@ -439,7 +473,7 @@ class PercLedger {
       );
     }
 
-    if (treasury.balance >= reward.total) {
+    if (_treasuryCanDebit(reward.total)) {
       _debit(treasury, reward.total);
       _credit(user, reward.total);
       user.lastFaucetDrawAt = now;
@@ -456,6 +490,7 @@ class PercLedger {
         scenarioLabel: label,
         percentChance: reward.percentChance,
         blockIndex: blocks.length,
+        confirmations: _txConfirmations,
       );
       treasury.transactions.insert(0, tx);
       user.transactions.insert(0, tx);
