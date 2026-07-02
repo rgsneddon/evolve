@@ -1065,13 +1065,14 @@ class _WalletScreenState extends State<WalletScreen> {
             ],
             if (reward != null) ...[
               const SizedBox(height: 12),
-              _rewardRow(strings.t('wallet_faucet_base'), reward.base.displayFixed8),
-              if (reward.bonus.microUnits > 0)
-                _rewardRow(
-                  strings.t('wallet_faucet_bonus'),
-                  '+${reward.bonus.displayFixed8} (${reward.percentChance.round()}%)',
-                ),
-              _rewardRow(strings.t('wallet_faucet_total'), reward.total.displayFixed8),
+              _rewardRow(
+                strings.t('wallet_faucet_outcome'),
+                reward.outcomeFractionLabel,
+              ),
+              _rewardRow(
+                strings.t('wallet_faucet_total'),
+                '${reward.total.displayFixed8} PERC',
+              ),
             ],
           ],
         ),

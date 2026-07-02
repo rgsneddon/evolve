@@ -3,16 +3,25 @@ import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/services/perc_faucet.dart';
 
 void main() {
-  test('scenario base reward is 0.00000050 PERC', () {
-    final reward = PercFaucet.computeScenarioReward(percentChance: 0);
-    expect(reward.base, PercAmount.scenarioBaseReward);
-    expect(reward.base.displayFixed8, '0.00000050');
+  test('percent chance reward is two-digit outcome over 100 PERC', () {
+    final reward = PercFaucet.computeAnalysisReward(outcomeScore: 42.7);
+    expect(reward.twoDigitOutcome, 43);
+    expect(reward.outcomeFractionLabel, '43/100');
+    expect(reward.total, PercAmount.fromPerc(0.43));
+    expect(reward.total.displayFixed8, '0.43000000');
   });
 
-  test('faucet bonus scales with percent chance outcome', () {
-    final low = PercFaucet.computeScenarioReward(percentChance: 10);
-    final high = PercFaucet.computeScenarioReward(percentChance: 80);
+  test('SCS reward uses refined score as two-digit xx/100', () {
+    final reward = PercFaucet.computeAnalysisReward(outcomeScore: 67.2);
+    expect(reward.twoDigitOutcome, 67);
+    expect(reward.total, PercAmount.fromPerc(0.67));
+  });
+
+  test('higher outcomes credit more PERC than lower outcomes', () {
+    final low = PercFaucet.computeAnalysisReward(outcomeScore: 10);
+    final high = PercFaucet.computeAnalysisReward(outcomeScore: 80);
     expect(high.total.microUnits, greaterThan(low.total.microUnits));
-    expect(high.bonus.microUnits, 80);
+    expect(high.twoDigitOutcome, 80);
+    expect(low.twoDigitOutcome, 10);
   });
 }

@@ -364,7 +364,8 @@ final _en = {
   'wallet_block_height': 'Block height: {height}',
   'wallet_faucet_title': 'Analysis faucet',
   'wallet_faucet_note':
-      'Tap Calculate percent chance or Calculate social cohesion score to draw 50 cent (0.00000050 PERC, plus outcome bonus) from treasury once every 450 minutes.',
+      'Tap Calculate percent chance or Calculate social cohesion score to draw xx/100 PERC from treasury — xx is the two-digit outcome (percent or SCS) — once every 450 minutes.',
+  'wallet_faucet_outcome': 'Outcome reward',
   'wallet_faucet_cooldown': 'Next treasury draw in approximately {wait}',
   'wallet_mesh_title': 'Concurrent wallet mesh',
   'wallet_mesh_connected':
@@ -420,7 +421,7 @@ final _en = {
   'wallet_explorer_confirmed': 'Fully confirmed (1 block)',
   'wallet_cooldown_popup_title': 'Treasury draw on cooldown',
   'wallet_cooldown_popup_body':
-      'Your wallet already drew from treasury within the last 450 minutes. The Perccent chain advances on scenarios — your next eligible draw (and block) is in approximately {blockWait}. You can draw 50 cent again after {wait}.',
+      'Your wallet already drew from treasury within the last 450 minutes. The Perccent chain advances on scenarios — your next eligible draw (and block) is in approximately {blockWait}. You can draw xx/100 PERC again after {wait}.',
   'wallet_cooldown_popup_ok': 'OK',
   'wallet_blockchain_awaiting_launch':
       'Blockchain awaits treasurer first sign-in to launch.',
@@ -936,7 +937,8 @@ final _es = {
   'wallet_block_height': 'Altura de bloque: {height}',
   'wallet_faucet_title': 'Grifo de análisis',
   'wallet_faucet_note':
-      'Pulse Calcular probabilidad % o Calcular puntuación de cohesión social para retirar 50 cent (0,00000050 PERC, más bono) de la tesorería una vez cada 450 minutos.',
+      'Pulse Calcular probabilidad % o Calcular puntuación de cohesión social para retirar xx/100 PERC de la tesorería — xx es el resultado de dos dígitos (porcentaje o SCS) — una vez cada 450 minutos.',
+  'wallet_faucet_outcome': 'Recompensa por resultado',
   'wallet_faucet_cooldown': 'Próximo retiro en aproximadamente {wait}',
   'wallet_explorer_link': 'the blockchain explorer',
   'wallet_explorer_block_current': 'Bloque #{height}',
@@ -956,7 +958,7 @@ final _es = {
   'wallet_explorer_confirmed': 'Totalmente confirmado (1 bloque)',
   'wallet_cooldown_popup_title': 'Retiro de tesorería en espera',
   'wallet_cooldown_popup_body':
-      'Su monedero ya retiró de la tesorería en los últimos 450 minutos. La cadena avanza con escenarios — su próximo retiro (y bloque) es en aproximadamente {blockWait}. Puede retirar 0,00000050 PERC de nuevo tras {wait}.',
+      'Su monedero ya retiró de la tesorería en los últimos 450 minutos. La cadena avanza con escenarios — su próximo retiro (y bloque) es en aproximadamente {blockWait}. Puede retirar xx/100 PERC de nuevo tras {wait}.',
   'wallet_cooldown_popup_ok': 'OK',
   'wallet_blockchain_awaiting_launch':
       'La cadena espera el primer inicio de sesión del tesorero.',

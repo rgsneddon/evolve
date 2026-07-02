@@ -39,7 +39,7 @@ void main() {
     );
   });
 
-  test('scenario credit adds base 0.00000050 PERC to user', () {
+  test('scenario credit adds xx/100 PERC to user from percent outcome', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('bob', 'password123');
@@ -47,7 +47,11 @@ void main() {
     final result = ledger.creditScenario(username: 'bob', percentChance: 42);
     expect(result.status, PercFaucetCreditStatus.credited);
     final bob = ledger.account('bob')!;
-    expect(bob.balance.microUnits, greaterThanOrEqualTo(50));
+    expect(
+      bob.balance,
+      PercAmount.fromPerc(0.42) + PercStaking.rewardPerBlock,
+    );
+    expect(result.reward!.outcomeFractionLabel, '42/100');
     expect(bob.transactions, isNotEmpty);
   });
 
@@ -61,7 +65,8 @@ void main() {
       percentChance: 25,
     );
     expect(result.status, PercFaucetCreditStatus.credited);
-    expect(result.reward!.base.displayFixed8, '0.00000050');
+    expect(result.reward!.twoDigitOutcome, 25);
+    expect(result.reward!.total, PercAmount.fromPerc(0.25));
   });
 
   test('faucet draw blocked for 450 minutes per wallet', () {

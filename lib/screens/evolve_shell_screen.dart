@@ -60,8 +60,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
           strings
               .t('wallet_cooldown_popup_body')
               .replaceAll('{wait}', PercFaucetCooldown.formatWait(wait))
-              .replaceAll('{blockWait}', PercFaucetCooldown.formatWait(blockWait))
-              .replaceAll('{base}', '0.00000050'),
+              .replaceAll('{blockWait}', PercFaucetCooldown.formatWait(blockWait)),
         ),
         actions: [
           TextButton(

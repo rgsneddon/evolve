@@ -1,8 +1,8 @@
 import '../models/perc_amount.dart';
 import '../perc_chain_constants.dart';
 
-/// Analysis faucet — base reward + outcome-score bonus from treasury.
-/// [outcomeScore] is percent chance (0–100) or social cohesion score (0–100).
+/// Analysis faucet — credits xx/100 PERC from treasury where xx is the
+/// two-digit outcome (percent chance or refined SCS, 0–100).
 class PercFaucet {
   const PercFaucet._();
 
@@ -15,16 +15,14 @@ class PercFaucet {
     required double outcomeScore,
   }) {
     final pct = outcomeScore.clamp(0.0, 100.0);
-    final base = PercChainConstants.scenarioBaseReward;
-    final bonusUnits =
-        (pct.round() * PercChainConstants.faucetBonusMicroPerPercentPoint)
-            .clamp(0, 10000);
-    final bonus = PercAmount(bonusUnits);
+    final twoDigit = pct.round().clamp(0, 100);
+    final total = PercAmount.fromPerc(twoDigit / 100);
     return PercFaucetReward(
-      base: base,
-      bonus: bonus,
+      base: PercAmount.zero,
+      bonus: total,
       percentChance: pct,
-      total: base + bonus,
+      twoDigitOutcome: twoDigit,
+      total: total,
     );
   }
 }
@@ -35,10 +33,15 @@ class PercFaucetReward {
     required this.bonus,
     required this.percentChance,
     required this.total,
+    required this.twoDigitOutcome,
   });
 
   final PercAmount base;
   final PercAmount bonus;
   final double percentChance;
   final PercAmount total;
+  /// Rounded outcome used for xx/100 PERC (percent chance or SCS).
+  final int twoDigitOutcome;
+
+  String get outcomeFractionLabel => '$twoDigitOutcome/100';
 }
