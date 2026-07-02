@@ -39,6 +39,12 @@ class EvolveProvider extends ChangeNotifier {
   final GrokAuthClient _grokAuth;
   final GrokConstrualService _grokConstrual;
 
+  /// Credits PERC faucet after successful scenario analysis.
+  Future<void> Function({
+    required double percentChance,
+    String? memo,
+  })? scenarioRewardHandler;
+
   AnalysisMode mode = AnalysisMode.cohesionScore;
   LocaleConfig locale = LocaleConfig.defaults;
   ScenarioInput input = const ScenarioInput();
@@ -752,6 +758,15 @@ class EvolveProvider extends ChangeNotifier {
       await Future<void>.delayed(const Duration(milliseconds: 150));
       _reanalyze(working);
       _persistCurrentMode();
+      if (result != null && scenarioRewardHandler != null) {
+        final memo = working.posedQuestion.trim().isNotEmpty
+            ? working.posedQuestion.trim()
+            : (working.topic.trim().isNotEmpty ? working.topic.trim() : null);
+        await scenarioRewardHandler!(
+          percentChance: result!.percentChance,
+          memo: memo,
+        );
+      }
       statusMessage = grokConstrualEnabled
           ? strings.t('grok_construal_applied')
           : strings.t('status_done');

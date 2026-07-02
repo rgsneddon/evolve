@@ -7,21 +7,40 @@ import 'l10n/app_localizations.dart';
 import 'models/locale_config.dart';
 import 'providers/locale_provider.dart';
 import 'providers/evolve_provider.dart';
-import 'screens/home_screen.dart';
+import 'perc/providers/perc_wallet_provider.dart';
+import 'screens/evolve_shell_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await OutcomeRegistry.ensureLoaded();
   final evolveProvider = EvolveProvider();
+  final walletProvider = PercWalletProvider();
   await evolveProvider.initialize();
-  runApp(EvolveApp(evolveProvider: evolveProvider));
+  await walletProvider.initialize();
+  evolveProvider.scenarioRewardHandler = ({
+    required double percentChance,
+    String? memo,
+  }) =>
+      walletProvider.creditScenario(
+        percentChance: percentChance,
+        memo: memo,
+      );
+  runApp(EvolveApp(
+    evolveProvider: evolveProvider,
+    walletProvider: walletProvider,
+  ));
 }
 
 class EvolveApp extends StatelessWidget {
-  const EvolveApp({super.key, required this.evolveProvider});
+  const EvolveApp({
+    super.key,
+    required this.evolveProvider,
+    required this.walletProvider,
+  });
 
   final EvolveProvider evolveProvider;
+  final PercWalletProvider walletProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +48,7 @@ class EvolveApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider.value(value: evolveProvider),
+        ChangeNotifierProvider.value(value: walletProvider),
       ],
       child: Consumer<LocaleProvider>(
         builder: (context, localeProv, _) {
@@ -51,7 +71,7 @@ class EvolveApp extends StatelessWidget {
               textDirection: localeProv.config.textDirection,
               child: child ?? const SizedBox.shrink(),
             ),
-            home: const HomeScreen(),
+            home: const EvolveShellScreen(),
           );
         },
       ),

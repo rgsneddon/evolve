@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/main.dart';
+import 'package:evolve/perc/providers/perc_wallet_provider.dart';
+import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
 import 'package:evolve/widgets/evolve_banner.dart';
 
@@ -10,8 +12,10 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final provider = EvolveProvider();
+    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
     await provider.initialize();
-    await tester.pumpWidget(EvolveApp(evolveProvider: provider));
+    await wallet.initialize();
+    await tester.pumpWidget(EvolveApp(evolveProvider: provider, walletProvider: wallet));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
