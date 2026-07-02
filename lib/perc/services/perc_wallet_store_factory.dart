@@ -1,10 +1,6 @@
-import 'package:flutter/foundation.dart';
-
 import 'perc_wallet_store.dart';
-import 'perc_wallet_store_io.dart';
-import 'perc_wallet_store_stub.dart';
+import 'perc_wallet_store_stub.dart'
+    if (dart.library.io) 'perc_wallet_store_io.dart'
+    if (dart.library.html) 'perc_wallet_store_web.dart' as platform;
 
-PercWalletStore createPercWalletStore() {
-  if (kIsWeb) return PercWalletStoreStub();
-  return PercWalletStoreIo();
-}
+PercWalletStore createPercWalletStore() => platform.createPercWalletStore();

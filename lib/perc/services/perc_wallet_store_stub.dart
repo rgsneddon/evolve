@@ -4,6 +4,8 @@ import 'perc_ledger.dart';
 import 'perc_wallet_store.dart';
 import 'perc_wallet_store_memory.dart';
 
+PercWalletStore createPercWalletStore() => PercWalletStoreStub();
+
 /// Web / fallback — uses in-memory persistence for the session.
 class PercWalletStoreStub implements PercWalletStore {
   final _memory = PercWalletStoreMemory();

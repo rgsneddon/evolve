@@ -6,6 +6,8 @@ import 'package:path_provider/path_provider.dart';
 import 'perc_ledger.dart';
 import 'perc_wallet_store.dart';
 
+PercWalletStore createPercWalletStore() => PercWalletStoreIo();
+
 class PercWalletStoreIo implements PercWalletStore {
   static const fileName = 'perc_wallet_ledger.json';
 

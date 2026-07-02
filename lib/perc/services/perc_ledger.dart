@@ -9,6 +9,7 @@ import '../models/perc_transaction.dart';
 import '../perc_chain_constants.dart';
 import 'perc_auth.dart';
 import 'perc_chronoflux_micro_verifier.dart';
+import 'perc_wallet_mesh.dart';
 import 'perc_faucet.dart';
 import 'perc_faucet_cooldown.dart';
 import 'perc_inflation.dart';
@@ -30,8 +31,10 @@ class PercLedger {
     this.microblockCount = 0,
     this.totalMicroblocks = 0,
     this.lastChronofluxFingerprint,
+    Map<String, List<String>>? walletPeers,
     PercChronofluxMicroVerifier? microVerifier,
-  }) : _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
+  })  : walletPeers = walletPeers ?? <String, List<String>>{},
+        _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
 
   final Map<String, PercAccount> accounts;
   final List<PercBlock> blocks;
@@ -45,6 +48,7 @@ class PercLedger {
   int microblockCount;
   int totalMicroblocks;
   String? lastChronofluxFingerprint;
+  Map<String, List<String>> walletPeers;
   final PercChronofluxMicroVerifier _microVerifier;
   bool _blockchainLaunchEventPending = false;
   bool _genesisRenewalEventPending = false;
@@ -55,6 +59,27 @@ class PercLedger {
 
   double get microblockProgress =>
       microblocksPerBlock > 0 ? microblockCount / microblocksPerBlock : 0;
+
+  bool get isWalletMeshComplete =>
+      PercWalletMesh.isComplete(walletPeers, accounts.keys);
+
+  List<String> connectedPeersFor(String username) {
+    final key = PercAuth.normalizeUsername(username);
+    return List.unmodifiable(walletPeers[key] ?? const []);
+  }
+
+  List<String> get sessionConnectedPeers =>
+      sessionUsername == null ? const [] : connectedPeersFor(sessionUsername!);
+
+  /// Ensures every wallet has concurrent peer links to every other wallet.
+  void connectAllWalletsConcurrently() {
+    final users = accounts.keys.toList();
+    if (users.isEmpty) {
+      walletPeers = {};
+      return;
+    }
+    walletPeers = PercWalletMesh.fullMesh(users);
+  }
 
   static PercLedger empty() => PercLedger(
         accounts: {},
@@ -470,6 +495,7 @@ class PercLedger {
       address: PercAuth.deriveAddress(u, salt),
     );
     accounts[u] = acc;
+    connectAllWalletsConcurrently();
     return acc;
   }
 
@@ -669,7 +695,7 @@ class PercLedger {
   }
 
   Map<String, dynamic> toJson() => {
-        'version': 4,
+        'version': 5,
         'accounts': accounts.map((k, v) => MapEntry(k, v.toJson())),
         'blocks': blocks.map((b) => b.toJson()).toList(),
         'lastScenarioAt': lastScenarioAt?.toIso8601String(),
@@ -683,6 +709,9 @@ class PercLedger {
         'totalMicroblocks': totalMicroblocks,
         if (lastChronofluxFingerprint != null)
           'lastChronofluxFingerprint': lastChronofluxFingerprint,
+        'walletPeers': walletPeers.map(
+          (k, v) => MapEntry(k, List<String>.from(v)),
+        ),
       };
 
   factory PercLedger.fromJson(Map<String, dynamic> json) {
@@ -720,7 +749,21 @@ class PercLedger {
       microblockCount: json['microblockCount'] as int? ?? 0,
       totalMicroblocks: json['totalMicroblocks'] as int? ?? 0,
       lastChronofluxFingerprint: json['lastChronofluxFingerprint'] as String?,
-    );
+      walletPeers: _walletPeersFromJson(json['walletPeers']),
+    )..connectAllWalletsConcurrently();
+  }
+
+  static Map<String, List<String>> _walletPeersFromJson(Object? raw) {
+    if (raw is! Map) return {};
+    final mesh = <String, List<String>>{};
+    for (final entry in raw.entries) {
+      final peers = entry.value;
+      if (peers is List) {
+        mesh[entry.key as String] =
+            peers.map((e) => e as String).toList()..sort();
+      }
+    }
+    return mesh;
   }
 
   static PercLedger _migrateFromChainService(Map<String, dynamic> json) {

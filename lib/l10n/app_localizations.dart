@@ -343,6 +343,11 @@ final _en = {
   'wallet_faucet_note':
       'Tap Calculate percent chance or Calculate social cohesion score to draw 50 cent (0.00000050 PERC, plus outcome bonus) from treasury once every 450 minutes.',
   'wallet_faucet_cooldown': 'Next treasury draw in approximately {wait}',
+  'wallet_mesh_title': 'Concurrent wallet mesh',
+  'wallet_mesh_connected':
+      'Connected to {count} other wallet(s) on the shared Perccent chain',
+  'wallet_mesh_peers': 'Peers: {peers}',
+  'wallet_mesh_incomplete': 'Mesh linking wallets…',
   'wallet_explorer_link': 'the blockchain explorer',
   'wallet_explorer_block_current': 'Block #{height}',
   'wallet_explorer_title': 'the blockchain explorer',

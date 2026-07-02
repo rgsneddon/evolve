@@ -15,15 +15,18 @@ import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
 import '../services/perc_inflation.dart';
 import '../services/perc_ledger.dart';
+import '../services/perc_ledger_hub.dart';
 import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
 
 class PercWalletProvider extends ChangeNotifier {
   PercWalletProvider({PercWalletStore? store})
-      : _store = store ?? createPercWalletStore();
+      : _store = store ?? createPercWalletStore() {
+    PercLedgerHub.instance.addListener(_onHubLedgerChanged);
+  }
 
   final PercWalletStore _store;
-  PercLedger _ledger = PercLedger.empty();
+  PercLedger get _ledger => PercLedgerHub.instance.ledger;
   bool _ready = false;
   PercFaucetReward? lastReward;
   String? statusMessage;
@@ -71,6 +74,11 @@ class PercWalletProvider extends ChangeNotifier {
   int get microblocksPerBlock => _ledger.microblocksPerBlock;
   double get microblockProgress => _ledger.microblockProgress;
   String? get lastChronofluxFingerprint => _ledger.lastChronofluxFingerprint;
+  bool get isWalletMeshComplete => _ledger.isWalletMeshComplete;
+  List<String> get connectedPeerWallets => _ledger.sessionConnectedPeers;
+  int get connectedWalletCount => connectedPeerWallets.length;
+
+  void _onHubLedgerChanged() => notifyListeners();
 
   Duration? get faucetCooldownRemaining {
     if (!isLoggedIn) return null;
@@ -108,10 +116,7 @@ class PercWalletProvider extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    final loaded = await _store.load();
-    _ledger = loaded ?? PercLedger.empty();
-    _ledger.ensureTreasuryAccount();
-    await _persist();
+    await PercLedgerHub.instance.initialize(_store);
     _ready = true;
     notifyListeners();
   }
@@ -124,7 +129,7 @@ class PercWalletProvider extends ChangeNotifier {
       _captureTreasuryLaunchEvent();
       statusMessage = 'Treasury secured — blockchain launched';
       notifyListeners();
-      await _persist();
+      await _commit();
     } catch (e) {
       errorMessage = e.toString().replaceFirst('StateError: ', '');
       notifyListeners();
@@ -138,7 +143,7 @@ class PercWalletProvider extends ChangeNotifier {
       _ledger.login(username, password);
       statusMessage = 'Account created';
       notifyListeners();
-      await _persist();
+      await _commit();
     } catch (e) {
       errorMessage = e.toString().replaceFirst('StateError: ', '');
       notifyListeners();
@@ -152,7 +157,7 @@ class PercWalletProvider extends ChangeNotifier {
       _captureTreasuryLaunchEvent();
       statusMessage = 'Signed in as ${_ledger.sessionUsername}';
       notifyListeners();
-      await _persist();
+      await _commit();
     } catch (e) {
       errorMessage = e.toString().replaceFirst('StateError: ', '');
       notifyListeners();
@@ -164,7 +169,7 @@ class PercWalletProvider extends ChangeNotifier {
     lastReward = null;
     _clearMessages();
     notifyListeners();
-    await _persist();
+    await _commit();
   }
 
   Future<void> send({
@@ -204,7 +209,7 @@ class PercWalletProvider extends ChangeNotifier {
           ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
           : 'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername';
       notifyListeners();
-      await _persist();
+      await _commit();
     } catch (e) {
       errorMessage = e.toString().replaceFirst('StateError: ', '');
       notifyListeners();
@@ -223,7 +228,7 @@ class PercWalletProvider extends ChangeNotifier {
           ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
           : 'Chronoflux microblock seal — block #${result.blockIndex}';
       notifyListeners();
-      unawaited(_persist());
+      unawaited(_commit());
     }
   }
 
@@ -266,7 +271,7 @@ class PercWalletProvider extends ChangeNotifier {
             ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
             : null;
         notifyListeners();
-        await _persist();
+        await _commit();
         return result;
       }
 
@@ -277,7 +282,7 @@ class PercWalletProvider extends ChangeNotifier {
             ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
             : '+${result.reward!.total.displayFixed8} ${PercChainConstants.currencySymbol}';
         notifyListeners();
-        await _persist();
+        await _commit();
         return result;
       }
 
@@ -290,7 +295,7 @@ class PercWalletProvider extends ChangeNotifier {
             : 'Treasury empty — run another scenario later';
       }
       notifyListeners();
-      await _persist();
+      await _commit();
       return result;
     } catch (e) {
       statusMessage = 'Treasury cap reached';
@@ -304,5 +309,11 @@ class PercWalletProvider extends ChangeNotifier {
     errorMessage = null;
   }
 
-  Future<void> _persist() => _store.save(_ledger);
+  Future<void> _commit() => PercLedgerHub.instance.commit();
+
+  @override
+  void dispose() {
+    PercLedgerHub.instance.removeListener(_onHubLedgerChanged);
+    super.dispose();
+  }
 }

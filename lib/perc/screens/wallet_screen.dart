@@ -475,6 +475,8 @@ class _WalletScreenState extends State<WalletScreen> {
                 const SizedBox(height: 12),
                 _explorerLink(context, wallet, strings),
                 const SizedBox(height: 12),
+                _walletMeshCard(wallet, strings),
+                const SizedBox(height: 12),
                 _faucetCard(wallet, strings),
                 const SizedBox(height: 12),
                 _addressCard(context, wallet, strings),
@@ -695,6 +697,49 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
             ],
             ..._treasuryRemainingLines(wallet, strings),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _walletMeshCard(PercWalletProvider wallet, AppLocalizations strings) {
+    final peers = wallet.connectedPeerWallets;
+    final peerLine = peers.isEmpty
+        ? '—'
+        : peers.join(', ');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.device_hub, size: 18, color: Color(0xFF00D9C0)),
+                const SizedBox(width: 8),
+                Text(
+                  strings.t('wallet_mesh_title'),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              wallet.isWalletMeshComplete
+                  ? strings
+                      .t('wallet_mesh_connected')
+                      .replaceAll('{count}', '${wallet.connectedWalletCount}')
+                  : strings.t('wallet_mesh_incomplete'),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
+            ),
+            if (peers.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                strings.t('wallet_mesh_peers').replaceAll('{peers}', peerLine),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
+              ),
+            ],
           ],
         ),
       ),
