@@ -3,9 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../models/analysis_mode.dart';
-import '../../models/locale_config.dart';
-import '../../models/scenario_input.dart';
-import '../models/perc_microblock_record_result.dart';
 import '../models/perc_evolution_step.dart';
 import '../models/perc_side_chain.dart';
 import '../perc_app_version.dart';
@@ -247,22 +244,6 @@ class PercWalletProvider extends ChangeNotifier {
     } catch (e) {
       errorMessage = e.toString().replaceFirst('StateError: ', '');
       notifyListeners();
-    }
-  }
-
-  void recordMicroblock(
-    ScenarioInput input, {
-    LocaleConfig locale = LocaleConfig.defaults,
-  }) {
-    if (!_ready) return;
-    final result = _ledger.recordMicroblock(input: input, locale: locale);
-    if (result.blockSealed) {
-      _captureGenesisRenewalEvent();
-      statusMessage = _pendingGenesisRenewalNotice
-          ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
-          : 'Chronoflux microblock seal — block #${result.blockIndex}';
-      notifyListeners();
-      unawaited(_commit());
     }
   }
 

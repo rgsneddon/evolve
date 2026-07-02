@@ -18,9 +18,6 @@ class PercTimeConfirmationPermutation {
 class PercChronofluxTimeConfirmations {
   const PercChronofluxTimeConfirmations._();
 
-  /// Keystroke → microblock (pre-confirmation).
-  static const Duration microblockTick = Duration(milliseconds: 1);
-
   /// Treasury inflation epoch — 1 PERC per second (Chronoflux continuum time).
   static const Duration inflationEpoch = Duration(seconds: 1);
 
@@ -36,12 +33,6 @@ class PercChronofluxTimeConfirmations {
       PercChainConstants.confirmationsRequired;
 
   static List<PercTimeConfirmationPermutation> allPermutations() => const [
-        PercTimeConfirmationPermutation(
-          name: 'Keystroke microblock',
-          interval: microblockTick,
-          confirmationsToSettle: 0,
-          principiaBinding: 'ω input → Chronoflux side-chain microblock',
-        ),
         PercTimeConfirmationPermutation(
           name: 'Inflation epoch',
           interval: inflationEpoch,

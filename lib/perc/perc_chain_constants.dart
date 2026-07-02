@@ -20,7 +20,7 @@ class PercChainConstants {
   static const String centValueInPerc = '0.00000001';
   static const int centsPerPerc = 100000000;
 
-  /// Keystrokes advance one microblock; 100M microblocks seal a block.
+  /// Side-chain microblocks seal a main block at 100M (scenario-driven, not analysis keystrokes).
   static const int microblocksPerBlock = 100000000;
 
   /// Override for tests — never set in production code.

@@ -347,7 +347,7 @@ final _en = {
   'wallet_logout': 'Sign out',
   'wallet_treasury_title': 'Treasury emission',
   'wallet_treasury_note':
-      'Perccent chain advances on scenarios and Chronoflux keystrokes. Treasury earns 1 PERC per elapsed second — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.',
+      'Perccent chain advances on scenario analysis — not on Grok construal or field keystrokes. Treasury earns 1 PERC per elapsed second — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.',
   'wallet_treasury_cycle': 'Treasury cycle #{cycle}',
   'wallet_treasury_minted': '{minted} PERC minted ({pct}% continuum)',
   'wallet_treasury_remaining': 'Treasury remaining: {amount} PERC',
@@ -901,7 +901,7 @@ final _es = {
   'wallet_logout': 'Cerrar sesión',
   'wallet_treasury_title': 'Emisión de tesorería',
   'wallet_treasury_note':
-      'La cadena Perccent avanza con escenarios y pulsaciones Chronoflux. La tesorería gana 1 PERC por segundo transcurrido — suministro continuo infinito Chronoflux. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
+      'La cadena Perccent avanza con análisis de escenarios — no con construcción Grok ni pulsaciones de campo. La tesorería gana 1 PERC por segundo transcurrido — suministro continuo infinito Chronoflux. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
   'wallet_treasury_cycle': 'Ciclo de tesorería #{cycle}',
   'wallet_treasury_minted': '{minted} PERC acuñados ({pct}% continuo)',
   'wallet_treasury_remaining': 'Tesorería restante: {amount} PERC',

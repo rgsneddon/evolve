@@ -29,8 +29,6 @@ Future<void> main() async {
         outcomeScore: outcomeScore,
         memo: memo,
       );
-  evolveProvider.microblockKeystrokeHandler = (input) =>
-      walletProvider.recordMicroblock(input, locale: evolveProvider.locale);
   runApp(EvolveApp(
     evolveProvider: evolveProvider,
     walletProvider: walletProvider,

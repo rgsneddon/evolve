@@ -44,7 +44,7 @@ class PercDappSpec {
     PercDappSpec(
       guid: 'perc-sidechain-002',
       name: 'Chronoflux Side Chain',
-      description: 'Microblock side chain — 100M keystrokes seal a main block',
+      description: 'Microblock side chain — 100M microblocks seal a main block',
       kind: PercDappKind.sideChain,
       icon: Icons.account_tree_outlined,
       color: Color(0xFF6C63FF),
