@@ -12,7 +12,7 @@ class CreditScreen extends StatelessWidget {
   const CreditScreen({super.key});
 
   static const governanceUrl =
-      'https://x.com/EvolveChronoflux/status/1';
+      'https://x.com/rgsneddon/status/2048748971246358967';
 
   @override
   Widget build(BuildContext context) {
