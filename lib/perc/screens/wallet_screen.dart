@@ -579,6 +579,17 @@ class _WalletScreenState extends State<WalletScreen> {
               strings.t('wallet_treasury_note'),
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8), height: 1.4),
             ),
+            const SizedBox(height: 6),
+            Text(
+              strings
+                  .t('wallet_treasury_cycle')
+                  .replaceAll('{cycle}', '${wallet.treasuryCycle}'),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF6C63FF),
+              ),
+            ),
             const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
@@ -833,6 +844,8 @@ class _WalletScreenState extends State<WalletScreen> {
             ? strings.t('wallet_tx_sent').replaceAll('{user}', tx.toUsername ?? '')
             : strings.t('wallet_tx_received')
                 .replaceAll('{user}', tx.fromUsername ?? '');
+      case PercTxKind.genesisRenewal:
+        title = tx.memo ?? strings.t('wallet_tx_genesis');
     }
 
     final prefix = isOut ? '-' : '+';

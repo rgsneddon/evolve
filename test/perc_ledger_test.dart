@@ -103,6 +103,52 @@ void main() {
     expect(PercChainConstants.treasuryUsername, 'rgsneddon');
   });
 
+  test('treasury cap renews genesis block and resumes emission', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+
+    ledger.cumulativeTreasuryMinted = PercChainConstants.maxSupply;
+    ledger.treasuryGenesisDone = true;
+
+    final result = ledger.creditScenario(
+      username: 'alice',
+      percentChance: 10,
+      scenarioLabel: 'Renewal',
+    );
+
+    expect(result.status, PercFaucetCreditStatus.credited);
+    expect(ledger.treasuryCycle, 2);
+    expect(ledger.treasuryCapped, isFalse);
+    expect(ledger.cumulativeTreasuryMinted, PercAmount.fromPerc(1));
+    expect(ledger.blocks.any((b) => b.isGenesisRenewal), isTrue);
+    expect(
+      ledger.blocks.last.transactions.any(
+        (t) => t.kind.name == 'genesisRenewal',
+      ),
+      isTrue,
+    );
+  });
+
+  test('send after treasury cap creates genesis renewal block', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+    ledger.register('bob', 'password123');
+
+    ledger.creditScenario(username: 'alice', percentChance: 50);
+    ledger.cumulativeTreasuryMinted = PercChainConstants.maxSupply;
+
+    ledger.send(
+      fromUsername: 'alice',
+      toUsername: 'bob',
+      amount: PercAmount.fromPerc(0.00000010),
+    );
+
+    expect(ledger.treasuryCycle, 2);
+    expect(ledger.blocks.last.isGenesisRenewal, isTrue);
+  });
+
   test('wallet provider persists ledger across reload', () async {
     final store = PercWalletStoreMemory();
     final wallet = PercWalletProvider(store: store);

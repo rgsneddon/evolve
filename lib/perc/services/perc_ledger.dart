@@ -18,6 +18,7 @@ class PercLedger {
     required this.lastScenarioAt,
     required this.treasuryGenesisDone,
     required this.cumulativeTreasuryMinted,
+    this.treasuryCycle = 1,
     this.blockchainLaunched = false,
     this.sessionUsername,
     this.nextTxId = 1,
@@ -28,10 +29,12 @@ class PercLedger {
   DateTime? lastScenarioAt;
   bool treasuryGenesisDone;
   PercAmount cumulativeTreasuryMinted;
+  int treasuryCycle;
   bool blockchainLaunched;
   String? sessionUsername;
   int nextTxId;
   bool _blockchainLaunchEventPending = false;
+  bool _genesisRenewalEventPending = false;
 
   static PercLedger empty() => PercLedger(
         accounts: {},
@@ -39,6 +42,7 @@ class PercLedger {
         lastScenarioAt: null,
         treasuryGenesisDone: false,
         cumulativeTreasuryMinted: PercAmount.zero,
+        treasuryCycle: 1,
         blockchainLaunched: false,
       );
 
@@ -47,6 +51,12 @@ class PercLedger {
   bool consumeBlockchainLaunchEvent() {
     if (!_blockchainLaunchEventPending) return false;
     _blockchainLaunchEventPending = false;
+    return true;
+  }
+
+  bool consumeGenesisRenewalEvent() {
+    if (!_genesisRenewalEventPending) return false;
+    _genesisRenewalEventPending = false;
     return true;
   }
 
@@ -122,6 +132,28 @@ class PercLedger {
     if (err != null) throw StateError(err);
   }
 
+  List<PercTransaction> _renewTreasuryCycleIfCapped(DateTime now) {
+    if (!treasuryCapped) return [];
+
+    treasuryCycle++;
+    cumulativeTreasuryMinted = PercAmount.zero;
+    treasuryGenesisDone = false;
+    _genesisRenewalEventPending = true;
+
+    return [
+      PercTransaction(
+        id: _newTxId(),
+        kind: PercTxKind.genesisRenewal,
+        amount: PercChainConstants.maxSupply,
+        timestamp: now,
+        toUsername: PercChainConstants.treasuryUsername,
+        memo:
+            'Genesis block — treasury cycle $treasuryCycle (${PercChainConstants.maxSupply.display} PERC allocation)',
+        blockIndex: blocks.length,
+      ),
+    ];
+  }
+
   PercAmount _treasuryEmissionForScenario(DateTime now) {
     if (treasuryCapped) return PercAmount.zero;
     final perSecond = PercChainConstants.treasuryEmissionPerSecond;
@@ -186,6 +218,7 @@ class PercLedger {
     required PercAmount treasuryEmitted,
     String? scenarioLabel,
     String? triggerUsername,
+    bool isGenesisRenewal = false,
   }) {
     blocks.add(PercBlock(
       index: blocks.length,
@@ -194,6 +227,8 @@ class PercLedger {
       treasuryEmitted: treasuryEmitted,
       scenarioLabel: scenarioLabel,
       triggerUsername: triggerUsername,
+      treasuryCycle: treasuryCycle,
+      isGenesisRenewal: isGenesisRenewal,
     ));
   }
 
@@ -203,6 +238,7 @@ class PercLedger {
     required PercAmount treasuryEmitted,
     String? scenarioLabel,
     String? triggerUsername,
+    bool isGenesisRenewal = false,
   }) {
     if (blockTxs.isEmpty) return;
     _applyStakingRewards(timestamp, blockTxs);
@@ -212,6 +248,7 @@ class PercLedger {
       treasuryEmitted: treasuryEmitted,
       scenarioLabel: scenarioLabel,
       triggerUsername: triggerUsername,
+      isGenesisRenewal: isGenesisRenewal,
     );
   }
 
@@ -289,6 +326,7 @@ class PercLedger {
     _debit(sender, amount);
     _credit(receiver, amount);
     final now = DateTime.now().toUtc();
+    final renewalTxs = _renewTreasuryCycleIfCapped(now);
     final tx = PercTransaction(
       id: _newTxId(),
       kind: PercTxKind.transfer,
@@ -301,11 +339,13 @@ class PercLedger {
     );
     sender.transactions.insert(0, tx);
     receiver.transactions.insert(0, tx);
+    final blockTxs = [...renewalTxs, tx];
     _finalizeBlock(
       timestamp: now,
-      blockTxs: [tx],
+      blockTxs: blockTxs,
       treasuryEmitted: PercAmount.zero,
       triggerUsername: from,
+      isGenesisRenewal: renewalTxs.isNotEmpty,
     );
     return tx;
   }
@@ -332,8 +372,10 @@ class PercLedger {
     final now = DateTime.now().toUtc();
     final cooldownLeft = PercFaucetCooldown.remainingSince(user.lastFaucetDrawAt, now);
     final treasury = _ensureTreasury();
+    final renewalTxs = _renewTreasuryCycleIfCapped(now);
+    final isGenesisRenewal = renewalTxs.isNotEmpty;
+    final blockTxs = <PercTransaction>[...renewalTxs];
     final emitted = _treasuryEmissionForScenario(now);
-    final blockTxs = <PercTransaction>[];
 
     if (emitted.isPositive) {
       treasuryGenesisDone = true;
@@ -364,6 +406,7 @@ class PercLedger {
           treasuryEmitted: emitted,
           scenarioLabel: scenarioLabel,
           triggerUsername: u,
+          isGenesisRenewal: isGenesisRenewal,
         );
         lastScenarioAt = now;
       }
@@ -406,6 +449,7 @@ class PercLedger {
         treasuryEmitted: emitted,
         scenarioLabel: scenarioLabel,
         triggerUsername: u,
+        isGenesisRenewal: isGenesisRenewal,
       );
     }
 
@@ -426,12 +470,13 @@ class PercLedger {
   }
 
   Map<String, dynamic> toJson() => {
-        'version': 2,
+        'version': 3,
         'accounts': accounts.map((k, v) => MapEntry(k, v.toJson())),
         'blocks': blocks.map((b) => b.toJson()).toList(),
         'lastScenarioAt': lastScenarioAt?.toIso8601String(),
         'treasuryGenesisDone': treasuryGenesisDone,
         'cumulativeTreasuryMinted': cumulativeTreasuryMinted.toJson(),
+        'treasuryCycle': treasuryCycle,
         'blockchainLaunched': blockchainLaunched,
         'sessionUsername': sessionUsername,
         'nextTxId': nextTxId,
@@ -464,6 +509,7 @@ class PercLedger {
           ? PercAmount.fromJson(
               json['cumulativeTreasuryMinted'] as Map<String, dynamic>)
           : PercAmount.zero,
+      treasuryCycle: json['treasuryCycle'] as int? ?? 1,
       blockchainLaunched: json['blockchainLaunched'] as bool? ??
           (blocks.isNotEmpty || treasuryGenesisDone),
       sessionUsername: json['sessionUsername'] as String?,

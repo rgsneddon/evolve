@@ -216,6 +216,19 @@ class BlockchainExplorerScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
               ),
             ],
+            if (block.isGenesisRenewal) ...[
+              const SizedBox(height: 4),
+              Text(
+                strings
+                    .t('wallet_explorer_genesis_renewal')
+                    .replaceAll('{cycle}', '${block.treasuryCycle}'),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFFFB347),
+                ),
+              ),
+            ],
             if (block.treasuryEmitted.isPositive) ...[
               const SizedBox(height: 4),
               Text(
@@ -317,6 +330,7 @@ class _CumulativeMintPainter extends CustomPainter {
     var cumulative = 0.0;
     final points = <Offset>[];
     for (var i = 0; i < blocks.length; i++) {
+      if (blocks[i].isGenesisRenewal) cumulative = 0;
       cumulative += blocks[i].treasuryEmitted.asPerc;
       final x = pad + (size.width - pad * 2) * (i / math.max(blocks.length - 1, 1));
       final maxY = PercChainConstants.maxSupply.asPerc;

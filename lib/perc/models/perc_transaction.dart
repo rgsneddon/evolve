@@ -1,6 +1,12 @@
 import 'perc_amount.dart';
 
-enum PercTxKind { treasuryEmission, scenarioReward, transfer, stakingReward }
+enum PercTxKind {
+  treasuryEmission,
+  scenarioReward,
+  transfer,
+  stakingReward,
+  genesisRenewal,
+}
 
 class PercTransaction {
   const PercTransaction({

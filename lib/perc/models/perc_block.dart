@@ -9,6 +9,8 @@ class PercBlock {
     required this.treasuryEmitted,
     this.scenarioLabel,
     this.triggerUsername,
+    this.treasuryCycle = 1,
+    this.isGenesisRenewal = false,
   });
 
   final int index;
@@ -17,6 +19,8 @@ class PercBlock {
   final PercAmount treasuryEmitted;
   final String? scenarioLabel;
   final String? triggerUsername;
+  final int treasuryCycle;
+  final bool isGenesisRenewal;
 
   Map<String, dynamic> toJson() => {
         'index': index,
@@ -25,6 +29,8 @@ class PercBlock {
         'treasuryEmitted': treasuryEmitted.toJson(),
         if (scenarioLabel != null) 'scenarioLabel': scenarioLabel,
         if (triggerUsername != null) 'triggerUsername': triggerUsername,
+        if (treasuryCycle != 1) 'treasuryCycle': treasuryCycle,
+        if (isGenesisRenewal) 'isGenesisRenewal': isGenesisRenewal,
       };
 
   factory PercBlock.fromJson(Map<String, dynamic> json) => PercBlock(
@@ -37,5 +43,7 @@ class PercBlock {
             PercAmount.fromJson(json['treasuryEmitted'] as Map<String, dynamic>),
         scenarioLabel: json['scenarioLabel'] as String?,
         triggerUsername: json['triggerUsername'] as String?,
+        treasuryCycle: json['treasuryCycle'] as int? ?? 1,
+        isGenesisRenewal: json['isGenesisRenewal'] as bool? ?? false,
       );
 }
