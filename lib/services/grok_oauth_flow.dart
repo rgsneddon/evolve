@@ -44,10 +44,13 @@ class GrokOAuthFlow {
     GrokAuthClient auth,
   ) async {
     final oauthError = callback.queryParameters['error'];
-    if (oauthError != null) {
-      final description =
-          callback.queryParameters['error_description'] ?? oauthError;
-      return GrokSession(oauthError: description);
+    if (oauthError != null && oauthError.isNotEmpty) {
+      final description = callback.queryParameters['error_description'];
+      return GrokSession(
+        oauthError: (description != null && description.isNotEmpty)
+            ? description
+            : oauthError,
+      );
     }
 
     final code = callback.queryParameters['code'];

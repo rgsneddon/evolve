@@ -14,7 +14,6 @@ import '../services/grok_auth_client.dart';
 import '../services/grok_construal_service.dart';
 
 import '../services/grok_oauth_flow.dart';
-import '../services/grok_oauth_launcher.dart';
 import '../services/grok_proxy_launcher.dart';
 import '../widgets/x_oauth_connecting_dialog.dart';
 import '../services/grok_heuristic_construal.dart';
@@ -99,7 +98,7 @@ class EvolveProvider extends ChangeNotifier {
     await _ensureGrokProxyResolved();
     _grokConfigReady = true;
     notifyListeners();
-    unawaited(_restoreGrokSessionWhenReady());
+    Future<void>.microtask(_restoreGrokSessionWhenReady);
   }
 
   Future<void> _restoreGrokSessionWhenReady() async {
@@ -577,8 +576,9 @@ class EvolveProvider extends ChangeNotifier {
     _persistCurrentMode();
 
     mode = next;
-    if (_savedInputs.containsKey(next) && _isPosed(_savedInputs[next]!)) {
-      input = _savedInputs[next]!;
+    final saved = _savedInputs[next];
+    if (saved != null && _isPosed(saved)) {
+      input = saved;
       result = _savedResults[next];
     } else {
       input = const ScenarioInput();
@@ -644,7 +644,7 @@ class EvolveProvider extends ChangeNotifier {
     statusMessage = strings.t('link_fetching');
     notifyListeners();
 
-    ScenarioInput? loadedInput;
+    late final ScenarioInput loadedInput;
     try {
       await _ensureGrokProxyResolved();
       final content = await _fetchNarrativeContent(trimmed);
@@ -678,7 +678,6 @@ class EvolveProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    if (loadedInput == null) return;
     try {
       await _populateConstructsFromNarrative(loadedInput);
     } catch (_) {
