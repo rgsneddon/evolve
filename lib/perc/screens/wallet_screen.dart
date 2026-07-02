@@ -307,6 +307,8 @@ class _WalletScreenState extends State<WalletScreen> {
                 const SizedBox(height: 16),
                 _balanceCard(wallet, strings),
                 const SizedBox(height: 12),
+                _stakingCard(wallet, strings),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -437,6 +439,45 @@ class _WalletScreenState extends State<WalletScreen> {
                 style: const TextStyle(fontSize: 12, color: Colors.redAccent),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _stakingCard(PercWalletProvider wallet, AppLocalizations strings) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.savings_outlined, color: Color(0xFF6C63FF), size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  strings.t('wallet_staking_title'),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              strings.t('wallet_staking_note'),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8), height: 1.45),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              strings
+                  .t('wallet_staking_earned')
+                  .replaceAll('{amount}', wallet.cumulativeStaking.displayFixed8),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF00D9C0),
+              ),
+            ),
           ],
         ),
       ),
@@ -682,6 +723,7 @@ class _WalletScreenState extends State<WalletScreen> {
     final isOut =
         tx.kind == PercTxKind.transfer && tx.fromUsername == viewer;
     final isIn = tx.kind == PercTxKind.scenarioReward ||
+        tx.kind == PercTxKind.stakingReward ||
         (tx.kind == PercTxKind.transfer && tx.toUsername == viewer) ||
         (tx.kind == PercTxKind.treasuryEmission &&
             viewer == PercChainConstants.treasuryUsername);
@@ -698,6 +740,8 @@ class _WalletScreenState extends State<WalletScreen> {
         title = strings.t('wallet_tx_treasury');
       case PercTxKind.scenarioReward:
         title = tx.scenarioLabel ?? strings.t('wallet_tx_reward');
+      case PercTxKind.stakingReward:
+        title = strings.t('wallet_tx_staking');
       case PercTxKind.transfer:
         title = isOut
             ? strings.t('wallet_tx_sent').replaceAll('{user}', tx.toUsername ?? '')

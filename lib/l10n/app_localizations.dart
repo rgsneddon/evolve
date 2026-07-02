@@ -313,6 +313,11 @@ final _en = {
   'wallet_title': 'Evolve Wallet',
   'wallet_subtitle': 'PERC chain · scenario-driven treasury',
   'wallet_balance_label': 'Available balance',
+  'wallet_staking_title': 'Cumulative staking',
+  'wallet_staking_note':
+      'Held PERC earns 10% of the 0.00000050 PERC base (0.00000005 PERC per PERC held) on each new block.',
+  'wallet_staking_earned': 'Total staking earned: {amount} PERC',
+  'wallet_tx_staking': 'Staking reward',
   'wallet_signed_in_as': 'Signed in as {user}',
   'wallet_logout': 'Sign out',
   'wallet_treasury_title': 'Treasury emission',
@@ -778,6 +783,11 @@ final _es = {
   'wallet_title': 'Monedero Evolve',
   'wallet_subtitle': 'Cadena PERC · tesorería por escenarios',
   'wallet_balance_label': 'Saldo disponible',
+  'wallet_staking_title': 'Staking acumulativo',
+  'wallet_staking_note':
+      'El PERC en cartera gana el 10% de la base 0,00000050 PERC (0,00000005 PERC por PERC) en cada bloque nuevo.',
+  'wallet_staking_earned': 'Staking total ganado: {amount} PERC',
+  'wallet_tx_staking': 'Recompensa de staking',
   'wallet_signed_in_as': 'Sesión: {user}',
   'wallet_logout': 'Cerrar sesión',
   'wallet_treasury_title': 'Emisión de tesorería',

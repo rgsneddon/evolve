@@ -7,6 +7,7 @@ import '../perc_chain_constants.dart';
 import 'perc_auth.dart';
 import 'perc_faucet.dart';
 import 'perc_faucet_cooldown.dart';
+import 'perc_staking.dart';
 import 'perc_treasury.dart';
 
 /// Local PERC ledger — blocks advance only on scenarios and transfers.
@@ -130,6 +131,43 @@ class PercLedger {
     acc.balance = acc.balance - amount;
   }
 
+  void _applyStakingRewards(DateTime now, List<PercTransaction> blockTxs) {
+    final treasury = _ensureTreasury();
+    final blockIndex = blocks.length;
+    final holders = <String, PercAmount>{};
+
+    for (final entry in accounts.entries) {
+      if (entry.key == PercChainConstants.treasuryUsername) continue;
+      if (entry.value.balance.isPositive) {
+        holders[entry.key] = entry.value.balance;
+      }
+    }
+
+    for (final entry in holders.entries) {
+      final reward = PercStaking.rewardForBalance(entry.value);
+      if (!reward.isPositive || treasury.balance < reward) continue;
+
+      final acc = accounts[entry.key]!;
+      _debit(treasury, reward);
+      _credit(acc, reward);
+      acc.cumulativeStakingEarned = acc.cumulativeStakingEarned + reward;
+
+      final tx = PercTransaction(
+        id: _newTxId(),
+        kind: PercTxKind.stakingReward,
+        amount: reward,
+        timestamp: now,
+        fromUsername: PercChainConstants.treasuryUsername,
+        toUsername: entry.key,
+        memo: 'Cumulative staking (10% of base per PERC held)',
+        blockIndex: blockIndex,
+      );
+      treasury.transactions.insert(0, tx);
+      acc.transactions.insert(0, tx);
+      blockTxs.add(tx);
+    }
+  }
+
   void _appendBlock({
     required DateTime timestamp,
     required List<PercTransaction> txs,
@@ -145,6 +183,24 @@ class PercLedger {
       scenarioLabel: scenarioLabel,
       triggerUsername: triggerUsername,
     ));
+  }
+
+  void _finalizeBlock({
+    required DateTime timestamp,
+    required List<PercTransaction> blockTxs,
+    required PercAmount treasuryEmitted,
+    String? scenarioLabel,
+    String? triggerUsername,
+  }) {
+    if (blockTxs.isEmpty) return;
+    _applyStakingRewards(timestamp, blockTxs);
+    _appendBlock(
+      timestamp: timestamp,
+      txs: blockTxs,
+      treasuryEmitted: treasuryEmitted,
+      scenarioLabel: scenarioLabel,
+      triggerUsername: triggerUsername,
+    );
   }
 
   void setupTreasuryPassword(String password) {
@@ -220,9 +276,9 @@ class PercLedger {
     );
     sender.transactions.insert(0, tx);
     receiver.transactions.insert(0, tx);
-    _appendBlock(
+    _finalizeBlock(
       timestamp: now,
-      txs: [tx],
+      blockTxs: [tx],
       treasuryEmitted: PercAmount.zero,
       triggerUsername: from,
     );
@@ -271,9 +327,9 @@ class PercLedger {
 
     if (cooldownLeft != null) {
       if (blockTxs.isNotEmpty) {
-        _appendBlock(
+        _finalizeBlock(
           timestamp: now,
-          txs: blockTxs,
+          blockTxs: blockTxs,
           treasuryEmitted: emitted,
           scenarioLabel: scenarioLabel,
           triggerUsername: u,
@@ -313,9 +369,9 @@ class PercLedger {
     }
 
     if (blockTxs.isNotEmpty) {
-      _appendBlock(
+      _finalizeBlock(
         timestamp: now,
-        txs: blockTxs,
+        blockTxs: blockTxs,
         treasuryEmitted: emitted,
         scenarioLabel: scenarioLabel,
         triggerUsername: u,

@@ -25,4 +25,7 @@ class PercChainConstants {
 
   /// Each wallet may draw the scenario faucet once per 450 minutes.
   static const Duration faucetCooldown = Duration(minutes: 450);
+
+  /// Cumulative staking yield: 10% of the 0.00000050 PERC base per PERC held per block.
+  static const int stakingYieldPercent = 10;
 }

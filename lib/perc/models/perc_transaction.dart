@@ -1,6 +1,6 @@
 import 'perc_amount.dart';
 
-enum PercTxKind { treasuryEmission, scenarioReward, transfer }
+enum PercTxKind { treasuryEmission, scenarioReward, transfer, stakingReward }
 
 class PercTransaction {
   const PercTransaction({
@@ -29,6 +29,7 @@ class PercTransaction {
 
   bool get isIncoming =>
       kind == PercTxKind.scenarioReward ||
+      kind == PercTxKind.stakingReward ||
       (kind == PercTxKind.transfer && toUsername != null);
 
   Map<String, dynamic> toJson() => {
