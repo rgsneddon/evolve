@@ -335,9 +335,9 @@ final _en = {
   'wallet_treasury_inflation_critical':
       'Treasury critical (5 cent left) — inflation on next scenario',
   'wallet_block_height': 'Block height: {height}',
-  'wallet_faucet_title': 'Scenario faucet',
+  'wallet_faucet_title': 'Analysis faucet',
   'wallet_faucet_note':
-      'Any signed-in wallet may draw 50 cent (0.00000050 PERC, plus outcome bonus) from treasury once every 450 minutes when a scenario completes.',
+      'Tap Calculate percent chance or Calculate social cohesion score to draw 50 cent (0.00000050 PERC, plus outcome bonus) from treasury once every 450 minutes.',
   'wallet_faucet_cooldown': 'Next treasury draw in approximately {wait}',
   'wallet_explorer_link': 'the blockchain explorer',
   'wallet_explorer_block_current': 'Block #{height}',
@@ -371,7 +371,7 @@ final _en = {
   'wallet_address_copied': 'Address copied',
   'wallet_transactions_title': 'RECENT TRANSACTIONS',
   'wallet_transactions_empty':
-      'Run a scenario on the Analysis tab to receive your first Perccent faucet payout.',
+      'Run a percent-chance or social-cohesion calculation on Analysis to receive your first Perccent faucet payout.',
   'wallet_treasury_setup_title': 'Secure treasury account',
   'wallet_treasury_setup_note':
       'Treasury holder rgsneddon receives all scenario-driven emissions. Create your password now (first use only).',
@@ -399,7 +399,7 @@ final _en = {
   'wallet_receive_note':
       'Share your username or address so others can send Perccent (PERC) to you.',
   'wallet_tx_treasury': 'Treasury emission',
-  'wallet_tx_reward': 'Scenario reward',
+  'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
   'wallet_tx_received': 'Received from {user}',
   'license_panel_title': 'License & Chronoflux attribution',
@@ -824,9 +824,9 @@ final _es = {
   'wallet_treasury_inflation_critical':
       'Tesorería crítica (5 cent restantes) — inflación en el próximo escenario',
   'wallet_block_height': 'Altura de bloque: {height}',
-  'wallet_faucet_title': 'Grifo de escenarios',
+  'wallet_faucet_title': 'Grifo de análisis',
   'wallet_faucet_note':
-      'Cualquier monedero conectado puede retirar 50 cent (0,00000050 PERC, más bono) de la tesorería una vez cada 450 minutos al completar un escenario.',
+      'Pulse Calcular probabilidad % o Calcular puntuación de cohesión social para retirar 50 cent (0,00000050 PERC, más bono) de la tesorería una vez cada 450 minutos.',
   'wallet_faucet_cooldown': 'Próximo retiro en aproximadamente {wait}',
   'wallet_explorer_link': 'the blockchain explorer',
   'wallet_explorer_block_current': 'Bloque #{height}',
@@ -860,7 +860,7 @@ final _es = {
   'wallet_address_copied': 'Dirección copiada',
   'wallet_transactions_title': 'TRANSACCIONES RECIENTES',
   'wallet_transactions_empty':
-      'Ejecuta un escenario en Análisis para recibir tu primer pago Perccent.',
+      'Ejecuta un análisis de probabilidad o cohesión social en Análisis para recibir tu primer pago Perccent.',
   'wallet_treasury_setup_title': 'Proteger cuenta de tesorería',
   'wallet_treasury_setup_note':
       'La tesorería rgsneddon recibe todas las emisiones. Cree su contraseña ahora (solo la primera vez).',
@@ -888,7 +888,7 @@ final _es = {
   'wallet_receive_note':
       'Comparta su usuario o dirección para que otros le envíen Perccent (PERC).',
   'wallet_tx_treasury': 'Emisión de tesorería',
-  'wallet_tx_reward': 'Recompensa de escenario',
+  'wallet_tx_reward': 'Recompensa de análisis',
   'wallet_tx_sent': 'Enviado a {user}',
   'wallet_tx_received': 'Recibido de {user}',
   'grok_construe_label': 'CONSTRUIR CON GROK',

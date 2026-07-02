@@ -1,14 +1,20 @@
 import '../models/perc_amount.dart';
 import '../perc_chain_constants.dart';
 
-/// Scenario faucet — base reward + percent-chance bonus from treasury.
+/// Analysis faucet — base reward + outcome-score bonus from treasury.
+/// [outcomeScore] is percent chance (0–100) or social cohesion score (0–100).
 class PercFaucet {
   const PercFaucet._();
 
   static PercFaucetReward computeScenarioReward({
     required double percentChance,
+  }) =>
+      computeAnalysisReward(outcomeScore: percentChance);
+
+  static PercFaucetReward computeAnalysisReward({
+    required double outcomeScore,
   }) {
-    final pct = percentChance.clamp(0.0, 100.0);
+    final pct = outcomeScore.clamp(0.0, 100.0);
     final base = PercChainConstants.scenarioBaseReward;
     final bonusUnits =
         (pct.round() * PercChainConstants.faucetBonusMicroPerPercentPoint)

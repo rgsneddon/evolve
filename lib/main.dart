@@ -6,6 +6,7 @@ import 'data/outcome_registry.dart';
 import 'l10n/app_localizations.dart';
 import 'models/locale_config.dart';
 import 'providers/locale_provider.dart';
+import 'models/analysis_mode.dart';
 import 'providers/evolve_provider.dart';
 import 'perc/providers/perc_wallet_provider.dart';
 import 'screens/evolve_shell_screen.dart';
@@ -18,12 +19,14 @@ Future<void> main() async {
   final walletProvider = PercWalletProvider();
   await evolveProvider.initialize();
   await walletProvider.initialize();
-  evolveProvider.scenarioRewardHandler = ({
-    required double percentChance,
+  evolveProvider.analysisRewardHandler = ({
+    required AnalysisMode mode,
+    required double outcomeScore,
     String? memo,
   }) =>
-      walletProvider.creditScenario(
-        percentChance: percentChance,
+      walletProvider.creditAnalysis(
+        mode: mode,
+        outcomeScore: outcomeScore,
         memo: memo,
       );
   runApp(EvolveApp(

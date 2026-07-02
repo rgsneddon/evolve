@@ -155,7 +155,7 @@ void main() {
     await wallet.initialize();
     await wallet.setupTreasuryPassword('password12345');
     await wallet.register('carol', 'password12345');
-    final credited = await wallet.creditScenario(percentChance: 55, memo: 'Persist');
+    final credited = await wallet.creditScenario(outcomeScore: 55, memo: 'Persist');
     expect(credited?.status, PercFaucetCreditStatus.credited);
     final balance = wallet.balance.microUnits;
 

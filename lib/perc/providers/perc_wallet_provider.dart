@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../models/analysis_mode.dart';
 import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../models/perc_faucet_credit_result.dart';
@@ -190,17 +191,35 @@ class PercWalletProvider extends ChangeNotifier {
     }
   }
 
-  Future<PercFaucetCreditResult?> creditScenario({
-    required double percentChance,
+  Future<PercFaucetCreditResult?> creditAnalysis({
+    required AnalysisMode mode,
+    required double outcomeScore,
     String? memo,
   }) async {
+    return creditScenario(
+      outcomeScore: outcomeScore,
+      memo: memo,
+      analysisMode: mode,
+    );
+  }
+
+  Future<PercFaucetCreditResult?> creditScenario({
+    required double outcomeScore,
+    String? memo,
+    AnalysisMode? analysisMode,
+  }) async {
+    final score = outcomeScore;
     if (!_ready || !isLoggedIn) return null;
     _clearMessages();
     try {
+      final label = memo ??
+          (analysisMode == AnalysisMode.cohesionScore
+              ? 'Social cohesion score analysis'
+              : 'Percent chance analysis');
       final result = _ledger.creditScenario(
         username: _ledger.sessionUsername!,
-        percentChance: percentChance,
-        scenarioLabel: memo,
+        percentChance: score,
+        scenarioLabel: label,
       );
 
       _captureGenesisRenewalEvent();

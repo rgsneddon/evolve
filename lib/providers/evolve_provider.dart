@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/localized_output.dart';
 import '../models/analysis_mode.dart';
+import '../perc/models/perc_faucet_credit_result.dart';
 import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
@@ -39,11 +40,12 @@ class EvolveProvider extends ChangeNotifier {
   final GrokAuthClient _grokAuth;
   final GrokConstrualService _grokConstrual;
 
-  /// Credits PERC faucet after successful scenario analysis.
-  Future<void> Function({
-    required double percentChance,
+  /// Credits Perccent faucet after percent-chance or social-cohesion calculate.
+  Future<PercFaucetCreditResult?> Function({
+    required AnalysisMode mode,
+    required double outcomeScore,
     String? memo,
-  })? scenarioRewardHandler;
+  })? analysisRewardHandler;
 
   AnalysisMode mode = AnalysisMode.cohesionScore;
   LocaleConfig locale = LocaleConfig.defaults;
@@ -758,13 +760,14 @@ class EvolveProvider extends ChangeNotifier {
       await Future<void>.delayed(const Duration(milliseconds: 150));
       _reanalyze(working);
       _persistCurrentMode();
-      if (result != null && scenarioRewardHandler != null) {
-        final memo = working.posedQuestion.trim().isNotEmpty
-            ? working.posedQuestion.trim()
-            : (working.topic.trim().isNotEmpty ? working.topic.trim() : null);
-        await scenarioRewardHandler!(
-          percentChance: result!.percentChance,
-          memo: memo,
+      if (result != null && analysisRewardHandler != null) {
+        final outcomeScore = mode == AnalysisMode.percentChance
+            ? result!.percentChance
+            : result!.core.refinedScs;
+        await analysisRewardHandler!(
+          mode: mode,
+          outcomeScore: outcomeScore,
+          memo: _analysisRewardMemo(working, mode),
         );
       }
       statusMessage = grokConstrualEnabled
@@ -991,4 +994,17 @@ class EvolveProvider extends ChangeNotifier {
       i.shearText.trim().isNotEmpty ||
       i.resistanceText.trim().isNotEmpty ||
       i.flowText.trim().isNotEmpty;
+
+  String? _analysisRewardMemo(ScenarioInput working, AnalysisMode analysisMode) {
+    final prefix = analysisMode == AnalysisMode.percentChance
+        ? 'Percent chance'
+        : 'Social cohesion score';
+    final detail = working.posedQuestion.trim().isNotEmpty
+        ? working.posedQuestion.trim()
+        : (working.topic.trim().isNotEmpty
+            ? working.topic.trim()
+            : working.vortexText.trim());
+    if (detail.isEmpty) return prefix;
+    return '$prefix: $detail';
+  }
 }
