@@ -7,6 +7,7 @@ import '../perc_chain_constants.dart';
 import 'perc_auth.dart';
 import 'perc_faucet.dart';
 import 'perc_faucet_cooldown.dart';
+import 'perc_inflation.dart';
 import 'perc_staking.dart';
 import 'perc_treasury.dart';
 
@@ -94,6 +95,21 @@ class PercLedger {
 
   PercAmount get treasuryRemaining =>
       PercChainConstants.maxSupply - cumulativeTreasuryMinted;
+
+  DateTime? get lastInflationEpoch =>
+      PercInflation.lastInflationEpoch(blocks);
+
+  bool get treasuryPoolCritical =>
+      PercInflation.isPoolCritical(treasuryBalance);
+
+  Duration? timeToNextInflation([DateTime? now]) =>
+      PercInflation.timeToNextInflation(
+        lastInflationEpoch: lastInflationEpoch,
+        blockchainLaunched: blockchainLaunched,
+        treasuryCapped: treasuryCapped,
+        treasuryPool: treasuryBalance,
+        now: (now ?? DateTime.now()).toUtc(),
+      );
 
   bool treasuryNeedsPasswordSetup() {
     final t = accounts[PercChainConstants.treasuryUsername];

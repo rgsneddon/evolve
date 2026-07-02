@@ -329,6 +329,11 @@ final _en = {
   'wallet_treasury_minted': '{minted} / {cap} PERC minted ({pct}%)',
   'wallet_treasury_remaining': 'Treasury remaining: {amount} PERC',
   'wallet_treasury_pool': 'Treasury pool (faucet): {amount} PERC',
+  'wallet_treasury_inflation_epoch': 'Last inflation epoch: {time}',
+  'wallet_treasury_inflation_next': 'Time to next inflation: {wait}',
+  'wallet_treasury_inflation_ready': 'Inflation ready — run a scenario',
+  'wallet_treasury_inflation_critical':
+      'Treasury critical (0.00000005 PERC left) — inflation on next scenario',
   'wallet_block_height': 'Block height: {height}',
   'wallet_faucet_title': 'Scenario faucet',
   'wallet_faucet_note':
@@ -812,6 +817,11 @@ final _es = {
   'wallet_treasury_minted': '{minted} / {cap} PERC acuñados ({pct}%)',
   'wallet_treasury_remaining': 'Tesorería restante: {amount} PERC',
   'wallet_treasury_pool': 'Fondo de tesorería (grifo): {amount} PERC',
+  'wallet_treasury_inflation_epoch': 'Última época de inflación: {time}',
+  'wallet_treasury_inflation_next': 'Tiempo hasta la próxima inflación: {wait}',
+  'wallet_treasury_inflation_ready': 'Inflación lista — ejecute un escenario',
+  'wallet_treasury_inflation_critical':
+      'Tesorería crítica (0,00000005 PERC) — inflación en el próximo escenario',
   'wallet_block_height': 'Altura de bloque: {height}',
   'wallet_faucet_title': 'Grifo de escenarios',
   'wallet_faucet_note':

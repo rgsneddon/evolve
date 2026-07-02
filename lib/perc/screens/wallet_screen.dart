@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +11,7 @@ import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
+import '../services/perc_inflation.dart';
 import '../widgets/blockchain_launch_balloon.dart';
 import '../widgets/wallet_creator_credit.dart';
 import 'blockchain_explorer_screen.dart';
@@ -27,6 +30,7 @@ class _WalletScreenState extends State<WalletScreen> {
   final _confirmCtrl = TextEditingController();
   bool _registerMode = false;
   PercWalletProvider? _wallet;
+  Timer? _inflationTicker;
 
   @override
   void didChangeDependencies() {
@@ -36,6 +40,20 @@ class _WalletScreenState extends State<WalletScreen> {
       _wallet?.removeListener(_onWalletUpdate);
       _wallet = wallet;
       _wallet!.addListener(_onWalletUpdate);
+    }
+    _syncInflationTicker(context.read<PercWalletProvider>());
+  }
+
+  void _syncInflationTicker(PercWalletProvider wallet) {
+    final needsTicker =
+        wallet.isBlockchainLaunched && wallet.timeToNextInflation != null;
+    if (needsTicker && _inflationTicker == null) {
+      _inflationTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    } else if (!needsTicker && _inflationTicker != null) {
+      _inflationTicker!.cancel();
+      _inflationTicker = null;
     }
   }
 
@@ -52,6 +70,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   void dispose() {
+    _inflationTicker?.cancel();
     _wallet?.removeListener(_onWalletUpdate);
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
@@ -63,6 +82,7 @@ class _WalletScreenState extends State<WalletScreen> {
   Widget build(BuildContext context) {
     final wallet = context.watch<PercWalletProvider>();
     final strings = AppLocalizations.of(context.watch<LocaleProvider>().config);
+    _syncInflationTicker(wallet);
 
     if (!wallet.isReady) {
       return const Center(child: CircularProgressIndicator());
@@ -83,7 +103,7 @@ class _WalletScreenState extends State<WalletScreen> {
     PercWalletProvider wallet,
     AppLocalizations strings,
   ) {
-    return [
+    final lines = <Widget>[
       Text(
         strings
             .t('wallet_treasury_remaining')
@@ -97,6 +117,47 @@ class _WalletScreenState extends State<WalletScreen> {
         style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
       ),
     ];
+
+    if (wallet.isBlockchainLaunched) {
+      final epoch = wallet.lastInflationEpoch;
+      if (epoch != null) {
+        lines.add(
+          Text(
+            strings
+                .t('wallet_treasury_inflation_epoch')
+                .replaceAll('{time}', PercInflation.formatEpoch(epoch)),
+            style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+          ),
+        );
+      }
+
+      final inflationLine = wallet.treasuryPoolCritical
+          ? strings.t('wallet_treasury_inflation_critical')
+          : wallet.inflationReady
+              ? strings.t('wallet_treasury_inflation_ready')
+              : strings
+                  .t('wallet_treasury_inflation_next')
+                  .replaceAll(
+                    '{wait}',
+                    PercInflation.formatCountdown(wallet.timeToNextInflation!),
+                  );
+      lines.add(
+        Text(
+          inflationLine,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: wallet.treasuryPoolCritical
+                ? const Color(0xFFFF8A65)
+                : wallet.inflationReady
+                    ? const Color(0xFF00D9C0)
+                    : const Color(0xFF6C63FF),
+          ),
+        ),
+      );
+    }
+
+    return lines;
   }
 
   Widget _appGateBanner(AppLocalizations strings) {

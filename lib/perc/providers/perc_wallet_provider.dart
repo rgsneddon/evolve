@@ -7,6 +7,7 @@ import '../models/perc_transaction.dart';
 import '../perc_chain_constants.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
+import '../services/perc_inflation.dart';
 import '../services/perc_ledger.dart';
 import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
@@ -48,6 +49,11 @@ class PercWalletProvider extends ChangeNotifier {
   PercAmount get treasuryPool => _ledger.treasuryBalance;
   bool get treasuryCapped => _ledger.treasuryCapped;
   int get treasuryCycle => _ledger.treasuryCycle;
+  DateTime? get lastInflationEpoch => _ledger.lastInflationEpoch;
+  bool get treasuryPoolCritical => _ledger.treasuryPoolCritical;
+  Duration? get timeToNextInflation => _ledger.timeToNextInflation();
+  bool get inflationReady =>
+      PercInflation.isInflationReady(timeToNextInflation);
   bool get isTreasuryAccount =>
       loggedInUsername == PercChainConstants.treasuryUsername;
 
