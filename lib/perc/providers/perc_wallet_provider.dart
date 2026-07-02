@@ -6,6 +6,7 @@ import '../../models/analysis_mode.dart';
 import '../../models/locale_config.dart';
 import '../../models/scenario_input.dart';
 import '../models/perc_microblock_record_result.dart';
+import '../models/perc_side_chain.dart';
 import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../models/perc_faucet_credit_result.dart';
@@ -68,6 +69,26 @@ class PercWalletProvider extends ChangeNotifier {
   bool get isTreasurySendLocked => _ledger.isTreasurySendLocked;
   bool get canSendFromSession =>
       isLoggedIn && !(isTreasuryAccount && isTreasurySendLocked);
+
+  /// Every registered user can receive PERC (including locked treasury).
+  bool get canReceiveFromSession => isLoggedIn;
+
+  PercSideChainState get sideChain => PercSideChainState.fromLedger(_ledger);
+
+  List<String> get allRegisteredWallets {
+    final list = _ledger.accounts.keys.toList()..sort();
+    return list;
+  }
+
+  /// Mesh peers excluding the signed-in user — for send picker.
+  List<String> get sendablePeers {
+    if (!isLoggedIn) return const [];
+    final self = loggedInUsername!;
+    return connectedPeerWallets.where((p) => p != self).toList();
+  }
+
+  String addressForUsername(String username) =>
+      _ledger.account(username)?.address ?? '';
   int get confirmationsRequired => PercChainConstants.confirmationsRequired;
   int get microblockCount => _ledger.microblockCount;
   int get totalMicroblocks => _ledger.totalMicroblocks;

@@ -7,6 +7,7 @@ class PercChainConstants {
   const PercChainConstants._();
 
   static const String chainId = 'perc-main-evolve-1';
+  static const String sideChainId = 'perc-chronoflux-side-1';
   static const String currencySymbol = 'PERC';
   static const String currencyName = 'Perccent';
   static const String centName = 'cent';

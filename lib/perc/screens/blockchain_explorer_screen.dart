@@ -8,6 +8,8 @@ import '../../providers/locale_provider.dart';
 import '../models/perc_block.dart';
 import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
+import '../services/perc_send_receive_actions.dart';
+import '../widgets/perc_dapp_suite_panel.dart';
 import '../widgets/wallet_creator_credit.dart';
 
 /// Graph-based dapp — historical Perccent chain blocks inside the wallet.
@@ -44,7 +46,22 @@ class BlockchainExplorerScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _heightCard(wallet.blockHeight, strings),
+                        PercDappSuitePanel(
+                          wallet: wallet,
+                          strings: strings,
+                          onSend: () => PercSendReceiveActions.showSend(
+                            context,
+                            wallet: wallet,
+                            strings: strings,
+                          ),
+                          onReceive: () => PercSendReceiveActions.showReceive(
+                            context,
+                            wallet: wallet,
+                            strings: strings,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _heightCard(wallet, strings),
                         const SizedBox(height: 16),
                         _graphCard(blocks, strings),
                         const SizedBox(height: 16),
@@ -76,7 +93,8 @@ class BlockchainExplorerScreen extends StatelessWidget {
     );
   }
 
-  Widget _heightCard(int height, AppLocalizations strings) {
+  Widget _heightCard(PercWalletProvider wallet, AppLocalizations strings) {
+    final side = wallet.sideChain;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -89,7 +107,7 @@ class BlockchainExplorerScreen extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '#$height',
+              '#${wallet.blockHeight}',
               style: const TextStyle(
                 fontSize: 40,
                 fontWeight: FontWeight.w800,
@@ -100,6 +118,18 @@ class BlockchainExplorerScreen extends StatelessWidget {
             Text(
               strings.t('wallet_explorer_subtitle'),
               style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              strings
+                  .t('wallet_sidechain_pending')
+                  .replaceAll('{pending}', '${side.pendingMicroblocks}')
+                  .replaceAll('{total}', '${side.microblocksPerBlock}'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF6C63FF)),
+            ),
+            Text(
+              '${strings.t('wallet_sidechain_id')}: ${side.sideChainId}',
+              style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
             ),
             const SizedBox(height: 4),
             Text(

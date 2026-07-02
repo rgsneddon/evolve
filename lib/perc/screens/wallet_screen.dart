@@ -13,7 +13,9 @@ import '../providers/perc_wallet_provider.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
 import '../services/perc_inflation.dart';
+import '../services/perc_send_receive_actions.dart';
 import '../widgets/blockchain_launch_balloon.dart';
+import '../widgets/perc_dapp_suite_panel.dart';
 import '../widgets/wallet_creator_credit.dart';
 import 'blockchain_explorer_screen.dart';
 
@@ -444,7 +446,11 @@ class _WalletScreenState extends State<WalletScreen> {
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: wallet.canSendFromSession
-                            ? () => _showSendDialog(context, wallet, strings)
+                            ? () => PercSendReceiveActions.showSend(
+                                  context,
+                                  wallet: wallet,
+                                  strings: strings,
+                                )
                             : wallet.isTreasuryAccount && wallet.isTreasurySendLocked
                                 ? () {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -463,12 +469,33 @@ class _WalletScreenState extends State<WalletScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => _showReceiveDialog(context, wallet, strings),
+                        onPressed: wallet.canReceiveFromSession
+                            ? () => PercSendReceiveActions.showReceive(
+                                  context,
+                                  wallet: wallet,
+                                  strings: strings,
+                                )
+                            : null,
                         icon: const Icon(Icons.qr_code_2_rounded, size: 18),
                         label: Text(strings.t('wallet_receive')),
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                PercDappSuitePanel(
+                  wallet: wallet,
+                  strings: strings,
+                  onSend: () => PercSendReceiveActions.showSend(
+                    context,
+                    wallet: wallet,
+                    strings: strings,
+                  ),
+                  onReceive: () => PercSendReceiveActions.showReceive(
+                    context,
+                    wallet: wallet,
+                    strings: strings,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 _treasuryCard(wallet, strings),
@@ -1019,98 +1046,4 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Future<void> _showSendDialog(
-    BuildContext context,
-    PercWalletProvider wallet,
-    AppLocalizations strings,
-  ) async {
-    final toCtrl = TextEditingController();
-    final amountCtrl = TextEditingController();
-    final memoCtrl = TextEditingController();
-
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(strings.t('wallet_send_title')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: toCtrl,
-              decoration: InputDecoration(labelText: strings.t('wallet_send_to')),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: strings.t('wallet_send_amount')),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: memoCtrl,
-              decoration: InputDecoration(labelText: strings.t('wallet_send_memo')),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () async {
-              await wallet.send(
-                toUsername: toCtrl.text,
-                amountText: amountCtrl.text,
-                memo: memoCtrl.text,
-              );
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: Text(strings.t('wallet_send_confirm')),
-          ),
-        ],
-      ),
-    );
-
-    toCtrl.dispose();
-    amountCtrl.dispose();
-    memoCtrl.dispose();
-  }
-
-  Future<void> _showReceiveDialog(
-    BuildContext context,
-    PercWalletProvider wallet,
-    AppLocalizations strings,
-  ) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(strings.t('wallet_receive_title')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              strings.t('wallet_receive_note'),
-              style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
-            ),
-            const SizedBox(height: 12),
-            Text('Username', style: const TextStyle(fontWeight: FontWeight.w700)),
-            SelectableText(wallet.loggedInUsername ?? ''),
-            const SizedBox(height: 10),
-            Text(strings.t('wallet_address_label'),
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            SelectableText(wallet.address, style: const TextStyle(fontFamily: 'monospace')),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: wallet.loggedInUsername ?? ''));
-              Navigator.pop(ctx);
-            },
-            child: Text(strings.t('wallet_copy_address')),
-          ),
-          FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
-        ],
-      ),
-    );
-  }
 }
