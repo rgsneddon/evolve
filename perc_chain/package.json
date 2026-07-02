@@ -1,7 +1,7 @@
 {
   "name": "perc-chain",
   "version": "0.1.0",
-  "description": "PERCENTAGE (PERC) blockchain node — Beam-inspired treasury for Evolve",
+  "description": "Perccent (PERC) blockchain node — 1 cent = 0.00000001 PERC for Evolve",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

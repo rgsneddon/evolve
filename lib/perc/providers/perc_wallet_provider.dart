@@ -32,7 +32,7 @@ class PercWalletProvider extends ChangeNotifier {
   String? get loggedInUsername => _ledger.sessionUsername;
   bool get needsTreasuryPassword => _ledger.treasuryNeedsPasswordSetup();
 
-  /// User may use Evolve only after register/login generates a PERC address.
+  /// User may use Evolve only after register/login generates a Perccent address.
   bool get hasAppAccess => isLoggedIn && address.isNotEmpty;
 
   PercAmount get balance => _ledger.sessionBalance;
@@ -159,13 +159,15 @@ class PercWalletProvider extends ChangeNotifier {
   }) async {
     _clearMessages();
     if (!isLoggedIn) {
-      errorMessage = 'Sign in to send PERC';
+      errorMessage =
+          'Sign in to send ${PercChainConstants.currencyName}';
       notifyListeners();
       return;
     }
     final amount = PercAmount.tryParseDisplay(amountText);
     if (amount == null || !amount.isPositive) {
-      errorMessage = 'Enter a valid PERC amount';
+      errorMessage =
+          'Enter a valid ${PercChainConstants.currencySymbol} amount';
       notifyListeners();
       return;
     }
@@ -178,7 +180,7 @@ class PercWalletProvider extends ChangeNotifier {
       );
       _captureGenesisRenewalEvent();
       statusMessage = _pendingGenesisRenewalNotice
-          ? 'Genesis block — treasury cycle $treasuryCycle renewed (286M PERC)'
+          ? 'Genesis block — treasury cycle $treasuryCycle renewed (286M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
           : 'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername';
       notifyListeners();
       await _persist();
@@ -206,7 +208,7 @@ class PercWalletProvider extends ChangeNotifier {
       if (result.showCooldownPopup) {
         _pendingCooldownPopup = result;
         statusMessage = _pendingGenesisRenewalNotice
-            ? 'Genesis block — treasury cycle $treasuryCycle renewed (286M PERC)'
+            ? 'Genesis block — treasury cycle $treasuryCycle renewed (286M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
             : null;
         notifyListeners();
         await _persist();
@@ -217,7 +219,7 @@ class PercWalletProvider extends ChangeNotifier {
           result.reward != null) {
         lastReward = result.reward;
         statusMessage = _pendingGenesisRenewalNotice
-            ? 'Genesis block — treasury cycle $treasuryCycle renewed (286M PERC)'
+            ? 'Genesis block — treasury cycle $treasuryCycle renewed (286M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
             : '+${result.reward!.total.displayFixed8} ${PercChainConstants.currencySymbol}';
         notifyListeners();
         await _persist();
@@ -229,7 +231,7 @@ class PercWalletProvider extends ChangeNotifier {
             'Blockchain awaiting treasurer rgsneddon first sign-in';
       } else if (result.status == PercFaucetCreditStatus.treasuryEmpty) {
         statusMessage = _pendingGenesisRenewalNotice
-            ? 'Genesis block — treasury cycle $treasuryCycle renewed (286M PERC)'
+            ? 'Genesis block — treasury cycle $treasuryCycle renewed (286M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
             : 'Treasury empty — run another scenario later';
       }
       notifyListeners();

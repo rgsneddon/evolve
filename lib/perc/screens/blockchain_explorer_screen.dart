@@ -10,7 +10,7 @@ import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../widgets/wallet_creator_credit.dart';
 
-/// Graph-based dapp — historical PERC chain blocks inside the wallet.
+/// Graph-based dapp — historical Perccent chain blocks inside the wallet.
 class BlockchainExplorerScreen extends StatelessWidget {
   const BlockchainExplorerScreen({super.key});
 
@@ -232,7 +232,7 @@ class BlockchainExplorerScreen extends StatelessWidget {
             if (block.treasuryEmitted.isPositive) ...[
               const SizedBox(height: 4),
               Text(
-                '+${block.treasuryEmitted.display} ${PercChainConstants.currencySymbol} treasury',
+                '+${block.treasuryEmitted.display} ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName} treasury',
                 style: const TextStyle(fontSize: 12, color: Color(0xFF6C63FF)),
               ),
             ],

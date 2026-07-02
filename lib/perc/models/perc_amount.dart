@@ -1,9 +1,11 @@
-/// PERCENTAGE (PERC) — 8 decimal places; 1 PERC = 100_000_000 micro-units.
+import '../perc_chain_constants.dart';
+
+/// Perccent (PERC) — 8 decimal places; 1 PERC = 100_000_000 cent (0.00000001 PERC each).
 class PercAmount {
   const PercAmount(this.microUnits);
 
   static const int decimals = 8;
-  static const int unitsPerPerc = 100000000;
+  static const int unitsPerPerc = PercChainConstants.centsPerPerc;
 
   final int microUnits;
 
@@ -16,8 +18,14 @@ class PercAmount {
   static PercAmount fromJson(Map<String, dynamic> json) =>
       PercAmount(json['microUnits'] as int? ?? json['balance'] as int? ?? 0);
 
-  /// Fixed reward per completed scenario: 0.00000050 PERC.
+  /// Fixed reward per completed scenario: 50 cent (0.00000050 PERC).
   static const scenarioBaseReward = PercAmount(50);
+
+  /// Smallest denomination — 1 cent = 0.00000001 PERC.
+  int get asCents => microUnits;
+
+  String get centDisplay =>
+      '$asCents ${asCents == 1 ? PercChainConstants.centName : '${PercChainConstants.centName}s'}';
 
   static PercAmount fromPerc(double perc) =>
       PercAmount((perc * unitsPerPerc).round());

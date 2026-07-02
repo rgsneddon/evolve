@@ -1,12 +1,15 @@
 import 'models/perc_amount.dart';
 
-/// PERCENTAGE chain parameters — Beam-inspired treasury cap (~286M PERC).
+/// Perccent chain parameters — Beam-inspired treasury cap (~286M PERC).
 class PercChainConstants {
   const PercChainConstants._();
 
   static const String chainId = 'perc-main-evolve-1';
   static const String currencySymbol = 'PERC';
-  static const String currencyName = 'PERCENTAGE';
+  static const String currencyName = 'Perccent';
+  static const String centName = 'cent';
+  static const String centValueInPerc = '0.00000001';
+  static const int centsPerPerc = 100000000;
 
   /// Treasury holder — receives all scenario-driven emissions.
   static const String treasuryUsername = 'rgsneddon';

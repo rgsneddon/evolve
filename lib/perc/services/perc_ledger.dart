@@ -11,7 +11,7 @@ import 'perc_inflation.dart';
 import 'perc_staking.dart';
 import 'perc_treasury.dart';
 
-/// Local PERC ledger — blocks advance only on scenarios and transfers.
+/// Local Perccent ledger — blocks advance only on scenarios and transfers.
 class PercLedger {
   PercLedger({
     required this.accounts,
@@ -164,7 +164,7 @@ class PercLedger {
         timestamp: now,
         toUsername: PercChainConstants.treasuryUsername,
         memo:
-            'Genesis block — treasury cycle $treasuryCycle (${PercChainConstants.maxSupply.display} PERC allocation)',
+            'Genesis block — treasury cycle $treasuryCycle (${PercChainConstants.maxSupply.display} ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName} allocation)',
         blockIndex: blocks.length,
       ),
     ];
@@ -187,7 +187,11 @@ class PercLedger {
   }
 
   void _debit(PercAccount acc, PercAmount amount) {
-    if (acc.balance < amount) throw StateError('Insufficient PERC balance');
+    if (acc.balance < amount) {
+      throw StateError(
+        'Insufficient ${PercChainConstants.currencyName} balance',
+      );
+    }
     acc.balance = acc.balance - amount;
   }
 
@@ -219,7 +223,8 @@ class PercLedger {
         timestamp: now,
         fromUsername: PercChainConstants.treasuryUsername,
         toUsername: entry.key,
-        memo: 'Cumulative staking (0.00000005 PERC per block)',
+        memo:
+            'Cumulative staking (${PercStaking.rewardPerBlock.centDisplay} per block)',
         blockIndex: blockIndex,
       );
       treasury.transactions.insert(0, tx);

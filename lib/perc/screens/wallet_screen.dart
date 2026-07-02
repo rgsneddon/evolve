@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../models/perc_transaction.dart';
 import '../perc_chain_constants.dart';
+import '../services/perc_currency.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
@@ -16,7 +17,7 @@ import '../widgets/blockchain_launch_balloon.dart';
 import '../widgets/wallet_creator_credit.dart';
 import 'blockchain_explorer_screen.dart';
 
-/// Evolve Wallet — PERC accounts, scenario-driven chain, send/receive.
+/// Evolve Wallet — Perccent accounts, scenario-driven chain, send/receive.
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
 
@@ -557,12 +558,16 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
             ),
             Text(
-              PercChainConstants.currencySymbol,
+              PercCurrency.brandLabel,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF6C63FF),
               ),
+            ),
+            Text(
+              PercCurrency.denominationNote(),
+              style: const TextStyle(fontSize: 10, color: Color(0xFF9BA3B8)),
             ),
             if (wallet.statusMessage != null) ...[
               const SizedBox(height: 10),

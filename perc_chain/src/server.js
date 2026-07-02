@@ -67,5 +67,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`PERC chain node listening on http://127.0.0.1:${PORT}`);
+  console.log(`Perccent chain node listening on http://127.0.0.1:${PORT}`);
 });
