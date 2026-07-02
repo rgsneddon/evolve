@@ -681,11 +681,13 @@ class EvolveProvider extends ChangeNotifier {
     try {
       await _populateConstructsFromNarrative(loadedInput);
     } catch (_) {
-      try {
-        await _applyHeuristicConstrualToForm(loadedInput);
-        statusMessage = strings.t('grok_fields_populated');
-      } catch (_) {
-        statusMessage = strings.t('link_fetched');
+      if (_usesHeuristicConstrual) {
+        try {
+          await _applyHeuristicConstrualToForm(loadedInput);
+          statusMessage = strings.t('grok_fields_populated');
+        } catch (_) {
+          statusMessage = strings.t('link_fetched');
+        }
       }
       notifyListeners();
     }
@@ -791,6 +793,7 @@ class EvolveProvider extends ChangeNotifier {
   /// After cohesion narrative link load — fill blank ω/σ/Iτ/Jμ like percent-chance Grok construal.
   Future<void> _populateConstructsFromNarrative(ScenarioInput narrativeInput) async {
     if (narrativeInput.posedQuestion.trim().isEmpty) return;
+    if (!grokConstrualEnabled && !_usesHeuristicConstrual) return;
 
     final generation = ++_construeGeneration;
     isConstruing = true;
@@ -798,19 +801,21 @@ class EvolveProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (!grokConstrualEnabled) {
-        grokConstrualEnabled = true;
-      }
       try {
         await _ensureGrokProxyReady();
       } catch (_) {
         // Heuristic construal does not require the proxy.
       }
 
-      if (!grokSession.canConstrue) {
+      final canPopulate =
+          grokSession.canConstrue || _usesHeuristicConstrual;
+      if (!canPopulate) {
         if (generation != _construeGeneration) return;
         statusMessage = strings.t('grok_sign_in_x_required');
         return;
+      }
+      if (!grokConstrualEnabled) {
+        grokConstrualEnabled = true;
       }
       await _fetchAndApplyConstrual(narrativeInput, persistToForm: true);
       if (generation != _construeGeneration) return;
