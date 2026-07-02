@@ -223,6 +223,18 @@ class BlockchainExplorerScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
               ),
             ],
+            if (block.microblockSeal) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Chronoflux microblock seal'
+                    '${block.microblocksSealed != null ? ' (${block.microblocksSealed} microblocks)' : ''}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF00D9C0),
+                ),
+              ),
+            ],
             if (block.isGenesisRenewal) ...[
               const SizedBox(height: 4),
               Text(

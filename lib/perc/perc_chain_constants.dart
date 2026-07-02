@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'models/perc_amount.dart';
 
 /// Perccent chain parameters — treasury cap 283M PERC; offline until scenarios run.
@@ -10,6 +12,13 @@ class PercChainConstants {
   static const String centName = 'cent';
   static const String centValueInPerc = '0.00000001';
   static const int centsPerPerc = 100000000;
+
+  /// Keystrokes advance one microblock; 100M microblocks seal a block.
+  static const int microblocksPerBlock = 100000000;
+
+  /// Override for tests — never set in production code.
+  @visibleForTesting
+  static int? microblocksPerBlockOverride;
 
   /// Treasury holder — offline wallet; no external chain until a user runs analysis.
   static const String treasuryUsername = 'rgsneddon';

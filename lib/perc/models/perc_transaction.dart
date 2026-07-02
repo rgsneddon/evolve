@@ -7,6 +7,7 @@ enum PercTxKind {
   transfer,
   stakingReward,
   genesisRenewal,
+  chronofluxMicroblock,
 }
 
 class PercTransaction {
@@ -22,6 +23,8 @@ class PercTransaction {
     this.percentChance,
     this.blockIndex,
     this.confirmations = 0,
+    this.chronofluxFingerprint,
+    this.microblockIndex,
   });
 
   final String id;
@@ -35,6 +38,8 @@ class PercTransaction {
   final double? percentChance;
   final int? blockIndex;
   final int confirmations;
+  final String? chronofluxFingerprint;
+  final int? microblockIndex;
 
   bool get isConfirmed =>
       confirmations >= PercChainConstants.confirmationsRequired;
@@ -56,6 +61,9 @@ class PercTransaction {
         if (percentChance != null) 'percentChance': percentChance,
         if (blockIndex != null) 'blockIndex': blockIndex,
         if (confirmations != 0) 'confirmations': confirmations,
+        if (chronofluxFingerprint != null)
+          'chronofluxFingerprint': chronofluxFingerprint,
+        if (microblockIndex != null) 'microblockIndex': microblockIndex,
       };
 
   factory PercTransaction.fromJson(Map<String, dynamic> json) => PercTransaction(
@@ -73,5 +81,7 @@ class PercTransaction {
         percentChance: (json['percentChance'] as num?)?.toDouble(),
         blockIndex: json['blockIndex'] as int?,
         confirmations: json['confirmations'] as int? ?? 0,
+        chronofluxFingerprint: json['chronofluxFingerprint'] as String?,
+        microblockIndex: json['microblockIndex'] as int?,
       );
 }

@@ -13,6 +13,9 @@ class PercBlock {
     this.treasuryCycle = 1,
     this.isGenesisRenewal = false,
     this.confirmations = PercChainConstants.confirmationsRequired,
+    this.microblockSeal = false,
+    this.chronofluxFingerprint,
+    this.microblocksSealed,
   });
 
   final int index;
@@ -24,6 +27,9 @@ class PercBlock {
   final int treasuryCycle;
   final bool isGenesisRenewal;
   final int confirmations;
+  final bool microblockSeal;
+  final String? chronofluxFingerprint;
+  final int? microblocksSealed;
 
   bool get isConfirmed =>
       confirmations >= PercChainConstants.confirmationsRequired;
@@ -39,6 +45,10 @@ class PercBlock {
         if (isGenesisRenewal) 'isGenesisRenewal': isGenesisRenewal,
         if (confirmations != PercChainConstants.confirmationsRequired)
           'confirmations': confirmations,
+        if (microblockSeal) 'microblockSeal': microblockSeal,
+        if (chronofluxFingerprint != null)
+          'chronofluxFingerprint': chronofluxFingerprint,
+        if (microblocksSealed != null) 'microblocksSealed': microblocksSealed,
       };
 
   factory PercBlock.fromJson(Map<String, dynamic> json) => PercBlock(
@@ -55,5 +65,8 @@ class PercBlock {
         isGenesisRenewal: json['isGenesisRenewal'] as bool? ?? false,
         confirmations: json['confirmations'] as int? ??
             PercChainConstants.confirmationsRequired,
+        microblockSeal: json['microblockSeal'] as bool? ?? false,
+        chronofluxFingerprint: json['chronofluxFingerprint'] as String?,
+        microblocksSealed: json['microblocksSealed'] as int?,
       );
 }

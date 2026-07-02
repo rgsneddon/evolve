@@ -16,11 +16,13 @@ class FrameworkFieldsHost extends StatefulWidget {
     required this.onChanged,
     required this.child,
     this.onRegisterFlush,
+    this.onKeystroke,
   });
 
   final ScenarioInput input;
   final ValueChanged<ScenarioInput> onChanged;
   final ValueChanged<VoidCallback?>? onRegisterFlush;
+  final ValueChanged<ScenarioInput>? onKeystroke;
   final Widget child;
 
   static _FrameworkFieldsScope of(BuildContext context) {
@@ -130,7 +132,7 @@ class _FrameworkFieldsHostState extends State<FrameworkFieldsHost> {
     setState(() {
       _outcomePartControllers.add(TextEditingController());
     });
-    schedulePush();
+    onFieldKeystroke();
   }
 
   void removeOutcomePartField(int index) {
@@ -152,7 +154,7 @@ class _FrameworkFieldsHostState extends State<FrameworkFieldsHost> {
         ];
       }
     });
-    schedulePush();
+    onFieldKeystroke();
   }
 
   TextEditingController get outcomeContextController => _outcomeContext;
@@ -223,15 +225,7 @@ class _FrameworkFieldsHostState extends State<FrameworkFieldsHost> {
     super.dispose();
   }
 
-  void schedulePush() {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 200), _push);
-  }
-
-  void _push() {
-    _debounce?.cancel();
-    widget.onChanged(
-      widget.input.copyWith(
+  ScenarioInput _snapshotInput() => widget.input.copyWith(
         posedQuestion: ScenarioInput.clamp(_posedQuestion.text),
         outcomeContext: ScenarioInput.clamp(_outcomeContext.text),
         outcomeParts: _outcomePartControllers
@@ -243,8 +237,21 @@ class _FrameworkFieldsHostState extends State<FrameworkFieldsHost> {
         shearText: ScenarioInput.clamp(_shear.text),
         resistanceText: ScenarioInput.clamp(_resistance.text),
         flowText: ScenarioInput.clamp(_flow.text),
-      ),
-    );
+      );
+
+  void onFieldKeystroke() {
+    widget.onKeystroke?.call(_snapshotInput());
+    schedulePush();
+  }
+
+  void schedulePush() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 200), _push);
+  }
+
+  void _push() {
+    _debounce?.cancel();
+    widget.onChanged(_snapshotInput());
   }
 
   @override
@@ -333,7 +340,7 @@ class _PosedQuestionFieldsState extends State<PosedQuestionFields> {
             ),
           ),
           style: const TextStyle(fontSize: 14, height: 1.45, fontWeight: FontWeight.w600),
-          onChanged: (_) => host.schedulePush(),
+          onChanged: (_) => host.onFieldKeystroke(),
         ),
         if (widget.showOutcomeParts && widget.strings != null)
           OutcomePartFields(strings: widget.strings!),
@@ -344,7 +351,7 @@ class _PosedQuestionFieldsState extends State<PosedQuestionFields> {
             labelText: widget.topicHint ?? 'Scenario topic (optional)',
             hintText: widget.topicHint,
           ),
-          onChanged: (_) => host.schedulePush(),
+          onChanged: (_) => host.onFieldKeystroke(),
         ),
         if (widget.regionFocusBanner != null && widget.regionFocusBanner!.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -512,7 +519,7 @@ class ConstructVariableFields extends StatelessWidget {
         ),
       ),
       style: const TextStyle(fontSize: 13, height: 1.45),
-      onChanged: (_) => host.schedulePush(),
+      onChanged: (_) => host.onFieldKeystroke(),
     );
   }
 }

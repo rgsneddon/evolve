@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../models/analysis_mode.dart';
+import '../../models/locale_config.dart';
+import '../../models/scenario_input.dart';
+import '../models/perc_microblock_record_result.dart';
 import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../models/perc_faucet_credit_result.dart';
@@ -61,6 +66,11 @@ class PercWalletProvider extends ChangeNotifier {
   bool get canSendFromSession =>
       isLoggedIn && !(isTreasuryAccount && isTreasurySendLocked);
   int get confirmationsRequired => PercChainConstants.confirmationsRequired;
+  int get microblockCount => _ledger.microblockCount;
+  int get totalMicroblocks => _ledger.totalMicroblocks;
+  int get microblocksPerBlock => _ledger.microblocksPerBlock;
+  double get microblockProgress => _ledger.microblockProgress;
+  String? get lastChronofluxFingerprint => _ledger.lastChronofluxFingerprint;
 
   Duration? get faucetCooldownRemaining {
     if (!isLoggedIn) return null;
@@ -198,6 +208,22 @@ class PercWalletProvider extends ChangeNotifier {
     } catch (e) {
       errorMessage = e.toString().replaceFirst('StateError: ', '');
       notifyListeners();
+    }
+  }
+
+  void recordMicroblock(
+    ScenarioInput input, {
+    LocaleConfig locale = LocaleConfig.defaults,
+  }) {
+    if (!_ready) return;
+    final result = _ledger.recordMicroblock(input: input, locale: locale);
+    if (result.blockSealed) {
+      _captureGenesisRenewalEvent();
+      statusMessage = _pendingGenesisRenewalNotice
+          ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
+          : 'Chronoflux microblock seal — block #${result.blockIndex}';
+      notifyListeners();
+      unawaited(_persist());
     }
   }
 

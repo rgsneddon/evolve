@@ -63,7 +63,7 @@ class OutcomePartFields extends StatelessWidget {
               fillColor: accent.withOpacity(0.05),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            onChanged: (_) => host.schedulePush(),
+            onChanged: (_) => host.onFieldKeystroke(),
           ),
           const SizedBox(height: 10),
           ...List.generate(host.outcomePartControllers.length, (index) {
@@ -85,7 +85,7 @@ class OutcomePartFields extends StatelessWidget {
                         fillColor: accent.withOpacity(0.05),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      onChanged: (_) => host.schedulePush(),
+                      onChanged: (_) => host.onFieldKeystroke(),
                     ),
                   ),
                   const SizedBox(width: 4),

@@ -1,4 +1,5 @@
 import '../models/analysis_mode.dart';
+import '../models/chronoflux_continuum_snapshot.dart';
 import '../models/locale_config.dart';
 import '../models/construct_input.dart';
 import '../models/scenario_input.dart';
@@ -546,6 +547,32 @@ class EvolveEngine {
       withLeversMin: withMin.toDouble(),
       withLeversMax: withMax.toDouble(),
       recurrenceRisk: out.recurrenceRisk(without < 45),
+    );
+  }
+
+  /// Lightweight continuum snapshot for microblock self-verification.
+  ChronofluxContinuumSnapshot continuumSnapshot(
+    ScenarioInput raw, {
+    LocaleConfig locale = LocaleConfig.defaults,
+  }) {
+    final out = LocalizedOutput.of(locale);
+    final input = parser.enrich(raw, locale: locale, output: out);
+    final baseline = _hydrodynamicCore(input);
+    final calcCtx = ScenarioCalculationContext.from(
+      input: input,
+      regionId: locale.regionId,
+    );
+    final core = _refinedCore(baseline, contextLean: calcCtx.effectiveLean);
+    final continuumPercent = heuristicPercentChance(
+      regressivePct: core.regressivePct,
+      refinedScs: core.refinedScs,
+      shearScs: input.shear.scs,
+    );
+    return ChronofluxContinuumSnapshot(
+      regressivePct: core.regressivePct,
+      refinedScs: core.refinedScs,
+      shearScs: input.shear.scs,
+      continuumPercent: continuumPercent,
     );
   }
 

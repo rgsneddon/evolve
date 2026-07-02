@@ -47,6 +47,9 @@ class EvolveProvider extends ChangeNotifier {
     String? memo,
   })? analysisRewardHandler;
 
+  /// Advances Chronoflux microblocks on each framework field keystroke.
+  void Function(ScenarioInput input)? microblockKeystrokeHandler;
+
   AnalysisMode mode = AnalysisMode.cohesionScore;
   LocaleConfig locale = LocaleConfig.defaults;
   ScenarioInput input = const ScenarioInput();
@@ -597,6 +600,10 @@ class EvolveProvider extends ChangeNotifier {
       _persistCurrentMode();
     }
     notifyListeners();
+  }
+
+  void recordKeystrokeMicroblock(ScenarioInput input) {
+    microblockKeystrokeHandler?.call(input);
   }
 
   void updateInput(ScenarioInput i) {

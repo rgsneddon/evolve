@@ -94,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     input: provider.input,
                     onChanged: provider.updateInput,
+                    onKeystroke: provider.recordKeystrokeMicroblock,
                     onRegisterFlush: provider.registerFlush,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

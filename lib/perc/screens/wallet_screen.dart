@@ -931,6 +931,8 @@ class _WalletScreenState extends State<WalletScreen> {
                 .replaceAll('{user}', tx.fromUsername ?? '');
       case PercTxKind.genesisRenewal:
         title = tx.memo ?? strings.t('wallet_tx_genesis');
+      case PercTxKind.chronofluxMicroblock:
+        title = tx.memo ?? 'Chronoflux microblock seal';
     }
 
     final prefix = isOut ? '-' : '+';
