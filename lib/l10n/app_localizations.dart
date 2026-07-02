@@ -348,6 +348,12 @@ final _en = {
   'wallet_cooldown_popup_body':
       'Your wallet already drew from treasury within the last 450 minutes. The blockchain advances on scenarios — your next eligible draw (and block) is in approximately {blockWait}. You can draw 0.00000050 PERC again after {wait}.',
   'wallet_cooldown_popup_ok': 'OK',
+  'wallet_blockchain_awaiting_launch':
+      'Blockchain awaits treasurer rgsneddon first sign-in to launch.',
+  'wallet_blockchain_launch_title': 'Blockchain launched!',
+  'wallet_blockchain_launch_body':
+      'Treasurer rgsneddon signed in — the PERC chain is live. Run scenarios to advance blocks.',
+  'wallet_blockchain_launch_ok': 'Let\'s go',
   'wallet_faucet_base': 'Base reward',
   'wallet_faucet_bonus': 'Outcome bonus',
   'wallet_faucet_total': 'Total credited',
@@ -818,6 +824,12 @@ final _es = {
   'wallet_cooldown_popup_body':
       'Su monedero ya retiró de la tesorería en los últimos 450 minutos. La cadena avanza con escenarios — su próximo retiro (y bloque) es en aproximadamente {blockWait}. Puede retirar 0,00000050 PERC de nuevo tras {wait}.',
   'wallet_cooldown_popup_ok': 'OK',
+  'wallet_blockchain_awaiting_launch':
+      'La cadena espera el primer inicio de sesión del tesorero rgsneddon.',
+  'wallet_blockchain_launch_title': '¡Cadena lanzada!',
+  'wallet_blockchain_launch_body':
+      'El tesorero rgsneddon inició sesión — la cadena PERC está activa.',
+  'wallet_blockchain_launch_ok': 'Adelante',
   'wallet_faucet_base': 'Recompensa base',
   'wallet_faucet_bonus': 'Bono por resultado',
   'wallet_faucet_total': 'Total acreditado',

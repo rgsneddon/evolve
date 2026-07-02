@@ -22,8 +22,10 @@ class PercWalletProvider extends ChangeNotifier {
   String? statusMessage;
   String? errorMessage;
   PercFaucetCreditResult? _pendingCooldownPopup;
+  bool _pendingLaunchBalloon = false;
 
   bool get isReady => _ready;
+  bool get isBlockchainLaunched => _ledger.isBlockchainLaunched;
   bool get isLoggedIn => _ledger.isLoggedIn;
   String? get loggedInUsername => _ledger.sessionUsername;
   bool get needsTreasuryPassword => _ledger.treasuryNeedsPasswordSetup();
@@ -55,6 +57,18 @@ class PercWalletProvider extends ChangeNotifier {
     return popup;
   }
 
+  bool takeBlockchainLaunchBalloon() {
+    if (!_pendingLaunchBalloon) return false;
+    _pendingLaunchBalloon = false;
+    return true;
+  }
+
+  void _captureTreasuryLaunchEvent() {
+    if (_ledger.consumeBlockchainLaunchEvent()) {
+      _pendingLaunchBalloon = true;
+    }
+  }
+
   Future<void> initialize() async {
     final loaded = await _store.load();
     _ledger = loaded ?? PercLedger.empty();
@@ -69,7 +83,8 @@ class PercWalletProvider extends ChangeNotifier {
     try {
       _ledger.setupTreasuryPassword(password);
       _ledger.login(PercChainConstants.treasuryUsername, password);
-      statusMessage = 'Treasury secured';
+      _captureTreasuryLaunchEvent();
+      statusMessage = 'Treasury secured — blockchain launched';
       notifyListeners();
       await _persist();
     } catch (e) {
@@ -96,6 +111,7 @@ class PercWalletProvider extends ChangeNotifier {
     _clearMessages();
     try {
       _ledger.login(username, password);
+      _captureTreasuryLaunchEvent();
       statusMessage = 'Signed in as ${_ledger.sessionUsername}';
       notifyListeners();
       await _persist();
@@ -177,7 +193,10 @@ class PercWalletProvider extends ChangeNotifier {
         return result;
       }
 
-      if (result.status == PercFaucetCreditStatus.treasuryEmpty) {
+      if (result.status == PercFaucetCreditStatus.blockchainNotLaunched) {
+        statusMessage =
+            'Blockchain awaiting treasurer rgsneddon first sign-in';
+      } else if (result.status == PercFaucetCreditStatus.treasuryEmpty) {
         statusMessage = 'Treasury empty — run another scenario later';
       }
       notifyListeners();

@@ -18,6 +18,7 @@ class PercLedger {
     required this.lastScenarioAt,
     required this.treasuryGenesisDone,
     required this.cumulativeTreasuryMinted,
+    this.blockchainLaunched = false,
     this.sessionUsername,
     this.nextTxId = 1,
   });
@@ -27,8 +28,10 @@ class PercLedger {
   DateTime? lastScenarioAt;
   bool treasuryGenesisDone;
   PercAmount cumulativeTreasuryMinted;
+  bool blockchainLaunched;
   String? sessionUsername;
   int nextTxId;
+  bool _blockchainLaunchEventPending = false;
 
   static PercLedger empty() => PercLedger(
         accounts: {},
@@ -36,7 +39,16 @@ class PercLedger {
         lastScenarioAt: null,
         treasuryGenesisDone: false,
         cumulativeTreasuryMinted: PercAmount.zero,
+        blockchainLaunched: false,
       );
+
+  bool get isBlockchainLaunched => blockchainLaunched;
+
+  bool consumeBlockchainLaunchEvent() {
+    if (!_blockchainLaunchEventPending) return false;
+    _blockchainLaunchEventPending = false;
+    return true;
+  }
 
   PercAccount? account(String username) => accounts[username];
 
@@ -229,6 +241,13 @@ class PercLedger {
     return acc;
   }
 
+  void _launchBlockchainIfTreasurerFirstLogin(String username) {
+    if (username != PercChainConstants.treasuryUsername) return;
+    if (blockchainLaunched) return;
+    blockchainLaunched = true;
+    _blockchainLaunchEventPending = true;
+  }
+
   PercAccount login(String username, String password) {
     final u = PercAuth.normalizeUsername(username);
     final acc = accounts[u];
@@ -241,6 +260,7 @@ class PercLedger {
       throw StateError('Invalid password');
     }
     sessionUsername = u;
+    _launchBlockchainIfTreasurerFirstLogin(u);
     return acc;
   }
 
@@ -252,6 +272,11 @@ class PercLedger {
     required PercAmount amount,
     String? memo,
   }) {
+    if (!blockchainLaunched) {
+      throw StateError(
+        'Blockchain not launched — treasurer rgsneddon must sign in first',
+      );
+    }
     final from = PercAuth.normalizeUsername(fromUsername);
     final to = PercAuth.normalizeUsername(toUsername);
     if (from == to) throw StateError('Cannot send to yourself');
@@ -295,6 +320,12 @@ class PercLedger {
     if (user == null) {
       return const PercFaucetCreditResult(
         status: PercFaucetCreditStatus.notLoggedIn,
+      );
+    }
+
+    if (!blockchainLaunched) {
+      return const PercFaucetCreditResult(
+        status: PercFaucetCreditStatus.blockchainNotLaunched,
       );
     }
 
@@ -401,6 +432,7 @@ class PercLedger {
         'lastScenarioAt': lastScenarioAt?.toIso8601String(),
         'treasuryGenesisDone': treasuryGenesisDone,
         'cumulativeTreasuryMinted': cumulativeTreasuryMinted.toJson(),
+        'blockchainLaunched': blockchainLaunched,
         'sessionUsername': sessionUsername,
         'nextTxId': nextTxId,
       };
@@ -417,19 +449,23 @@ class PercLedger {
     for (final e in raw.entries) {
       accts[e.key] = PercAccount.fromJson(e.value as Map<String, dynamic>);
     }
+    final blocks = (json['blocks'] as List<dynamic>? ?? [])
+        .map((e) => PercBlock.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final treasuryGenesisDone = json['treasuryGenesisDone'] as bool? ?? false;
     return PercLedger(
       accounts: accts,
-      blocks: (json['blocks'] as List<dynamic>? ?? [])
-          .map((e) => PercBlock.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      blocks: blocks,
       lastScenarioAt: json['lastScenarioAt'] != null
           ? DateTime.parse(json['lastScenarioAt'] as String)
           : null,
-      treasuryGenesisDone: json['treasuryGenesisDone'] as bool? ?? false,
+      treasuryGenesisDone: treasuryGenesisDone,
       cumulativeTreasuryMinted: json['cumulativeTreasuryMinted'] != null
           ? PercAmount.fromJson(
               json['cumulativeTreasuryMinted'] as Map<String, dynamic>)
           : PercAmount.zero,
+      blockchainLaunched: json['blockchainLaunched'] as bool? ??
+          (blocks.isNotEmpty || treasuryGenesisDone),
       sessionUsername: json['sessionUsername'] as String?,
       nextTxId: json['nextTxId'] as int? ?? 1,
     );
@@ -444,6 +480,7 @@ class PercLedger {
     t.balance = treasury.poolBalance;
     ledger.cumulativeTreasuryMinted = treasury.cumulativeMinted;
     ledger.treasuryGenesisDone = treasury.cumulativeMinted.isPositive;
+    ledger.blockchainLaunched = treasury.cumulativeMinted.isPositive;
     ledger.lastScenarioAt = treasury.lastTick;
 
     final oldBalance = PercAmount(json['balance'] as int? ?? 0);
@@ -466,6 +503,7 @@ class PercLedger {
     final ledger = PercLedger.empty();
     ledger._ensureTreasury();
     ledger.treasuryGenesisDone = json['treasuryGenesisDone'] as bool? ?? false;
+    ledger.blockchainLaunched = ledger.treasuryGenesisDone;
     if (json['lastTick'] != null) {
       ledger.lastScenarioAt = DateTime.parse(json['lastTick'] as String);
     }

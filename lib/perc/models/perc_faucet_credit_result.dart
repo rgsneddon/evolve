@@ -5,6 +5,7 @@ enum PercFaucetCreditStatus {
   onCooldown,
   treasuryEmpty,
   notLoggedIn,
+  blockchainNotLaunched,
 }
 
 class PercFaucetCreditResult {

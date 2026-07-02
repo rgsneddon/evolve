@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
+import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_staking.dart';
@@ -7,6 +8,8 @@ import 'package:evolve/perc/services/perc_staking.dart';
 void _seed(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password123');
+  ledger.login(PercChainConstants.treasuryUsername, 'password123');
+  ledger.consumeBlockchainLaunchEvent();
   ledger.register('staker', 'password123');
 }
 

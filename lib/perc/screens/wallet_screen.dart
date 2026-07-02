@@ -9,6 +9,7 @@ import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
+import '../widgets/blockchain_launch_balloon.dart';
 import 'blockchain_explorer_screen.dart';
 
 /// Evolve Wallet — PERC accounts, scenario-driven chain, send/receive.
@@ -24,9 +25,33 @@ class _WalletScreenState extends State<WalletScreen> {
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _registerMode = false;
+  PercWalletProvider? _wallet;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final wallet = context.read<PercWalletProvider>();
+    if (!identical(_wallet, wallet)) {
+      _wallet?.removeListener(_onWalletUpdate);
+      _wallet = wallet;
+      _wallet!.addListener(_onWalletUpdate);
+    }
+  }
+
+  void _onWalletUpdate() {
+    if (!mounted || _wallet == null) return;
+    if (_wallet!.takeBlockchainLaunchBalloon()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final strings = AppLocalizations.of(context.read<LocaleProvider>().config);
+        showBlockchainLaunchBalloon(context, strings);
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _wallet?.removeListener(_onWalletUpdate);
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
@@ -89,7 +114,17 @@ class _WalletScreenState extends State<WalletScreen> {
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
-            ..._treasuryRemainingLines(wallet, strings),
+            if (!wallet.isBlockchainLaunched)
+              Text(
+                strings.t('wallet_blockchain_awaiting_launch'),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFFF8A65),
+                  height: 1.4,
+                ),
+              )
+            else
+              ..._treasuryRemainingLines(wallet, strings),
           ],
         ),
       ),
@@ -535,13 +570,21 @@ class _WalletScreenState extends State<WalletScreen> {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const BlockchainExplorerScreen(),
-            ),
-          );
-        },
+        onTap: wallet.isBlockchainLaunched
+            ? () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const BlockchainExplorerScreen(),
+                  ),
+                );
+              }
+            : () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(strings.t('wallet_blockchain_awaiting_launch')),
+                  ),
+                );
+              },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(

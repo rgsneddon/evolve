@@ -10,6 +10,8 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 void _seedLedger(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password123');
+  ledger.login(PercChainConstants.treasuryUsername, 'password123');
+  ledger.consumeBlockchainLaunchEvent();
 }
 
 void main() {
