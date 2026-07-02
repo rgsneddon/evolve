@@ -17,11 +17,13 @@ class XOAuthConnectingDialog extends StatefulWidget {
     required this.body,
     required this.cancelLabel,
     required this.onFinished,
+    this.useMobileAuth = false,
   });
 
   final Uri authorize;
   final String redirectUri;
   final Future<GrokSession> sessionFuture;
+  final bool useMobileAuth;
   final String title;
   final String body;
   final String cancelLabel;
@@ -43,6 +45,7 @@ class _XOAuthConnectingDialogState extends State<XOAuthConnectingDialog> {
   }
 
   Future<void> _launchBrowser() async {
+    if (widget.useMobileAuth) return;
     final handle = GrokOAuthLauncher.prepareTab();
     _tab = handle;
     await GrokOAuthLauncher.launch(widget.authorize, handle: handle);

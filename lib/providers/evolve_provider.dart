@@ -13,6 +13,7 @@ import '../models/evolve_result.dart';
 import '../services/grok_auth_client.dart';
 import '../services/grok_construal_service.dart';
 
+import '../services/grok_oauth_flow.dart';
 import '../services/grok_oauth_launcher.dart';
 import '../services/grok_proxy_launcher.dart';
 import '../widgets/x_oauth_connecting_dialog.dart';
@@ -441,6 +442,7 @@ class EvolveProvider extends ChangeNotifier {
           context,
           authorize: authorize,
           auth: auth,
+          redirectUri: login.redirectUri,
         );
       }
 
@@ -514,8 +516,15 @@ class EvolveProvider extends ChangeNotifier {
     BuildContext context, {
     required Uri authorize,
     required GrokAuthClient auth,
+    String redirectUri = '',
   }) async {
-    final sessionFuture = auth.waitForSession();
+    final useMobileAuth = GrokOAuthFlow.usesMobileDeepLink;
+    final sessionFuture = useMobileAuth
+        ? GrokOAuthFlow.completeAuthorization(
+            authorizeUrl: authorize,
+            auth: auth,
+          )
+        : auth.waitForSession();
     var result = const GrokSession();
 
     await showDialog<void>(
@@ -523,10 +532,13 @@ class EvolveProvider extends ChangeNotifier {
       barrierDismissible: false,
       builder: (ctx) => XOAuthConnectingDialog(
         authorize: authorize,
-        redirectUri: '',
+        redirectUri: redirectUri,
         sessionFuture: sessionFuture,
+        useMobileAuth: useMobileAuth,
         title: strings.t('grok_connect_title'),
-        body: strings.t('grok_connecting'),
+        body: useMobileAuth
+            ? strings.t('grok_connecting_mobile')
+            : strings.t('grok_connecting'),
         cancelLabel: strings.t('grok_dialog_cancel'),
         onFinished: (session, tab) {
           result = session;

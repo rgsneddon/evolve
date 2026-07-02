@@ -2,8 +2,20 @@ import 'dart:io';
 
 Map<String, String>? _fileEnv;
 
-/// Platform env first, then [grok_proxy.local.env] in cwd or parent folders.
+const _dartDefineEnv = <String, String>{
+  'X_CLIENT_ID': String.fromEnvironment('X_CLIENT_ID'),
+  'X_CLIENT_SECRET': String.fromEnvironment('X_CLIENT_SECRET'),
+  'XAI_API_KEY': String.fromEnvironment('XAI_API_KEY'),
+  'GROK_PROXY_MOCK': String.fromEnvironment('GROK_PROXY_MOCK'),
+  'GROK_PROXY_PUBLIC_URL': String.fromEnvironment('GROK_PROXY_PUBLIC_URL'),
+  'XAI_CONSTRUAL_MODEL': String.fromEnvironment('XAI_CONSTRUAL_MODEL'),
+};
+
+/// Build-time defines, platform env, then [grok_proxy.local.env] in cwd or parents.
 String? readEnv(String key) {
+  final fromDefine = _dartDefineEnv[key]?.trim();
+  if (fromDefine != null && fromDefine.isNotEmpty) return fromDefine;
+
   final platform = Platform.environment[key];
   if (platform != null && platform.trim().isNotEmpty) return platform.trim();
   _ensureFileEnvLoaded();

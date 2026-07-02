@@ -20,6 +20,7 @@ dependencies:
   pdf: ^3.11.3
   file_selector: ^1.0.4
   path_provider: ^2.1.5
+  flutter_web_auth_2: ^5.0.3
 
 dev_dependencies:
   flutter_test:

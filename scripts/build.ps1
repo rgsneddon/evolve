@@ -41,7 +41,18 @@ switch ($Platform) {
         if (-not $info.JavaHome) {
             throw 'JDK required for Android builds. Run scripts\setup_build_tooling.ps1 first.'
         }
-        & $flutter build apk $mode
+        . "$PSScriptRoot\lib\grok_env.ps1"
+        $defineArgs = @()
+        if (Import-GrokLocalEnv -Root $Root) {
+            foreach ($key in @('X_CLIENT_ID', 'X_CLIENT_SECRET', 'XAI_API_KEY')) {
+                $val = (Get-Item "env:$key" -ErrorAction SilentlyContinue).Value
+                if ($val) { $defineArgs += "--dart-define=$key=$val" }
+            }
+            Write-Host 'Baked Grok OAuth credentials into Android build (dart-define).' -ForegroundColor Cyan
+        } else {
+            Write-Host 'No grok_proxy.local.env — Android Grok will use mock X sign-in.' -ForegroundColor Yellow
+        }
+        & $flutter build apk $mode @defineArgs
         Write-Host ''
         Write-Host 'Output: build\app\outputs\flutter-apk\app-release.apk' -ForegroundColor Green
     }

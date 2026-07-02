@@ -1,3 +1,5 @@
+import '../grok_oauth_redirect.dart'
+    if (dart.library.html) '../grok_oauth_redirect_stub.dart' as oauth_redirect;
 import 'grok_proxy_env_stub.dart'
     if (dart.library.io) 'grok_proxy_env_io.dart' as env;
 
@@ -24,9 +26,13 @@ class GrokProxyConfig {
   String get baseUrl => 'http://127.0.0.1:$port';
 
   String get redirectUri {
+    final mobile = oauth_redirect.GrokOAuthRedirect.redirectUri;
+    if (mobile != null && mobile.isNotEmpty) return mobile;
+
     final public = publicBaseUrl?.trim();
     if (public != null && public.isNotEmpty) {
-      final normalized = public.endsWith('/') ? public.substring(0, public.length - 1) : public;
+      final normalized =
+          public.endsWith('/') ? public.substring(0, public.length - 1) : public;
       return '$normalized/auth/callback';
     }
     return '$baseUrl/auth/callback';

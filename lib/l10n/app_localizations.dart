@@ -492,15 +492,17 @@ final _en = {
       'If it still shows SSUCF, rename your app at console.x.com (see checklist below). '
       'After you sign in, return here — Evolve will detect your Premium account.',
   'grok_oauth_redirect_hint':
-      'If X says “Something went wrong”, register this exact callback in console.x.com → your app → OAuth 2.0 → Callback URLs (use 127.0.0.1, not localhost):',
+      'If X says “Something went wrong”, register the callback for your platform in console.x.com → your app → OAuth 2.0 → Callback URLs:',
   'grok_oauth_portal_checklist':
       'X Developer Portal checklist:\n'
       '1. console.x.com → your app → App settings → App name: Evolve (replaces SSUCF in the sign-in popup)\n'
       '2. User authentication settings → OAuth 2.0 enabled\n'
-      '3. App type: Native App (desktop) or Web App with the callback below\n'
-      '4. Callback URL exactly: http://127.0.0.1:8787/auth/callback\n'
+      '3. App type: Native App\n'
+      '4. Callback URLs (add both if you use Windows and Android):\n'
+      '   • Desktop: http://127.0.0.1:8787/auth/callback\n'
+      '   • Android: evolve://auth/callback\n'
       '5. Scopes allowed: tweet.read, users.read, offline.access\n'
-      '6. Copy Client ID into grok_proxy.local.env next to evolve.exe (Windows) or project root',
+      '6. Copy Client ID into grok_proxy.local.env (rebuild Android APK to bake credentials in)',
   'grok_oauth_denied':
       'X denied access — check your Developer Portal callback URL and OAuth 2.0 settings.',
   'grok_dialog_cancel': 'Cancel',
@@ -515,6 +517,8 @@ final _en = {
   'grok_proxy_start_failed': 'Could not start the Grok proxy on this device.',
   'grok_connecting':
       'Complete X sign-in in your browser. This window and the browser tab will close automatically when you are connected.',
+  'grok_connecting_mobile':
+      'Complete X sign-in in the browser tab. You will return to Evolve automatically when your account is connected.',
   'grok_connect_failed': 'X connection failed — try again or leave Grok construe off.',
   'grok_connect_cancelled': 'X connection cancelled.',
   'grok_premium_required':
@@ -1000,13 +1004,15 @@ final _es = {
       'Compatible con DuckDuckGo, Chrome, Edge y su navegador predeterminado. '
       'La pantalla de permisos de X debe decir Evolve. Si aún muestra SSUCF, renombre la app en console.x.com.',
   'grok_oauth_redirect_hint':
-      'Si X muestra un error, registre esta URL de retorno en console.x.com → su app → OAuth 2.0 (use 127.0.0.1, no localhost):',
+      'Si X muestra un error, registre la URL de retorno de su plataforma en console.x.com → su app → OAuth 2.0:',
   'grok_oauth_portal_checklist':
       'Lista en el portal de X:\n'
       '1. console.x.com → su app → App settings → App name: Evolve\n'
       '2. OAuth 2.0 activado en la app\n'
-      '3. Tipo Native App o Web App con la URL de retorno indicada\n'
-      '4. URL exacta: http://127.0.0.1:8787/auth/callback\n'
+      '3. Tipo Native App\n'
+      '4. URLs de retorno (escritorio y Android):\n'
+      '   • Escritorio: http://127.0.0.1:8787/auth/callback\n'
+      '   • Android: evolve://auth/callback\n'
       '5. Ámbitos: tweet.read, users.read, offline.access',
   'grok_oauth_denied':
       'X denegó el acceso — revise la URL de retorno y OAuth 2.0 en el portal.',
@@ -1035,6 +1041,8 @@ final _es = {
   'grok_proxy_start_failed': 'No se pudo iniciar el proxy Grok en este dispositivo.',
   'grok_connecting':
       'Complete el inicio de sesión de X en su navegador. Esta ventana y la pestaña del navegador se cerrarán automáticamente al conectarse.',
+  'grok_connecting_mobile':
+      'Complete el inicio de sesión de X en la pestaña del navegador. Volverá a Evolve automáticamente al conectarse.',
   'grok_connect_failed': 'Falló la conexión con X.',
   'grok_connect_cancelled': 'Conexión con X cancelada.',
   'grok_premium_required': 'Se requiere X Premium para construir con Grok.',
