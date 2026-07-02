@@ -11,22 +11,26 @@ void _seed(PercLedger ledger) {
 }
 
 void main() {
-  test('staking unit is 10% of 0.00000050 PERC per PERC held', () {
-    expect(PercStaking.unitRewardPerPerc.microUnits, 5);
-    expect(PercStaking.unitRewardPerPerc.displayFixed8, '0.00000005');
+  test('staking reward is flat 0.00000005 PERC per block', () {
+    expect(PercStaking.rewardPerBlock.microUnits, 5);
+    expect(PercStaking.rewardPerBlock.displayFixed8, '0.00000005');
   });
 
-  test('staking reward scales with held balance', () {
+  test('flat 0.00000005 PERC for any positive held balance', () {
+    expect(
+      PercStaking.rewardForBalance(PercAmount.scenarioBaseReward).microUnits,
+      5,
+    );
     expect(
       PercStaking.rewardForBalance(PercAmount.fromPerc(1)).microUnits,
       5,
     );
     expect(
-      PercStaking.rewardForBalance(PercAmount.fromPerc(2)).microUnits,
-      10,
+      PercStaking.rewardForBalance(PercAmount.fromPerc(100)).microUnits,
+      5,
     );
     expect(
-      PercStaking.rewardForBalance(PercAmount.scenarioBaseReward).microUnits,
+      PercStaking.rewardForBalance(PercAmount.zero).microUnits,
       0,
     );
   });
@@ -41,14 +45,14 @@ void main() {
 
     ledger.creditScenario(username: 'bob', percentChance: 10);
     final staker = ledger.account('staker')!;
-    expect(staker.cumulativeStakingEarned.microUnits, 5);
+    expect(staker.cumulativeStakingEarned.microUnits, 10);
     expect(
-      staker.transactions.any((t) => t.kind == PercTxKind.stakingReward),
-      isTrue,
+      staker.transactions.where((t) => t.kind == PercTxKind.stakingReward).length,
+      2,
     );
   });
 
-  test('staking pays from treasury to all holders on block', () {
+  test('staking pays flat amount to all holders on block', () {
     final ledger = PercLedger.empty();
     _seed(ledger);
     ledger.register('bob', 'password123');
@@ -57,13 +61,12 @@ void main() {
     ledger.account('staker')!.balance = PercAmount.fromPerc(2);
     ledger.account('bob')!.balance = PercAmount.fromPerc(1);
 
-    final bobBalanceBefore = ledger.account('bob')!.balance;
     ledger.creditScenario(username: 'bob', percentChance: 20);
 
     final staker = ledger.account('staker')!;
     final bob = ledger.account('bob')!;
 
     expect(staker.cumulativeStakingEarned.microUnits, 10);
-    expect(bob.balance.microUnits, greaterThan(bobBalanceBefore.microUnits));
+    expect(bob.cumulativeStakingEarned.microUnits, 5);
   });
 }

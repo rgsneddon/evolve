@@ -159,7 +159,7 @@ class PercLedger {
         timestamp: now,
         fromUsername: PercChainConstants.treasuryUsername,
         toUsername: entry.key,
-        memo: 'Cumulative staking (10% of base per PERC held)',
+        memo: 'Cumulative staking (0.00000005 PERC per block)',
         blockIndex: blockIndex,
       );
       treasury.transactions.insert(0, tx);

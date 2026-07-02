@@ -315,7 +315,7 @@ final _en = {
   'wallet_balance_label': 'Available balance',
   'wallet_staking_title': 'Cumulative staking',
   'wallet_staking_note':
-      'Held PERC earns 10% of the 0.00000050 PERC base (0.00000005 PERC per PERC held) on each new block.',
+      'Any held PERC earns a flat 0.00000005 PERC each block (10% of the 0.00000050 base).',
   'wallet_staking_earned': 'Total staking earned: {amount} PERC',
   'wallet_tx_staking': 'Staking reward',
   'wallet_signed_in_as': 'Signed in as {user}',
@@ -785,7 +785,7 @@ final _es = {
   'wallet_balance_label': 'Saldo disponible',
   'wallet_staking_title': 'Staking acumulativo',
   'wallet_staking_note':
-      'El PERC en cartera gana el 10% de la base 0,00000050 PERC (0,00000005 PERC por PERC) en cada bloque nuevo.',
+      'Cualquier PERC en cartera gana 0,00000005 PERC fijos por bloque (10% de la base 0,00000050).',
   'wallet_staking_earned': 'Staking total ganado: {amount} PERC',
   'wallet_tx_staking': 'Recompensa de staking',
   'wallet_signed_in_as': 'Sesión: {user}',

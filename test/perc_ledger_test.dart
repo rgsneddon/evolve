@@ -3,6 +3,7 @@ import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
+import 'package:evolve/perc/services/perc_staking.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 
@@ -29,7 +30,9 @@ void main() {
     expect(ledger.blocks.first.treasuryEmitted, PercAmount.fromPerc(1));
     expect(
       ledger.treasuryBalance,
-      PercAmount.fromPerc(1) - result.reward!.total,
+      PercAmount.fromPerc(1) -
+          result.reward!.total -
+          PercStaking.rewardPerBlock,
     );
   });
 
@@ -70,7 +73,10 @@ void main() {
     expect(second.status, PercFaucetCreditStatus.onCooldown);
     expect(second.cooldownRemaining, isNotNull);
     expect(second.cooldownRemaining!.inMinutes, greaterThan(440));
-    expect(ledger.account('alice')!.balance, first.reward!.total);
+    expect(
+      ledger.account('alice')!.balance,
+      first.reward!.total + PercStaking.rewardPerBlock,
+    );
   });
 
   test('send transfers PERC between local accounts', () {
