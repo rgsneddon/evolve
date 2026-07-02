@@ -26,6 +26,9 @@ class PercSendReceiveActions {
     final amountCtrl = TextEditingController();
     final memoCtrl = TextEditingController();
     String? selectedPeer = peers.isNotEmpty ? peers.first : null;
+    if (selectedPeer != null) {
+      toCtrl.text = selectedPeer!;
+    }
 
     await showDialog<void>(
       context: context,
@@ -35,10 +38,20 @@ class PercSendReceiveActions {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (peers.isNotEmpty)
+              TextField(
+                controller: toCtrl,
+                decoration: InputDecoration(
+                  labelText: strings.t('wallet_send_to'),
+                  hintText: strings.t('wallet_send_to_hint'),
+                ),
+                onChanged: (_) => setState(() => selectedPeer = null),
+              ),
+              if (peers.isNotEmpty) ...[
+                const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   value: selectedPeer,
-                  decoration: InputDecoration(labelText: strings.t('wallet_send_to')),
+                  decoration:
+                      InputDecoration(labelText: strings.t('wallet_send_peer_pick')),
                   items: peers
                       .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                       .toList(),
@@ -46,12 +59,8 @@ class PercSendReceiveActions {
                     selectedPeer = v;
                     toCtrl.text = v ?? '';
                   }),
-                )
-              else
-                TextField(
-                  controller: toCtrl,
-                  decoration: InputDecoration(labelText: strings.t('wallet_send_to')),
                 ),
+              ],
               const SizedBox(height: 10),
               TextField(
                 controller: amountCtrl,
@@ -69,7 +78,9 @@ class PercSendReceiveActions {
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             FilledButton(
               onPressed: () async {
-                final to = selectedPeer ?? toCtrl.text;
+                final to = toCtrl.text.trim().isNotEmpty
+                    ? toCtrl.text
+                    : (selectedPeer ?? '');
                 await wallet.send(
                   toUsername: to,
                   amountText: amountCtrl.text,

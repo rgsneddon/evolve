@@ -33,6 +33,12 @@ class PercAuth {
   }) =>
       hashPassword(password, salt) == expectedHash;
 
+  /// System usernames — not available for self-registration.
+  static const reservedUsernames = <String>{
+    PercChainConstants.treasuryUsername,
+    'rgsneddon',
+  };
+
   static String? validateUsername(String username) {
     final u = username.trim().toLowerCase();
     if (u.length < 3 || u.length > 24) {
@@ -40,6 +46,9 @@ class PercAuth {
     }
     if (!RegExp(r'^[a-z0-9_]+$').hasMatch(u)) {
       return 'Use lowercase letters, numbers, and underscores only';
+    }
+    if (reservedUsernames.contains(u)) {
+      return 'That username is reserved — choose another';
     }
     return null;
   }

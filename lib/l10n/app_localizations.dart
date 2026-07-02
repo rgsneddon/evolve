@@ -446,7 +446,15 @@ final _en = {
   'wallet_create_password': 'Create password',
   'wallet_login_title': 'Evolve Wallet sign-in',
   'wallet_login_note':
-      'Register or sign in to generate your Perccent address — required before using Evolve.',
+      'Sign in with the username you chose when you created your wallet.',
+  'wallet_register_title': 'Create your wallet',
+  'wallet_register_note':
+      'Pick a username and password — your Perccent address is generated from them on this device.',
+  'wallet_choose_username': 'Choose username',
+  'wallet_username_hint': 'e.g. parish_ward_42',
+  'wallet_username_rules': '3–24 characters: lowercase letters, numbers, underscores.',
+  'wallet_treasury_setup_link': 'Treasury holder? Secure treasury account',
+  'wallet_back_to_sign_in': 'Back to sign in',
   'wallet_app_gate_title': 'Create your wallet first',
   'wallet_app_gate_note':
       'Evolve unlocks after you register and receive a Perccent address on this device.',
@@ -457,6 +465,8 @@ final _en = {
   'wallet_receive': 'Receive',
   'wallet_send_title': 'Send Perccent',
   'wallet_send_to': 'To username',
+  'wallet_send_to_hint': 'Type any registered username',
+  'wallet_send_peer_pick': 'Or pick a mesh peer',
   'wallet_send_amount': 'Amount (PERC)',
   'wallet_send_memo': 'Memo (optional)',
   'wallet_send_confirm': 'Send Perccent',
@@ -971,6 +981,15 @@ final _es = {
   'wallet_password_confirm': 'Confirmar contraseña',
   'wallet_create_password': 'Crear contraseña',
   'wallet_login_title': 'Inicio de sesión Evolve Wallet',
+  'wallet_register_title': 'Crear su monedero',
+  'wallet_register_note':
+      'Elija un nombre de usuario y contraseña — su dirección Perccent se genera en este dispositivo.',
+  'wallet_choose_username': 'Elija nombre de usuario',
+  'wallet_username_hint': 'p. ej. parish_ward_42',
+  'wallet_username_rules':
+      '3–24 caracteres: minúsculas, números y guiones bajos.',
+  'wallet_treasury_setup_link': '¿Tesorero? Proteger cuenta de tesorería',
+  'wallet_back_to_sign_in': 'Volver al inicio de sesión',
   'wallet_login_note':
       'Regístrese o inicie sesión para generar su dirección Perccent — obligatorio para usar Evolve.',
   'wallet_app_gate_title': 'Cree su monedero primero',
@@ -983,6 +1002,8 @@ final _es = {
   'wallet_receive': 'Recibir',
   'wallet_send_title': 'Enviar Perccent',
   'wallet_send_to': 'Usuario destino',
+  'wallet_send_to_hint': 'Escriba cualquier usuario registrado',
+  'wallet_send_peer_pick': 'O elija un par de la malla',
   'wallet_send_amount': 'Cantidad (PERC)',
   'wallet_send_memo': 'Nota (opcional)',
   'wallet_send_confirm': 'Enviar Perccent',

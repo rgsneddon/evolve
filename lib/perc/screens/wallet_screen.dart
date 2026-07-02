@@ -35,6 +35,8 @@ class _WalletScreenState extends State<WalletScreen> {
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _registerMode = false;
+  bool _showTreasurySetup = false;
+  bool _registerDefaultSet = false;
   PercWalletProvider? _wallet;
   Timer? _inflationTicker;
 
@@ -47,7 +49,11 @@ class _WalletScreenState extends State<WalletScreen> {
       _wallet = wallet;
       _wallet!.addListener(_onWalletUpdate);
     }
-    _syncInflationTicker(context.read<PercWalletProvider>());
+    if (!_registerDefaultSet && wallet.isReady && !wallet.isLoggedIn) {
+      _registerDefaultSet = true;
+      _registerMode = !wallet.hasNonTreasuryAccounts;
+    }
+    _syncInflationTicker(wallet);
   }
 
   void _syncInflationTicker(PercWalletProvider wallet) {
@@ -94,11 +100,10 @@ class _WalletScreenState extends State<WalletScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (wallet.needsTreasuryPassword) {
-      return _treasurySetup(wallet, strings);
-    }
-
     if (!wallet.isLoggedIn) {
+      if (_showTreasurySetup && wallet.needsTreasuryPassword) {
+        return _treasurySetup(wallet, strings, showBack: true);
+      }
       return _loginRegister(wallet, strings);
     }
 
@@ -227,7 +232,11 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget _treasurySetup(PercWalletProvider wallet, AppLocalizations strings) {
+  Widget _treasurySetup(
+    PercWalletProvider wallet,
+    AppLocalizations strings, {
+    bool showBack = false,
+  }) {
     return SafeArea(
       child: Center(
         child: SingleChildScrollView(
@@ -245,6 +254,16 @@ class _WalletScreenState extends State<WalletScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (showBack)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: () =>
+                                  setState(() => _showTreasurySetup = false),
+                              icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                              label: Text(strings.t('wallet_back_to_sign_in')),
+                            ),
+                          ),
                         Text(
                           strings.t('wallet_treasury_setup_title'),
                           style: const TextStyle(
@@ -341,7 +360,9 @@ class _WalletScreenState extends State<WalletScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          strings.t('wallet_login_title'),
+                          _registerMode
+                              ? strings.t('wallet_register_title')
+                              : strings.t('wallet_login_title'),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -349,7 +370,9 @@ class _WalletScreenState extends State<WalletScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          strings.t('wallet_login_note'),
+                          _registerMode
+                              ? strings.t('wallet_register_note')
+                              : strings.t('wallet_login_note'),
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF9BA3B8),
@@ -360,9 +383,19 @@ class _WalletScreenState extends State<WalletScreen> {
                         TextField(
                           controller: _usernameCtrl,
                           decoration: InputDecoration(
-                            labelText: strings.t('wallet_username'),
+                            labelText: _registerMode
+                                ? strings.t('wallet_choose_username')
+                                : strings.t('wallet_username'),
+                            hintText: _registerMode
+                                ? strings.t('wallet_username_hint')
+                                : null,
+                            helperText: _registerMode
+                                ? strings.t('wallet_username_rules')
+                                : null,
                           ),
                           textInputAction: TextInputAction.next,
+                          autocorrect: false,
+                          enableSuggestions: false,
                         ),
                         const SizedBox(height: 12),
                         TextField(
@@ -409,6 +442,14 @@ class _WalletScreenState extends State<WalletScreen> {
                                 : strings.t('wallet_register'),
                           ),
                         ),
+                        if (wallet.needsTreasuryPassword) ...[
+                          const SizedBox(height: 4),
+                          TextButton(
+                            onPressed: () =>
+                                setState(() => _showTreasurySetup = true),
+                            child: Text(strings.t('wallet_treasury_setup_link')),
+                          ),
+                        ],
                       ],
                     ),
                   ),

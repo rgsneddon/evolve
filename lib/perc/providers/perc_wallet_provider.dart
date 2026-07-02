@@ -42,6 +42,11 @@ class PercWalletProvider extends ChangeNotifier {
   String? get loggedInUsername => _ledger.sessionUsername;
   bool get needsTreasuryPassword => _ledger.treasuryNeedsPasswordSetup();
 
+  /// True when any non-treasury wallet has been registered on this device.
+  bool get hasNonTreasuryAccounts => _ledger.accounts.keys.any(
+        (name) => name != PercChainConstants.treasuryUsername,
+      );
+
   /// User may use Evolve only after register/login generates a Perccent address.
   bool get hasAppAccess => isLoggedIn && address.isNotEmpty;
 
