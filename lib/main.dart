@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'data/outcome_registry.dart';
 import 'l10n/app_localizations.dart';
 import 'models/locale_config.dart';
+import 'models/locale_config_ui.dart';
 import 'providers/locale_provider.dart';
 import 'models/analysis_mode.dart';
 import 'providers/evolve_provider.dart';

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// Global region + language selection for UI and PART THREE agent roles.
 class LocaleConfig {
   const LocaleConfig({
@@ -11,13 +9,6 @@ class LocaleConfig {
   final String languageCode;
 
   static const defaults = LocaleConfig(regionId: 'global', languageCode: 'en');
-
-  Locale get materialLocale => regionId == 'global'
-      ? Locale(languageCode)
-      : Locale(languageCode, regionId);
-
-  TextDirection get textDirection =>
-      languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr;
 
   static const regions = [
     (id: 'global', flag: '🌐', nameKey: 'region_global'),

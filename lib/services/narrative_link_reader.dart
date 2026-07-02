@@ -1,7 +1,10 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+
+import 'platform_detect_stub.dart'
+    if (dart.library.io) 'platform_detect_io.dart'
+    if (dart.library.html) 'platform_detect_web.dart' as platform_detect;
 
 /// Text extracted from a narrative URL for SCS analysis.
 class NarrativeLinkContent {
@@ -314,9 +317,7 @@ class NarrativeLinkReader {
   }
 
   static bool get _isMobilePlatform =>
-      !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.android ||
-          defaultTargetPlatform == TargetPlatform.iOS);
+      !platform_detect.platformIsWeb && platform_detect.platformIsMobile;
 
   static bool _isXHost(Uri uri) {
     final h = uri.host.toLowerCase();
@@ -426,7 +427,7 @@ class NarrativeLinkReader {
       add(https.replace(host: host.substring(4)));
     }
 
-    if (kIsWeb) {
+    if (platform_detect.platformIsWeb) {
       add(Uri.parse(
         'https://api.allorigins.win/raw?url=${Uri.encodeComponent(https.toString())}',
       ));
