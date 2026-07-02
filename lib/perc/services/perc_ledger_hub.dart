@@ -42,6 +42,7 @@ class PercLedgerHub extends ChangeNotifier {
     _store = store;
     final loaded = await store.load();
     _ledger = loaded ?? PercLedger.empty();
+    _ledger.migrateLegacyTreasuryAccounts();
     _ledger.ensureTreasuryAccount();
     _ledger.connectAllWalletsConcurrently();
     final evolved = _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
@@ -59,6 +60,8 @@ class PercLedgerHub extends ChangeNotifier {
     if (store == null) return;
     final loaded = await store.load();
     if (loaded == null) return;
+    loaded.migrateLegacyTreasuryAccounts();
+    loaded.ensureTreasuryAccount();
     loaded.connectAllWalletsConcurrently();
     _evolution.evolveLedger(loaded, appVersion: PercAppVersion.current);
     _ledger = loaded;

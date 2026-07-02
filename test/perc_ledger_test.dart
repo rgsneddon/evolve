@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/perc/models/perc_account.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
@@ -101,6 +102,31 @@ void main() {
 
   test('treasury username is evolve_treasury', () {
     expect(PercChainConstants.treasuryUsername, 'evolve_treasury');
+  });
+
+  test('migrates legacy rgsneddon treasury to evolve_treasury', () {
+    final ledger = PercLedger.empty();
+    final salt = 'legacy-salt';
+    ledger.accounts['rgsneddon'] = PercAccount(
+      username: 'rgsneddon',
+      passwordHash: 'hash',
+      salt: salt,
+      address: 'perc1legacy',
+      passwordSet: true,
+      balance: PercAmount.fromPerc(5),
+    );
+    ledger.sessionUsername = 'rgsneddon';
+    ledger.blockchainLaunched = true;
+    ledger.register('alice', 'password123');
+
+    ledger.migrateLegacyTreasuryAccounts();
+
+    expect(ledger.accounts.containsKey('rgsneddon'), isFalse);
+    expect(ledger.account('evolve_treasury'), isNotNull);
+    expect(ledger.account('evolve_treasury')!.balance, PercAmount.fromPerc(5));
+    expect(ledger.sessionUsername, 'evolve_treasury');
+    expect(ledger.account('rgsneddon'), isNull);
+    expect(ledger.accounts.keys, isNot(contains('rgsneddon')));
   });
 
   test('treasury pool renewal at 1 cent reserve resumes emission', () {

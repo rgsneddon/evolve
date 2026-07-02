@@ -21,6 +21,8 @@ import 'perc_treasury.dart';
 
 /// Local Perccent ledger — blocks advance on scenarios, transfers, and Chronoflux microblock seals.
 class PercLedger {
+  /// Pre-rename treasury usernames merged into [PercChainConstants.treasuryUsername].
+  static const legacyTreasuryUsernames = ['rgsneddon'];
   PercLedger({
     required this.accounts,
     required this.blocks,
@@ -130,12 +132,27 @@ class PercLedger {
     return true;
   }
 
-  PercAccount? account(String username) => accounts[username];
+  PercAccount? account(String username) =>
+      _accountFor(PercAuth.normalizeUsername(username));
 
   bool get isLoggedIn => sessionUsername != null;
 
-  PercAccount? get sessionAccount =>
-      sessionUsername == null ? null : accounts[sessionUsername];
+  PercAccount? get sessionAccount => sessionUsername == null
+      ? null
+      : _accountFor(PercAuth.normalizeUsername(sessionUsername!));
+
+  PercAccount? _accountFor(String username) {
+    final direct = accounts[username];
+    if (direct != null) return direct;
+    final treasury = PercChainConstants.treasuryUsername;
+    if (username == treasury) {
+      for (final legacy in legacyTreasuryUsernames) {
+        final acc = accounts[legacy];
+        if (acc != null) return acc;
+      }
+    }
+    return null;
+  }
 
   PercAmount get treasuryBalance =>
       accounts[PercChainConstants.treasuryUsername]?.balance ?? PercAmount.zero;
@@ -202,7 +219,7 @@ class PercLedger {
       );
 
   bool treasuryNeedsPasswordSetup() {
-    final t = accounts[PercChainConstants.treasuryUsername];
+    final t = _accountFor(PercChainConstants.treasuryUsername);
     return t != null && !t.passwordSet;
   }
 
@@ -212,6 +229,129 @@ class PercLedger {
   String _newTxId() => 'tx-${nextTxId++}';
 
   void ensureTreasuryAccount() => _ensureTreasury();
+
+  /// Merges legacy treasury keys (e.g. rgsneddon) into evolve_treasury after renames.
+  void migrateLegacyTreasuryAccounts() {
+    final current = PercChainConstants.treasuryUsername;
+    for (final legacy in legacyTreasuryUsernames) {
+      if (legacy == current || !accounts.containsKey(legacy)) continue;
+
+      final legacyAcc = accounts.remove(legacy)!;
+      final existing = accounts[current];
+
+      if (existing == null) {
+        accounts[current] = PercAccount(
+          username: current,
+          passwordHash: legacyAcc.passwordHash,
+          salt: legacyAcc.salt,
+          address: legacyAcc.address,
+          passwordSet: legacyAcc.passwordSet,
+          balance: legacyAcc.balance,
+          lastFaucetDrawAt: legacyAcc.lastFaucetDrawAt,
+          cumulativeStakingEarned: legacyAcc.cumulativeStakingEarned,
+          transactions: List<PercTransaction>.from(legacyAcc.transactions),
+        );
+      } else {
+        if (!existing.passwordSet && legacyAcc.passwordSet) {
+          existing.passwordHash = legacyAcc.passwordHash;
+          existing.salt = legacyAcc.salt;
+          existing.passwordSet = true;
+        }
+        existing.balance = existing.balance + legacyAcc.balance;
+        existing.cumulativeStakingEarned =
+            existing.cumulativeStakingEarned + legacyAcc.cumulativeStakingEarned;
+        if (existing.lastFaucetDrawAt == null) {
+          existing.lastFaucetDrawAt = legacyAcc.lastFaucetDrawAt;
+        }
+        existing.transactions.insertAll(0, legacyAcc.transactions);
+      }
+
+      _rewriteUsernameReferences(legacy, current);
+    }
+
+    _normalizeSessionUsername();
+    connectAllWalletsConcurrently();
+  }
+
+  void _normalizeSessionUsername() {
+    if (sessionUsername == null) return;
+    final normalized = PercAuth.normalizeUsername(sessionUsername!);
+    if (legacyTreasuryUsernames.contains(normalized)) {
+      sessionUsername = PercChainConstants.treasuryUsername;
+      return;
+    }
+    sessionUsername = normalized;
+    if (!accounts.containsKey(sessionUsername)) {
+      sessionUsername = null;
+    }
+  }
+
+  void _rewriteUsernameReferences(String from, String to) {
+    if (sessionUsername == from) sessionUsername = to;
+
+    final remappedPeers = <String, List<String>>{};
+    for (final entry in walletPeers.entries) {
+      final key = entry.key == from ? to : entry.key;
+      remappedPeers[key] = entry.value.map((p) => p == from ? to : p).toList()
+        ..sort();
+    }
+    walletPeers = remappedPeers;
+
+    for (final acc in accounts.values) {
+      final txs = acc.transactions
+          .map((tx) => _remapTxUsernames(tx, from, to))
+          .toList();
+      acc.transactions
+        ..clear()
+        ..addAll(txs);
+    }
+
+    final remappedBlocks = blocks
+        .map(
+          (b) => PercBlock(
+            index: b.index,
+            timestamp: b.timestamp,
+            transactions: b.transactions
+                .map((tx) => _remapTxUsernames(tx, from, to))
+                .toList(),
+            treasuryEmitted: b.treasuryEmitted,
+            scenarioLabel: b.scenarioLabel,
+            triggerUsername:
+                b.triggerUsername == from ? to : b.triggerUsername,
+            treasuryCycle: b.treasuryCycle,
+            isGenesisRenewal: b.isGenesisRenewal,
+            confirmations: b.confirmations,
+            microblockSeal: b.microblockSeal,
+            chronofluxFingerprint: b.chronofluxFingerprint,
+            microblocksSealed: b.microblocksSealed,
+          ),
+        )
+        .toList();
+    blocks
+      ..clear()
+      ..addAll(remappedBlocks);
+  }
+
+  PercTransaction _remapTxUsernames(
+    PercTransaction tx,
+    String from,
+    String to,
+  ) =>
+      PercTransaction(
+        id: tx.id,
+        kind: tx.kind,
+        amount: tx.amount,
+        timestamp: tx.timestamp,
+        fromUsername: tx.fromUsername == from ? to : tx.fromUsername,
+        toUsername: tx.toUsername == from ? to : tx.toUsername,
+        memo: tx.memo?.replaceAll(from, to),
+        scenarioLabel: tx.scenarioLabel,
+        percentChance: tx.percentChance,
+        blockIndex: tx.blockIndex,
+        confirmations: tx.confirmations,
+        chronofluxFingerprint: tx.chronofluxFingerprint,
+        microblockIndex: tx.microblockIndex,
+      );
 
   PercAccount _ensureTreasury() {
     final key = PercChainConstants.treasuryUsername;
@@ -553,7 +693,7 @@ class PercLedger {
 
   PercAccount login(String username, String password) {
     final u = PercAuth.normalizeUsername(username);
-    final acc = accounts[u];
+    final acc = _accountFor(u);
     if (acc == null || !acc.passwordSet) throw StateError('Unknown account');
     if (!PercAuth.verifyPassword(
       password: password,
@@ -584,10 +724,15 @@ class PercLedger {
     final to = PercAuth.normalizeUsername(toUsername);
     if (from == to) throw StateError('Cannot send to yourself');
     if (!amount.isPositive) throw StateError('Amount must be positive');
-    final sender = accounts[from];
-    final receiver = accounts[to];
-    if (sender == null || receiver == null) {
-      throw StateError('Account not found');
+    final sender = _accountFor(from);
+    final receiver = _accountFor(to);
+    if (sender == null) {
+      throw StateError('Sender account not found — sign in again');
+    }
+    if (receiver == null) {
+      throw StateError(
+        'Recipient "$to" not found — they must register a wallet first',
+      );
     }
     _assertTreasuryCanSend(from);
     _debit(sender, amount);
@@ -624,7 +769,7 @@ class PercLedger {
     String? scenarioLabel,
   }) {
     final u = PercAuth.normalizeUsername(username);
-    final user = accounts[u];
+    final user = _accountFor(u);
     if (user == null) {
       return const PercFaucetCreditResult(
         status: PercFaucetCreditStatus.notLoggedIn,
@@ -823,7 +968,9 @@ class PercLedger {
           .map((e) => PercEvolutionStep.fromJson(e as Map<String, dynamic>))
           .toList(),
       evolutionEpoch: json['evolutionEpoch'] as int? ?? 1,
-    )..connectAllWalletsConcurrently();
+    )
+      ..migrateLegacyTreasuryAccounts()
+      ..connectAllWalletsConcurrently();
   }
 
   static Map<String, List<String>> _walletPeersFromJson(Object? raw) {
