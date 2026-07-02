@@ -9,7 +9,7 @@ import '../providers/locale_provider.dart';
 import 'home_screen.dart';
 import '../perc/screens/wallet_screen.dart';
 
-/// Root shell — Analysis + PERCENTAGE wallet (Beam-style dual-pane navigation).
+/// Root shell — Analysis + wallet after PERC address registration.
 class EvolveShellScreen extends StatefulWidget {
   const EvolveShellScreen({super.key});
 
@@ -74,7 +74,18 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final wallet = context.watch<PercWalletProvider>();
     final strings = AppLocalizations.of(context.watch<LocaleProvider>().config);
+
+    if (!wallet.isReady) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!wallet.hasAppAccess) {
+      return const Scaffold(body: WalletScreen());
+    }
 
     return Scaffold(
       body: IndexedStack(

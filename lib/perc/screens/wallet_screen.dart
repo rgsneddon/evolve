@@ -98,6 +98,34 @@ class _WalletScreenState extends State<WalletScreen> {
     ];
   }
 
+  Widget _appGateBanner(AppLocalizations strings) {
+    return Card(
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      color: const Color(0xFF1E2433),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              strings.t('wallet_app_gate_title'),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              strings.t('wallet_app_gate_note'),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF9BA3B8),
+                height: 1.45,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _publicTreasuryBanner(
     PercWalletProvider wallet,
     AppLocalizations strings,
@@ -139,6 +167,7 @@ class _WalletScreenState extends State<WalletScreen> {
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
               children: [
+                if (!wallet.hasAppAccess) _appGateBanner(strings),
                 _publicTreasuryBanner(wallet, strings),
                 Card(
                   margin: const EdgeInsets.all(20),
@@ -232,6 +261,7 @@ class _WalletScreenState extends State<WalletScreen> {
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
               children: [
+                if (!wallet.hasAppAccess) _appGateBanner(strings),
                 _publicTreasuryBanner(wallet, strings),
                 Card(
                   margin: const EdgeInsets.all(20),

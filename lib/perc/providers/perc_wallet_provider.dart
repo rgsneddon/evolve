@@ -30,6 +30,9 @@ class PercWalletProvider extends ChangeNotifier {
   String? get loggedInUsername => _ledger.sessionUsername;
   bool get needsTreasuryPassword => _ledger.treasuryNeedsPasswordSetup();
 
+  /// User may use Evolve only after register/login generates a PERC address.
+  bool get hasAppAccess => isLoggedIn && address.isNotEmpty;
+
   PercAmount get balance => _ledger.sessionBalance;
   PercAmount get cumulativeStaking =>
       _ledger.sessionAccount?.cumulativeStakingEarned ?? PercAmount.zero;

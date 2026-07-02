@@ -372,7 +372,10 @@ final _en = {
   'wallet_create_password': 'Create password',
   'wallet_login_title': 'Evolve Wallet sign-in',
   'wallet_login_note':
-      'Each app install keeps local accounts. Sign in or register a new username.',
+      'Register or sign in to generate your PERC address — required before using Evolve.',
+  'wallet_app_gate_title': 'Create your wallet first',
+  'wallet_app_gate_note':
+      'Evolve unlocks after you register and receive a PERC address on this device.',
   'wallet_username': 'Username',
   'wallet_sign_in': 'Sign in',
   'wallet_register': 'Create account',
@@ -848,7 +851,10 @@ final _es = {
   'wallet_create_password': 'Crear contraseña',
   'wallet_login_title': 'Inicio de sesión Evolve Wallet',
   'wallet_login_note':
-      'Cada instalación guarda cuentas locales. Inicie sesión o registre un usuario nuevo.',
+      'Regístrese o inicie sesión para generar su dirección PERC — obligatorio para usar Evolve.',
+  'wallet_app_gate_title': 'Cree su monedero primero',
+  'wallet_app_gate_note':
+      'Evolve se desbloquea tras registrarse y recibir una dirección PERC en este dispositivo.',
   'wallet_username': 'Usuario',
   'wallet_sign_in': 'Iniciar sesión',
   'wallet_register': 'Crear cuenta',
