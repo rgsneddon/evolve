@@ -28,6 +28,7 @@ class PercChainEvolution {
     String appVersion = PercAppVersion.current,
     DateTime? now,
   }) {
+    ledger.repairForAppUpgrade();
     _assertEvolutionaryChain(ledger);
     ledger.evolutionaryChainId = PercChainConstants.evolutionaryChainId;
     ledger.chronofluxPrincipiaId = PercChainConstants.chronofluxPrincipiaId;
@@ -37,7 +38,22 @@ class PercChainEvolution {
 
     if (ledger.evolvedAppVersions.contains(appVersion)) return false;
 
+    final lastVersion = ledger.evolvedAppVersions.isEmpty
+        ? null
+        : ledger.evolvedAppVersions.last;
+    if (lastVersion != null) {
+      if (!PercAppVersion.isNewerThan(appVersion, lastVersion)) {
+        return false;
+      }
+      if (PercAppVersion.sameReleaseLine(appVersion, lastVersion)) {
+        ledger.connectedAppVersion = appVersion;
+        return false;
+      }
+    }
+
     final verification = _verifier.verify(principiaAnchor);
+    final parentStep =
+        ledger.evolutionSteps.isEmpty ? null : ledger.evolutionSteps.last;
     final step = PercEvolutionStep(
       appVersion: appVersion,
       timestamp: (now ?? DateTime.now()).toUtc(),
@@ -45,6 +61,8 @@ class PercChainEvolution {
       blockHeight: ledger.blockHeight,
       microblockHeight: ledger.totalMicroblocks,
       evolutionEpoch: ledger.evolutionEpoch,
+      previousAppVersion: parentStep?.appVersion ?? lastVersion ?? '',
+      parentChronofluxFingerprint: parentStep?.chronofluxFingerprint ?? '',
     );
 
     ledger.evolutionSteps = [...ledger.evolutionSteps, step];

@@ -28,8 +28,11 @@ void main() {
     expect(ledger.blockHeight, heightBefore);
 
     expect(evolution.evolveLedger(ledger, appVersion: '1.2.0+1'), isFalse);
-    expect(evolution.evolveLedger(ledger, appVersion: PercAppVersion.current), isTrue);
+    expect(evolution.evolveLedger(ledger, appVersion: '1.2.0+99'), isFalse);
+    expect(evolution.evolveLedger(ledger, appVersion: '1.3.0+1'), isTrue);
     expect(ledger.evolvedAppVersions.length, 2);
+    expect(ledger.evolutionSteps.last.previousAppVersion, '1.2.0+1');
+    expect(ledger.evolutionSteps.last.parentChronofluxFingerprint, isNotEmpty);
   });
 
   test('ledger json round-trip preserves evolutionary chain across versions', () {
@@ -41,6 +44,38 @@ void main() {
     expect(restored.evolutionaryChainId, PercChainConstants.evolutionaryChainId);
     expect(restored.evolvedAppVersions, contains('1.2.4+30'));
     expect(restored.toJson()['version'], 6);
+  });
+
+  test('repairForAppUpgrade restores mesh after stale peer keys', () {
+    final ledger = PercLedger.empty();
+    ledger.ensureTreasuryAccount();
+    ledger.register('alice', 'password123');
+    ledger.walletPeers = {
+      'rgsneddon': ['alice'],
+      'alice': ['rgsneddon'],
+    };
+
+    ledger.repairForAppUpgrade();
+
+    expect(ledger.isWalletMeshComplete, isTrue);
+    expect(ledger.walletPeers.containsKey('rgsneddon'), isFalse);
+    expect(
+      ledger.connectedPeersFor('alice'),
+      contains(PercChainConstants.treasuryUsername),
+    );
+  });
+
+  test('upgrade from older release adds parent-linked evolution step', () {
+    final ledger = PercLedger.empty();
+    ledger.ensureTreasuryAccount();
+    const evolution = PercChainEvolution();
+    evolution.evolveLedger(ledger, appVersion: '1.2.0+10');
+
+    expect(evolution.evolveLedger(ledger, appVersion: '1.2.7+20'), isTrue);
+
+    expect(ledger.evolvedAppVersions, ['1.2.0+10', '1.2.7+20']);
+    expect(ledger.evolutionSteps.last.previousAppVersion, '1.2.0+10');
+    expect(ledger.evolutionSteps.every((s) => s.hasParentLink || s == ledger.evolutionSteps.first), isTrue);
   });
 
   test('hub connects current app version to same evolutionary chain', () async {

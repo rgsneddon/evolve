@@ -230,6 +230,82 @@ class PercLedger {
 
   void ensureTreasuryAccount() => _ensureTreasury();
 
+  /// One-shot repair when opening a newer app over a saved ledger (seamless upgrade).
+  void repairForAppUpgrade() {
+    migrateLegacyTreasuryAccounts();
+    ensureTreasuryAccount();
+    _sanitizeWalletPeers();
+    repairEvolutionChain();
+    connectAllWalletsConcurrently();
+  }
+
+  /// Rebuilds wallet peer mesh keys and backfills parent links between app versions.
+  void repairEvolutionChain() {
+    if (evolutionSteps.isEmpty && evolvedAppVersions.isNotEmpty) {
+      final rebuilt = <PercEvolutionStep>[];
+      for (var i = 0; i < evolvedAppVersions.length; i++) {
+        final version = evolvedAppVersions[i];
+        final parentVersion = i == 0 ? '' : evolvedAppVersions[i - 1];
+        final parentFp = i == 0 ? '' : rebuilt[i - 1].chronofluxFingerprint;
+        rebuilt.add(
+          PercEvolutionStep(
+            appVersion: version,
+            timestamp: lastScenarioAt ?? DateTime.now().toUtc(),
+            chronofluxFingerprint: lastChronofluxFingerprint ?? parentFp,
+            blockHeight: blockHeight,
+            microblockHeight: totalMicroblocks,
+            evolutionEpoch: i + 1,
+            previousAppVersion: parentVersion,
+            parentChronofluxFingerprint: parentFp,
+          ),
+        );
+      }
+      evolutionSteps = rebuilt;
+    } else if (evolutionSteps.isNotEmpty) {
+      evolvedAppVersions = evolutionSteps.map((s) => s.appVersion).toList();
+    }
+
+    if (evolutionSteps.isNotEmpty) {
+      final linked = <PercEvolutionStep>[];
+      for (var i = 0; i < evolutionSteps.length; i++) {
+        var step = evolutionSteps[i];
+        final parent = i == 0 ? null : linked[i - 1];
+        if (!step.hasParentLink && parent != null) {
+          step = step.copyWith(
+            previousAppVersion: parent.appVersion,
+            parentChronofluxFingerprint: parent.chronofluxFingerprint,
+          );
+        }
+        linked.add(step);
+      }
+      evolutionSteps = linked;
+      evolvedAppVersions = linked.map((s) => s.appVersion).toList();
+      evolutionEpoch = linked.length + 1;
+      lastChronofluxFingerprint ??= linked.last.chronofluxFingerprint;
+    } else {
+      evolutionEpoch = 1;
+    }
+  }
+
+  void _sanitizeWalletPeers() {
+    final users = accounts.keys.toSet();
+    if (users.isEmpty) {
+      walletPeers = {};
+      return;
+    }
+    final sanitized = <String, List<String>>{};
+    for (final user in users) {
+      final peers = (walletPeers[user] ?? const <String>[])
+          .where(users.contains)
+          .where((peer) => peer != user)
+          .toSet()
+          .toList()
+        ..sort();
+      sanitized[user] = peers;
+    }
+    walletPeers = sanitized;
+  }
+
   /// Merges legacy treasury keys (e.g. rgsneddon) into evolve_treasury after renames.
   void migrateLegacyTreasuryAccounts() {
     final current = PercChainConstants.treasuryUsername;
@@ -968,9 +1044,7 @@ class PercLedger {
           .map((e) => PercEvolutionStep.fromJson(e as Map<String, dynamic>))
           .toList(),
       evolutionEpoch: json['evolutionEpoch'] as int? ?? 1,
-    )
-      ..migrateLegacyTreasuryAccounts()
-      ..connectAllWalletsConcurrently();
+    )..repairForAppUpgrade();
   }
 
   static Map<String, List<String>> _walletPeersFromJson(Object? raw) {
