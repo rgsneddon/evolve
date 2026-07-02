@@ -312,6 +312,7 @@ final _en = {
   'nav_wallet': 'Wallet',
   'wallet_title': 'Evolve Wallet',
   'wallet_subtitle': 'PERC chain · scenario-driven treasury',
+  'wallet_creator_credit': 'Evolve is a privacy-focussed blockchain app',
   'wallet_balance_label': 'Available balance',
   'wallet_staking_title': 'Cumulative staking',
   'wallet_staking_note':
@@ -791,6 +792,7 @@ final _es = {
   'nav_wallet': 'Monedero',
   'wallet_title': 'Monedero Evolve',
   'wallet_subtitle': 'Cadena PERC · tesorería por escenarios',
+  'wallet_creator_credit': 'Evolve es una aplicación blockchain centrada en la privacidad',
   'wallet_balance_label': 'Saldo disponible',
   'wallet_staking_title': 'Staking acumulativo',
   'wallet_staking_note':

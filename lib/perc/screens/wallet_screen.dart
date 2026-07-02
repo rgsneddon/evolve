@@ -10,6 +10,7 @@ import '../providers/perc_wallet_provider.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
 import '../widgets/blockchain_launch_balloon.dart';
+import '../widgets/wallet_creator_credit.dart';
 import 'blockchain_explorer_screen.dart';
 
 /// Evolve Wallet — PERC accounts, scenario-driven chain, send/receive.
@@ -245,6 +246,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     ),
                   ),
                 ),
+                WalletCreatorCredit(strings: strings),
               ],
             ),
           ),
@@ -344,6 +346,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     ),
                   ),
                 ),
+                WalletCreatorCredit(strings: strings),
               ],
             ),
           ),
@@ -413,6 +416,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           child: _txTile(tx, wallet.loggedInUsername, strings),
                         ),
                       ),
+                WalletCreatorCredit(strings: strings),
               ],
             ),
           ),
@@ -449,6 +453,15 @@ class _WalletScreenState extends State<WalletScreen> {
                     .t('wallet_signed_in_as')
                     .replaceAll('{user}', wallet.loggedInUsername ?? ''),
                 style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                strings.t('wallet_creator_credit'),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontStyle: FontStyle.italic,
+                  color: Color(0xFF7A8299),
+                ),
               ),
             ],
           ),

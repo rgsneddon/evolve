@@ -8,6 +8,7 @@ import '../../providers/locale_provider.dart';
 import '../models/perc_block.dart';
 import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
+import '../widgets/wallet_creator_credit.dart';
 
 /// Graph-based dapp — historical PERC chain blocks inside the wallet.
 class BlockchainExplorerScreen extends StatelessWidget {
@@ -65,6 +66,7 @@ class BlockchainExplorerScreen extends StatelessWidget {
                             child: _blockTile(b, strings),
                           ),
                         ),
+                        WalletCreatorCredit(strings: strings),
                       ],
                     ),
                   ),
