@@ -2,9 +2,15 @@ import 'package:flutter/foundation.dart';
 
 import 'models/perc_amount.dart';
 
-/// Perccent chain parameters — treasury cap 283M PERC; offline until scenarios run.
+/// Perccent chain parameters — infinite Chronoflux continuum supply.
 class PercChainConstants {
   const PercChainConstants._();
+
+  /// Shared evolutionary blockchain — every app version connects here.
+  static const String evolutionaryChainId = 'evolve-chronoflux-principia-chain-1';
+
+  /// Chronoflux Principia — mechanical foundation for chain evolution.
+  static const String chronofluxPrincipiaId = 'chronoflux-principia-roy-d-herbert';
 
   static const String chainId = 'perc-main-evolve-1';
   static const String sideChainId = 'perc-chronoflux-side-1';
@@ -21,20 +27,26 @@ class PercChainConstants {
   @visibleForTesting
   static int? microblocksPerBlockOverride;
 
+  /// Perccent forked from Beam privacy — confidential assets enabled.
+  static const bool beamPrivacyEnabled = true;
+
+  /// Chronoflux continuum — treasury supply is unbounded.
+  static const bool infiniteContinuumSupply = true;
+
   /// Treasury holder — offline wallet; no external chain until a user runs analysis.
   static const String treasuryUsername = 'rgsneddon';
   static const bool treasuryRequiresExternalChain = false;
 
-  /// One block confirmation fully settles PERC.
+  /// One block confirmation fully settles PERC (Chronoflux Principia TIME).
   static const int confirmationsRequired = 1;
 
-  /// Max supply / pool renewal mint — 283 million PERC.
-  static final PercAmount maxSupply = PercAmount.fromPerc(283000000);
+  /// Pool renewal allocation per cycle when treasury hits 1 cent reserve.
+  static final PercAmount poolRenewalAllocation = PercAmount.fromPerc(283000000);
 
   /// Minimum treasury reserve — 1 cent (0.00000001 PERC); pool renews at this level.
   static const PercAmount minimumTreasuryReserve = PercAmount(1);
 
-  /// Treasury emits 1 PERC per second until max supply.
+  /// Treasury emits 1 PERC per second — infinite continuum.
   static final PercAmount treasuryEmissionPerSecond = PercAmount.fromPerc(1);
 
   /// Fixed base faucet payout per scenario analysis.
@@ -48,4 +60,7 @@ class PercChainConstants {
 
   /// Cumulative staking: flat 10% of 0.00000050 PERC (0.00000005) per block per holder.
   static const int stakingYieldPercent = 10;
+
+  /// Legacy cap reference — superseded by infinite continuum (display only).
+  static final PercAmount legacyCycleAllocation = poolRenewalAllocation;
 }

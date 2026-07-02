@@ -351,7 +351,7 @@ const sharedInfoStringsEn = <String, String>{
   'advisory_cohesion_step3_grok':
       'Grok construal fills ω/σ/Iτ/Jμ from the loaded narrative. Review, then Calculate social cohesion score.',
   'link_label': 'Narrative URL',
-  'link_hint': 'https://example.com/article…',
+  'link_hint': 'Paste a narrative link URL',
   'link_fetch': 'Read narrative from link',
   'link_fetching': 'Reading narrative from link…',
   'link_fetched': 'Narrative loaded — ω/σ/Iτ/Jμ fields are being filled from the link text.',

@@ -356,10 +356,13 @@ class PercAssetMinterScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _infoRow(
-                strings.t('wallet_treasury_minted')
+                strings
+                    .t('wallet_treasury_minted')
                     .replaceAll('{minted}', wallet.treasuryMinted.display)
-                    .replaceAll('{cap}', PercChainConstants.maxSupply.display)
-                    .replaceAll('{pct}', '${(wallet.treasuryProgress * 100).toStringAsFixed(1)}'),
+                    .replaceAll(
+                      '{pct}',
+                      '${(wallet.treasuryProgress * 100).toStringAsFixed(1)}',
+                    ),
                 '',
               ),
               _infoRow(

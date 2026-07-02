@@ -310,9 +310,32 @@ final _en = {
   'app_subtitle': 'Social Science Chronoflux Framework',
   'nav_analysis': 'Analysis',
   'nav_wallet': 'Wallet',
+  'nav_credit': 'Credit',
+  'credit_title': 'Credit & governance',
+  'credit_governance_intro':
+      'This app is best used alongside governance method',
+  'credit_governance_link_label': 'Full Community Governance',
+  'credit_governance_link_suffix':
+      ' as a tool to debate and come to consensus conclusions within parish wards.',
+  'credit_parish_note':
+      'Use Evolve Chronoflux analysis to structure ward-level debate and reach shared conclusions — not as a substitute for democratic process, but as a quantitative companion to Full Community Governance.',
+  'credit_cohesion_goal':
+      'Build release aims for 94% Social Cohesion within the British Isles.',
+  'credit_peace_goal':
+      'Full committal across Earth will bring Peace on Earth at a scattered 93% Social Cohesion.',
+  'credit_attribution_title': 'Attribution',
+  'credit_attribution_body':
+      'Chronoflux Principia — Roy D Herbert. Perccent blockchain forked from Beam privacy architecture — Valdok and Beam CTO Alex Romanov.',
   'wallet_title': 'Evolve Wallet',
   'wallet_subtitle': 'Perccent chain · scenario-driven treasury',
-  'wallet_creator_credit': 'Evolve is a privacy-focussed blockchain app',
+  'wallet_creator_credit':
+      'Roy D Herbert (Chronoflux Principia) · Valdok · Beam CTO Alex Romanov — Beam-privacy Perccent fork',
+  'wallet_privacy_title': 'Beam-confidential Perccent',
+  'wallet_privacy_note':
+      'Perccent is forked from Beam privacy — confidential addresses and shielded balances on-device.',
+  'wallet_avg_block_time': 'Average time per block: {time}',
+  'wallet_time_confirmations_title': 'Chronoflux TIME confirmations',
+  'wallet_supply_infinite': 'Infinite continuum supply (∞ PERC)',
   'wallet_balance_label': 'Available balance',
   'wallet_staking_title': 'Cumulative staking',
   'wallet_staking_note':
@@ -324,16 +347,16 @@ final _en = {
   'wallet_logout': 'Sign out',
   'wallet_treasury_title': 'Treasury emission',
   'wallet_treasury_note':
-      'Perccent chain advances only when scenarios run. Treasury earns 1 PERC per elapsed second (first block: 1 PERC) until ~283M cap. Treasury wallet stays offline until any user runs analysis.',
+      'Perccent chain advances on scenarios and Chronoflux keystrokes. Treasury earns 1 PERC per elapsed second — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.',
   'wallet_treasury_cycle': 'Treasury cycle #{cycle}',
-  'wallet_treasury_minted': '{minted} / {cap} PERC minted ({pct}%)',
+  'wallet_treasury_minted': '{minted} PERC minted ({pct}% continuum)',
   'wallet_treasury_remaining': 'Treasury remaining: {amount} PERC',
   'wallet_treasury_pool': 'Treasury pool (faucet): {amount} PERC',
   'wallet_treasury_inflation_epoch': 'Last inflation epoch: {time}',
   'wallet_treasury_inflation_next': 'Time to next inflation: {wait}',
   'wallet_treasury_inflation_ready': 'Inflation ready — run a scenario',
   'wallet_treasury_inflation_critical':
-      'Treasury at 1 cent reserve — 283M pool mint on next scenario',
+      'Treasury at 1 cent reserve — pool renewal mint on next scenario',
   'wallet_treasury_send_locked':
       'Treasury rgsneddon is locked — manual sends disabled after blockchain launch',
   'wallet_treasury_offline_note':
@@ -348,6 +371,14 @@ final _en = {
       'Connected to {count} other wallet(s) on the shared Perccent chain',
   'wallet_mesh_peers': 'Peers: {peers}',
   'wallet_mesh_incomplete': 'Mesh linking wallets…',
+  'wallet_evolution_title': 'Evolutionary blockchain',
+  'wallet_evolution_note':
+      'Every app version connects to the same chain — evolution verified by the Chronoflux Principia.',
+  'wallet_evolution_chain': 'Evolutionary chain: {id}',
+  'wallet_evolution_principia': 'Chronoflux Principia: {id}',
+  'wallet_evolution_app': 'App version: {version}',
+  'wallet_evolution_epochs': 'Evolution epochs: {count}',
+  'wallet_evolution_versions': 'Connected versions: {versions}',
   'wallet_dapp_suite_title': 'Perccent dapp suite',
   'wallet_dapp_suite_subtitle':
       'Beam-suite structure — side chain, send/receive, bridges, and governance for all users',
@@ -439,7 +470,7 @@ final _en = {
   'license_panel_title': 'License & Chronoflux attribution',
   'license_dialog_title': 'Evolve License',
   'license_chronoflux_attribution':
-      'The Chronoflux Principia, realised by Roy D Herbert, is a core mechanical part of the Evolve framework. The hydrodynamic constructs, continuum mechanics, and analysis pipeline derive from and operate through that Principia.',
+      'The Chronoflux Principia, realised by Roy D Herbert, is a core mechanical part of the Evolve framework. The hydrodynamic constructs, continuum mechanics, and analysis pipeline derive from and operate through that Principia. Perccent is forked from Beam privacy architecture — credit Valdok and Beam CTO Alex Romanov.',
   'license_copyright': 'Copyright (c) 2026 rgsneddon. All rights reserved.',
   'license_dual_summary':
       'Proprietary / dual license: personal non-commercial use permitted under LICENSE; commercial use requires a separate Commercial License (ra5kul@protonmail.com).',
@@ -537,9 +568,9 @@ final _en = {
   'outcome_parts_hint':
       'Enter each pathway below for a listed percent-chance breakdown (minimum two).',
   'outcome_context_label': 'Shared outcome (optional)',
-  'outcome_context_hint': 'e.g. to end the recession, to win the election',
+  'outcome_context_hint': 'Outcome context for your scenario',
   'outcome_part_label': 'Pathway {n}',
-  'outcome_part_hint': 'e.g. austerity, stimulus, status quo',
+  'outcome_part_hint': 'Pathway or outcome part label',
   'outcome_part_add': 'Add pathway field',
   'outcome_part_remove': 'Remove',
   'outcome_part_include_others': 'Include Others (non-exhaustive)',
@@ -833,9 +864,32 @@ final _es = {
   'app_subtitle': 'Marco cronoflux de ciencias sociales',
   'nav_analysis': 'Análisis',
   'nav_wallet': 'Monedero',
+  'nav_credit': 'Crédito',
+  'credit_title': 'Crédito y gobernanza',
+  'credit_governance_intro':
+      'Esta aplicación funciona mejor junto al método de gobernanza',
+  'credit_governance_link_label': 'Full Community Governance',
+  'credit_governance_link_suffix':
+      ' como herramienta para debatir y alcanzar conclusiones de consenso en las parroquias.',
+  'credit_parish_note':
+      'Use el análisis Evolve Chronoflux para estructurar el debate a nivel de parroquia y alcanzar conclusiones compartidas — no como sustituto del proceso democrático, sino como compañero cuantitativo de Full Community Governance.',
+  'credit_cohesion_goal':
+      'La versión de lanzamiento apunta al 94% de cohesión social en las Islas Británicas.',
+  'credit_peace_goal':
+      'El compromiso pleno en la Tierra traerá Paz en la Tierra con un 93% de cohesión social dispersa.',
+  'credit_attribution_title': 'Atribución',
+  'credit_attribution_body':
+      'Chronoflux Principia — Roy D Herbert. Cadena Perccent bifurcada de la arquitectura de privacidad Beam — Valdok y el CTO de Beam Alex Romanov.',
+  'wallet_privacy_title': 'Perccent confidencial Beam',
+  'wallet_privacy_note':
+      'Perccent se bifurcó de Beam privacy — direcciones confidenciales y saldos protegidos en el dispositivo.',
+  'wallet_avg_block_time': 'Tiempo medio por bloque: {time}',
+  'wallet_time_confirmations_title': 'Confirmaciones Chronoflux TIME',
+  'wallet_supply_infinite': 'Suministro continuo infinito (∞ PERC)',
   'wallet_title': 'Monedero Evolve',
   'wallet_subtitle': 'Cadena Perccent · tesorería por escenarios',
-  'wallet_creator_credit': 'Evolve es una aplicación blockchain centrada en la privacidad',
+  'wallet_creator_credit':
+      'Roy D Herbert (Chronoflux Principia) · Valdok · CTO de Beam Alex Romanov — bifurcación Perccent con privacidad Beam',
   'wallet_balance_label': 'Saldo disponible',
   'wallet_staking_title': 'Staking acumulativo',
   'wallet_staking_note':
@@ -847,9 +901,9 @@ final _es = {
   'wallet_logout': 'Cerrar sesión',
   'wallet_treasury_title': 'Emisión de tesorería',
   'wallet_treasury_note':
-      'La cadena Perccent avanza solo al ejecutar escenarios. Tesorería gana 1 PERC por segundo transcurrido hasta ~283M. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
+      'La cadena Perccent avanza con escenarios y pulsaciones Chronoflux. La tesorería gana 1 PERC por segundo transcurrido — suministro continuo infinito Chronoflux. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
   'wallet_treasury_cycle': 'Ciclo de tesorería #{cycle}',
-  'wallet_treasury_minted': '{minted} / {cap} PERC acuñados ({pct}%)',
+  'wallet_treasury_minted': '{minted} PERC acuñados ({pct}% continuo)',
   'wallet_treasury_remaining': 'Tesorería restante: {amount} PERC',
   'wallet_treasury_pool': 'Fondo de tesorería (grifo): {amount} PERC',
   'wallet_treasury_inflation_epoch': 'Última época de inflación: {time}',

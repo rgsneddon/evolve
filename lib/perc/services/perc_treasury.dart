@@ -19,13 +19,17 @@ class PercTreasury {
   DateTime lastTick;
 
   PercAmount get remainingSupply =>
-      PercChainConstants.maxSupply - cumulativeMinted;
+      PercChainConstants.poolRenewalAllocation - cumulativeMinted;
 
   bool get isCapped =>
-      cumulativeMinted >= PercChainConstants.maxSupply;
+      !PercChainConstants.infiniteContinuumSupply &&
+          cumulativeMinted >= PercChainConstants.poolRenewalAllocation;
 
   double get emissionProgress =>
-      cumulativeMinted.asPerc / PercChainConstants.maxSupply.asPerc;
+      PercChainConstants.infiniteContinuumSupply
+          ? 0
+          : cumulativeMinted.asPerc /
+              PercChainConstants.poolRenewalAllocation.asPerc;
 
   /// Advance treasury by elapsed whole seconds; returns amount emitted this tick.
   PercAmount tick([DateTime? now]) {

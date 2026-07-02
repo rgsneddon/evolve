@@ -44,7 +44,7 @@ void main() {
     await _unlockApp(wallet);
 
     expect(wallet.hasAppAccess, isTrue);
-    expect(wallet.address.startsWith('perc1'), isTrue);
+    expect(wallet.address.startsWith('percpriv1'), isTrue);
 
     await tester.pumpWidget(
       EvolveApp(evolveProvider: provider, walletProvider: wallet),

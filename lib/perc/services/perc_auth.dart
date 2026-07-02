@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 
 import '../perc_chain_constants.dart';
+import 'perc_beam_privacy.dart';
 
 class PercAuth {
   const PercAuth._();
@@ -18,6 +19,9 @@ class PercAuth {
       sha256.convert(utf8.encode('$salt:$password')).toString();
 
   static String deriveAddress(String username, String salt) {
+    if (PercChainConstants.beamPrivacyEnabled) {
+      return PercBeamPrivacy.deriveConfidentialAddress(username, salt);
+    }
     final digest = sha256.convert(utf8.encode('perc:$username:$salt')).toString();
     return 'perc1${digest.substring(0, 40)}';
   }

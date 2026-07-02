@@ -9,7 +9,8 @@ void main() {
     expect(PercChainConstants.currencySymbol, 'PERC');
     expect(PercChainConstants.centValueInPerc, '0.00000001');
     expect(PercChainConstants.centsPerPerc, 100000000);
-    expect(PercChainConstants.maxSupply.asPerc, 283000000);
+    expect(PercChainConstants.infiniteContinuumSupply, isTrue);
+    expect(PercChainConstants.poolRenewalAllocation.asPerc, 283000000);
     expect(PercChainConstants.confirmationsRequired, 1);
   });
 

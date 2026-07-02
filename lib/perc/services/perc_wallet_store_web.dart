@@ -8,17 +8,24 @@ PercWalletStore createPercWalletStore() => PercWalletStoreWeb();
 
 /// Web persistence — shared localStorage so every tab uses the same ledger.
 class PercWalletStoreWeb implements PercWalletStore {
-  static const storageKey = 'perc_perccent_ledger_v1';
+  static const storageKey =
+      'perc_evolve-chronoflux-principia-chain-1_ledger';
+  static const legacyStorageKey = 'perc_perccent_ledger_v1';
 
   @override
   Future<PercLedger?> load() async {
-    final raw = html.window.localStorage[storageKey];
+    var raw = html.window.localStorage[storageKey];
+    if (raw == null || raw.trim().isEmpty) {
+      raw = html.window.localStorage[legacyStorageKey];
+    }
     if (raw == null || raw.trim().isEmpty) return null;
     return PercLedger.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
   @override
   Future<void> save(PercLedger ledger) async {
-    html.window.localStorage[storageKey] = jsonEncode(ledger.toJson());
+    final encoded = jsonEncode(ledger.toJson());
+    html.window.localStorage[storageKey] = encoded;
+    html.window.localStorage.remove(legacyStorageKey);
   }
 }

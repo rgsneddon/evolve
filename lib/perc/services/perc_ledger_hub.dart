@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../perc_app_version.dart';
+import 'perc_chain_evolution.dart';
 import 'perc_ledger.dart';
 import 'perc_ledger_hub_sync_stub.dart'
     if (dart.library.html) 'perc_ledger_hub_sync_web.dart' as hub_sync;
@@ -18,6 +20,7 @@ class PercLedgerHub extends ChangeNotifier {
   bool _ready = false;
   int _revision = 0;
   void Function()? _cancelSync;
+  final PercChainEvolution _evolution = const PercChainEvolution();
 
   PercLedger get ledger => _ledger;
   int get revision => _revision;
@@ -41,10 +44,11 @@ class PercLedgerHub extends ChangeNotifier {
     _ledger = loaded ?? PercLedger.empty();
     _ledger.ensureTreasuryAccount();
     _ledger.connectAllWalletsConcurrently();
+    final evolved = _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
     _ready = true;
     _revision++;
     notifyListeners();
-    await store.save(_ledger);
+    if (evolved) await store.save(_ledger);
     _cancelSync = hub_sync.bindCrossTabSync(
       onRemoteRevision: () => unawaited(reloadFromStore()),
     );
@@ -56,6 +60,7 @@ class PercLedgerHub extends ChangeNotifier {
     final loaded = await store.load();
     if (loaded == null) return;
     loaded.connectAllWalletsConcurrently();
+    _evolution.evolveLedger(loaded, appVersion: PercAppVersion.current);
     _ledger = loaded;
     _revision++;
     notifyListeners();
@@ -63,6 +68,7 @@ class PercLedgerHub extends ChangeNotifier {
 
   Future<void> commit() async {
     _ledger.connectAllWalletsConcurrently();
+    _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
     _revision++;
     notifyListeners();
     await _store?.save(_ledger);

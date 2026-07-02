@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../providers/perc_wallet_provider.dart';
+import 'perc_beam_privacy.dart';
 
 /// Send/receive dialogs — available to every registered wallet user.
 class PercSendReceiveActions {
@@ -114,7 +115,10 @@ class PercSendReceiveActions {
             const SizedBox(height: 10),
             Text(strings.t('wallet_address_label'),
                 style: const TextStyle(fontWeight: FontWeight.w700)),
-            SelectableText(wallet.address, style: const TextStyle(fontFamily: 'monospace')),
+            SelectableText(
+              PercBeamPrivacy.shieldAddress(wallet.address),
+              style: const TextStyle(fontFamily: 'monospace'),
+            ),
           ],
         ),
         actions: [

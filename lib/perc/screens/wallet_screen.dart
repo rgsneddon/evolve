@@ -13,6 +13,9 @@ import '../providers/perc_wallet_provider.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
 import '../services/perc_inflation.dart';
+import '../services/perc_beam_privacy.dart';
+import '../services/perc_block_timing.dart';
+import '../services/perc_chronoflux_time_confirmations.dart';
 import '../services/perc_send_receive_actions.dart';
 import '../widgets/blockchain_launch_balloon.dart';
 import '../widgets/perc_dapp_suite_panel.dart';
@@ -483,6 +486,12 @@ class _WalletScreenState extends State<WalletScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
+                _privacyCard(strings),
+                const SizedBox(height: 12),
+                _timeConfirmationsCard(strings),
+                const SizedBox(height: 12),
+                _evolutionaryChainCard(wallet, strings),
+                const SizedBox(height: 12),
                 PercDappSuitePanel(
                   wallet: wallet,
                   strings: strings,
@@ -610,6 +619,23 @@ class _WalletScreenState extends State<WalletScreen> {
               PercCurrency.denominationNote(),
               style: const TextStyle(fontSize: 10, color: Color(0xFF9BA3B8)),
             ),
+            const SizedBox(height: 8),
+            Text(
+              strings
+                  .t('wallet_avg_block_time')
+                  .replaceAll(
+                    '{time}',
+                    PercBlockTiming.formatAverage(wallet.averageTimePerBlock),
+                  ),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+            ),
+            if (PercChainConstants.infiniteContinuumSupply) ...[
+              const SizedBox(height: 4),
+              Text(
+                strings.t('wallet_supply_infinite'),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF6C63FF)),
+              ),
+            ],
             if (wallet.statusMessage != null) ...[
               const SizedBox(height: 10),
               Text(
@@ -712,7 +738,6 @@ class _WalletScreenState extends State<WalletScreen> {
               strings
                   .t('wallet_treasury_minted')
                   .replaceAll('{minted}', wallet.treasuryMinted.display)
-                  .replaceAll('{cap}', PercChainConstants.maxSupply.display)
                   .replaceAll('{pct}', pct.toStringAsFixed(2)),
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
             ),
@@ -724,6 +749,129 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
             ],
             ..._treasuryRemainingLines(wallet, strings),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _privacyCard(AppLocalizations strings) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.shield_outlined, size: 18, color: Color(0xFF818CF8)),
+                const SizedBox(width: 8),
+                Text(
+                  strings.t('wallet_privacy_title'),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              strings.t('wallet_privacy_note'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _timeConfirmationsCard(AppLocalizations strings) {
+    final perms = PercChronofluxTimeConfirmations.allPermutations();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              strings.t('wallet_time_confirmations_title'),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            ...perms.map(
+              (p) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '${p.name}: ${PercChronofluxTimeConfirmations.formatInterval(p.interval)} → ${p.confirmationsToSettle} confirmation(s)',
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF9BA3B8)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _evolutionaryChainCard(
+    PercWalletProvider wallet,
+    AppLocalizations strings,
+  ) {
+    final chainId = wallet.evolutionaryChainId.isEmpty
+        ? PercChainConstants.evolutionaryChainId
+        : wallet.evolutionaryChainId;
+    final principiaId = wallet.chronofluxPrincipiaId.isEmpty
+        ? PercChainConstants.chronofluxPrincipiaId
+        : wallet.chronofluxPrincipiaId;
+    final versions = wallet.evolvedAppVersions.isEmpty
+        ? wallet.currentAppVersion
+        : wallet.evolvedAppVersions.join(', ');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFFFB347)),
+                const SizedBox(width: 8),
+                Text(
+                  strings.t('wallet_evolution_title'),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              strings.t('wallet_evolution_note'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              strings.t('wallet_evolution_chain').replaceAll('{id}', chainId),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF00D9C0)),
+            ),
+            Text(
+              strings.t('wallet_evolution_principia').replaceAll('{id}', principiaId),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
+            ),
+            Text(
+              strings
+                  .t('wallet_evolution_app')
+                  .replaceAll('{version}', wallet.currentAppVersion),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+            ),
+            Text(
+              strings
+                  .t('wallet_evolution_epochs')
+                  .replaceAll('{count}', '${wallet.evolutionEpoch}'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+            ),
+            Text(
+              strings
+                  .t('wallet_evolution_versions')
+                  .replaceAll('{versions}', versions),
+              style: const TextStyle(fontSize: 10, color: Color(0xFF7A8299)),
+            ),
           ],
         ),
       ),
@@ -924,7 +1072,7 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
             const SizedBox(height: 8),
             SelectableText(
-              wallet.address,
+              PercBeamPrivacy.shieldAddress(wallet.address),
               style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
             ),
             const SizedBox(height: 8),

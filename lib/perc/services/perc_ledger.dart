@@ -4,11 +4,14 @@ import '../models/perc_account.dart';
 import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../models/perc_faucet_credit_result.dart';
+import '../models/perc_evolution_step.dart';
 import '../models/perc_microblock_record_result.dart';
+import '../perc_app_version.dart';
 import '../models/perc_transaction.dart';
 import '../perc_chain_constants.dart';
 import 'perc_auth.dart';
 import 'perc_chronoflux_micro_verifier.dart';
+import 'perc_block_timing.dart';
 import 'perc_wallet_mesh.dart';
 import 'perc_faucet.dart';
 import 'perc_faucet_cooldown.dart';
@@ -32,8 +35,18 @@ class PercLedger {
     this.totalMicroblocks = 0,
     this.lastChronofluxFingerprint,
     Map<String, List<String>>? walletPeers,
+    this.evolutionaryChainId = '',
+    this.chronofluxPrincipiaId = '',
+    this.mainChainId = '',
+    this.sideChainId = '',
+    this.connectedAppVersion = '',
+    List<String>? evolvedAppVersions,
+    List<PercEvolutionStep>? evolutionSteps,
+    this.evolutionEpoch = 1,
     PercChronofluxMicroVerifier? microVerifier,
   })  : walletPeers = walletPeers ?? <String, List<String>>{},
+        evolvedAppVersions = evolvedAppVersions ?? [],
+        evolutionSteps = evolutionSteps ?? [],
         _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
 
   final Map<String, PercAccount> accounts;
@@ -49,7 +62,19 @@ class PercLedger {
   int totalMicroblocks;
   String? lastChronofluxFingerprint;
   Map<String, List<String>> walletPeers;
+  String evolutionaryChainId;
+  String chronofluxPrincipiaId;
+  String mainChainId;
+  String sideChainId;
+  String connectedAppVersion;
+  List<String> evolvedAppVersions;
+  List<PercEvolutionStep> evolutionSteps;
+  int evolutionEpoch;
   final PercChronofluxMicroVerifier _microVerifier;
+
+  bool get isOnEvolutionaryChain =>
+      evolutionaryChainId == PercChainConstants.evolutionaryChainId ||
+      evolutionaryChainId.isEmpty;
   bool _blockchainLaunchEventPending = false;
   bool _genesisRenewalEventPending = false;
 
@@ -131,14 +156,29 @@ class PercLedger {
     );
   }
 
-  double get treasuryProgress =>
-      cumulativeTreasuryMinted.asPerc / PercChainConstants.maxSupply.asPerc;
+  double get treasuryProgress {
+    if (PercChainConstants.infiniteContinuumSupply) {
+      final minted = cumulativeTreasuryMinted.asPerc;
+      if (minted <= 0) return 0;
+      return (minted / (minted + 1)).clamp(0.0, 0.9999);
+    }
+    return cumulativeTreasuryMinted.asPerc /
+        PercChainConstants.poolRenewalAllocation.asPerc;
+  }
 
   bool get treasuryCapped =>
-      cumulativeTreasuryMinted >= PercChainConstants.maxSupply;
+      !PercChainConstants.infiniteContinuumSupply &&
+      cumulativeTreasuryMinted >= PercChainConstants.poolRenewalAllocation;
 
-  PercAmount get treasuryRemaining =>
-      PercChainConstants.maxSupply - cumulativeTreasuryMinted;
+  PercAmount get treasuryRemaining {
+    if (PercChainConstants.infiniteContinuumSupply) {
+      return PercAmount.fromPerc(999999999);
+    }
+    return PercChainConstants.poolRenewalAllocation - cumulativeTreasuryMinted;
+  }
+
+  Duration? get averageTimePerBlock =>
+      PercBlockTiming.averageTimePerBlock(blocks);
 
   DateTime? get lastInflationEpoch =>
       PercInflation.lastInflationEpoch(blocks);
@@ -198,8 +238,7 @@ class PercLedger {
     if (err != null) throw StateError(err);
   }
 
-  bool _needsTreasuryPoolRenewal() =>
-      treasuryCapped || isTreasuryAtReserve;
+  bool _needsTreasuryPoolRenewal() => isTreasuryAtReserve;
 
   List<PercTransaction> _renewTreasuryPoolIfNeeded(DateTime now) {
     if (!_needsTreasuryPoolRenewal()) return [];
@@ -210,17 +249,17 @@ class PercLedger {
     _genesisRenewalEventPending = true;
 
     final treasury = _ensureTreasury();
-    _credit(treasury, PercChainConstants.maxSupply);
+    _credit(treasury, PercChainConstants.poolRenewalAllocation);
 
     return [
       PercTransaction(
         id: _newTxId(),
         kind: PercTxKind.genesisRenewal,
-        amount: PercChainConstants.maxSupply,
+        amount: PercChainConstants.poolRenewalAllocation,
         timestamp: now,
         toUsername: PercChainConstants.treasuryUsername,
         memo:
-            'Treasury pool renewal — cycle $treasuryCycle (${PercChainConstants.maxSupply.display} ${PercChainConstants.currencySymbol} minted to ${PercChainConstants.treasuryUsername})',
+            'Treasury pool renewal — cycle $treasuryCycle (${PercChainConstants.poolRenewalAllocation.display} ${PercChainConstants.currencySymbol} minted to ${PercChainConstants.treasuryUsername})',
         blockIndex: blocks.length,
         confirmations: PercChainConstants.confirmationsRequired,
       ),
@@ -252,7 +291,10 @@ class PercLedger {
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
     if (elapsed <= 0) return PercAmount.zero;
     var emission = perSecond * elapsed;
-    if (emission > treasuryRemaining) emission = treasuryRemaining;
+    if (!PercChainConstants.infiniteContinuumSupply &&
+        emission > treasuryRemaining) {
+      emission = treasuryRemaining;
+    }
     return emission;
   }
 
@@ -385,7 +427,10 @@ class PercLedger {
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
     if (elapsed <= 0) return [];
     var emission = perSecond * elapsed;
-    if (emission > treasuryRemaining) emission = treasuryRemaining;
+    if (!PercChainConstants.infiniteContinuumSupply &&
+        emission > treasuryRemaining) {
+      emission = treasuryRemaining;
+    }
     if (!emission.isPositive) return [];
 
     cumulativeTreasuryMinted = cumulativeTreasuryMinted + emission;
@@ -695,7 +740,23 @@ class PercLedger {
   }
 
   Map<String, dynamic> toJson() => {
-        'version': 5,
+        'version': 6,
+        'evolutionaryChainId': evolutionaryChainId.isEmpty
+            ? PercChainConstants.evolutionaryChainId
+            : evolutionaryChainId,
+        'chronofluxPrincipiaId': chronofluxPrincipiaId.isEmpty
+            ? PercChainConstants.chronofluxPrincipiaId
+            : chronofluxPrincipiaId,
+        'mainChainId':
+            mainChainId.isEmpty ? PercChainConstants.chainId : mainChainId,
+        'sideChainId': sideChainId.isEmpty
+            ? PercChainConstants.sideChainId
+            : sideChainId,
+        'connectedAppVersion':
+            connectedAppVersion.isEmpty ? PercAppVersion.current : connectedAppVersion,
+        'evolvedAppVersions': evolvedAppVersions,
+        'evolutionSteps': evolutionSteps.map((e) => e.toJson()).toList(),
+        'evolutionEpoch': evolutionEpoch,
         'accounts': accounts.map((k, v) => MapEntry(k, v.toJson())),
         'blocks': blocks.map((b) => b.toJson()).toList(),
         'lastScenarioAt': lastScenarioAt?.toIso8601String(),
@@ -750,6 +811,18 @@ class PercLedger {
       totalMicroblocks: json['totalMicroblocks'] as int? ?? 0,
       lastChronofluxFingerprint: json['lastChronofluxFingerprint'] as String?,
       walletPeers: _walletPeersFromJson(json['walletPeers']),
+      evolutionaryChainId: json['evolutionaryChainId'] as String? ?? '',
+      chronofluxPrincipiaId: json['chronofluxPrincipiaId'] as String? ?? '',
+      mainChainId: json['mainChainId'] as String? ?? '',
+      sideChainId: json['sideChainId'] as String? ?? '',
+      connectedAppVersion: json['connectedAppVersion'] as String? ?? '',
+      evolvedAppVersions: (json['evolvedAppVersions'] as List<dynamic>? ?? [])
+          .map((e) => e as String)
+          .toList(),
+      evolutionSteps: (json['evolutionSteps'] as List<dynamic>? ?? [])
+          .map((e) => PercEvolutionStep.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      evolutionEpoch: json['evolutionEpoch'] as int? ?? 1,
     )..connectAllWalletsConcurrently();
   }
 

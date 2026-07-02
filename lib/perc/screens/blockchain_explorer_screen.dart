@@ -8,6 +8,7 @@ import '../../providers/locale_provider.dart';
 import '../models/perc_block.dart';
 import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
+import '../services/perc_block_timing.dart';
 import '../services/perc_send_receive_actions.dart';
 import '../widgets/perc_dapp_suite_panel.dart';
 import '../widgets/wallet_creator_credit.dart';
@@ -131,11 +132,28 @@ class BlockchainExplorerScreen extends StatelessWidget {
               '${strings.t('wallet_sidechain_id')}: ${side.sideChainId}',
               style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
             ),
+            Text(
+              strings
+                  .t('wallet_evolution_chain')
+                  .replaceAll('{id}', wallet.evolutionaryChainId.isEmpty
+                      ? PercChainConstants.evolutionaryChainId
+                      : wallet.evolutionaryChainId),
+              style: const TextStyle(fontSize: 11, color: Color(0xFFFFB347)),
+            ),
             const SizedBox(height: 4),
             Text(
               strings
                   .t('wallet_explorer_confirmations')
                   .replaceAll('{count}', '${PercChainConstants.confirmationsRequired}'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
+            ),
+            Text(
+              strings
+                  .t('wallet_avg_block_time')
+                  .replaceAll(
+                    '{time}',
+                    PercBlockTiming.formatAverage(wallet.averageTimePerBlock),
+                  ),
               style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
             ),
           ],
@@ -388,14 +406,25 @@ class _CumulativeMintPainter extends CustomPainter {
 
     final pad = 12.0;
     var cumulative = 0.0;
+    var peak = 0.0;
     final points = <Offset>[];
     for (var i = 0; i < blocks.length; i++) {
       if (blocks[i].isGenesisRenewal) cumulative = 0;
       cumulative += blocks[i].treasuryEmitted.asPerc;
+      if (cumulative > peak) peak = cumulative;
       final x = pad + (size.width - pad * 2) * (i / math.max(blocks.length - 1, 1));
-      final maxY = PercChainConstants.maxSupply.asPerc;
-      final y = size.height - pad - (cumulative / maxY).clamp(0.0, 1.0) * (size.height - pad * 2);
-      points.add(Offset(x, y));
+      points.add(Offset(x, cumulative));
+    }
+    final maxY = math.max(
+      peak,
+      PercChainConstants.poolRenewalAllocation.asPerc,
+    );
+    for (var i = 0; i < points.length; i++) {
+      final cumulativeY = points[i].dy;
+      final y = size.height -
+          pad -
+          (cumulativeY / maxY).clamp(0.0, 1.0) * (size.height - pad * 2);
+      points[i] = Offset(points[i].dx, y);
     }
 
     final line = Paint()

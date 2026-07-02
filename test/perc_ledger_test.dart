@@ -103,12 +103,13 @@ void main() {
     expect(PercChainConstants.treasuryUsername, 'rgsneddon');
   });
 
-  test('treasury cap renews genesis block and resumes emission', () {
+  test('treasury pool renewal at 1 cent reserve resumes emission', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
 
-    ledger.cumulativeTreasuryMinted = PercChainConstants.maxSupply;
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    treasury.balance = PercChainConstants.minimumTreasuryReserve;
     ledger.treasuryGenesisDone = true;
 
     final result = ledger.creditScenario(
@@ -130,14 +131,15 @@ void main() {
     );
   });
 
-  test('send after treasury cap creates genesis renewal block', () {
+  test('send at 1 cent treasury reserve creates genesis renewal block', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
     ledger.register('bob', 'password123');
 
     ledger.creditScenario(username: 'alice', percentChance: 50);
-    ledger.cumulativeTreasuryMinted = PercChainConstants.maxSupply;
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    treasury.balance = PercChainConstants.minimumTreasuryReserve;
 
     ledger.send(
       fromUsername: 'alice',

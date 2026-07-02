@@ -12,8 +12,12 @@ void _seedLedger(PercLedger ledger) {
 }
 
 void main() {
-  test('max supply is 283 million PERC', () {
-    expect(PercChainConstants.maxSupply, PercAmount.fromPerc(283000000));
+  test('pool renewal allocation is 283 million PERC', () {
+    expect(
+      PercChainConstants.poolRenewalAllocation,
+      PercAmount.fromPerc(283000000),
+    );
+    expect(PercChainConstants.infiniteContinuumSupply, isTrue);
     expect(PercChainConstants.confirmationsRequired, 1);
     expect(PercChainConstants.minimumTreasuryReserve.displayFixed8, '0.00000001');
   });
@@ -70,7 +74,10 @@ void main() {
     ledger.creditScenario(username: 'alice', percentChance: 25);
 
     expect(ledger.treasuryCycle, 2);
-    expect(treasury.balance.microUnits, greaterThan(PercChainConstants.maxSupply.microUnits));
+    expect(
+      treasury.balance.microUnits,
+      greaterThan(PercChainConstants.poolRenewalAllocation.microUnits),
+    );
     expect(ledger.blocks.any((b) => b.isGenesisRenewal), isTrue);
   });
 

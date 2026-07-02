@@ -6,7 +6,10 @@ import '../../models/analysis_mode.dart';
 import '../../models/locale_config.dart';
 import '../../models/scenario_input.dart';
 import '../models/perc_microblock_record_result.dart';
+import '../models/perc_evolution_step.dart';
 import '../models/perc_side_chain.dart';
+import '../perc_app_version.dart';
+import '../services/perc_beam_privacy.dart';
 import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../models/perc_faucet_credit_result.dart';
@@ -98,6 +101,16 @@ class PercWalletProvider extends ChangeNotifier {
   bool get isWalletMeshComplete => _ledger.isWalletMeshComplete;
   List<String> get connectedPeerWallets => _ledger.sessionConnectedPeers;
   int get connectedWalletCount => connectedPeerWallets.length;
+  String get evolutionaryChainId => _ledger.evolutionaryChainId;
+  String get chronofluxPrincipiaId => _ledger.chronofluxPrincipiaId;
+  String get connectedAppVersion => _ledger.connectedAppVersion;
+  String get currentAppVersion => PercAppVersion.current;
+  List<String> get evolvedAppVersions => List.unmodifiable(_ledger.evolvedAppVersions);
+  List<PercEvolutionStep> get evolutionSteps =>
+      List.unmodifiable(_ledger.evolutionSteps);
+  int get evolutionEpoch => _ledger.evolutionEpoch;
+  bool get isOnEvolutionaryChain => _ledger.isOnEvolutionaryChain;
+  Duration? get averageTimePerBlock => _ledger.averageTimePerBlock;
 
   void _onHubLedgerChanged() => notifyListeners();
 
