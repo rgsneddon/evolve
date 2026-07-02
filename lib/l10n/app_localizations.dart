@@ -319,6 +319,8 @@ final _en = {
   'wallet_treasury_note':
       'Chain advances only when scenarios run. Treasury earns 1 PERC per elapsed second (first block: 1 PERC) until ~286M cap.',
   'wallet_treasury_minted': '{minted} / {cap} PERC minted ({pct}%)',
+  'wallet_treasury_remaining': 'Treasury remaining: {amount} PERC',
+  'wallet_treasury_pool': 'Treasury pool (faucet): {amount} PERC',
   'wallet_block_height': 'Block height: {height}',
   'wallet_faucet_title': 'Scenario faucet',
   'wallet_faucet_note':
@@ -782,6 +784,8 @@ final _es = {
   'wallet_treasury_note':
       'La cadena avanza solo al ejecutar escenarios. Tesorería gana 1 PERC por segundo transcurrido (primer bloque: 1 PERC) hasta ~286M.',
   'wallet_treasury_minted': '{minted} / {cap} PERC acuñados ({pct}%)',
+  'wallet_treasury_remaining': 'Tesorería restante: {amount} PERC',
+  'wallet_treasury_pool': 'Fondo de tesorería (grifo): {amount} PERC',
   'wallet_block_height': 'Altura de bloque: {height}',
   'wallet_faucet_title': 'Grifo de escenarios',
   'wallet_faucet_note':

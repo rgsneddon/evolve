@@ -53,71 +53,135 @@ class _WalletScreenState extends State<WalletScreen> {
     return _walletHome(context, wallet, strings);
   }
 
+  List<Widget> _treasuryRemainingLines(
+    PercWalletProvider wallet,
+    AppLocalizations strings,
+  ) {
+    return [
+      Text(
+        strings
+            .t('wallet_treasury_remaining')
+            .replaceAll('{amount}', wallet.treasuryRemaining.display),
+        style: const TextStyle(fontSize: 11, color: Color(0xFF00D9C0)),
+      ),
+      Text(
+        strings
+            .t('wallet_treasury_pool')
+            .replaceAll('{amount}', wallet.treasuryPool.displayFixed8),
+        style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+      ),
+    ];
+  }
+
+  Widget _publicTreasuryBanner(
+    PercWalletProvider wallet,
+    AppLocalizations strings,
+  ) {
+    return Card(
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              strings.t('wallet_treasury_title'),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            ..._treasuryRemainingLines(wallet, strings),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _treasurySetup(PercWalletProvider wallet, AppLocalizations strings) {
     return SafeArea(
       child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Card(
-            margin: const EdgeInsets.all(20),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    strings.t('wallet_treasury_setup_title'),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    strings.t('wallet_treasury_setup_note'),
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8), height: 1.45),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: strings.t('wallet_treasury_username'),
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              children: [
+                _publicTreasuryBanner(wallet, strings),
+                Card(
+                  margin: const EdgeInsets.all(20),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          strings.t('wallet_treasury_setup_title'),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          strings.t('wallet_treasury_setup_note'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF9BA3B8),
+                            height: 1.45,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: strings.t('wallet_treasury_username'),
+                          ),
+                          controller: TextEditingController(
+                            text: PercChainConstants.treasuryUsername,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _passwordCtrl,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: strings.t('wallet_password'),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _confirmCtrl,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: strings.t('wallet_password_confirm'),
+                          ),
+                        ),
+                        if (wallet.errorMessage != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            wallet.errorMessage!,
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: () {
+                            if (_passwordCtrl.text != _confirmCtrl.text) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Passwords do not match'),
+                                ),
+                              );
+                              return;
+                            }
+                            wallet.setupTreasuryPassword(_passwordCtrl.text);
+                          },
+                          child: Text(strings.t('wallet_create_password')),
+                        ),
+                      ],
                     ),
-                    controller: TextEditingController(
-                      text: PercChainConstants.treasuryUsername,
-                    ),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _passwordCtrl,
-                    obscureText: true,
-                    decoration: InputDecoration(labelText: strings.t('wallet_password')),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _confirmCtrl,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: strings.t('wallet_password_confirm'),
-                    ),
-                  ),
-                  if (wallet.errorMessage != null) ...[
-                    const SizedBox(height: 10),
-                    Text(wallet.errorMessage!, style: const TextStyle(color: Colors.redAccent)),
-                  ],
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () {
-                      if (_passwordCtrl.text != _confirmCtrl.text) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Passwords do not match')),
-                        );
-                        return;
-                      }
-                      wallet.setupTreasuryPassword(_passwordCtrl.text);
-                    },
-                    child: Text(strings.t('wallet_create_password')),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -128,66 +192,94 @@ class _WalletScreenState extends State<WalletScreen> {
   Widget _loginRegister(PercWalletProvider wallet, AppLocalizations strings) {
     return SafeArea(
       child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Card(
-            margin: const EdgeInsets.all(20),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    strings.t('wallet_login_title'),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    strings.t('wallet_login_note'),
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8), height: 1.45),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _usernameCtrl,
-                    decoration: InputDecoration(labelText: strings.t('wallet_username')),
-                    textInputAction: TextInputAction.next,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _passwordCtrl,
-                    obscureText: true,
-                    decoration: InputDecoration(labelText: strings.t('wallet_password')),
-                  ),
-                  if (wallet.errorMessage != null) ...[
-                    const SizedBox(height: 10),
-                    Text(wallet.errorMessage!, style: const TextStyle(color: Colors.redAccent)),
-                  ],
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () {
-                      if (_registerMode) {
-                        wallet.register(_usernameCtrl.text, _passwordCtrl.text);
-                      } else {
-                        wallet.login(_usernameCtrl.text, _passwordCtrl.text);
-                      }
-                    },
-                    child: Text(
-                      _registerMode
-                          ? strings.t('wallet_register')
-                          : strings.t('wallet_sign_in'),
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              children: [
+                _publicTreasuryBanner(wallet, strings),
+                Card(
+                  margin: const EdgeInsets.all(20),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          strings.t('wallet_login_title'),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          strings.t('wallet_login_note'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF9BA3B8),
+                            height: 1.45,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _usernameCtrl,
+                          decoration: InputDecoration(
+                            labelText: strings.t('wallet_username'),
+                          ),
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _passwordCtrl,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: strings.t('wallet_password'),
+                          ),
+                        ),
+                        if (wallet.errorMessage != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            wallet.errorMessage!,
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: () {
+                            if (_registerMode) {
+                              wallet.register(
+                                _usernameCtrl.text,
+                                _passwordCtrl.text,
+                              );
+                            } else {
+                              wallet.login(
+                                _usernameCtrl.text,
+                                _passwordCtrl.text,
+                              );
+                            }
+                          },
+                          child: Text(
+                            _registerMode
+                                ? strings.t('wallet_register')
+                                : strings.t('wallet_sign_in'),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              setState(() => _registerMode = !_registerMode),
+                          child: Text(
+                            _registerMode
+                                ? strings.t('wallet_sign_in')
+                                : strings.t('wallet_register'),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  TextButton(
-                    onPressed: () => setState(() => _registerMode = !_registerMode),
-                    child: Text(
-                      _registerMode
-                          ? strings.t('wallet_sign_in')
-                          : strings.t('wallet_register'),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -387,11 +479,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   .replaceAll('{pct}', pct.toStringAsFixed(2)),
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
             ),
-            if (wallet.isTreasuryAccount)
-              Text(
-                'Treasury pool: ${wallet.treasuryPool.displayFixed8} PERC',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
-              ),
+            ..._treasuryRemainingLines(wallet, strings),
           ],
         ),
       ),
