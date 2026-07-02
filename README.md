@@ -1,6 +1,6 @@
 # Evolve — Social Science Chronoflux Framework
 
-[Live web app](https://rgsneddon.github.io/evolve/) · [GitHub Releases](https://github.com/rgsneddon/evolve/releases)
+**Web** · **Releases** (see this repository’s GitHub Pages site and Releases tab)
 
 Evolve is a cross-platform app for analysing social and political scenarios using the **Chronoflux** hydrodynamic framework.
 
@@ -14,15 +14,15 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ### Windows (easiest)
 
-Download the latest **Windows** zip from [GitHub Releases](https://github.com/rgsneddon/evolve/releases), extract, and run `evolve.exe`.
+Download the latest **Windows** zip from this repository’s **Releases** tab, extract, and run `evolve.exe`.
 
 ### Web
 
-Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evolve/)
+Live app: deploy with `scripts/deploy_web_github.ps1` (GitHub Pages on your fork).
 
 ### Android
 
-Download the latest **Android APK** from [GitHub Releases](https://github.com/rgsneddon/evolve/releases) and install on your device.
+Download the latest **Android APK** from this repository’s **Releases** tab and install on your device.
 
 ---
 
@@ -148,7 +148,7 @@ Scroll to the bottom of the app and expand **License & Chronoflux attribution** 
 | **Conclusion explainer** | Below each result: momentum, σ/continuum scores, registry filter, and bullet list of exact `OR-xxxx` cases used in calibration |
 | **Synopsis export** | After Calculate: **PDF**, **Text (.md)**, **View in browser**, or **Copy to clipboard** — full MarkdownBin-style report including PART THREE actions |
 | **Social narrative links** | Paste X, YouTube, Bluesky, Reddit, or Mastodon URLs in Social Cohesion mode — text fetched via Grok proxy for party-response scoring |
-| **Web Grok heuristic** | [GitHub Pages](https://rgsneddon.github.io/evolve/) uses `@evolve_web` in-browser construal — no local proxy, no X sign-in |
+| **Web Grok heuristic** | GitHub Pages builds use `@evolve_web` in-browser construal — no local proxy, no X sign-in |
 | **Android Grok** | Release APK includes `INTERNET` permission and loopback cleartext for the embedded proxy; Grok construal connects as `@evolve_mock` (or `@evolve_android` heuristic fallback) |
 
 ---
@@ -196,7 +196,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_grok_proxy.ps1
 | **Heuristic** (default) | No `GROK_PROXY_URL` at build time | Slide **Use** → `@evolve_web`; blank fields filled in-browser before Calculate |
 | **Live Grok** | `GROK_PROXY_URL` points to a hosted proxy with CORS | Same OAuth flow as desktop, via your remote proxy |
 
-The web app cannot run a localhost proxy (browser security). Heuristic mode is the default on [rgsneddon.github.io/Evolve](https://rgsneddon.github.io/evolve/).
+The web app cannot run a localhost proxy (browser security). Heuristic mode is the default on GitHub Pages deployments without `GROK_PROXY_URL`.
 
 ---
 
@@ -210,7 +210,7 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 - Leave bias fields blank to let the engine infer observational values relative to your ω question and selected region.
 - **Don't use** Grok for reproducible, fully local analysis with no network dependency.
 - On **web**, Grok heuristic mode (`@evolve_web`) needs no X account; use **Windows/Android** for live Premium Grok.
-- Use the lowercase web URL: `https://rgsneddon.github.io/evolve/` (not `/Evolve/`).
+- Use a lowercase GitHub Pages path: `/evolve/` (not `/Evolve/`) when deploying under a user or org site.
 
 ---
 
@@ -228,7 +228,7 @@ test/          Unit and widget tests
 
 ## License
 
-Copyright (c) 2026 rgsneddon. All rights reserved.
+Copyright (c) 2026 Evolve Chronoflux. All rights reserved.
 
 The **Chronoflux Principia**, realised by **Roy D Herbert**, is a **core mechanical part** of the Evolve framework — the hydrodynamic constructs and analysis pipeline at the centre of the engine derive from and operate through that Principia. Evolve is a derivative computational implementation of that work.
 
@@ -237,6 +237,6 @@ Evolve and this Chronoflux implementation are **proprietary software** offered u
 | Use | License |
 |-----|---------|
 | Personal, private, non-commercial use | [LICENSE](LICENSE) (proprietary grant) |
-| Commercial use, redistribution, SaaS, or derivative products for sale | Separate **Commercial License** — contact [ra5kul@protonmail.com](mailto:ra5kul@protonmail.com) |
+| Commercial use, redistribution, SaaS, or derivative products for sale | Separate **Commercial License** — contact [licensing@evolve-chronoflux.dev](mailto:licensing@evolve-chronoflux.dev) |
 
 Third-party dependencies (Flutter packages, fonts, etc.) remain under their own licenses; see `NOTICES` in build outputs.

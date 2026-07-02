@@ -22,7 +22,7 @@ void main() {
     expect(PercChainConstants.minimumTreasuryReserve.displayFixed8, '0.00000001');
   });
 
-  test('treasury rgsneddon cannot send manually after blockchain launch', () {
+  test('treasury evolve_treasury cannot send manually after blockchain launch', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('bob', 'password123');

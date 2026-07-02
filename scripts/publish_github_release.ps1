@@ -15,7 +15,7 @@ $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
 
 $tag = if ($Version -match '^v') { $Version } else { "v$Version" }
-$owner = 'rgsneddon'
+$owner = if ($env:GITHUB_REPOSITORY_OWNER) { $env:GITHUB_REPOSITORY_OWNER } else { 'YOUR_GITHUB_USER' }
 $remote = "https://github.com/$owner/$RepoName.git"
 
 if (-not $DeployDir) {

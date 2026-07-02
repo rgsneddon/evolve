@@ -303,7 +303,7 @@ class PercWalletProvider extends ChangeNotifier {
 
       if (result.status == PercFaucetCreditStatus.blockchainNotLaunched) {
         statusMessage =
-            'Blockchain awaiting treasurer rgsneddon first sign-in';
+            'Blockchain awaiting treasurer first sign-in';
       } else if (result.status == PercFaucetCreditStatus.treasuryEmpty) {
         statusMessage = _pendingGenesisRenewalNotice
             ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'

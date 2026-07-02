@@ -608,7 +608,7 @@ class GrokProxyStore {
       uri,
       headers: {
         'User-Agent':
-            'Mozilla/5.0 (compatible; Evolve/1.0; +https://github.com/rgsneddon/evolve)',
+            'Mozilla/5.0 (compatible; Evolve/1.0)',
         'Accept': 'application/json',
       },
     );

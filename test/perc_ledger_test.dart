@@ -15,7 +15,7 @@ void _seedLedger(PercLedger ledger) {
 }
 
 void main() {
-  test('first scenario mints 1 PERC to treasury rgsneddon', () {
+  test('first scenario mints 1 PERC to evolve_treasury', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -99,8 +99,8 @@ void main() {
     expect(ledger.blocks.length, greaterThanOrEqualTo(2));
   });
 
-  test('treasury username is rgsneddon', () {
-    expect(PercChainConstants.treasuryUsername, 'rgsneddon');
+  test('treasury username is evolve_treasury', () {
+    expect(PercChainConstants.treasuryUsername, 'evolve_treasury');
   });
 
   test('treasury pool renewal at 1 cent reserve resumes emission', () {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 
-/// Celebration when treasurer rgsneddon launches the chain on first sign-in.
+/// Celebration when the treasurer launches the chain on first sign-in.
 Future<void> showBlockchainLaunchBalloon(
   BuildContext context,
   AppLocalizations strings,

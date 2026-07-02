@@ -34,7 +34,7 @@ class PercChainConstants {
   static const bool infiniteContinuumSupply = true;
 
   /// Treasury holder — offline wallet; no external chain until a user runs analysis.
-  static const String treasuryUsername = 'rgsneddon';
+  static const String treasuryUsername = 'evolve_treasury';
   static const bool treasuryRequiresExternalChain = false;
 
   /// One block confirmation fully settles PERC (Chronoflux Principia TIME).

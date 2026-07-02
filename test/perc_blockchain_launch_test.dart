@@ -4,7 +4,7 @@ import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 
 void main() {
-  test('blockchain does not launch until rgsneddon first sign-in', () {
+  test('blockchain does not launch until treasurer first sign-in', () {
     final ledger = PercLedger.empty();
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password123');

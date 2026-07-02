@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.rgsneddon" "\0"
+            VALUE "CompanyName", "Evolve Chronoflux" "\0"
             VALUE "FileDescription", "evolve" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "evolve" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.rgsneddon. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Evolve Chronoflux. All rights reserved." "\0"
             VALUE "OriginalFilename", "evolve.exe" "\0"
             VALUE "ProductName", "evolve" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

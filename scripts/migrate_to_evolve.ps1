@@ -38,12 +38,12 @@ foreach ($r in $renames) {
 }
 
 # Android MainActivity package path
-$oldKt = Join-Path $DestRoot 'android\app\src\main\kotlin\com\rgsneddon\evolve'
-$newKtDir = Join-Path $DestRoot 'android\app\src\main\kotlin\com\rgsneddon\evolve'
+$oldKt = Join-Path $DestRoot 'android\app\src\main\kotlin\com\evolve\chronoflux'
+$newKtDir = Join-Path $DestRoot 'android\app\src\main\kotlin\com\evolve\chronoflux'
 if (Test-Path $oldKt) {
     New-Item -ItemType Directory -Path $newKtDir -Force | Out-Null
     $kt = Get-Content (Join-Path $oldKt 'MainActivity.kt') -Raw
-    $kt = $kt -replace 'com\.rgsneddon\.evolve', 'com.rgsneddon.evolve'
+    $kt = $kt -replace 'com\.evolve\.chronoflux', 'com.evolve.chronoflux'
     Set-Content (Join-Path $newKtDir 'MainActivity.kt') $kt -NoNewline
     Remove-Item $oldKt -Recurse -Force
 }
@@ -59,7 +59,7 @@ $replacements = @(
     @{ From = 'evolve_engine.dart'; To = 'evolve_engine.dart' },
     @{ From = 'evolve_provider.dart'; To = 'evolve_provider.dart' },
     @{ From = 'evolve_result.dart'; To = 'evolve_result.dart' },
-    @{ From = 'com.rgsneddon.evolve'; To = 'com.rgsneddon.evolve' },
+    @{ From = 'com.evolve.chronoflux'; To = 'com.evolve.chronoflux' },
     @{ From = '@evolve_mock'; To = '@evolve_mock' },
     @{ From = '@evolve_web'; To = '@evolve_web' },
     @{ From = '@evolve_android'; To = '@evolve_android' },
@@ -87,8 +87,7 @@ $replacements = @(
     @{ From = 'short_name": "Evolve"'; To = 'short_name": "Evolve"' },
     @{ From = 'apple-mobile-web-app-title" content="Evolve"'; To = 'apple-mobile-web-app-title" content="Evolve"' },
     @{ From = 'android:label="Evolve"'; To = 'android:label="Evolve"' },
-    @{ From = 'rgsneddon/evolve'; To = 'rgsneddon/evolve' },
-    @{ From = 'rgsneddon/evolve'; To = 'rgsneddon/evolve' },
+    @{ From = 'YOUR_GITHUB_USER/evolve'; To = 'YOUR_GITHUB_USER/evolve' },
     @{ From = 'evolve'; To = 'evolve' }
 )
 

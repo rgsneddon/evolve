@@ -21,10 +21,10 @@ void main() {
       if (request.url.host == '127.0.0.1') {
         return http.Response(
           jsonEncode({
-            'url': 'https://x.com/rgsneddon/status/2066269545849880814',
+            'url': 'https://x.com/example_user/status/2066269545849880814',
             'title': 'X post 2066269545849880814',
             'narrative':
-                '@rgsneddon: Parliament is just a revolving door of policies we didn\'t vote for.',
+                '@example_user: Parliament is just a revolving door of policies we didn\'t vote for.',
           }),
           200,
           headers: {'content-type': 'application/json'},
@@ -36,10 +36,10 @@ void main() {
     final reader = NarrativeLinkReader(client: client);
     final content = await reader.fetchViaProxy(
       'http://127.0.0.1:8787',
-      'https://x.com/rgsneddon/status/2066269545849880814',
+      'https://x.com/example_user/status/2066269545849880814',
     );
     expect(content.narrative, contains('revolving door'));
-    expect(content.narrative, contains('@rgsneddon'));
+    expect(content.narrative, contains('@example_user'));
   });
 
   test('fetchViaProxy accepts short X narratives from proxy', () async {

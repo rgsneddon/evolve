@@ -1,6 +1,7 @@
-# Build and package Evolve web output for GitHub Pages (rgsneddon/evolve).
+# Build and package Evolve web output for GitHub Pages.
 param(
     [string]$RepoName = 'evolve',
+    [string]$GitHubOwner = $(if ($env:GITHUB_REPOSITORY_OWNER) { $env:GITHUB_REPOSITORY_OWNER } else { 'YOUR_GITHUB_USER' }),
     [string]$GrokProxyUrl = $env:GROK_PROXY_URL,
     [switch]$SkipBuild
 )
@@ -73,16 +74,16 @@ Write-Host 'Deploy package ready:' -ForegroundColor Green
 Write-Host "  $zipPath"
 Write-Host ''
 Write-Host 'Upload to GitHub (repo root must contain assets/, canvaskit/, icons/):' -ForegroundColor Yellow
-Write-Host "  1. Open https://github.com/rgsneddon/$RepoName"
+Write-Host "  1. Open https://github.com/$GitHubOwner/$RepoName"
 Write-Host '  2. Delete old web files at repo root (keep README.md if you want).'
 Write-Host '  3. Upload EVERYTHING inside build\web\ (all 3 folders + all files).'
 Write-Host "     Or extract $RepoName-github-pages.zip and upload those contents."
 Write-Host '  4. Settings -> Pages -> Source: Deploy from branch main, folder / (root).'
 Write-Host '     (If you see "There isn''t a GitHub Pages site here", Pages is not enabled yet.)'
-Write-Host "  5. Wait 1-2 minutes, then open: https://rgsneddon.github.io/$RepoName/"
+Write-Host "  5. Wait 1-2 minutes, then open: https://$GitHubOwner.github.io/$RepoName/"
 Write-Host ''
 Write-Host 'Verify after deploy:' -ForegroundColor Yellow
-Write-Host "  https://rgsneddon.github.io/$RepoName/canvaskit/canvaskit.js  (must be 200, not 404)"
+Write-Host "  https://$GitHubOwner.github.io/$RepoName/canvaskit/canvaskit.js  (must be 200, not 404)"
 Write-Host "  index.html must contain: <base href=`"$baseHref`">"
 
 exit 0

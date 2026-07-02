@@ -358,7 +358,7 @@ final _en = {
   'wallet_treasury_inflation_critical':
       'Treasury at 1 cent reserve — pool renewal mint on next scenario',
   'wallet_treasury_send_locked':
-      'Treasury rgsneddon is locked — manual sends disabled after blockchain launch',
+      'Treasury account is locked — manual sends disabled after blockchain launch',
   'wallet_treasury_offline_note':
       'Treasury is offline (no external chain) until a user runs analysis. Only staking drains the pool until 1 cent remains.',
   'wallet_block_height': 'Block height: {height}',
@@ -423,10 +423,10 @@ final _en = {
       'Your wallet already drew from treasury within the last 450 minutes. The Perccent chain advances on scenarios — your next eligible draw (and block) is in approximately {blockWait}. You can draw 50 cent again after {wait}.',
   'wallet_cooldown_popup_ok': 'OK',
   'wallet_blockchain_awaiting_launch':
-      'Blockchain awaits treasurer rgsneddon first sign-in to launch.',
+      'Blockchain awaits treasurer first sign-in to launch.',
   'wallet_blockchain_launch_title': 'Blockchain launched!',
   'wallet_blockchain_launch_body':
-      'Treasurer rgsneddon signed in — the Perccent chain is live. Run scenarios to advance blocks.',
+      'Treasurer signed in — the Perccent chain is live. Run scenarios to advance blocks.',
   'wallet_blockchain_launch_ok': 'Let\'s go',
   'wallet_faucet_base': 'Base reward',
   'wallet_faucet_bonus': 'Outcome bonus',
@@ -439,7 +439,7 @@ final _en = {
       'Run a percent-chance or social-cohesion calculation on Analysis to receive your first Perccent faucet payout.',
   'wallet_treasury_setup_title': 'Secure treasury account',
   'wallet_treasury_setup_note':
-      'Treasury holder rgsneddon receives all scenario-driven emissions. Create your password now (first use only).',
+      'Treasury holder receives all scenario-driven emissions. Create your password now (first use only).',
   'wallet_treasury_username': 'Treasury username',
   'wallet_password': 'Password',
   'wallet_password_confirm': 'Confirm password',
@@ -471,9 +471,9 @@ final _en = {
   'license_dialog_title': 'Evolve License',
   'license_chronoflux_attribution':
       'The Chronoflux Principia, realised by Roy D Herbert, is a core mechanical part of the Evolve framework. The hydrodynamic constructs, continuum mechanics, and analysis pipeline derive from and operate through that Principia. Perccent is forked from Beam privacy architecture — credit Valdok and Beam CTO Alex Romanov.',
-  'license_copyright': 'Copyright (c) 2026 rgsneddon. All rights reserved.',
+  'license_copyright': 'Copyright (c) 2026 Evolve Chronoflux. All rights reserved.',
   'license_dual_summary':
-      'Proprietary / dual license: personal non-commercial use permitted under LICENSE; commercial use requires a separate Commercial License (ra5kul@protonmail.com).',
+      'Proprietary / dual license: personal non-commercial use permitted under LICENSE; commercial use requires a separate Commercial License (licensing@evolve-chronoflux.dev).',
   'license_view_full': 'View full license',
   'grok_construe_label': 'GROK CONSTRUE',
   'grok_bar_hint':
@@ -916,7 +916,7 @@ final _es = {
   'wallet_treasury_inflation_critical':
       'Tesorería en reserva de 1 cent — acuñación de 283M en el próximo escenario',
   'wallet_treasury_send_locked':
-      'Tesorería rgsneddon bloqueada — envíos manuales deshabilitados tras el lanzamiento',
+      'Cuenta de tesorería bloqueada — envíos manuales deshabilitados tras el lanzamiento',
   'wallet_treasury_offline_note':
       'La tesorería está offline (sin cadena externa) hasta que un usuario ejecute un análisis. Solo el staking reduce el fondo hasta 1 cent.',
   'wallet_block_height': 'Altura de bloque: {height}',
@@ -945,10 +945,10 @@ final _es = {
       'Su monedero ya retiró de la tesorería en los últimos 450 minutos. La cadena avanza con escenarios — su próximo retiro (y bloque) es en aproximadamente {blockWait}. Puede retirar 0,00000050 PERC de nuevo tras {wait}.',
   'wallet_cooldown_popup_ok': 'OK',
   'wallet_blockchain_awaiting_launch':
-      'La cadena espera el primer inicio de sesión del tesorero rgsneddon.',
+      'La cadena espera el primer inicio de sesión del tesorero.',
   'wallet_blockchain_launch_title': '¡Cadena lanzada!',
   'wallet_blockchain_launch_body':
-      'El tesorero rgsneddon inició sesión — la cadena Perccent está activa.',
+      'El tesorero inició sesión — la cadena Perccent está activa.',
   'wallet_blockchain_launch_ok': 'Adelante',
   'wallet_faucet_base': 'Recompensa base',
   'wallet_faucet_bonus': 'Bono por resultado',
@@ -961,7 +961,7 @@ final _es = {
       'Ejecuta un análisis de probabilidad o cohesión social en Análisis para recibir tu primer pago Perccent.',
   'wallet_treasury_setup_title': 'Proteger cuenta de tesorería',
   'wallet_treasury_setup_note':
-      'La tesorería rgsneddon recibe todas las emisiones. Cree su contraseña ahora (solo la primera vez).',
+      'La tesorería recibe todas las emisiones. Cree su contraseña ahora (solo la primera vez).',
   'wallet_treasury_username': 'Usuario de tesorería',
   'wallet_password': 'Contraseña',
   'wallet_password_confirm': 'Confirmar contraseña',

@@ -131,16 +131,16 @@ void main() {
 
   test('parseOembedTweetHtml extracts tweet body', () {
     const html =
-        '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Parliament is just a revolving door of policies we didn\'t vote for.</p>&mdash; Russell (@rgsneddon) <a href="https://twitter.com/rgsneddon/status/1">June 14, 2026</a></blockquote>';
+        '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Parliament is just a revolving door of policies we didn\'t vote for.</p>&mdash; Russell (@example_user) <a href="https://twitter.com/example_user/status/1">June 14, 2026</a></blockquote>';
     expect(
       NarrativeLinkReader.parseOembedTweetHtml(html),
       'Parliament is just a revolving door of policies we didn\'t vote for.',
     );
     expect(
       NarrativeLinkReader.authorHandleFromOembed({
-        'author_url': 'https://twitter.com/rgsneddon',
+        'author_url': 'https://twitter.com/example_user',
       }),
-      'rgsneddon',
+      'example_user',
     );
   });
 

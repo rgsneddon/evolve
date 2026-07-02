@@ -577,7 +577,7 @@ class PercLedger {
   }) {
     if (!blockchainLaunched) {
       throw StateError(
-        'Blockchain not launched — treasurer rgsneddon must sign in first',
+        'Blockchain not launched — treasurer must sign in first',
       );
     }
     final from = PercAuth.normalizeUsername(fromUsername);

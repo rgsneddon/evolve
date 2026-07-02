@@ -8,13 +8,13 @@ import 'package:evolve/services/grok_proxy/grok_proxy_store.dart';
 
 void main() {
   test('fetchNarrativeLink reads public X post without OAuth token', () async {
-    const tweetUrl = 'https://x.com/rgsneddon/status/2066269545849880814';
+    const tweetUrl = 'https://x.com/example_user/status/2066269545849880814';
     final client = MockClient((request) async {
       if (request.url.host == 'publish.twitter.com') {
         return http.Response(
           jsonEncode({
             'author_name': 'Russell',
-            'author_url': 'https://twitter.com/rgsneddon',
+            'author_url': 'https://twitter.com/example_user',
             'html':
                 '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Parliament is just a revolving door of policies we didn\'t vote for.</p></blockquote>',
           }),
@@ -37,11 +37,11 @@ void main() {
 
     final result = await store.fetchNarrativeLink(tweetUrl);
     expect(result['narrative'], contains('revolving door'));
-    expect(result['narrative'], contains('@rgsneddon'));
+    expect(result['narrative'], contains('@example_user'));
   });
 
   test('fetchNarrativeLink falls back to syndication when oembed fails', () async {
-    const tweetUrl = 'https://x.com/rgsneddon/status/2066269545849880814';
+    const tweetUrl = 'https://x.com/example_user/status/2066269545849880814';
     final client = MockClient((request) async {
       if (request.url.host == 'publish.twitter.com') {
         return http.Response('not found', 404);
@@ -50,7 +50,7 @@ void main() {
         return http.Response(
           jsonEncode({
             'text': 'Parliament is just a revolving door of policies we didn\'t vote for.',
-            'user': {'screen_name': 'rgsneddon'},
+            'user': {'screen_name': 'example_user'},
           }),
           200,
           headers: {'content-type': 'application/json'},
@@ -71,6 +71,6 @@ void main() {
 
     final result = await store.fetchNarrativeLink(tweetUrl);
     expect(result['narrative'], contains('revolving door'));
-    expect(result['narrative'], contains('@rgsneddon'));
+    expect(result['narrative'], contains('@example_user'));
   });
 }

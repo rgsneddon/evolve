@@ -3,7 +3,7 @@ import '../models/perc_block.dart';
 import '../perc_chain_constants.dart';
 import 'perc_staking.dart';
 
-/// Treasury inflation — epoch marks each emission block to rgsneddon.
+/// Treasury inflation — epoch marks each emission block to evolve_treasury.
 class PercInflation {
   const PercInflation._();
 
