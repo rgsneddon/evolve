@@ -10,6 +10,27 @@ enum PercTxKind {
   chronofluxMicroblock,
 }
 
+extension PercTxKindWire on PercTxKind {
+  String get wireName => switch (this) {
+        PercTxKind.treasuryEmission => 'treasuryEmission',
+        PercTxKind.scenarioReward => 'scenarioReward',
+        PercTxKind.transfer => 'transfer',
+        PercTxKind.stakingReward => 'stakingReward',
+        PercTxKind.genesisRenewal => 'genesisRenewal',
+        PercTxKind.chronofluxMicroblock => 'chronofluxMicroblock',
+      };
+
+  static PercTxKind fromWire(String raw) => switch (raw) {
+        'treasuryEmission' => PercTxKind.treasuryEmission,
+        'scenarioReward' => PercTxKind.scenarioReward,
+        'transfer' => PercTxKind.transfer,
+        'stakingReward' => PercTxKind.stakingReward,
+        'genesisRenewal' => PercTxKind.genesisRenewal,
+        'chronofluxMicroblock' => PercTxKind.chronofluxMicroblock,
+        _ => PercTxKind.scenarioReward,
+      };
+}
+
 class PercTransaction {
   const PercTransaction({
     required this.id,
@@ -61,7 +82,7 @@ class PercTransaction {
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'kind': kind.name,
+        'kind': kind.wireName,
         'amount': amount.toJson(),
         'timestamp': timestamp.toIso8601String(),
         if (fromUsername != null) 'fromUsername': fromUsername,
@@ -83,10 +104,7 @@ class PercTransaction {
 
   factory PercTransaction.fromJson(Map<String, dynamic> json) => PercTransaction(
         id: json['id'] as String,
-        kind: PercTxKind.values.firstWhere(
-          (k) => k.name == json['kind'],
-          orElse: () => PercTxKind.scenarioReward,
-        ),
+        kind: PercTxKindWire.fromWire(json['kind'] as String? ?? ''),
         amount: PercAmount.fromJson(json['amount'] as Map<String, dynamic>),
         timestamp: DateTime.parse(json['timestamp'] as String),
         fromUsername: json['fromUsername'] as String?,

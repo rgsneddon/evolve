@@ -200,18 +200,6 @@ void main() {
 
   test('bridge round-trips through json', () {
     const input = ScenarioInput(posedQuestion: 'Should we extend library hours?');
-    final result = engine.analyze(
-      input,
-      mode: AnalysisMode.cohesionScore,
-      locale: locale,
-    );
-    final link = WardConclusionBridge.build(
-      result: result,
-      input: input,
-      mode: AnalysisMode.cohesionScore,
-      locale: locale,
-      strings: strings,
-    );
 
     final dual = WardConclusionBridge.buildDual(
       percentResult: engine.analyze(

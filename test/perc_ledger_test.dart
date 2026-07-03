@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_account.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
+import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
@@ -100,7 +101,7 @@ void main() {
       amount: PercAmount.fromPerc(0.00000010),
     );
 
-    expect(sent.kind.name, 'transfer');
+    expect(sent.kind.wireName, 'transfer');
     expect(ledger.account('bob')!.balance.microUnits, greaterThan(0));
     expect(ledger.blocks.length, greaterThanOrEqualTo(2));
   });
@@ -156,7 +157,7 @@ void main() {
     expect(ledger.blocks.any((b) => b.isGenesisRenewal), isTrue);
     expect(
       ledger.blocks.last.transactions.any(
-        (t) => t.kind.name == 'genesisRenewal',
+        (t) => t.kind.wireName == 'genesisRenewal',
       ),
       isTrue,
     );

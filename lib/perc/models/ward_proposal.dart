@@ -5,6 +5,21 @@ enum WardVoteChoice {
   abstain,
 }
 
+extension WardVoteChoiceWire on WardVoteChoice {
+  String get wireName => switch (this) {
+        WardVoteChoice.forProposal => 'forProposal',
+        WardVoteChoice.against => 'against',
+        WardVoteChoice.abstain => 'abstain',
+      };
+
+  static WardVoteChoice fromWire(String raw) => switch (raw) {
+        'forProposal' => WardVoteChoice.forProposal,
+        'against' => WardVoteChoice.against,
+        'abstain' => WardVoteChoice.abstain,
+        _ => WardVoteChoice.abstain,
+      };
+}
+
 class WardProposal {
   const WardProposal({
     required this.id,
@@ -82,7 +97,7 @@ class WardBallot {
   Map<String, dynamic> toJson() => {
         'proposalId': proposalId,
         'voterUsername': voterUsername,
-        'choice': choice.name,
+        'choice': choice.wireName,
         'comment': comment,
         'castAt': castAt.toIso8601String(),
       };
@@ -90,10 +105,7 @@ class WardBallot {
   factory WardBallot.fromJson(Map<String, dynamic> json) => WardBallot(
         proposalId: json['proposalId'] as String,
         voterUsername: json['voterUsername'] as String,
-        choice: WardVoteChoice.values.firstWhere(
-          (c) => c.name == json['choice'],
-          orElse: () => WardVoteChoice.abstain,
-        ),
+        choice: WardVoteChoiceWire.fromWire(json['choice'] as String? ?? ''),
         comment: json['comment'] as String? ?? '',
         castAt: DateTime.parse(json['castAt'] as String),
       );

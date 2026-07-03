@@ -137,6 +137,6 @@ void main() {
       (t) => t.kind == PercTxKind.scenarioReward,
     );
     expect(rewardTx.scenarioLabel, contains('Social cohesion'));
-    expect(rewardTx.kind.name, 'scenarioReward');
+    expect(rewardTx.kind.wireName, 'scenarioReward');
   });
 }
