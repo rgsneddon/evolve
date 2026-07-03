@@ -427,6 +427,11 @@ class PercLedger {
         confirmations: tx.confirmations,
         chronofluxFingerprint: tx.chronofluxFingerprint,
         microblockIndex: tx.microblockIndex,
+        continuumScs: tx.continuumScs,
+        vortexScs: tx.vortexScs,
+        shearScs: tx.shearScs,
+        resistanceScs: tx.resistanceScs,
+        flowScs: tx.flowScs,
       );
 
   PercAccount _ensureTreasury() {
@@ -843,6 +848,11 @@ class PercLedger {
     required String username,
     required double percentChance,
     String? scenarioLabel,
+    double? continuumScs,
+    double? vortexScs,
+    double? shearScs,
+    double? resistanceScs,
+    double? flowScs,
   }) {
     final u = PercAuth.normalizeUsername(username);
     final user = _accountFor(u);
@@ -926,6 +936,11 @@ class PercLedger {
         percentChance: reward.percentChance,
         blockIndex: blocks.length,
         confirmations: _txConfirmations,
+        continuumScs: continuumScs,
+        vortexScs: vortexScs,
+        shearScs: shearScs,
+        resistanceScs: resistanceScs,
+        flowScs: flowScs,
       );
       treasury.transactions.insert(0, tx);
       user.transactions.insert(0, tx);

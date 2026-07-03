@@ -45,6 +45,11 @@ class EvolveProvider extends ChangeNotifier {
     required AnalysisMode mode,
     required double outcomeScore,
     String? memo,
+    double? continuumScs,
+    double? vortexScs,
+    double? shearScs,
+    double? resistanceScs,
+    double? flowScs,
   })? analysisRewardHandler;
 
   AnalysisMode mode = AnalysisMode.cohesionScore;
@@ -767,13 +772,19 @@ class EvolveProvider extends ChangeNotifier {
       _reanalyze(working);
       _persistCurrentMode();
       if (result != null && analysisRewardHandler != null) {
+        final core = result!.core;
         final outcomeScore = mode == AnalysisMode.percentChance
             ? result!.percentChance
-            : result!.core.refinedScs;
+            : core.refinedScs;
         await analysisRewardHandler!(
           mode: mode,
           outcomeScore: outcomeScore,
           memo: _analysisRewardMemo(working, mode),
+          continuumScs: outcomeScore,
+          vortexScs: core.vortexScs,
+          shearScs: core.shearScs,
+          resistanceScs: core.resistanceScs,
+          flowScs: core.flowScs,
         );
       }
       statusMessage = grokConstrualEnabled

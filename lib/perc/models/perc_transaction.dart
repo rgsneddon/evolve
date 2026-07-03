@@ -25,6 +25,11 @@ class PercTransaction {
     this.confirmations = 0,
     this.chronofluxFingerprint,
     this.microblockIndex,
+    this.continuumScs,
+    this.vortexScs,
+    this.shearScs,
+    this.resistanceScs,
+    this.flowScs,
   });
 
   final String id;
@@ -40,6 +45,11 @@ class PercTransaction {
   final int confirmations;
   final String? chronofluxFingerprint;
   final int? microblockIndex;
+  final double? continuumScs;
+  final double? vortexScs;
+  final double? shearScs;
+  final double? resistanceScs;
+  final double? flowScs;
 
   bool get isConfirmed =>
       confirmations >= PercChainConstants.confirmationsRequired;
@@ -64,6 +74,11 @@ class PercTransaction {
         if (chronofluxFingerprint != null)
           'chronofluxFingerprint': chronofluxFingerprint,
         if (microblockIndex != null) 'microblockIndex': microblockIndex,
+        if (continuumScs != null) 'continuumScs': continuumScs,
+        if (vortexScs != null) 'vortexScs': vortexScs,
+        if (shearScs != null) 'shearScs': shearScs,
+        if (resistanceScs != null) 'resistanceScs': resistanceScs,
+        if (flowScs != null) 'flowScs': flowScs,
       };
 
   factory PercTransaction.fromJson(Map<String, dynamic> json) => PercTransaction(
@@ -83,5 +98,10 @@ class PercTransaction {
         confirmations: json['confirmations'] as int? ?? 0,
         chronofluxFingerprint: json['chronofluxFingerprint'] as String?,
         microblockIndex: json['microblockIndex'] as int?,
+        continuumScs: (json['continuumScs'] as num?)?.toDouble(),
+        vortexScs: (json['vortexScs'] as num?)?.toDouble(),
+        shearScs: (json['shearScs'] as num?)?.toDouble(),
+        resistanceScs: (json['resistanceScs'] as num?)?.toDouble(),
+        flowScs: (json['flowScs'] as num?)?.toDouble(),
       );
 }

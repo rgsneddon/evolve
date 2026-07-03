@@ -59,6 +59,13 @@ class PercChronofluxTimeConfirmations {
           principiaBinding:
               'Main-chain block — ${PercChainConstants.confirmationsRequired} confirmation fully settles PERC',
         ),
+        PercTimeConfirmationPermutation(
+          name: 'Chronoflux inputs',
+          interval: const Duration(seconds: 1),
+          confirmationsToSettle: 1,
+          principiaBinding:
+              'Five construct inputs (ρt, ω, σ, Iτ, Jμ) — one second per point',
+        ),
       ];
 
   static String formatInterval(Duration d) {

@@ -411,6 +411,11 @@ final _en = {
   'wallet_explorer_empty': 'No blocks yet — run a scenario to advance the chain.',
   'wallet_explorer_emission_chart': 'Treasury emission per block',
   'wallet_explorer_cumulative_chart': 'Cumulative treasury minted',
+  'wallet_chronoflux_graph_title': 'Chronoflux five-point variables',
+  'wallet_chronoflux_graph_note':
+      'Pentagon radar and five-point time series for ρt, ω, σ, Iτ, Jμ — times match Chronoflux input order across scenario draws.',
+  'wallet_chronoflux_graph_empty':
+      'Run a percent chance or social cohesion analysis to populate Chronoflux variable graphs.',
   'wallet_explorer_legend_emission': 'Treasury Perccent (PERC)',
   'wallet_explorer_legend_txs': 'Transactions',
   'wallet_explorer_history': 'BLOCK HISTORY',
@@ -948,6 +953,11 @@ final _es = {
   'wallet_explorer_empty': 'Sin bloques — ejecute un escenario para avanzar la cadena.',
   'wallet_explorer_emission_chart': 'Emisión de tesorería por bloque',
   'wallet_explorer_cumulative_chart': 'Acuñación acumulada de tesorería',
+  'wallet_chronoflux_graph_title': 'Cinco variables Chronoflux',
+  'wallet_chronoflux_graph_note':
+      'Radar pentagonal y series de cinco puntos para ρt, ω, σ, Iτ, Jμ — tiempos alineados al orden de entrada Chronoflux.',
+  'wallet_chronoflux_graph_empty':
+      'Ejecute un análisis de probabilidad o cohesión social para poblar los gráficos.',
   'wallet_explorer_legend_emission': 'Perccent tesorería (PERC)',
   'wallet_explorer_legend_txs': 'Transacciones',
   'wallet_explorer_history': 'HISTORIAL DE BLOQUES',

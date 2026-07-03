@@ -8,7 +8,18 @@ import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_currency.dart';
 import '../services/perc_faucet_cooldown.dart';
+import '../widgets/chronoflux_five_point_graph_panel.dart';
 import '../widgets/wallet_creator_credit.dart';
+
+Widget _chronofluxGraphStrip(PercWalletProvider wallet, AppLocalizations strings) =>
+    Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: ChronofluxFivePointGraphPanel(
+        wallet: wallet,
+        strings: strings,
+        compact: true,
+      ),
+    );
 
 class PercSendReceiveHubScreen extends StatelessWidget {
   const PercSendReceiveHubScreen({
@@ -37,7 +48,9 @@ class PercSendReceiveHubScreen extends StatelessWidget {
                 strings.t('wallet_dapp_send_receive_note'),
                 style: const TextStyle(fontSize: 13, color: Color(0xFF9BA3B8)),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+              _chronofluxGraphStrip(wallet, strings),
+              const SizedBox(height: 4),
               FilledButton.icon(
                 onPressed: wallet.canSendFromSession ? onSend : null,
                 icon: const Icon(Icons.send_rounded),
@@ -94,6 +107,7 @@ class PercSideChainScreen extends StatelessWidget {
                 '${side.pendingMicroblocks} / ${side.microblocksPerBlock}',
               ),
               const SizedBox(height: 12),
+              _chronofluxGraphStrip(wallet, strings),
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: LinearProgressIndicator(
@@ -142,7 +156,9 @@ class PercGovernanceScreen extends StatelessWidget {
                 strings.t('wallet_staking_note'),
                 style: const TextStyle(fontSize: 13, color: Color(0xFF9BA3B8)),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              _chronofluxGraphStrip(wallet, strings),
+              const SizedBox(height: 4),
               _infoRow(
                 strings.t('wallet_staking_earned').replaceAll('{amount}', ''),
                 wallet.cumulativeStaking.displayFixed8,
@@ -179,6 +195,8 @@ class PercAnalysisGalleryScreen extends StatelessWidget {
                 strings.t('wallet_faucet_note'),
                 style: const TextStyle(fontSize: 13, color: Color(0xFF9BA3B8)),
               ),
+              const SizedBox(height: 12),
+              _chronofluxGraphStrip(wallet, strings),
               if (reward != null) ...[
                 const SizedBox(height: 16),
                 _infoRow(
@@ -226,7 +244,9 @@ class PercSideChainBridgeScreen extends StatelessWidget {
                 strings.t('wallet_dapp_bridge_note'),
                 style: const TextStyle(fontSize: 13, color: Color(0xFF9BA3B8)),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              _chronofluxGraphStrip(wallet, strings),
+              const SizedBox(height: 4),
               _bridgeRow(
                 strings.t('wallet_dapp_side_chain'),
                 side.sideChainId,
@@ -272,7 +292,9 @@ class PercMeshBridgeScreen extends StatelessWidget {
                     : strings.t('wallet_mesh_incomplete'),
                 style: const TextStyle(fontSize: 13, color: Color(0xFF9BA3B8)),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              _chronofluxGraphStrip(wallet, strings),
+              const SizedBox(height: 4),
               ...peers.map(
                 (peer) => Card(
                   child: ListTile(
@@ -305,13 +327,16 @@ class PercNameServiceScreen extends StatelessWidget {
       body: SafeArea(
         child: ListView.separated(
           padding: const EdgeInsets.all(16),
-          itemCount: users.length + 1,
+          itemCount: users.length + 2,
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
-            if (index == users.length) {
+            if (index == 0) {
+              return _chronofluxGraphStrip(wallet, strings);
+            }
+            if (index == users.length + 1) {
               return WalletCreatorCredit(strings: strings);
             }
-            final user = users[index];
+            final user = users[index - 1];
             final address = wallet.addressForUsername(user);
             return Card(
               child: ListTile(
@@ -354,7 +379,9 @@ class PercAssetMinterScreen extends StatelessWidget {
                 strings.t('wallet_treasury_note'),
                 style: const TextStyle(fontSize: 13, color: Color(0xFF9BA3B8)),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              _chronofluxGraphStrip(wallet, strings),
+              const SizedBox(height: 4),
               _infoRow(
                 strings
                     .t('wallet_treasury_minted')

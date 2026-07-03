@@ -256,11 +256,21 @@ class PercWalletProvider extends ChangeNotifier {
     required AnalysisMode mode,
     required double outcomeScore,
     String? memo,
+    double? continuumScs,
+    double? vortexScs,
+    double? shearScs,
+    double? resistanceScs,
+    double? flowScs,
   }) async {
     return creditScenario(
       outcomeScore: outcomeScore,
       memo: memo,
       analysisMode: mode,
+      continuumScs: continuumScs,
+      vortexScs: vortexScs,
+      shearScs: shearScs,
+      resistanceScs: resistanceScs,
+      flowScs: flowScs,
     );
   }
 
@@ -268,6 +278,11 @@ class PercWalletProvider extends ChangeNotifier {
     required double outcomeScore,
     String? memo,
     AnalysisMode? analysisMode,
+    double? continuumScs,
+    double? vortexScs,
+    double? shearScs,
+    double? resistanceScs,
+    double? flowScs,
   }) async {
     final score = outcomeScore;
     if (!_ready || !isLoggedIn) return null;
@@ -281,6 +296,11 @@ class PercWalletProvider extends ChangeNotifier {
         username: _ledger.sessionUsername!,
         percentChance: score,
         scenarioLabel: label,
+        continuumScs: continuumScs ?? score,
+        vortexScs: vortexScs,
+        shearScs: shearScs,
+        resistanceScs: resistanceScs,
+        flowScs: flowScs,
       );
 
       _captureGenesisRenewalEvent();

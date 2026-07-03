@@ -10,6 +10,7 @@ import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_block_timing.dart';
 import '../services/perc_send_receive_actions.dart';
+import '../widgets/chronoflux_five_point_graph_panel.dart';
 import '../widgets/perc_dapp_suite_panel.dart';
 import '../widgets/wallet_creator_credit.dart';
 
@@ -67,6 +68,11 @@ class BlockchainExplorerScreen extends StatelessWidget {
                         _graphCard(blocks, strings),
                         const SizedBox(height: 16),
                         _cumulativeCard(blocks, strings),
+                        const SizedBox(height: 16),
+                        ChronofluxFivePointGraphPanel(
+                          wallet: wallet,
+                          strings: strings,
+                        ),
                         const SizedBox(height: 20),
                         Text(
                           strings.t('wallet_explorer_history'),

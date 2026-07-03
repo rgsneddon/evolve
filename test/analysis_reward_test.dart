@@ -24,11 +24,21 @@ void main() {
       required AnalysisMode mode,
       required double outcomeScore,
       String? memo,
+      double? continuumScs,
+      double? vortexScs,
+      double? shearScs,
+      double? resistanceScs,
+      double? flowScs,
     }) =>
         wallet.creditAnalysis(
           mode: mode,
           outcomeScore: outcomeScore,
           memo: memo,
+          continuumScs: continuumScs,
+          vortexScs: vortexScs,
+          shearScs: shearScs,
+          resistanceScs: resistanceScs,
+          flowScs: flowScs,
         );
 
     evolve.setMode(AnalysisMode.percentChance);
@@ -56,11 +66,21 @@ void main() {
       required AnalysisMode mode,
       required double outcomeScore,
       String? memo,
+      double? continuumScs,
+      double? vortexScs,
+      double? shearScs,
+      double? resistanceScs,
+      double? flowScs,
     }) =>
         wallet.creditAnalysis(
           mode: mode,
           outcomeScore: outcomeScore,
           memo: memo,
+          continuumScs: continuumScs,
+          vortexScs: vortexScs,
+          shearScs: shearScs,
+          resistanceScs: resistanceScs,
+          flowScs: flowScs,
         );
 
     evolve.setMode(AnalysisMode.cohesionScore);
@@ -92,11 +112,21 @@ void main() {
       required AnalysisMode mode,
       required double outcomeScore,
       String? memo,
+      double? continuumScs,
+      double? vortexScs,
+      double? shearScs,
+      double? resistanceScs,
+      double? flowScs,
     }) =>
         wallet.creditAnalysis(
           mode: mode,
           outcomeScore: outcomeScore,
           memo: memo,
+          continuumScs: continuumScs,
+          vortexScs: vortexScs,
+          shearScs: shearScs,
+          resistanceScs: resistanceScs,
+          flowScs: flowScs,
         );
 
     evolve.setMode(AnalysisMode.cohesionScore);

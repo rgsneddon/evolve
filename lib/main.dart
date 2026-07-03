@@ -24,11 +24,21 @@ Future<void> main() async {
     required AnalysisMode mode,
     required double outcomeScore,
     String? memo,
+    double? continuumScs,
+    double? vortexScs,
+    double? shearScs,
+    double? resistanceScs,
+    double? flowScs,
   }) =>
       walletProvider.creditAnalysis(
         mode: mode,
         outcomeScore: outcomeScore,
         memo: memo,
+        continuumScs: continuumScs,
+        vortexScs: vortexScs,
+        shearScs: shearScs,
+        resistanceScs: resistanceScs,
+        flowScs: flowScs,
       );
   runApp(EvolveApp(
     evolveProvider: evolveProvider,
