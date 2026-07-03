@@ -339,7 +339,7 @@ final _en = {
   'wallet_balance_label': 'Available balance',
   'wallet_staking_title': 'Cumulative staking',
   'wallet_staking_note':
-      'Any held PERC earns 5 cent each block (10% of the 50 cent base). 1 PERC = 100,000,000 cent (0.00000001 PERC each).',
+      'Confirmed held PERC earns 5 cent each block (10% of the 50 cent base) after 1 block confirmation. 1 PERC = 100,000,000 cent (0.00000001 PERC each).',
   'wallet_staking_earned': 'Total staking earned: {amount} PERC',
   'wallet_tx_staking': 'Staking reward',
   'wallet_tx_genesis': 'Genesis renewal (283M PERC Perccent)',
@@ -987,7 +987,7 @@ final _es = {
   'wallet_balance_label': 'Saldo disponible',
   'wallet_staking_title': 'Staking acumulativo',
   'wallet_staking_note':
-      'Cualquier PERC en cartera gana 5 cent por bloque (10% de la base de 50 cent). 1 PERC = 100.000.000 cent (0,00000001 PERC cada uno).',
+      'El PERC confirmado en cartera gana 5 cent por bloque (10% de la base de 50 cent) tras 1 confirmación de bloque. 1 PERC = 100.000.000 cent (0,00000001 PERC cada uno).',
   'wallet_staking_earned': 'Staking total ganado: {amount} PERC',
   'wallet_tx_staking': 'Recompensa de staking',
   'wallet_tx_genesis': 'Renovación génesis (283M PERC Perccent)',

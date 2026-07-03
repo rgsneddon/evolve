@@ -19,6 +19,23 @@ void main() {
     expect(PercStaking.rewardPerBlock.displayFixed8, '0.00000005');
   });
 
+  test('confirmed balance excludes same-block incoming credits', () {
+    expect(
+      PercStaking.confirmedBalanceForStaking(
+        walletBalance: PercAmount.fromPerc(1),
+        sameBlockIncoming: PercAmount.fromPerc(1),
+      ),
+      PercAmount.zero,
+    );
+    expect(
+      PercStaking.confirmedBalanceForStaking(
+        walletBalance: PercAmount.fromPerc(2),
+        sameBlockIncoming: PercAmount.fromPerc(0.5),
+      ),
+      PercAmount.fromPerc(1.5),
+    );
+  });
+
   test('flat 0.00000005 PERC for any positive held balance', () {
     expect(
       PercStaking.rewardForBalance(PercAmount.scenarioBaseReward).microUnits,
@@ -48,10 +65,10 @@ void main() {
 
     ledger.creditScenario(username: 'bob', percentChance: 10);
     final staker = ledger.account('staker')!;
-    expect(staker.cumulativeStakingEarned.microUnits, 10);
+    expect(staker.cumulativeStakingEarned.microUnits, 5);
     expect(
       staker.transactions.where((t) => t.kind == PercTxKind.stakingReward).length,
-      2,
+      1,
     );
   });
 
@@ -69,7 +86,25 @@ void main() {
     final staker = ledger.account('staker')!;
     final bob = ledger.account('bob')!;
 
-    expect(staker.cumulativeStakingEarned.microUnits, 10);
+    expect(staker.cumulativeStakingEarned.microUnits, 5);
     expect(bob.cumulativeStakingEarned.microUnits, 5);
+  });
+
+  test('staking rewards confirm in one block', () {
+    final ledger = PercLedger.empty();
+    _seed(ledger);
+    ledger.register('bob', 'password123');
+    ledger.creditScenario(username: 'staker', percentChance: 10);
+    ledger.creditScenario(username: 'bob', percentChance: 10);
+
+    final reward = ledger
+        .account('staker')!
+        .transactions
+        .firstWhere((t) => t.kind == PercTxKind.stakingReward);
+    expect(
+      reward.confirmations,
+      PercChainConstants.stakingConfirmationsRequired,
+    );
+    expect(reward.isConfirmed, isTrue);
   });
 }

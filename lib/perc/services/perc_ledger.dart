@@ -640,6 +640,19 @@ class PercLedger {
     acc.balance = acc.balance - amount;
   }
 
+  PercAmount _sameBlockIncomingFor(String username, List<PercTransaction> blockTxs) {
+    var total = PercAmount.zero;
+    for (final tx in blockTxs) {
+      if (tx.toUsername != username) continue;
+      if (tx.kind == PercTxKind.scenarioReward ||
+          tx.kind == PercTxKind.transfer ||
+          tx.kind == PercTxKind.transferRevert) {
+        total = total + tx.amount;
+      }
+    }
+    return total;
+  }
+
   void _applyStakingRewards(DateTime now, List<PercTransaction> blockTxs) {
     final treasury = _ensureTreasury();
     final blockIndex = blocks.length;
@@ -647,8 +660,12 @@ class PercLedger {
 
     for (final entry in accounts.entries) {
       if (entry.key == PercChainConstants.treasuryUsername) continue;
-      if (entry.value.balance.isPositive) {
-        holders[entry.key] = entry.value.balance;
+      final confirmed = PercStaking.confirmedBalanceForStaking(
+        walletBalance: entry.value.balance,
+        sameBlockIncoming: _sameBlockIncomingFor(entry.key, blockTxs),
+      );
+      if (confirmed.isPositive) {
+        holders[entry.key] = confirmed;
       }
     }
 

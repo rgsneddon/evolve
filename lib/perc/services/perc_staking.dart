@@ -1,7 +1,7 @@
 import '../models/perc_amount.dart';
 import '../perc_chain_constants.dart';
 
-/// Cumulative staking — flat 0.00000005 PERC per block for any held balance.
+/// Cumulative staking — flat 0.00000005 PERC per block for confirmed held PERC.
 class PercStaking {
   const PercStaking._();
 
@@ -12,7 +12,17 @@ class PercStaking {
     return PercAmount(micro);
   }
 
-  /// One flat staking payout per block when balance is positive.
+  /// Balance eligible for staking after [PercChainConstants.stakingConfirmationsRequired].
+  static PercAmount confirmedBalanceForStaking({
+    required PercAmount walletBalance,
+    required PercAmount sameBlockIncoming,
+  }) {
+    final confirmed = walletBalance - sameBlockIncoming;
+    if (!confirmed.isPositive) return PercAmount.zero;
+    return confirmed;
+  }
+
+  /// One flat staking payout per block when confirmed balance is positive.
   static PercAmount rewardForBalance(PercAmount balance) {
     if (!balance.isPositive) return PercAmount.zero;
     return rewardPerBlock;

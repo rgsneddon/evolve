@@ -5,6 +5,7 @@ import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_staking.dart';
 
+
 void _seedLedger(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password123');
@@ -34,10 +35,9 @@ void main() {
 
     ledger.login('bob', 'password123');
 
-    final transfer = PercAmount.fromPerc(0.00000010);
     expect(
       ledger.account('bob')!.balance,
-      transfer + PercStaking.rewardPerBlock,
+      PercAmount.fromPerc(0.00000010),
     );
     expect(ledger.pendingInboundFor('bob'), isEmpty);
   });

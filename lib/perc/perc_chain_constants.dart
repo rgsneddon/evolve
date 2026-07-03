@@ -40,6 +40,9 @@ class PercChainConstants {
   /// One block confirmation fully settles PERC (Chronoflux Principia TIME).
   static const int confirmationsRequired = 1;
 
+  /// Held PERC earns staking only after this many main-chain confirmations.
+  static const int stakingConfirmationsRequired = confirmationsRequired;
+
   /// Pool renewal allocation per cycle when treasury hits 1 cent reserve.
   static final PercAmount poolRenewalAllocation = PercAmount.fromPerc(283000000);
 

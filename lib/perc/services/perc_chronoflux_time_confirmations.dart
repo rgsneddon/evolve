@@ -60,6 +60,13 @@ class PercChronofluxTimeConfirmations {
               'Main-chain block — ${PercChainConstants.confirmationsRequired} confirmation fully settles PERC',
         ),
         PercTimeConfirmationPermutation(
+          name: 'Staking settlement',
+          interval: Duration.zero,
+          confirmationsToSettle: PercChainConstants.stakingConfirmationsRequired,
+          principiaBinding:
+              'Held PERC confirms in ${PercChainConstants.stakingConfirmationsRequired} block — cumulative staking pays 5 cent per block',
+        ),
+        PercTimeConfirmationPermutation(
           name: 'Chronoflux inputs',
           interval: const Duration(seconds: 1),
           confirmationsToSettle: 1,

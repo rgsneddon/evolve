@@ -5,7 +5,7 @@ import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
-import 'package:evolve/perc/services/perc_staking.dart';
+
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 
@@ -34,9 +34,7 @@ void main() {
     expect(ledger.blocks.first.treasuryEmitted, PercAmount.fromPerc(1));
     expect(
       ledger.treasuryBalance,
-      PercAmount.fromPerc(1) -
-          result.reward!.total -
-          PercStaking.rewardPerBlock,
+      PercAmount.fromPerc(1) - result.reward!.total,
     );
   });
 
@@ -48,10 +46,7 @@ void main() {
     final result = ledger.creditScenario(username: 'bob', percentChance: 42);
     expect(result.status, PercFaucetCreditStatus.credited);
     final bob = ledger.account('bob')!;
-    expect(
-      bob.balance,
-      PercAmount.fromPerc(0.42) + PercStaking.rewardPerBlock,
-    );
+    expect(bob.balance, PercAmount.fromPerc(0.42));
     expect(result.reward!.outcomeFractionLabel, '42/100');
     expect(bob.transactions, isNotEmpty);
   });
@@ -82,10 +77,7 @@ void main() {
     expect(second.status, PercFaucetCreditStatus.onCooldown);
     expect(second.cooldownRemaining, isNotNull);
     expect(second.cooldownRemaining!.inMinutes, greaterThan(440));
-    expect(
-      ledger.account('alice')!.balance,
-      first.reward!.total + PercStaking.rewardPerBlock,
-    );
+    expect(ledger.account('alice')!.balance, first.reward!.total);
   });
 
   test('send queues PERC when recipient wallet is offline', () {
@@ -123,10 +115,9 @@ void main() {
     );
 
     expect(ledger.pendingInboundFor('bob'), isEmpty);
-    final transfer = PercAmount.fromPerc(0.00000005);
     expect(
       ledger.account('bob')!.balance,
-      transfer + PercStaking.rewardPerBlock,
+      PercAmount.fromPerc(0.00000005),
     );
   });
 
