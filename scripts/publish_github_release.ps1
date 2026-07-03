@@ -34,7 +34,9 @@ if (-not $SkipBuild) {
 }
 
 try {
-    & "$PSScriptRoot\deploy_web_github.ps1" -RepoName $RepoName
+    $deployArgs = @{ RepoName = $RepoName }
+    if ($SkipBuild) { $deployArgs.SkipBuild = $true }
+    & "$PSScriptRoot\deploy_web_github.ps1" @deployArgs
 } catch {
     Write-Error $_
     exit 1
@@ -81,8 +83,9 @@ if (-not $SkipPages) {
     $pagesBranch = 'gh-pages'
     git fetch origin
     if (git show-ref --verify --quiet "refs/remotes/origin/$pagesBranch") {
+        git checkout -B $pagesBranch "origin/$pagesBranch"
+    } elseif (git show-ref --verify --quiet "refs/heads/$pagesBranch") {
         git checkout $pagesBranch
-        git pull --ff-only origin $pagesBranch
     } else {
         git checkout --orphan $pagesBranch
         git rm -rf . 2>$null | Out-Null

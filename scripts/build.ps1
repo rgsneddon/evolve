@@ -19,7 +19,7 @@ Set-Location $Root
 
 switch ($Platform) {
     'web' {
-        & $flutter build web $mode
+        & $flutter build web $mode --base-href /evolve/
         Write-Host ''
         Write-Host 'Output: build\web' -ForegroundColor Green
         Write-Host 'Serve:  flutter run -d web-server --web-port 8080 --release' -ForegroundColor Green
