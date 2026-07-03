@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
+. "$PSScriptRoot\lib\package_checksum.ps1"
 
 Set-Location $Root
 
@@ -74,19 +75,20 @@ $publishedName = $setupName
 $publishedPath = Join-Path $versionedDir $publishedName
 Copy-Item $setupPath $publishedPath -Force
 
-$hash = (Get-FileHash $publishedPath -Algorithm SHA256).Hash.ToLowerInvariant()
-$shaPath = "$publishedPath.sha256"
-@(
-    "$hash  $publishedName",
-    "version=$Version",
-    "build=$Build",
-    "url=https://rgsneddon.github.io/evolve/downloads/v$Version/$publishedName"
-) | Set-Content -Path $shaPath -Encoding utf8
+$signed = Write-PackageChecksumSidecar `
+    -PackagePath $publishedPath `
+    -Version $Version `
+    -Build $Build `
+    -Platform 'windows' `
+    -Url "https://rgsneddon.github.io/evolve/downloads/v$Version/$publishedName"
 
 Write-Host ''
 Write-Host 'Installer ready:' -ForegroundColor Green
 Write-Host "  $publishedPath"
-Write-Host "  $shaPath"
+Write-Host "  $($signed.Sha256Path)"
+Write-Host "  $($signed.Sha512Path)"
 Write-Host ''
 Write-Host 'Secure versioned URL (after gh-pages deploy):' -ForegroundColor Cyan
 Write-Host "  https://rgsneddon.github.io/evolve/downloads/v$Version/$publishedName"
+Write-Host "SHA-256: $($signed.Sha256)" -ForegroundColor Cyan
+Write-Host "SHA-512: $($signed.Sha512)" -ForegroundColor Cyan

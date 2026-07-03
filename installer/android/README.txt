@@ -21,5 +21,7 @@ Minimum Android: API 23 (Android 6.0)
 Secure direct URL pattern:
   https://rgsneddon.github.io/evolve/downloads/v{version}/evolve-v{version}-android-setup.apk
 
-Checksum sidecar:
+Checksum sidecars (SHA-256 minimum, SHA-512 included):
   evolve-v{version}-android-setup.apk.sha256
+  evolve-v{version}-android-setup.apk.sha512
+  CHECKSUMS.sha256 / CHECKSUMS.sha512 / checksums.json

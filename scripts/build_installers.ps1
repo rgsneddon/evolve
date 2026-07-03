@@ -15,6 +15,9 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & "$PSScriptRoot\build_android_installer.ps1" @PSBoundParameters
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+& "$PSScriptRoot\sign_download_packages.ps1"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 if (-not $SkipDeploy) {
     & "$PSScriptRoot\deploy_downloads.ps1"
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

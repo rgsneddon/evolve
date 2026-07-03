@@ -68,6 +68,23 @@ if (-not (Test-Path $pagesZip)) {
 }
 Copy-Item $pagesZip (Join-Path $releaseDir "$RepoName-github-pages.zip") -Force
 
+$versionNoV = $tag -replace '^v', ''
+$installerDir = Join-Path $Root "build\downloads\v$versionNoV"
+if (Test-Path $installerDir) {
+    & "$PSScriptRoot\sign_download_packages.ps1" -Version $versionNoV -SourceDir $installerDir
+    Get-ChildItem $installerDir -File | ForEach-Object {
+        Copy-Item $_.FullName (Join-Path $releaseDir $_.Name) -Force
+    }
+}
+
+. "$PSScriptRoot\lib\package_checksum.ps1"
+Get-ChildItem $releaseDir -File | Where-Object {
+    $_.Extension -notin '.sha256', '.sha512', '.json' -and $_.Name -notlike 'CHECKSUMS*'
+} | ForEach-Object {
+    Write-PackageChecksumSidecar -PackagePath $_.FullName -Version $versionNoV | Out-Null
+}
+Write-VersionChecksumManifest -VersionDir $releaseDir | Out-Null
+
 if (-not $SkipPages) {
     if (-not (Test-Path (Join-Path $DeployDir '.git'))) {
         Write-Host "Cloning $remote -> $DeployDir" -ForegroundColor Cyan
@@ -130,11 +147,14 @@ $token = ($cred | Select-String '^password=(.+)$').Matches.Groups[1].Value
 if (-not $token) { throw 'Could not read GitHub token from git credential helper.' }
 $env:GH_TOKEN = $token
 
-$assets = @(
-    (Join-Path $releaseDir "evolve-$tag-windows-x64.zip"),
-    (Join-Path $releaseDir "$RepoName-github-pages.zip")
-)
-if (Test-Path $apkOut) { $assets += $apkOut }
+$assets = Get-ChildItem $releaseDir -File | Where-Object {
+    $_.Extension -notin '.sha256', '.sha512', '.json' -and $_.Name -notlike 'CHECKSUMS*'
+} | ForEach-Object { $_.FullName }
+
+# Include checksum sidecars in the GitHub Release.
+$assets += Get-ChildItem $releaseDir -File | Where-Object {
+    $_.Extension -in '.sha256', '.sha512' -or $_.Name -like 'CHECKSUMS*'
+} | ForEach-Object { $_.FullName }
 
 $missing = $assets | Where-Object { -not (Test-Path $_) }
 if ($missing) {
@@ -145,9 +165,10 @@ $defaultNotes = @"
 Evolve Chronoflux $tag
 
 - Web (GitHub Pages): https://$owner.github.io/$RepoName/
-- Windows: extract ``evolve-$tag-windows-x64.zip`` and run ``evolve.exe``
-- Android: install ``evolve-$tag-android.apk`` (when included)
+- Windows: ``evolve-$tag-windows-x64-setup.exe`` (or zip fallback)
+- Android: ``evolve-$tag-android-setup.apk`` (when included)
 - Pages bundle: ``$RepoName-github-pages.zip`` for manual deploy
+- Verify downloads with attached ``.sha256`` / ``.sha512`` checksum files (minimum SHA-256)
 "@
 $notes = if ($ReleaseNotes.Trim()) { $ReleaseNotes.Trim() } else { $defaultNotes }
 

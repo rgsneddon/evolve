@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
+. "$PSScriptRoot\lib\package_checksum.ps1"
 
 Set-Location $Root
 
@@ -59,19 +60,15 @@ Copy-Item $stagingPath $publishedPath -Force
 
 $abis = Get-ApkAbis $publishedPath
 $sizeMb = [math]::Round((Get-Item $publishedPath).Length / 1MB, 1)
-$hash = (Get-FileHash $publishedPath -Algorithm SHA256).Hash.ToLowerInvariant()
-$shaPath = "$publishedPath.sha256"
 $secureUrl = "https://rgsneddon.github.io/evolve/downloads/v$Version/$publishedName"
 
-@(
-    "$hash  $publishedName",
-    "version=$Version",
-    "build=$Build",
-    "platform=android",
-    "abis=$abis",
-    "minSdk=23",
-    "url=$secureUrl"
-) | Set-Content -Path $shaPath -Encoding utf8
+$signed = Write-PackageChecksumSidecar `
+    -PackagePath $publishedPath `
+    -Version $Version `
+    -Build $Build `
+    -Platform 'android' `
+    -Url $secureUrl `
+    -ExtraMetadata @("abis=$abis", 'minSdk=23')
 
 $manifestPath = Join-Path $Root "installer\android\evolve-v$Version-android.json"
 @{
@@ -83,18 +80,21 @@ $manifestPath = Join-Path $Root "installer\android\evolve-v$Version-android.json
     minSdk = 23
     sizeBytes = (Get-Item $publishedPath).Length
     sizeMb = $sizeMb
-    sha256 = $hash
+    sha256 = $signed.Sha256
+    sha512 = $signed.Sha512
     url = $secureUrl
 } | ConvertTo-Json -Depth 4 | Set-Content -Path $manifestPath -Encoding utf8
 
 Write-Host ''
 Write-Host "Android installer v$Version (build $Build) ready:" -ForegroundColor Green
 Write-Host "  $publishedPath"
-Write-Host "  $shaPath"
+Write-Host "  $($signed.Sha256Path)"
+Write-Host "  $($signed.Sha512Path)"
 Write-Host "  ABIs: $abis"
 Write-Host "  Size: $sizeMb MB"
 Write-Host ''
 Write-Host 'Secure versioned URL (after gh-pages deploy):' -ForegroundColor Cyan
 Write-Host "  $secureUrl"
 Write-Host ''
-Write-Host "SHA-256: $hash" -ForegroundColor Cyan
+Write-Host "SHA-256: $($signed.Sha256)" -ForegroundColor Cyan
+Write-Host "SHA-512: $($signed.Sha512)" -ForegroundColor Cyan

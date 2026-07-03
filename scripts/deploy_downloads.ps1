@@ -6,6 +6,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
+. "$PSScriptRoot\lib\package_checksum.ps1"
 Set-Location $Root
 
 if (-not $Version) {
@@ -25,6 +26,10 @@ $srcDir = Join-Path $Root "build\downloads\v$Version"
 if (-not (Test-Path $srcDir)) {
     throw "Missing staged downloads: $srcDir. Run build_windows_installer.ps1 and build_android_installer.ps1 first."
 }
+
+& "$PSScriptRoot\sign_download_packages.ps1" -Version $Version -SourceDir $srcDir
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Test-VersionPackageChecksums -VersionDir $srcDir -RequireSidecars | Out-Null
 
 if (-not (Test-Path (Join-Path $GhPagesWorktree '.git'))) {
     Write-Host "Creating gh-pages worktree at $GhPagesWorktree" -ForegroundColor Cyan
