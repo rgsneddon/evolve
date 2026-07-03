@@ -88,11 +88,15 @@ class PercWalletProvider extends ChangeNotifier {
     return list;
   }
 
-  /// Mesh peers excluding the signed-in user — for send picker.
-  List<String> get sendablePeers {
+  /// Registered PERC addresses excluding the signed-in wallet — for send picker.
+  List<String> get sendableAddresses {
     if (!isLoggedIn) return const [];
-    final self = loggedInUsername!;
-    return connectedPeerWallets.where((p) => p != self).toList();
+    final self = address;
+    return allRegisteredWallets
+        .where((name) => name != loggedInUsername)
+        .map((name) => _ledger.account(name)?.address ?? '')
+        .where((addr) => addr.isNotEmpty && addr != self)
+        .toList(growable: false);
   }
 
   String addressForUsername(String username) =>
@@ -218,7 +222,7 @@ class PercWalletProvider extends ChangeNotifier {
   }
 
   Future<void> send({
-    required String toUsername,
+    required String toAddress,
     required String amountText,
     String? memo,
   }) async {
@@ -242,25 +246,34 @@ class PercWalletProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    final addrErr = PercAuth.validateAddress(toAddress);
+    if (addrErr != null) {
+      errorMessage = addrErr;
+      notifyListeners();
+      return;
+    }
+    final normalizedAddress = PercAuth.normalizeAddress(toAddress);
     try {
-      final recipient = PercAuth.normalizeUsername(toUsername);
-      final recipientOnline = _ledger.sessionUsername == recipient;
+      final recipient = _ledger.accountForAddress(normalizedAddress)?.username;
+      final recipientOnline = recipient != null &&
+          _ledger.sessionUsername == recipient;
       _ledger.send(
         fromUsername: _ledger.sessionUsername!,
-        toUsername: toUsername,
+        toAddress: normalizedAddress,
         amount: amount,
         memo: memo,
       );
       _captureGenesisRenewalEvent();
+      final dest = PercBeamPrivacy.shieldAddress(normalizedAddress);
       if (_pendingGenesisRenewalNotice) {
         statusMessage =
             'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})';
       } else if (recipientOnline) {
         statusMessage =
-            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername';
+            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $dest';
       } else {
         statusMessage =
-            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername — delivers when they sign in within ${_formatReceiveDelay()}, otherwise returns to your wallet';
+            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $dest — delivers when they sign in within ${_formatReceiveDelay()}, otherwise returns to your wallet';
       }
       notifyListeners();
       await _commit();

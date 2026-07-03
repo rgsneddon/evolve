@@ -63,4 +63,22 @@ class PercAuth {
 
   static bool isTreasuryUsername(String username) =>
       normalizeUsername(username) == PercChainConstants.treasuryUsername;
+
+  static String normalizeAddress(String address) => address.trim();
+
+  static String? validateAddress(String address) {
+    final a = normalizeAddress(address);
+    if (a.isEmpty) return 'Enter a recipient PERC address';
+    if (PercChainConstants.beamPrivacyEnabled) {
+      final prefix = PercBeamPrivacy.confidentialPrefix;
+      if (!a.startsWith(prefix) || a.length != prefix.length + 40) {
+        return 'Enter a valid confidential PERC address';
+      }
+      return null;
+    }
+    if (!a.startsWith('perc1') || a.length != 45) {
+      return 'Enter a valid PERC address';
+    }
+    return null;
+  }
 }

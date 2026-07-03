@@ -9,6 +9,9 @@ import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 
+String _addr(PercLedger ledger, String username) =>
+    ledger.account(username)!.address;
+
 void _seedLedger(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password123');
@@ -89,7 +92,7 @@ void main() {
     ledger.creditScenario(username: 'alice', percentChance: 50);
     final sent = ledger.send(
       fromUsername: 'alice',
-      toUsername: 'bob',
+      toAddress: _addr(ledger, 'bob'),
       amount: PercAmount.fromPerc(0.00000010),
     );
 
@@ -97,6 +100,23 @@ void main() {
     expect(ledger.account('bob')!.balance, PercAmount.zero);
     expect(ledger.pendingInboundFor('bob'), hasLength(1));
     expect(ledger.blocks.length, greaterThanOrEqualTo(2));
+  });
+
+  test('send rejects usernames — PERC address required', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+    ledger.register('bob', 'password123');
+    ledger.creditScenario(username: 'alice', percentChance: 50);
+
+    expect(
+      () => ledger.send(
+        fromUsername: 'alice',
+        toAddress: 'bob',
+        amount: PercAmount.fromPerc(0.00000005),
+      ),
+      throwsA(isA<StateError>()),
+    );
   });
 
   test('send credits recipient immediately when their wallet is online', () {
@@ -110,7 +130,7 @@ void main() {
 
     ledger.send(
       fromUsername: 'alice',
-      toUsername: 'bob',
+      toAddress: _addr(ledger, 'bob'),
       amount: PercAmount.fromPerc(0.00000005),
     );
 
@@ -190,7 +210,7 @@ void main() {
 
     ledger.send(
       fromUsername: 'alice',
-      toUsername: 'bob',
+      toAddress: _addr(ledger, 'bob'),
       amount: PercAmount.fromPerc(0.00000010),
     );
 

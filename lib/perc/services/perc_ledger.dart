@@ -243,6 +243,18 @@ class PercLedger {
   PercAccount? account(String username) =>
       _accountFor(PercAuth.normalizeUsername(username));
 
+  PercAccount? accountForAddress(String address) =>
+      _accountForAddress(PercAuth.normalizeAddress(address));
+
+  PercAccount? _accountForAddress(String address) {
+    final normalized = PercAuth.normalizeAddress(address);
+    if (normalized.isEmpty) return null;
+    for (final acc in accounts.values) {
+      if (acc.address == normalized) return acc;
+    }
+    return null;
+  }
+
   bool get isLoggedIn => sessionUsername != null;
 
   PercAccount? get sessionAccount => sessionUsername == null
@@ -1013,7 +1025,7 @@ class PercLedger {
 
   PercTransaction send({
     required String fromUsername,
-    required String toUsername,
+    required String toAddress,
     required PercAmount amount,
     String? memo,
   }) {
@@ -1023,18 +1035,23 @@ class PercLedger {
       );
     }
     final from = PercAuth.normalizeUsername(fromUsername);
-    final to = PercAuth.normalizeUsername(toUsername);
-    if (from == to) throw StateError('Cannot send to yourself');
+    final addrErr = PercAuth.validateAddress(toAddress);
+    if (addrErr != null) throw StateError(addrErr);
+    final toAddr = PercAuth.normalizeAddress(toAddress);
     if (!amount.isPositive) throw StateError('Amount must be positive');
     final sender = _accountFor(from);
-    final receiver = _accountFor(to);
+    final receiver = _accountForAddress(toAddr);
     if (sender == null) {
       throw StateError('Sender account not found — sign in again');
     }
     if (receiver == null) {
       throw StateError(
-        'Recipient "$to" not found — they must register a wallet first',
+        'Recipient address not found — they must register a wallet first',
       );
+    }
+    final to = receiver.username;
+    if (sender.address == receiver.address) {
+      throw StateError('Cannot send to yourself');
     }
     _assertTreasuryCanSend(from);
     final now = DateTime.now().toUtc();

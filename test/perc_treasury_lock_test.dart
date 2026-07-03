@@ -4,6 +4,9 @@ import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_staking.dart';
 
+String _addr(PercLedger ledger, String username) =>
+    ledger.account(username)!.address;
+
 void _seedLedger(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password123');
@@ -33,7 +36,7 @@ void main() {
     expect(
       () => ledger.send(
         fromUsername: PercChainConstants.treasuryUsername,
-        toUsername: 'bob',
+        toAddress: _addr(ledger, 'bob'),
         amount: PercAmount.fromPerc(0.00000010),
       ),
       throwsA(isA<StateError>()),
@@ -53,7 +56,7 @@ void main() {
 
     ledger.send(
       fromUsername: 'staker',
-      toUsername: 'runner',
+      toAddress: _addr(ledger, 'runner'),
       amount: PercAmount(1),
     );
 

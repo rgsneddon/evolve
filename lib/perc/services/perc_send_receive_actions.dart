@@ -21,13 +21,13 @@ class PercSendReceiveActions {
       return;
     }
 
-    final peers = wallet.sendablePeers;
+    final addresses = wallet.sendableAddresses;
     final toCtrl = TextEditingController();
     final amountCtrl = TextEditingController();
     final memoCtrl = TextEditingController();
-    String? selectedPeer = peers.isNotEmpty ? peers.first : null;
-    if (selectedPeer != null) {
-      toCtrl.text = selectedPeer!;
+    String? selectedAddress = addresses.isNotEmpty ? addresses.first : null;
+    if (selectedAddress != null) {
+      toCtrl.text = selectedAddress!;
     }
 
     await showDialog<void>(
@@ -44,19 +44,32 @@ class PercSendReceiveActions {
                   labelText: strings.t('wallet_send_to'),
                   hintText: strings.t('wallet_send_to_hint'),
                 ),
-                onChanged: (_) => setState(() => selectedPeer = null),
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                onChanged: (_) => setState(() => selectedAddress = null),
               ),
-              if (peers.isNotEmpty) ...[
+              if (addresses.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  value: selectedPeer,
-                  decoration:
-                      InputDecoration(labelText: strings.t('wallet_send_peer_pick')),
-                  items: peers
-                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                  value: selectedAddress,
+                  decoration: InputDecoration(
+                    labelText: strings.t('wallet_send_address_pick'),
+                  ),
+                  items: addresses
+                      .map(
+                        (addr) => DropdownMenuItem(
+                          value: addr,
+                          child: Text(
+                            PercBeamPrivacy.shieldAddress(addr),
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() {
-                    selectedPeer = v;
+                    selectedAddress = v;
                     toCtrl.text = v ?? '';
                   }),
                 ),
@@ -80,9 +93,9 @@ class PercSendReceiveActions {
               onPressed: () async {
                 final to = toCtrl.text.trim().isNotEmpty
                     ? toCtrl.text
-                    : (selectedPeer ?? '');
+                    : (selectedAddress ?? '');
                 await wallet.send(
-                  toUsername: to,
+                  toAddress: to,
                   amountText: amountCtrl.text,
                   memo: memoCtrl.text,
                 );
@@ -120,10 +133,6 @@ class PercSendReceiveActions {
               style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
             ),
             const SizedBox(height: 12),
-            Text(strings.t('wallet_username'),
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            SelectableText(wallet.loggedInUsername ?? ''),
-            const SizedBox(height: 10),
             Text(strings.t('wallet_address_label'),
                 style: const TextStyle(fontWeight: FontWeight.w700)),
             SelectableText(
