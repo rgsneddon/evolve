@@ -79,6 +79,16 @@ class EvolveProvider extends ChangeNotifier {
   AppLocalizations get strings => AppLocalizations.of(locale);
   LocalizedOutput get output => LocalizedOutput.of(locale);
 
+  /// Saved analysis for a mode (current tab or a prior tab run).
+  EvolveResult? resultForMode(AnalysisMode mode) {
+    if (mode == this.mode) return result;
+    return _savedResults[mode];
+  }
+
+  bool get hasDualSavedResults =>
+      resultForMode(AnalysisMode.percentChance) != null &&
+      resultForMode(AnalysisMode.cohesionScore) != null;
+
   bool get grokConfigReady => _grokConfigReady;
 
   bool get _usesInBrowserGrok =>

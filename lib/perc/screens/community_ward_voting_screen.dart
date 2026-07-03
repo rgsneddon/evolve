@@ -9,11 +9,13 @@ import '../../services/evolve_engine.dart';
 import '../models/ward_conclusion_link.dart';
 import '../models/ward_proposal.dart';
 import '../providers/perc_wallet_provider.dart';
+import '../services/ward_conclusion_bridge.dart';
 import '../widgets/chronoflux_five_point_graph_panel.dart';
+import '../widgets/ward_dual_metric_populator.dart';
 import '../widgets/wallet_creator_credit.dart';
 
 /// v2.0 main dapp — community ward voting with open scenario probability checker.
-class CommunityWardVotingScreen extends StatelessWidget {
+class CommunityWardVotingScreen extends StatefulWidget {
   const CommunityWardVotingScreen({
     super.key,
     required this.strings,
@@ -24,41 +26,86 @@ class CommunityWardVotingScreen extends StatelessWidget {
   final WardConclusionLink? initialLink;
 
   @override
+  State<CommunityWardVotingScreen> createState() =>
+      _CommunityWardVotingScreenState();
+}
+
+class _CommunityWardVotingScreenState extends State<CommunityWardVotingScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  WardConclusionLink? _pendingPopulateLink;
+  int _populateGeneration = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _populateVoteFields(WardConclusionLink link) {
+    setState(() {
+      _pendingPopulateLink = link;
+      _populateGeneration++;
+    });
+    _tabController.animateTo(0);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(strings.t('wallet_dapp_ward_voting')),
-          bottom: TabBar(
-            tabs: [
-              Tab(
-                icon: const Icon(Icons.how_to_vote_outlined, size: 20),
-                text: strings.t('ward_voting_tab_vote'),
-              ),
-              Tab(
-                icon: const Icon(Icons.analytics_outlined, size: 20),
-                text: strings.t('ward_voting_tab_scenario'),
-              ),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            _WardVoteTab(strings: strings, initialLink: initialLink),
-            _WardScenarioCheckerTab(strings: strings),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.strings.t('wallet_dapp_ward_voting')),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(
+              icon: const Icon(Icons.how_to_vote_outlined, size: 20),
+              text: widget.strings.t('ward_voting_tab_vote'),
+            ),
+            Tab(
+              icon: const Icon(Icons.analytics_outlined, size: 20),
+              text: widget.strings.t('ward_voting_tab_scenario'),
+            ),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _WardVoteTab(
+            strings: widget.strings,
+            initialLink: widget.initialLink,
+            populateLink: _pendingPopulateLink,
+            populateGeneration: _populateGeneration,
+          ),
+          _WardScenarioCheckerTab(
+            strings: widget.strings,
+            onPopulateVoteFields: _populateVoteFields,
+          ),
+        ],
       ),
     );
   }
 }
 
 class _WardVoteTab extends StatefulWidget {
-  const _WardVoteTab({required this.strings, this.initialLink});
+  const _WardVoteTab({
+    required this.strings,
+    this.initialLink,
+    this.populateLink,
+    this.populateGeneration = 0,
+  });
 
   final AppLocalizations strings;
   final WardConclusionLink? initialLink;
+  final WardConclusionLink? populateLink;
+  final int populateGeneration;
 
   @override
   State<_WardVoteTab> createState() => _WardVoteTabState();
@@ -73,20 +120,26 @@ class _WardVoteTabState extends State<_WardVoteTab> {
   WardVoteChoice? _pendingChoice;
   bool _submittingProposal = false;
   bool _appliedConclusionLink = false;
+  int _lastPopulateGeneration = 0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _applyConclusionLink());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _applyConclusionLink();
+      _applyPopulateLink();
+    });
   }
 
-  void _applyConclusionLink() {
-    if (_appliedConclusionLink || !mounted) return;
-    final link = widget.initialLink ??
-        context.read<PercWalletProvider>().pendingWardConclusionLink;
-    if (link == null) return;
+  @override
+  void didUpdateWidget(covariant _WardVoteTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.populateGeneration != oldWidget.populateGeneration) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _applyPopulateLink());
+    }
+  }
 
-    _appliedConclusionLink = true;
+  void _applyLinkToFields(WardConclusionLink link) {
     final wallet = context.read<PercWalletProvider>();
     final match = wallet.openWardProposals
         .where((p) => WardConclusionLink.normalizeTitle(p.title) == link.matchKey)
@@ -103,6 +156,26 @@ class _WardVoteTabState extends State<_WardVoteTab> {
         _commentController.text = link.voteCommentPrefill;
       }
     });
+  }
+
+  void _applyConclusionLink() {
+    if (_appliedConclusionLink || !mounted) return;
+    final link = widget.initialLink ??
+        context.read<PercWalletProvider>().pendingWardConclusionLink;
+    if (link == null) return;
+
+    _appliedConclusionLink = true;
+    _applyLinkToFields(link);
+  }
+
+  void _applyPopulateLink() {
+    if (!mounted) return;
+    final link = widget.populateLink;
+    if (link == null || widget.populateGeneration == _lastPopulateGeneration) {
+      return;
+    }
+    _lastPopulateGeneration = widget.populateGeneration;
+    _applyLinkToFields(link);
   }
 
   @override
@@ -157,6 +230,11 @@ class _WardVoteTabState extends State<_WardVoteTab> {
                 widget.initialLink ?? wallet.pendingWardConclusionLink!,
               ),
             ],
+            const SizedBox(height: 16),
+            WardDualMetricPopulator(
+              strings: widget.strings,
+              onPopulate: _applyLinkToFields,
+            ),
             const SizedBox(height: 16),
             ChronofluxFivePointGraphPanel(
               wallet: wallet,
@@ -305,12 +383,14 @@ class _WardVoteTabState extends State<_WardVoteTab> {
   }
 
   Widget _conclusionLinkBanner(WardConclusionLink link) {
-    final modeLabel = link.analysisMode == AnalysisMode.percentChance
-        ? widget.strings.t('mode_percent')
-        : widget.strings.t('mode_cohesion');
-    final outcomeLabel = link.analysisMode == AnalysisMode.percentChance
-        ? '${link.outcomeScore.round()}%'
-        : '${link.outcomeScore.round()}/100 SCS';
+    final metricsLine = link.dualAnalysis &&
+            link.percentChance != null &&
+            link.refinedScs != null
+        ? '${widget.strings.t('ward_scenario_percent_title')} · ${link.percentChance!.round()}%'
+            ' · ${widget.strings.t('ward_scenario_scs_title')} · ${link.refinedScs!.round()}/100'
+        : link.analysisMode == AnalysisMode.percentChance
+            ? '${widget.strings.t('mode_percent')} · ${link.outcomeScore.round()}%'
+            : '${widget.strings.t('mode_cohesion')} · ${link.outcomeScore.round()}/100 SCS';
 
     return Card(
       color: const Color(0xFF6C63FF).withOpacity(0.1),
@@ -337,7 +417,7 @@ class _WardVoteTabState extends State<_WardVoteTab> {
             ),
             const SizedBox(height: 6),
             Text(
-              '$modeLabel · $outcomeLabel',
+              metricsLine,
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
             ),
             if (link.grokEnriched) ...[
@@ -602,9 +682,13 @@ class _WardVoteTabState extends State<_WardVoteTab> {
 }
 
 class _WardScenarioCheckerTab extends StatefulWidget {
-  const _WardScenarioCheckerTab({required this.strings});
+  const _WardScenarioCheckerTab({
+    required this.strings,
+    required this.onPopulateVoteFields,
+  });
 
   final AppLocalizations strings;
+  final ValueChanged<WardConclusionLink> onPopulateVoteFields;
 
   @override
   State<_WardScenarioCheckerTab> createState() => _WardScenarioCheckerTabState();
@@ -675,6 +759,27 @@ class _WardScenarioCheckerTabState extends State<_WardScenarioCheckerTab> {
     }
   }
 
+  void _populateVoteFields() {
+    final question = _questionController.text.trim();
+    if (question.isEmpty || _percentChance == null || _refinedScs == null) {
+      return;
+    }
+    final locale = context.read<LocaleProvider>().config;
+    final input = ScenarioInput(
+      topic: _topicController.text.trim(),
+      posedQuestion: question,
+    );
+    final link = WardConclusionBridge.buildFromScenario(
+      input: input,
+      locale: locale,
+      strings: widget.strings,
+    );
+    widget.onPopulateVoteFields(link);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(widget.strings.t('ward_dual_populated_ok'))),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -740,6 +845,15 @@ class _WardScenarioCheckerTabState extends State<_WardScenarioCheckerTab> {
                     color: const Color(0xFF00D9C0),
                   )),
                 ],
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: _populateVoteFields,
+                icon: const Icon(Icons.input_outlined, size: 18),
+                label: Text(widget.strings.t('ward_dual_populate_button')),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF22C55E),
+                ),
               ),
               const SizedBox(height: 12),
               Text(

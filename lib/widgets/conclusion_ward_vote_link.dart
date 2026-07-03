@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/analysis_mode.dart';
 import '../perc/providers/perc_wallet_provider.dart';
 import '../perc/screens/community_ward_voting_screen.dart';
 import '../perc/services/ward_conclusion_bridge.dart';
@@ -40,15 +41,27 @@ class ConclusionWardVoteLink extends StatelessWidget {
     final result = evolve.result;
     if (result == null) return;
 
-    final link = WardConclusionBridge.build(
-      result: result,
-      input: evolve.input,
-      mode: evolve.mode,
-      locale: evolve.locale,
-      strings: evolve.strings,
-      conclusionExcerptOverride: conclusionExcerpt,
-      grokConstrualEnabled: evolve.grokConstrualEnabled,
-    );
+    final percentResult = evolve.resultForMode(AnalysisMode.percentChance);
+    final cohesionResult = evolve.resultForMode(AnalysisMode.cohesionScore);
+    final link = percentResult != null && cohesionResult != null
+        ? WardConclusionBridge.buildDual(
+            percentResult: percentResult,
+            cohesionResult: cohesionResult,
+            input: evolve.input,
+            locale: evolve.locale,
+            strings: evolve.strings,
+            conclusionExcerptOverride: conclusionExcerpt,
+            grokConstrualEnabled: evolve.grokConstrualEnabled,
+          )
+        : WardConclusionBridge.build(
+            result: result,
+            input: evolve.input,
+            mode: evolve.mode,
+            locale: evolve.locale,
+            strings: evolve.strings,
+            conclusionExcerptOverride: conclusionExcerpt,
+            grokConstrualEnabled: evolve.grokConstrualEnabled,
+          );
 
     final wallet = context.read<PercWalletProvider>();
     wallet.setPendingWardConclusionLink(link);

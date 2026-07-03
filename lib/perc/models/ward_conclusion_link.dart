@@ -13,6 +13,11 @@ class WardConclusionLink {
     required this.grokEnriched,
     this.posedQuestion = '',
     this.topic = '',
+    this.dualAnalysis = false,
+    this.percentChance,
+    this.percentPhrase = '',
+    this.refinedScs,
+    this.scsLean = '',
   });
 
   final String title;
@@ -25,6 +30,11 @@ class WardConclusionLink {
   final bool grokEnriched;
   final String posedQuestion;
   final String topic;
+  final bool dualAnalysis;
+  final double? percentChance;
+  final String percentPhrase;
+  final double? refinedScs;
+  final String scsLean;
 
   /// Normalized title for matching open ward proposals.
   String get matchKey => WardConclusionLink.normalizeTitle(title);
@@ -43,6 +53,11 @@ class WardConclusionLink {
         'grokEnriched': grokEnriched,
         'posedQuestion': posedQuestion,
         'topic': topic,
+        'dualAnalysis': dualAnalysis,
+        'percentChance': percentChance,
+        'percentPhrase': percentPhrase,
+        'refinedScs': refinedScs,
+        'scsLean': scsLean,
       };
 
   factory WardConclusionLink.fromJson(Map<String, dynamic> json) =>
@@ -59,5 +74,10 @@ class WardConclusionLink {
         grokEnriched: json['grokEnriched'] as bool? ?? false,
         posedQuestion: json['posedQuestion'] as String? ?? '',
         topic: json['topic'] as String? ?? '',
+        dualAnalysis: json['dualAnalysis'] as bool? ?? false,
+        percentChance: (json['percentChance'] as num?)?.toDouble(),
+        percentPhrase: json['percentPhrase'] as String? ?? '',
+        refinedScs: (json['refinedScs'] as num?)?.toDouble(),
+        scsLean: json['scsLean'] as String? ?? '',
       );
 }

@@ -425,6 +425,14 @@ final _en = {
   'ward_conclusion_link_vote_prefill_header': 'My vote is informed by this Evolve analysis:',
   'ward_conclusion_link_question': 'Posed question',
   'ward_conclusion_link_grok_note': 'Grok construal:',
+  'ward_dual_populator_title': 'Dual analysis — % and SCS',
+  'ward_dual_populator_note':
+      'Run percent chance and social cohesion score together, then populate proposal and vote fields with both metrics.',
+  'ward_dual_run_button': 'Run % + SCS analysis',
+  'ward_dual_populate_button': 'Populate proposal & vote fields',
+  'ward_dual_populated_ok': 'Proposal and vote fields filled with % and SCS combined.',
+  'ward_dual_summary_header': 'Evolve dual analysis — ward proposal summary',
+  'ward_dual_vote_prefill_header': 'My vote is informed by this dual Chronoflux analysis:',
   'ward_scenario_intro':
       'Free open scenario probability checker — runs both percent chance and social cohesion score (SCS) from the Chronoflux paper without treasury draw.',
   'ward_scenario_topic_label': 'Scenario topic (optional)',

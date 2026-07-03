@@ -68,6 +68,54 @@ void main() {
     }
   });
 
+  test('buildDual combines percent chance and SCS in summary and comment', () {
+    const input = ScenarioInput(
+      posedQuestion: 'Should the ward fund the new community garden?',
+    );
+    final percentResult = engine.analyze(
+      input,
+      mode: AnalysisMode.percentChance,
+      locale: locale,
+    );
+    final cohesionResult = engine.analyze(
+      input,
+      mode: AnalysisMode.cohesionScore,
+      locale: locale,
+    );
+
+    final link = WardConclusionBridge.buildDual(
+      percentResult: percentResult,
+      cohesionResult: cohesionResult,
+      input: input,
+      locale: locale,
+      strings: strings,
+    );
+
+    expect(link.dualAnalysis, isTrue);
+    expect(link.percentChance, percentResult.percentChance);
+    expect(link.refinedScs, cohesionResult.core.refinedScs);
+    expect(link.summary, contains(strings.t('ward_dual_summary_header')));
+    expect(link.summary, contains('${percentResult.percentChance.round()}%'));
+    expect(link.summary, contains('${cohesionResult.core.refinedScs.round()}/100 SCS'));
+    expect(link.voteCommentPrefill, contains(strings.t('ward_dual_vote_prefill_header')));
+  });
+
+  test('buildFromScenario produces dual link', () {
+    const input = ScenarioInput(
+      posedQuestion: 'Will the library expansion bond pass?',
+    );
+    final link = WardConclusionBridge.buildFromScenario(
+      input: input,
+      locale: locale,
+      strings: strings,
+    );
+
+    expect(link.dualAnalysis, isTrue);
+    expect(link.percentChance, isNotNull);
+    expect(link.refinedScs, isNotNull);
+    expect(link.title, contains('library expansion'));
+  });
+
   test('bridge round-trips through json', () {
     const input = ScenarioInput(posedQuestion: 'Should we extend library hours?');
     final result = engine.analyze(
@@ -83,10 +131,26 @@ void main() {
       strings: strings,
     );
 
-    final restored = WardConclusionLink.fromJson(link.toJson());
-    expect(restored.title, link.title);
-    expect(restored.analysisMode, link.analysisMode);
-    expect(restored.outcomeScore, link.outcomeScore);
-    expect(restored.grokEnriched, link.grokEnriched);
+    final dual = WardConclusionBridge.buildDual(
+      percentResult: engine.analyze(
+        input,
+        mode: AnalysisMode.percentChance,
+        locale: locale,
+      ),
+      cohesionResult: engine.analyze(
+        input,
+        mode: AnalysisMode.cohesionScore,
+        locale: locale,
+      ),
+      input: input,
+      locale: locale,
+      strings: strings,
+    );
+    final restored = WardConclusionLink.fromJson(dual.toJson());
+    expect(restored.title, dual.title);
+    expect(restored.dualAnalysis, isTrue);
+    expect(restored.percentChance, dual.percentChance);
+    expect(restored.refinedScs, dual.refinedScs);
+    expect(restored.grokEnriched, dual.grokEnriched);
   });
 }
