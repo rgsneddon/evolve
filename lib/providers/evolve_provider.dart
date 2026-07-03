@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/localized_output.dart';
 import '../models/analysis_mode.dart';
-import '../perc/models/perc_faucet_credit_result.dart';
 import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
@@ -39,18 +38,6 @@ class EvolveProvider extends ChangeNotifier {
   final NarrativeLinkReader _linkReader;
   final GrokAuthClient _grokAuth;
   final GrokConstrualService _grokConstrual;
-
-  /// Credits Perccent faucet after percent-chance or social-cohesion calculate.
-  Future<PercFaucetCreditResult?> Function({
-    required AnalysisMode mode,
-    required double outcomeScore,
-    String? memo,
-    double? continuumScs,
-    double? vortexScs,
-    double? shearScs,
-    double? resistanceScs,
-    double? flowScs,
-  })? analysisRewardHandler;
 
   AnalysisMode mode = AnalysisMode.cohesionScore;
   LocaleConfig locale = LocaleConfig.defaults;
@@ -88,13 +75,6 @@ class EvolveProvider extends ChangeNotifier {
   bool get hasDualSavedResults =>
       resultForMode(AnalysisMode.percentChance) != null &&
       resultForMode(AnalysisMode.cohesionScore) != null;
-
-  /// Applies Grok construal for ward voting without changing the home scenario form.
-  Future<ScenarioInput> construeForWard(ScenarioInput source) async {
-    if (!grokConstrualEnabled) return source;
-    if (!grokSession.canConstrue && !_usesHeuristicConstrual) return source;
-    return _fetchAndApplyConstrual(source, persistToForm: false);
-  }
 
   bool get grokConfigReady => _grokConfigReady;
 
@@ -828,22 +808,6 @@ class EvolveProvider extends ChangeNotifier {
       await Future<void>.delayed(const Duration(milliseconds: 150));
       _reanalyze(working);
       _persistCurrentMode();
-      if (result != null && analysisRewardHandler != null) {
-        final core = result!.core;
-        final outcomeScore = mode == AnalysisMode.percentChance
-            ? result!.percentChance
-            : core.refinedScs;
-        await analysisRewardHandler!(
-          mode: mode,
-          outcomeScore: outcomeScore,
-          memo: _analysisRewardMemo(working, mode),
-          continuumScs: outcomeScore,
-          vortexScs: core.vortexScs,
-          shearScs: core.shearScs,
-          resistanceScs: core.resistanceScs,
-          flowScs: core.flowScs,
-        );
-      }
       statusMessage = grokConstrualEnabled
           ? strings.t('grok_construal_applied')
           : strings.t('status_done');
@@ -1072,16 +1036,4 @@ class EvolveProvider extends ChangeNotifier {
       i.resistanceText.trim().isNotEmpty ||
       i.flowText.trim().isNotEmpty;
 
-  String? _analysisRewardMemo(ScenarioInput working, AnalysisMode analysisMode) {
-    final prefix = analysisMode == AnalysisMode.percentChance
-        ? 'Percent chance'
-        : 'Social cohesion score';
-    final detail = working.posedQuestion.trim().isNotEmpty
-        ? working.posedQuestion.trim()
-        : (working.topic.trim().isNotEmpty
-            ? working.topic.trim()
-            : working.vortexText.trim());
-    if (detail.isEmpty) return prefix;
-    return '$prefix: $detail';
-  }
 }

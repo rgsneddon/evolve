@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/evolve_result.dart';
 import '../providers/evolve_provider.dart';
 import '../services/conclusion_explainer.dart';
-import 'conclusion_ward_vote_link.dart';
+
 import 'explainer_card.dart';
 import 'party_response_panel.dart';
 import 'part_two_panel.dart';
@@ -95,17 +95,6 @@ class CohesionReportPanel extends StatelessWidget {
               ConclusionBlock(
                 text: split.conclusion,
                 accentColor: const Color(0xFF6C63FF),
-              ),
-              const SizedBox(height: 12),
-              ConclusionWardVoteLink(
-                conclusionExcerpt: split.conclusion,
-                accentColor: const Color(0xFF22C55E),
-              ),
-            ] else ...[
-              const SizedBox(height: 12),
-              ConclusionWardVoteLink(
-                conclusionExcerpt: result.partThreeConclusion.headline,
-                accentColor: const Color(0xFF22C55E),
               ),
             ],
             const SizedBox(height: 14),

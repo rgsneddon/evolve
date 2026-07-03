@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../models/part_three_conclusion.dart';
 import '../providers/evolve_provider.dart';
-import 'conclusion_ward_vote_link.dart';
-
 class PartThreeConclusionPanel extends StatelessWidget {
   const PartThreeConclusionPanel({super.key, required this.conclusion});
 
@@ -123,21 +121,9 @@ class PartThreeConclusionPanel extends StatelessWidget {
               color: Color(0xFF7A8296),
             ),
           ),
-          const SizedBox(height: 12),
-          ConclusionWardVoteLink(
-            conclusionExcerpt: _voteExcerpt(),
-            accentColor: const Color(0xFF22C55E),
-          ),
         ],
       ),
     );
-  }
-
-  String _voteExcerpt() {
-    final buf = StringBuffer()
-      ..writeln(conclusion.headline)
-      ..writeln(conclusion.projectedImpact);
-    return buf.toString().trim();
   }
 
   String _copyPayload() {

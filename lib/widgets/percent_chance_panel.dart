@@ -8,7 +8,7 @@ import '../models/part_percent_breakdown.dart';
 import '../providers/evolve_provider.dart';
 import '../services/conclusion_explainer.dart';
 import '../services/question_semantics.dart';
-import 'conclusion_ward_vote_link.dart';
+
 import 'explainer_card.dart';
 import 'part_two_panel.dart';
 
@@ -131,13 +131,6 @@ class PercentChancePanel extends StatelessWidget {
               text: split.conclusion.isNotEmpty
                   ? split.conclusion
                   : '${provider.output.grokConclusionMarker} ${result.continuumConclusion}',
-            ),
-            const SizedBox(height: 12),
-            ConclusionWardVoteLink(
-              conclusionExcerpt: split.conclusion.isNotEmpty
-                  ? split.conclusion
-                  : result.continuumConclusion,
-              accentColor: const Color(0xFF22C55E),
             ),
             const SizedBox(height: 14),
             ExplainerCard(
