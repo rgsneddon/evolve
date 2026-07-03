@@ -1,0 +1,16 @@
+﻿{
+    "url":  "https://rgsneddon.github.io/evolve/downloads/v2.2.9/evolve-v2.2.9-android-setup.apk",
+    "build":  "59",
+    "platform":  "android",
+    "version":  "2.2.9",
+    "sizeMb":  74.9,
+    "name":  "evolve-v2.2.9-android-setup.apk",
+    "minSdk":  23,
+    "sha256":  "b92e529939c7382813a3e27644eaf705880a21f7c4143206255c7084ad92ff54",
+    "abis":  [
+                 "arm64-v8a",
+                 "armeabi-v7a",
+                 "x86_64"
+             ],
+    "sizeBytes":  78542897
+}

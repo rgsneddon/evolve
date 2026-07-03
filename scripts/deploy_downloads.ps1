@@ -1,0 +1,68 @@
+# Deploy versioned download packages to GitHub Pages (gh-pages branch).
+param(
+    [string]$Version = '',
+    [string]$GhPagesWorktree = ''
+)
+
+$ErrorActionPreference = 'Stop'
+$Root = Split-Path $PSScriptRoot -Parent
+Set-Location $Root
+
+if (-not $Version) {
+    $pubspec = Get-Content (Join-Path $Root 'pubspec.yaml') -Raw
+    if ($pubspec -match 'version:\s*([0-9.]+)\+(\d+)') {
+        $Version = $Matches[1]
+    } else {
+        throw 'Could not read version from pubspec.yaml'
+    }
+}
+
+if (-not $GhPagesWorktree) {
+    $GhPagesWorktree = Join-Path (Split-Path $Root -Parent) 'evolve_ghpages'
+}
+
+$srcDir = Join-Path $Root "build\downloads\v$Version"
+if (-not (Test-Path $srcDir)) {
+    throw "Missing staged downloads: $srcDir. Run build_windows_installer.ps1 and build_android_installer.ps1 first."
+}
+
+if (-not (Test-Path (Join-Path $GhPagesWorktree '.git'))) {
+    Write-Host "Creating gh-pages worktree at $GhPagesWorktree" -ForegroundColor Cyan
+    git fetch origin gh-pages
+    git worktree add $GhPagesWorktree origin/gh-pages
+}
+
+$dstDir = Join-Path $GhPagesWorktree "downloads\v$Version"
+New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
+Copy-Item (Join-Path $srcDir '*') $dstDir -Force
+
+foreach ($page in @('downloads\index.html', 'download.html')) {
+    $srcPage = Join-Path $Root $page
+    $dstPage = Join-Path $GhPagesWorktree $page
+    if (Test-Path $srcPage) {
+        Copy-Item $srcPage $dstPage -Force
+    }
+}
+
+Set-Location $GhPagesWorktree
+git add "downloads/v$Version" downloads/index.html download.html
+$status = git status --porcelain
+if (-not $status) {
+    Write-Host 'Downloads unchanged on gh-pages.' -ForegroundColor Yellow
+    exit 0
+}
+
+git checkout -B gh-pages
+git commit -m "Deploy v$Version download packages to GitHub Pages"
+git config http.postBuffer 524288000
+git push origin gh-pages
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host ''
+Write-Host 'Downloads deployed:' -ForegroundColor Green
+Write-Host '  https://rgsneddon.github.io/evolve/downloads/'
+Get-ChildItem $dstDir -File | ForEach-Object {
+    if ($_.Extension -ne '.sha256') {
+        Write-Host "  https://rgsneddon.github.io/evolve/downloads/v$Version/$($_.Name)"
+    }
+}
