@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
+import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_staking.dart';
@@ -41,7 +42,7 @@ void main() {
     expect(ledger.pendingInboundFor('bob'), isEmpty);
   });
 
-  test('pending inbound not settled after receive window expires', () {
+  test('expired pending inbound reverts PERC to sender', () {
     PercChainConstants.walletOnlineReceiveDelayOverride =
         const Duration(seconds: 2);
 
@@ -51,21 +52,31 @@ void main() {
     ledger.register('bob', 'password123');
     ledger.creditScenario(username: 'alice', percentChance: 50);
 
+    final transfer = PercAmount.fromPerc(0.00000010);
     ledger.send(
       fromUsername: 'alice',
       toUsername: 'bob',
-      amount: PercAmount.fromPerc(0.00000010),
+      amount: transfer,
     );
     final sentAt = ledger.pendingInboundFor('bob').single.sentAt;
+    final aliceAfterSend = ledger.account('alice')!.balance;
 
-    ledger.login(
-      'bob',
-      'password123',
+    ledger.refreshPendingInboundTransfers(
       now: sentAt.add(const Duration(seconds: 3)),
     );
 
+    expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(ledger.account('bob')!.balance, PercAmount.zero);
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
+    expect(
+      ledger.account('alice')!.balance,
+      aliceAfterSend + transfer + PercStaking.rewardPerBlock,
+    );
+    expect(
+      ledger.account('alice')!.transactions.any(
+            (t) => t.kind == PercTxKind.transferRevert,
+          ),
+      isTrue,
+    );
   });
 
   test('production wallet online receive delay is 12 months', () {

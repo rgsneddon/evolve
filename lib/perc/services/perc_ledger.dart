@@ -894,8 +894,62 @@ class PercLedger {
     sessionUsername = u;
     _launchBlockchainIfTreasurerFirstLogin(u);
     final t = (now ?? DateTime.now()).toUtc();
-    _settlePendingInbound(u, t);
+    refreshPendingInboundTransfers(now: t);
     return acc;
+  }
+
+  /// Reverts expired escrows and settles inbound transfers for the session user.
+  void refreshPendingInboundTransfers({DateTime? now}) {
+    final t = (now ?? DateTime.now()).toUtc();
+    _revertExpiredPendingInbound(t);
+    final u = sessionUsername;
+    if (u != null) _settlePendingInbound(u, t);
+  }
+
+  void _revertExpiredPendingInbound(DateTime now) {
+    final window = PercChainConstants.walletOnlineReceiveDelayEffective;
+    final expired = pendingInboundTransfers
+        .where((p) => !now.isBefore(p.sentAt.add(window)))
+        .toList();
+    if (expired.isEmpty) return;
+
+    final blockTxs = <PercTransaction>[];
+    for (final pending in expired) {
+      final sender = _accountFor(pending.fromUsername);
+      pendingInboundTransfers.remove(pending);
+      if (sender == null) continue;
+
+      _credit(sender, pending.amount);
+      final tx = PercTransaction(
+        id: _newTxId(),
+        kind: PercTxKind.transferRevert,
+        amount: pending.amount,
+        timestamp: now,
+        fromUsername: pending.toUsername,
+        toUsername: pending.fromUsername,
+        memo:
+            'Returned — ${pending.toUsername} did not sign in within ${_receiveWindowLabel(window)}',
+        blockIndex: blocks.length,
+        confirmations: _txConfirmations,
+      );
+      sender.transactions.insert(0, tx);
+      blockTxs.add(tx);
+    }
+
+    if (blockTxs.isEmpty) return;
+    _finalizeBlock(
+      timestamp: now,
+      blockTxs: blockTxs,
+      treasuryEmitted: PercAmount.zero,
+      triggerUsername: blockTxs.first.toUsername,
+    );
+  }
+
+  String _receiveWindowLabel(Duration window) {
+    if (window.inDays >= 365) return '12 months';
+    if (window.inDays >= 30) return '${window.inDays ~/ 30} months';
+    if (window.inHours >= 1) return '${window.inHours} hours';
+    return '${window.inSeconds} seconds';
   }
 
   void _settlePendingInbound(String username, DateTime now) {
@@ -937,10 +991,7 @@ class PercLedger {
 
   /// Settles inbound transfers for the signed-in user when still in receive window.
   void refreshPendingInboundForSession({DateTime? now}) {
-    final u = sessionUsername;
-    if (u == null) return;
-    final t = (now ?? DateTime.now()).toUtc();
-    _settlePendingInbound(u, t);
+    refreshPendingInboundTransfers(now: now);
   }
 
   PercTransaction send({
@@ -969,8 +1020,9 @@ class PercLedger {
       );
     }
     _assertTreasuryCanSend(from);
-    _debit(sender, amount);
     final now = DateTime.now().toUtc();
+    _revertExpiredPendingInbound(now);
+    _debit(sender, amount);
     final renewalTxs = _renewTreasuryPoolIfNeeded(now);
     final txId = _newTxId();
     final tx = PercTransaction(

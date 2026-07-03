@@ -5,6 +5,7 @@ enum PercTxKind {
   treasuryEmission,
   scenarioReward,
   transfer,
+  transferRevert,
   stakingReward,
   genesisRenewal,
   chronofluxMicroblock,
@@ -15,6 +16,7 @@ extension PercTxKindWire on PercTxKind {
         PercTxKind.treasuryEmission => 'treasuryEmission',
         PercTxKind.scenarioReward => 'scenarioReward',
         PercTxKind.transfer => 'transfer',
+        PercTxKind.transferRevert => 'transferRevert',
         PercTxKind.stakingReward => 'stakingReward',
         PercTxKind.genesisRenewal => 'genesisRenewal',
         PercTxKind.chronofluxMicroblock => 'chronofluxMicroblock',
@@ -24,6 +26,7 @@ extension PercTxKindWire on PercTxKind {
         'treasuryEmission' => PercTxKind.treasuryEmission,
         'scenarioReward' => PercTxKind.scenarioReward,
         'transfer' => PercTxKind.transfer,
+        'transferRevert' => PercTxKind.transferRevert,
         'stakingReward' => PercTxKind.stakingReward,
         'genesisRenewal' => PercTxKind.genesisRenewal,
         'chronofluxMicroblock' => PercTxKind.chronofluxMicroblock,
@@ -78,6 +81,7 @@ class PercTransaction {
   bool get isIncoming =>
       kind == PercTxKind.scenarioReward ||
       kind == PercTxKind.stakingReward ||
+      kind == PercTxKind.transferRevert ||
       (kind == PercTxKind.transfer && toUsername != null);
 
   Map<String, dynamic> toJson() => {

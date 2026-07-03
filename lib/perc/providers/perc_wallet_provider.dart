@@ -161,9 +161,7 @@ class PercWalletProvider extends ChangeNotifier {
 
   Future<void> initialize() async {
     await PercLedgerHub.instance.initialize(_store);
-    if (_ledger.isLoggedIn) {
-      _ledger.refreshPendingInboundForSession();
-    }
+    _ledger.refreshPendingInboundTransfers();
     _ready = true;
     notifyListeners();
   }
@@ -262,7 +260,7 @@ class PercWalletProvider extends ChangeNotifier {
             'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername';
       } else {
         statusMessage =
-            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername — delivers when they sign in within ${_formatReceiveDelay()}';
+            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername — delivers when they sign in within ${_formatReceiveDelay()}, otherwise returns to your wallet';
       }
       notifyListeners();
       await _commit();

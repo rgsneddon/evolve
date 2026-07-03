@@ -1,7 +1,8 @@
 import 'perc_amount.dart';
 
 /// PERC held in escrow until the recipient signs in within
-/// [PercChainConstants.walletOnlineReceiveDelay] of [sentAt].
+/// [PercChainConstants.walletOnlineReceiveDelay] of [sentAt], then reverts
+/// to [fromUsername] if unclaimed.
 class PercPendingInboundTransfer {
   PercPendingInboundTransfer({
     required this.id,

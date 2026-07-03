@@ -59,7 +59,8 @@ class PercChainConstants {
   static const Duration faucetCooldown = Duration(minutes: 450);
 
   /// Offline inbound transfers must be collected by signing in within this
-  /// window after they were sent (12 calendar months).
+  /// window after they were sent (12 calendar months); otherwise funds revert
+  /// to the sender.
   static const Duration walletOnlineReceiveDelay = Duration(days: 365);
 
   /// Override for tests — never set in production code.
