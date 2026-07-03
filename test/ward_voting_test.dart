@@ -91,6 +91,8 @@ void main() {
     final tally = ledger.wardTallyFor(proposal.id);
     expect(tally[WardVoteChoice.forProposal], 1);
     expect(tally[WardVoteChoice.against], 1);
+    expect(ledger.wardTotalVotesFor(proposal.id), 2);
+    expect(ledger.wardPublicBallotsFor(proposal.id).length, 2);
   });
 
   test('ward proposals persist in ledger json round-trip', () {

@@ -176,6 +176,12 @@ class PercLedger {
   Map<WardVoteChoice, int> wardTallyFor(String proposalId) =>
       WardVoting.tallyFor(ballots: wardBallots, proposalId: proposalId);
 
+  int wardTotalVotesFor(String proposalId) =>
+      WardVoting.totalVotesFor(ballots: wardBallots, proposalId: proposalId);
+
+  List<WardBallot> wardPublicBallotsFor(String proposalId) =>
+      WardVoting.publicBallotsFor(ballots: wardBallots, proposalId: proposalId);
+
   /// One ballot per wallet per proposal — no recast once recorded.
   WardBallot castWardVote({
     required String proposalId,

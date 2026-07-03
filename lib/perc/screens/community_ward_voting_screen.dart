@@ -119,27 +119,53 @@ class _WardVoteTabState extends State<_WardVoteTab> {
               compact: true,
             ),
             const SizedBox(height: 16),
-            if (!wallet.isLoggedIn)
+            if (wallet.isLoggedIn) ...[
+              _submitProposalCard(wallet),
+              const SizedBox(height: 16),
+            ] else
               Card(
                 color: const Color(0xFF1A1F2E),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(
                     widget.strings.t('ward_voting_login_required'),
-                    style: const TextStyle(color: Color(0xFFFFB347)),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF9BA3B8),
+                      height: 1.45,
+                    ),
                   ),
                 ),
-              )
-            else ...[
-              _submitProposalCard(wallet),
-              const SizedBox(height: 16),
-            ],
+              ),
+            const SizedBox(height: 16),
             if (proposals.isEmpty)
               Text(
                 widget.strings.t('ward_voting_no_proposals'),
                 style: const TextStyle(color: Color(0xFF9BA3B8)),
               ),
             if (proposals.isNotEmpty) ...[
+              Text(
+                widget.strings.t('ward_voting_public_results_title'),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                widget.strings.t('ward_voting_public_results_note'),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+              ),
+              const SizedBox(height: 12),
+              ...proposals.map(
+                (p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _publicProposalResultsCard(wallet, p),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.strings.t('ward_voting_select_proposal'),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _selectedProposalId,
                 decoration: InputDecoration(
@@ -155,22 +181,23 @@ class _WardVoteTabState extends State<_WardVoteTab> {
                     .toList(),
                 onChanged: (id) => setState(() => _selectedProposalId = id),
               ),
-              if (_selectedProposalId != null) ...[
+              if (_selectedProposalId != null && wallet.isLoggedIn) ...[
                 const SizedBox(height: 12),
                 _proposalDetail(
                   proposals.firstWhere((p) => p.id == _selectedProposalId),
                 ),
                 const SizedBox(height: 12),
-                _tallyCard(wallet, _selectedProposalId!),
-                if (wallet.isLoggedIn) ...[
-                const SizedBox(height: 12),
+                Text(
+                  widget.strings.t('ward_voting_comment_label'),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
                 TextField(
                   controller: _commentController,
                   minLines: 3,
                   maxLines: 6,
                   maxLength: 2000,
                   decoration: InputDecoration(
-                    labelText: widget.strings.t('ward_voting_comment_label'),
                     hintText: widget.strings.t('ward_voting_comment_hint'),
                     alignLabelWithHint: true,
                   ),
@@ -221,7 +248,6 @@ class _WardVoteTabState extends State<_WardVoteTab> {
                       ),
                     ],
                   ),
-                ],
                 ],
               ],
             ],
@@ -332,7 +358,93 @@ class _WardVoteTabState extends State<_WardVoteTab> {
     );
   }
 
-  Widget _tallyCard(PercWalletProvider wallet, String proposalId) {
+  Widget _publicProposalResultsCard(
+    PercWalletProvider wallet,
+    WardProposal proposal,
+  ) {
+    final total = wallet.wardTotalVotesFor(proposal.id);
+    final ballots = wallet.wardPublicBallotsFor(proposal.id);
+    final isSelected = _selectedProposalId == proposal.id;
+
+    return Material(
+      color: isSelected
+          ? const Color(0xFF22C55E).withOpacity(0.08)
+          : const Color(0xFF1A1F2E),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => setState(() => _selectedProposalId = proposal.id),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                proposal.title,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                widget.strings
+                    .t('ward_proposal_days_left')
+                    .replaceAll('{days}', '${proposal.listingDaysRemaining(DateTime.now())}'),
+                style: const TextStyle(fontSize: 10, color: Color(0xFF22C55E)),
+              ),
+              const SizedBox(height: 10),
+              _tallyRow(wallet, proposal.id),
+              const SizedBox(height: 8),
+              Text(
+                widget.strings
+                    .t('ward_voting_total_ballots')
+                    .replaceAll('{count}', '$total'),
+                style: const TextStyle(fontSize: 10, color: Color(0xFF9BA3B8)),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                widget.strings.t('ward_voting_public_comments'),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 6),
+              if (ballots.isEmpty)
+                Text(
+                  widget.strings.t('ward_voting_no_ballots_yet'),
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                )
+              else
+                ...ballots.take(5).map(_publicCommentTile),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _publicCommentTile(WardBallot ballot) {
+    final choiceLabel = switch (ballot.choice) {
+      WardVoteChoice.forProposal => widget.strings.t('ward_voting_comment_choice_for'),
+      WardVoteChoice.against => widget.strings.t('ward_voting_comment_choice_against'),
+      WardVoteChoice.abstain => widget.strings.t('ward_voting_comment_choice_abstain'),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${ballot.voterUsername} · $choiceLabel',
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF6C63FF)),
+          ),
+          if (ballot.comment.isNotEmpty)
+            Text(
+              ballot.comment,
+              style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8), height: 1.4),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tallyRow(PercWalletProvider wallet, String proposalId) {
     final tally = wallet.wardTallyFor(proposalId);
     return Row(
       children: [

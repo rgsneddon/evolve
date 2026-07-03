@@ -397,7 +397,17 @@ final _en = {
   'ward_proposal_listed_ok': 'Proposal listed for all wallets — voting open for 10 days.',
   'ward_proposal_days_left': '{days} day(s) left in listing',
   'ward_proposal_by': 'Proposed by {user}',
-  'ward_voting_login_required': 'Register or sign in to your Perccent wallet to vote.',
+  'ward_voting_login_required':
+      'Sign in to submit a proposal or cast your vote. Live results below are public — no vote required to view.',
+  'ward_voting_public_results_title': 'Live public results',
+  'ward_voting_public_results_note':
+      'Vote tallies and comments update for every wallet as ballots are cast.',
+  'ward_voting_total_ballots': '{count} wallet(s) voted',
+  'ward_voting_no_ballots_yet': 'No votes yet — results will appear here as wallets vote.',
+  'ward_voting_public_comments': 'Public comments',
+  'ward_voting_comment_choice_for': 'For',
+  'ward_voting_comment_choice_against': 'Against',
+  'ward_voting_comment_choice_abstain': 'Abstain',
   'ward_voting_no_proposals': 'No open ward proposals at this time.',
   'ward_voting_select_proposal': 'Select proposal',
   'ward_voting_comment_label': 'Your comment',

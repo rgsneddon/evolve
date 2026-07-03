@@ -128,6 +128,12 @@ class PercWalletProvider extends ChangeNotifier {
   Map<WardVoteChoice, int> wardTallyFor(String proposalId) =>
       _ledger.wardTallyFor(proposalId);
 
+  int wardTotalVotesFor(String proposalId) =>
+      _ledger.wardTotalVotesFor(proposalId);
+
+  List<WardBallot> wardPublicBallotsFor(String proposalId) =>
+      List.unmodifiable(_ledger.wardPublicBallotsFor(proposalId));
+
   bool hasVotedOnWardProposal(String proposalId) =>
       wardBallotFor(proposalId) != null;
 

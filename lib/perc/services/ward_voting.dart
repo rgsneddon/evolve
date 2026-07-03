@@ -64,4 +64,19 @@ class WardVoting {
     }
     return counts;
   }
+
+  static int totalVotesFor({
+    required List<WardBallot> ballots,
+    required String proposalId,
+  }) =>
+      ballots.where((b) => b.proposalId == proposalId).length;
+
+  static List<WardBallot> publicBallotsFor({
+    required List<WardBallot> ballots,
+    required String proposalId,
+  }) {
+    final listed = ballots.where((b) => b.proposalId == proposalId).toList();
+    listed.sort((a, b) => b.castAt.compareTo(a.castAt));
+    return listed;
+  }
 }
