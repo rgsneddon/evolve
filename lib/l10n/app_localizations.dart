@@ -589,7 +589,8 @@ final _en = {
       '   • Desktop: http://127.0.0.1:8787/auth/callback\n'
       '   • Android: evolve://auth/callback\n'
       '5. Scopes allowed: tweet.read, users.read, offline.access\n'
-      '6. Copy Client ID into grok_proxy.local.env (rebuild Android APK to bake credentials in)',
+      '6. Keys and tokens → OAuth 2.0 Client ID must match Evolve exactly (shown when you sign in)\n'
+      '7. Rebuild Android APK after changing grok_proxy.local.env (scripts\\build.ps1 apk)',
   'grok_oauth_denied':
       'X denied access — check your Developer Portal callback URL and OAuth 2.0 settings.',
   'grok_dialog_cancel': 'Cancel',

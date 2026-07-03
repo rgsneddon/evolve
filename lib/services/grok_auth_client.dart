@@ -8,11 +8,13 @@ class GrokLoginStart {
   const GrokLoginStart({
     required this.authorizeUrl,
     required this.redirectUri,
+    this.clientId = '',
     this.mock = false,
   });
 
   final Uri authorizeUrl;
   final String redirectUri;
+  final String clientId;
   final bool mock;
 }
 
@@ -93,9 +95,21 @@ class GrokAuthClient {
     if (url == null || url.isEmpty) {
       throw GrokAuthException('login', message: 'Missing authorizeUrl');
     }
+    final authorizeUrl = Uri.parse(url);
+    final clientId = '${json['clientId'] ?? ''}'.trim();
+    final urlClientId = authorizeUrl.queryParameters['client_id']?.trim() ?? '';
+    if (clientId.isNotEmpty &&
+        urlClientId.isNotEmpty &&
+        clientId != urlClientId) {
+      throw GrokAuthException(
+        'login',
+        message: 'client_id mismatch (config vs authorize URL)',
+      );
+    }
     return GrokLoginStart(
-      authorizeUrl: Uri.parse(url),
+      authorizeUrl: authorizeUrl,
       redirectUri: '${json['redirectUri'] ?? ''}',
+      clientId: clientId.isNotEmpty ? clientId : urlClientId,
       mock: json['mock'] == true,
     );
   }

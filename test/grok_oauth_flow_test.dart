@@ -17,8 +17,10 @@ void main() {
       port: 8787,
       mock: false,
       xClientId: 'test-client',
+      xClientSecret: 'desktop-secret',
     );
     expect(config.redirectUri, 'http://127.0.0.1:8787/auth/callback');
+    expect(config.effectiveClientSecret, 'desktop-secret');
   });
 
   test('sessionFromCallbackUri reports oauth errors', () async {

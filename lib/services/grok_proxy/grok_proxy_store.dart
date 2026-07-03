@@ -37,6 +37,8 @@ class GrokProxyStore {
 
   String get redirectUri => config.redirectUri;
 
+  String get clientId => config.xClientId ?? '';
+
   bool get _usesMockToken => _accessToken == 'mock-token';
 
   Map<String, dynamic> statusJson() => {
@@ -157,7 +159,7 @@ class GrokProxyStore {
     }
 
     final clientId = config.xClientId!;
-    final clientSecret = config.xClientSecret ?? '';
+    final clientSecret = config.effectiveClientSecret;
 
     final tokenRes = await _client.post(
       Uri.parse('https://api.x.com/2/oauth2/token'),
@@ -192,7 +194,7 @@ class GrokProxyStore {
     }
 
     final clientId = config.xClientId!;
-    final clientSecret = config.xClientSecret ?? '';
+    final clientSecret = config.effectiveClientSecret;
     final tokenRes = await _client.post(
       Uri.parse('https://api.x.com/2/oauth2/token'),
       headers: tokenExchangeHeaders(clientId, clientSecret),

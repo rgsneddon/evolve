@@ -495,6 +495,7 @@ class EvolveProvider extends ChangeNotifier {
           authorize: authorize,
           auth: auth,
           redirectUri: login.redirectUri,
+          clientId: login.clientId,
         );
       }
 
@@ -569,6 +570,7 @@ class EvolveProvider extends ChangeNotifier {
     required Uri authorize,
     required GrokAuthClient auth,
     String redirectUri = '',
+    String clientId = '',
   }) async {
     final useMobileAuth = GrokOAuthFlow.usesMobileDeepLink;
     final sessionFuture = useMobileAuth
@@ -585,12 +587,14 @@ class EvolveProvider extends ChangeNotifier {
       builder: (ctx) => XOAuthConnectingDialog(
         authorize: authorize,
         redirectUri: redirectUri,
+        clientId: clientId,
         sessionFuture: sessionFuture,
         useMobileAuth: useMobileAuth,
         title: strings.t('grok_connect_title'),
         body: useMobileAuth
             ? strings.t('grok_connecting_mobile')
             : strings.t('grok_connecting'),
+        redirectHint: useMobileAuth ? strings.t('grok_oauth_redirect_hint') : '',
         cancelLabel: strings.t('grok_dialog_cancel'),
         onFinished: (session, tab) {
           result = session;

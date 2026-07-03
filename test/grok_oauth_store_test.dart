@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/services/grok_proxy/grok_proxy_config.dart';
 import 'package:evolve/services/grok_proxy/grok_proxy_store.dart';
 
 void main() {
@@ -39,5 +40,19 @@ void main() {
     expect(confidentialBody.containsKey('client_id'), isFalse);
     expect(confidentialBody.containsKey('client_secret'), isFalse);
     expect(confidentialBody['code_verifier'], 'verifier');
+  });
+
+  test('authorizeUrl client_id matches configured xClientId', () async {
+    const clientId = 'portal-client-id-123';
+    final store = GrokProxyStore(
+      GrokProxyConfig(
+        port: 8787,
+        mock: false,
+        xClientId: clientId,
+      ),
+    );
+    final url = Uri.parse(await store.authorizeUrl());
+    expect(store.clientId, clientId);
+    expect(url.queryParameters['client_id'], clientId);
   });
 }

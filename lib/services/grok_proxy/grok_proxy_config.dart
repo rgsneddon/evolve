@@ -38,6 +38,12 @@ class GrokProxyConfig {
     return '$baseUrl/auth/callback';
   }
 
+  /// Native App (Android/iOS) must use PKCE without a client secret.
+  String get effectiveClientSecret {
+    if (oauth_redirect.GrokOAuthRedirect.usesMobileRedirect) return '';
+    return xClientSecret?.trim() ?? '';
+  }
+
   static GrokProxyConfig fromEnvironment({int port = 8787}) {
     final clientId = env.readEnv('X_CLIENT_ID');
     final hasClientId = clientId != null &&

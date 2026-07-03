@@ -25,6 +25,7 @@ Future<void> handleGrokProxyRequest(HttpRequest request, GrokProxyStore store) a
     return _json(request, 200, {
       'authorizeUrl': url,
       'redirectUri': store.redirectUri,
+      'clientId': store.clientId,
       'mock': store.mock,
     });
   }
