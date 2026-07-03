@@ -438,6 +438,10 @@ final _en = {
       'Linked conclusion enriched with % and SCS — proposal and vote fields updated.',
   'ward_dual_summary_header': 'Evolve dual analysis — ward proposal summary',
   'ward_dual_vote_prefill_header': 'My vote is informed by this dual Chronoflux analysis:',
+  'ward_grok_use_construal': 'Use Grok construal',
+  'ward_grok_live_connected': 'Live Grok connected — ω/σ/Iτ/Jμ filled before analysis',
+  'ward_grok_heuristic_mode': 'Heuristic Grok construal — discourse levers applied',
+  'ward_grok_available': 'Grok construal available for ward analysis',
   'ward_scenario_intro':
       'Free open scenario probability checker — runs both percent chance and social cohesion score (SCS) from the Chronoflux paper without treasury draw.',
   'ward_scenario_topic_label': 'Scenario topic (optional)',

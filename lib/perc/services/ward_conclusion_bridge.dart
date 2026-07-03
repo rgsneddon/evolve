@@ -7,6 +7,7 @@ import '../../models/scenario_input.dart';
 import '../../services/conclusion_explainer.dart';
 import '../../services/evolve_engine.dart';
 import '../models/ward_conclusion_link.dart';
+import 'ward_grok_construal.dart';
 
 /// Builds ward-voting payloads readable by the Community Ward Voting dapp.
 class WardConclusionBridge {
@@ -197,16 +198,19 @@ class WardConclusionBridge {
     }
 
     final hasScenario = _hasScenarioInput(input);
+    final working = grokConstrualEnabled
+        ? WardGrokConstrual.applyHeuristic(input, locale)
+        : input;
     if (pct == null && hasScenario) {
       pct = engine.analyze(
-        input,
+        working,
         mode: AnalysisMode.percentChance,
         locale: locale,
       );
     }
     if (scs == null && hasScenario) {
       scs = engine.analyze(
-        input,
+        working,
         mode: AnalysisMode.cohesionScore,
         locale: locale,
       );
@@ -236,10 +240,52 @@ class WardConclusionBridge {
   }
 
   /// Upgrades a previously created single-mode conclusion link to dual % + SCS.
+  static Future<WardConclusionLink> enrichLinkToDualAsync({
+    required WardConclusionLink seed,
+    required LocaleConfig locale,
+    required AppLocalizations strings,
+    bool grokConstrualEnabled = false,
+    Future<ScenarioInput> Function(ScenarioInput)? construe,
+    EvolveEngine engine = const EvolveEngine(),
+  }) async {
+    if (seed.dualAnalysis &&
+        seed.percentChance != null &&
+        seed.refinedScs != null &&
+        (!grokConstrualEnabled || seed.grokEnriched)) {
+      return seed;
+    }
+
+    final question = seed.posedQuestion.trim();
+    if (question.isEmpty) return seed;
+
+    var input = ScenarioInput(
+      topic: seed.topic,
+      posedQuestion: question,
+    );
+    final useGrok = grokConstrualEnabled || seed.grokEnriched;
+    if (useGrok) {
+      if (construe != null) {
+        input = await construe(input);
+      } else {
+        input = WardGrokConstrual.applyHeuristic(input, locale);
+      }
+    }
+
+    return _enrichInputToDual(
+      seed: seed,
+      input: input,
+      locale: locale,
+      strings: strings,
+      grokConstrualEnabled: useGrok,
+      engine: engine,
+    );
+  }
+
   static WardConclusionLink enrichLinkToDual({
     required WardConclusionLink seed,
     required LocaleConfig locale,
     required AppLocalizations strings,
+    bool grokConstrualEnabled = false,
     EvolveEngine engine = const EvolveEngine(),
   }) {
     if (seed.dualAnalysis &&
@@ -251,10 +297,32 @@ class WardConclusionBridge {
     final question = seed.posedQuestion.trim();
     if (question.isEmpty) return seed;
 
-    final input = ScenarioInput(
+    var input = ScenarioInput(
       topic: seed.topic,
       posedQuestion: question,
     );
+    if (grokConstrualEnabled || seed.grokEnriched) {
+      input = WardGrokConstrual.applyHeuristic(input, locale);
+    }
+
+    return _enrichInputToDual(
+      seed: seed,
+      input: input,
+      locale: locale,
+      strings: strings,
+      grokConstrualEnabled: grokConstrualEnabled || seed.grokEnriched,
+      engine: engine,
+    );
+  }
+
+  static WardConclusionLink _enrichInputToDual({
+    required WardConclusionLink seed,
+    required ScenarioInput input,
+    required LocaleConfig locale,
+    required AppLocalizations strings,
+    required bool grokConstrualEnabled,
+    EvolveEngine engine = const EvolveEngine(),
+  }) {
     final percentResult = engine.analyze(
       input,
       mode: AnalysisMode.percentChance,
@@ -272,7 +340,7 @@ class WardConclusionBridge {
       locale: locale,
       strings: strings,
       conclusionExcerptOverride: seed.conclusionExcerpt,
-      grokConstrualEnabled: seed.grokEnriched,
+      grokConstrualEnabled: grokConstrualEnabled,
     );
 
     return WardConclusionLink(
@@ -297,28 +365,59 @@ class WardConclusionBridge {
   }
 
   /// Runs open dual analysis (no PERC faucet) and returns a combined link.
+  static Future<WardConclusionLink> buildFromScenarioAsync({
+    required ScenarioInput input,
+    required LocaleConfig locale,
+    required AppLocalizations strings,
+    bool grokConstrualEnabled = false,
+    Future<ScenarioInput> Function(ScenarioInput)? construe,
+    EvolveEngine engine = const EvolveEngine(),
+  }) async {
+    var working = input;
+    if (grokConstrualEnabled) {
+      if (construe != null) {
+        working = await construe(working);
+      } else {
+        working = WardGrokConstrual.applyHeuristic(working, locale);
+      }
+    }
+    return buildFromScenario(
+      input: working,
+      locale: locale,
+      strings: strings,
+      grokConstrualEnabled: grokConstrualEnabled,
+      engine: engine,
+    );
+  }
+
   static WardConclusionLink buildFromScenario({
     required ScenarioInput input,
     required LocaleConfig locale,
     required AppLocalizations strings,
+    bool grokConstrualEnabled = false,
     EvolveEngine engine = const EvolveEngine(),
   }) {
+    var working = input;
+    if (grokConstrualEnabled) {
+      working = WardGrokConstrual.applyHeuristic(working, locale);
+    }
     final percentResult = engine.analyze(
-      input,
+      working,
       mode: AnalysisMode.percentChance,
       locale: locale,
     );
     final cohesionResult = engine.analyze(
-      input,
+      working,
       mode: AnalysisMode.cohesionScore,
       locale: locale,
     );
     return buildDual(
       percentResult: percentResult,
       cohesionResult: cohesionResult,
-      input: input,
+      input: working,
       locale: locale,
       strings: strings,
+      grokConstrualEnabled: grokConstrualEnabled,
     );
   }
 

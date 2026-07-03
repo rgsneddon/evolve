@@ -160,6 +160,28 @@ void main() {
     expect(enriched.summary, contains('${enriched.refinedScs!.round()}/100 SCS'));
   });
 
+  test('buildFromScenario with grok construal marks link grok enriched', () {
+    const input = ScenarioInput(
+      posedQuestion: 'Will the night market license be renewed?',
+    );
+    final plain = WardConclusionBridge.buildFromScenario(
+      input: input,
+      locale: locale,
+      strings: strings,
+      grokConstrualEnabled: false,
+    );
+    final grok = WardConclusionBridge.buildFromScenario(
+      input: input,
+      locale: locale,
+      strings: strings,
+      grokConstrualEnabled: true,
+    );
+
+    expect(plain.grokEnriched, isFalse);
+    expect(grok.grokEnriched, isTrue);
+    expect(grok.summary, contains(strings.t('ward_conclusion_link_grok_note')));
+  });
+
   test('buildFromScenario produces dual link', () {
     const input = ScenarioInput(
       posedQuestion: 'Will the library expansion bond pass?',

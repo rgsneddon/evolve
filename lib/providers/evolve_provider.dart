@@ -89,6 +89,13 @@ class EvolveProvider extends ChangeNotifier {
       resultForMode(AnalysisMode.percentChance) != null &&
       resultForMode(AnalysisMode.cohesionScore) != null;
 
+  /// Applies Grok construal for ward voting without changing the home scenario form.
+  Future<ScenarioInput> construeForWard(ScenarioInput source) async {
+    if (!grokConstrualEnabled) return source;
+    if (!grokSession.canConstrue && !_usesHeuristicConstrual) return source;
+    return _fetchAndApplyConstrual(source, persistToForm: false);
+  }
+
   bool get grokConfigReady => _grokConfigReady;
 
   bool get _usesInBrowserGrok =>

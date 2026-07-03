@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/scenario_input.dart';
+import '../../providers/evolve_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../models/ward_conclusion_link.dart';
 import '../services/ward_conclusion_bridge.dart';
@@ -33,6 +34,10 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
   WardConclusionLink? _lastLink;
   String? _error;
   bool _enrichedSeed = false;
+  bool? _grokEnabled;
+
+  bool _useGrok(EvolveProvider evolve) =>
+      _grokEnabled ?? evolve.grokConstrualEnabled;
 
   @override
   void initState() {
@@ -55,6 +60,7 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
     if (seed == null) return;
     _topicController.text = seed.topic;
     _questionController.text = seed.posedQuestion;
+    if (seed.grokEnriched) _grokEnabled = true;
     if (seed.dualAnalysis && seed.percentChance != null && seed.refinedScs != null) {
       _lastLink = seed;
     }
@@ -64,7 +70,10 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
     if (_enrichedSeed || !mounted) return;
     final seed = widget.seedLink;
     if (seed == null) return;
-    if (seed.dualAnalysis && seed.percentChance != null && seed.refinedScs != null) {
+    if (seed.dualAnalysis &&
+        seed.percentChance != null &&
+        seed.refinedScs != null &&
+        (!_useGrok(context.read<EvolveProvider>()) || seed.grokEnriched)) {
       _enrichedSeed = true;
       if (mounted) setState(() => _lastLink = seed);
       return;
@@ -78,11 +87,17 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
     });
 
     try {
+      final evolve = context.read<EvolveProvider>();
       final locale = context.read<LocaleProvider>().config;
-      final enriched = WardConclusionBridge.enrichLinkToDual(
+      final useGrok = _useGrok(evolve) || seed.grokEnriched;
+      final enriched = await WardConclusionBridge.enrichLinkToDualAsync(
         seed: seed,
         locale: locale,
         strings: widget.strings,
+        grokConstrualEnabled: useGrok,
+        construe: useGrok && evolve.grokConstrualEnabled
+            ? evolve.construeForWard
+            : null,
       );
       if (!mounted) return;
       setState(() {
@@ -123,11 +138,13 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
       _lastLink = null;
     });
 
+    final evolve = context.read<EvolveProvider>();
     final locale = context.read<LocaleProvider>().config;
     final input = ScenarioInput(
       topic: _topicController.text.trim(),
       posedQuestion: question,
     );
+    final useGrok = _useGrok(evolve);
 
     try {
       WardConclusionLink link;
@@ -135,16 +152,24 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
       if (seed != null &&
           seed.posedQuestion.trim() == question &&
           (seed.topic.trim().isEmpty || seed.topic.trim() == input.topic)) {
-        link = WardConclusionBridge.enrichLinkToDual(
+        link = await WardConclusionBridge.enrichLinkToDualAsync(
           seed: seed.copyWith(topic: input.topic, posedQuestion: question),
           locale: locale,
           strings: widget.strings,
+          grokConstrualEnabled: useGrok || seed.grokEnriched,
+          construe: useGrok && evolve.grokConstrualEnabled
+              ? evolve.construeForWard
+              : null,
         );
       } else {
-        link = WardConclusionBridge.buildFromScenario(
+        link = await WardConclusionBridge.buildFromScenarioAsync(
           input: input,
           locale: locale,
           strings: widget.strings,
+          grokConstrualEnabled: useGrok,
+          construe: useGrok && evolve.grokConstrualEnabled
+              ? evolve.construeForWard
+              : null,
         );
       }
       if (!mounted) return;
@@ -170,8 +195,56 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
     );
   }
 
+  Widget _grokRow(EvolveProvider evolve) {
+    if (!evolve.grokConstrualAvailable) return const SizedBox.shrink();
+
+    final useGrok = _useGrok(evolve);
+    final status = evolve.grokConstrualEnabled && evolve.grokSession.canConstrue
+        ? widget.strings.t('ward_grok_live_connected')
+        : evolve.grokUsesHeuristicMode
+            ? widget.strings.t('ward_grok_heuristic_mode')
+            : widget.strings.t('ward_grok_available');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF59E0B).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFF59E0B)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.strings.t('ward_grok_use_construal'),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  status,
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF9BA3B8)),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: useGrok,
+            onChanged: (v) => setState(() => _grokEnabled = v),
+            activeColor: const Color(0xFFF59E0B),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final evolve = context.watch<EvolveProvider>();
     final link = _lastLink;
     final hasSeed = widget.seedLink != null;
 
@@ -194,6 +267,7 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8), height: 1.4),
             ),
             const SizedBox(height: 12),
+            _grokRow(evolve),
             TextField(
               controller: _topicController,
               decoration: InputDecoration(
@@ -233,6 +307,17 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
             ],
             if (link != null) ...[
               const SizedBox(height: 14),
+              if (link.grokEnriched) ...[
+                Text(
+                  widget.strings.t('ward_conclusion_link_grok_badge'),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF00D9C0),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

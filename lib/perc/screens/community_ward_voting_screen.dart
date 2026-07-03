@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/analysis_mode.dart';
 import '../../models/scenario_input.dart';
+import '../../providers/evolve_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../services/evolve_engine.dart';
 import '../models/ward_conclusion_link.dart';
@@ -131,6 +132,24 @@ class _WardVoteTabState extends State<_WardVoteTab> {
     });
   }
 
+  Future<void> _enrichAndApplyLink(WardConclusionLink raw) async {
+    final evolve = context.read<EvolveProvider>();
+    final locale = context.read<LocaleProvider>().config;
+    final useGrok = evolve.grokConstrualEnabled || raw.grokEnriched;
+    final enriched = await WardConclusionBridge.enrichLinkToDualAsync(
+      seed: raw,
+      locale: locale,
+      strings: widget.strings,
+      grokConstrualEnabled: useGrok,
+      construe: useGrok && evolve.grokConstrualEnabled
+          ? evolve.construeForWard
+          : null,
+    );
+    if (!mounted) return;
+    context.read<PercWalletProvider>().setPendingWardConclusionLink(enriched);
+    _applyLinkToFields(enriched);
+  }
+
   @override
   void didUpdateWidget(covariant _WardVoteTab oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -165,14 +184,7 @@ class _WardVoteTabState extends State<_WardVoteTab> {
     if (raw == null) return;
 
     _appliedConclusionLink = true;
-    final locale = context.read<LocaleProvider>().config;
-    final enriched = WardConclusionBridge.enrichLinkToDual(
-      seed: raw,
-      locale: locale,
-      strings: widget.strings,
-    );
-    context.read<PercWalletProvider>().setPendingWardConclusionLink(enriched);
-    _applyLinkToFields(enriched);
+    _enrichAndApplyLink(raw);
   }
 
   void _applyPopulateLink() {
@@ -707,6 +719,7 @@ class _WardScenarioCheckerTabState extends State<_WardScenarioCheckerTab> {
   final _topicController = TextEditingController();
   final _questionController = TextEditingController();
   bool _running = false;
+  bool? _grokEnabled;
   double? _percentChance;
   double? _refinedScs;
   String? _percentPhrase;
@@ -733,30 +746,30 @@ class _WardScenarioCheckerTabState extends State<_WardScenarioCheckerTab> {
       _refinedScs = null;
     });
 
+    final evolve = context.read<EvolveProvider>();
     final locale = context.read<LocaleProvider>().config;
     final input = ScenarioInput(
       topic: _topicController.text.trim(),
       posedQuestion: question,
     );
-    const engine = EvolveEngine();
+    final useGrok = _grokEnabled ?? evolve.grokConstrualEnabled;
 
     try {
-      final pctResult = engine.analyze(
-        input,
-        mode: AnalysisMode.percentChance,
+      final link = await WardConclusionBridge.buildFromScenarioAsync(
+        input: input,
         locale: locale,
-      );
-      final scsResult = engine.analyze(
-        input,
-        mode: AnalysisMode.cohesionScore,
-        locale: locale,
+        strings: widget.strings,
+        grokConstrualEnabled: useGrok,
+        construe: useGrok && evolve.grokConstrualEnabled
+            ? evolve.construeForWard
+            : null,
       );
       if (!mounted) return;
       setState(() {
-        _percentChance = pctResult.percentChance;
-        _percentPhrase = pctResult.percentPhrase;
-        _refinedScs = scsResult.core.refinedScs;
-        _scsLean = scsResult.core.lean;
+        _percentChance = link.percentChance;
+        _percentPhrase = link.percentPhrase;
+        _refinedScs = link.refinedScs;
+        _scsLean = link.scsLean;
         _running = false;
       });
     } catch (e) {
@@ -768,21 +781,28 @@ class _WardScenarioCheckerTabState extends State<_WardScenarioCheckerTab> {
     }
   }
 
-  void _populateVoteFields() {
+  Future<void> _populateVoteFields() async {
     final question = _questionController.text.trim();
     if (question.isEmpty || _percentChance == null || _refinedScs == null) {
       return;
     }
+    final evolve = context.read<EvolveProvider>();
     final locale = context.read<LocaleProvider>().config;
     final input = ScenarioInput(
       topic: _topicController.text.trim(),
       posedQuestion: question,
     );
-    final link = WardConclusionBridge.buildFromScenario(
+    final useGrok = _grokEnabled ?? evolve.grokConstrualEnabled;
+    final link = await WardConclusionBridge.buildFromScenarioAsync(
       input: input,
       locale: locale,
       strings: widget.strings,
+      grokConstrualEnabled: useGrok,
+      construe: useGrok && evolve.grokConstrualEnabled
+          ? evolve.construeForWard
+          : null,
     );
+    if (!mounted) return;
     widget.onPopulateVoteFields(link);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(widget.strings.t('ward_dual_populated_ok'))),
@@ -802,6 +822,31 @@ class _WardScenarioCheckerTabState extends State<_WardScenarioCheckerTab> {
               style: const TextStyle(fontSize: 13, color: Color(0xFF9BA3B8), height: 1.45),
             ),
             const SizedBox(height: 16),
+            Consumer<EvolveProvider>(
+              builder: (context, evolve, _) {
+                if (!evolve.grokConstrualAvailable) return const SizedBox.shrink();
+                final useGrok = _grokEnabled ?? evolve.grokConstrualEnabled;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      widget.strings.t('ward_grok_use_construal'),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: Text(
+                      evolve.grokConstrualEnabled && evolve.grokSession.canConstrue
+                          ? widget.strings.t('ward_grok_live_connected')
+                          : widget.strings.t('ward_grok_heuristic_mode'),
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                    value: useGrok,
+                    onChanged: (v) => setState(() => _grokEnabled = v),
+                    activeColor: const Color(0xFFF59E0B),
+                  ),
+                );
+              },
+            ),
             TextField(
               controller: _topicController,
               decoration: InputDecoration(
