@@ -8,6 +8,7 @@ import '../models/perc_evolution_step.dart';
 import '../models/perc_microblock_record_result.dart';
 import '../perc_app_version.dart';
 import '../models/perc_transaction.dart';
+import '../models/perc_pending_inbound_transfer.dart';
 import '../models/ward_proposal.dart';
 import 'ward_voting.dart';
 import '../perc_chain_constants.dart';
@@ -50,12 +51,14 @@ class PercLedger {
     List<WardProposal>? wardProposals,
     List<WardBallot>? wardBallots,
     this.nextWardProposalId = 1,
+    List<PercPendingInboundTransfer>? pendingInboundTransfers,
     PercChronofluxMicroVerifier? microVerifier,
   })  : walletPeers = walletPeers ?? <String, List<String>>{},
         evolvedAppVersions = evolvedAppVersions ?? [],
         evolutionSteps = evolutionSteps ?? [],
         wardProposals = wardProposals ?? [],
         wardBallots = wardBallots ?? [],
+        pendingInboundTransfers = pendingInboundTransfers ?? [],
         _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
 
   final Map<String, PercAccount> accounts;
@@ -82,7 +85,15 @@ class PercLedger {
   final List<WardProposal> wardProposals;
   final List<WardBallot> wardBallots;
   int nextWardProposalId;
+  final List<PercPendingInboundTransfer> pendingInboundTransfers;
   final PercChronofluxMicroVerifier _microVerifier;
+
+  List<PercPendingInboundTransfer> pendingInboundFor(String username) {
+    final u = PercAuth.normalizeUsername(username);
+    return pendingInboundTransfers
+        .where((p) => p.toUsername == u)
+        .toList(growable: false);
+  }
 
   bool get isOnEvolutionaryChain =>
       evolutionaryChainId == PercChainConstants.evolutionaryChainId ||
@@ -869,7 +880,7 @@ class PercLedger {
     _blockchainLaunchEventPending = true;
   }
 
-  PercAccount login(String username, String password) {
+  PercAccount login(String username, String password, {DateTime? now}) {
     final u = PercAuth.normalizeUsername(username);
     final acc = _accountFor(u);
     if (acc == null || !acc.passwordSet) throw StateError('Unknown account');
@@ -882,10 +893,68 @@ class PercLedger {
     }
     sessionUsername = u;
     _launchBlockchainIfTreasurerFirstLogin(u);
+    final t = (now ?? DateTime.now()).toUtc();
+    _markRecipientOnline(u, t);
+    _settlePendingInbound(u, t);
     return acc;
   }
 
+  void _markRecipientOnline(String username, DateTime now) {
+    for (final pending in pendingInboundTransfers) {
+      if (pending.toUsername == username &&
+          pending.recipientBroughtOnlineAt == null) {
+        pending.recipientBroughtOnlineAt = now;
+      }
+    }
+  }
+
+  void _settlePendingInbound(String username, DateTime now) {
+    final delay = PercChainConstants.walletOnlineReceiveDelayEffective;
+    final toSettle = pendingInboundTransfers
+        .where((p) =>
+            p.toUsername == username && p.recipientBroughtOnlineAt != null)
+        .where(
+          (p) => !now.isBefore(p.recipientBroughtOnlineAt!.add(delay)),
+        )
+        .toList();
+    if (toSettle.isEmpty) return;
+
+    for (final pending in toSettle) {
+      final receiver = _accountFor(pending.toUsername);
+      if (receiver == null) continue;
+      _credit(receiver, pending.amount);
+      final tx = PercTransaction(
+        id: _newTxId(),
+        kind: PercTxKind.transfer,
+        amount: pending.amount,
+        timestamp: now,
+        fromUsername: pending.fromUsername,
+        toUsername: pending.toUsername,
+        memo: pending.memo,
+        blockIndex: blocks.length,
+        confirmations: _txConfirmations,
+      );
+      receiver.transactions.insert(0, tx);
+      pendingInboundTransfers.remove(pending);
+      _finalizeBlock(
+        timestamp: now,
+        blockTxs: [tx],
+        treasuryEmitted: PercAmount.zero,
+        triggerUsername: pending.toUsername,
+      );
+    }
+  }
+
   void logout() => sessionUsername = null;
+
+  /// Marks the signed-in user online and settles inbound transfers past the delay.
+  void refreshPendingInboundForSession({DateTime? now}) {
+    final u = sessionUsername;
+    if (u == null) return;
+    final t = (now ?? DateTime.now()).toUtc();
+    _markRecipientOnline(u, t);
+    _settlePendingInbound(u, t);
+  }
 
   PercTransaction send({
     required String fromUsername,
@@ -914,11 +983,11 @@ class PercLedger {
     }
     _assertTreasuryCanSend(from);
     _debit(sender, amount);
-    _credit(receiver, amount);
     final now = DateTime.now().toUtc();
     final renewalTxs = _renewTreasuryPoolIfNeeded(now);
+    final txId = _newTxId();
     final tx = PercTransaction(
-      id: _newTxId(),
+      id: txId,
       kind: PercTxKind.transfer,
       amount: amount,
       timestamp: now,
@@ -929,7 +998,24 @@ class PercLedger {
       confirmations: _txConfirmations,
     );
     sender.transactions.insert(0, tx);
-    receiver.transactions.insert(0, tx);
+
+    final recipientOnline = sessionUsername == to;
+    if (recipientOnline) {
+      _credit(receiver, amount);
+      receiver.transactions.insert(0, tx);
+    } else {
+      pendingInboundTransfers.add(
+        PercPendingInboundTransfer(
+          id: txId,
+          fromUsername: from,
+          toUsername: to,
+          amount: amount,
+          sentAt: now,
+          memo: memo,
+        ),
+      );
+    }
+
     final blockTxs = [...renewalTxs, tx];
     _finalizeBlock(
       timestamp: now,
@@ -1073,7 +1159,7 @@ class PercLedger {
   }
 
   Map<String, dynamic> toJson() => {
-        'version': 6,
+        'version': 7,
         'evolutionaryChainId': evolutionaryChainId.isEmpty
             ? PercChainConstants.evolutionaryChainId
             : evolutionaryChainId,
@@ -1109,6 +1195,8 @@ class PercLedger {
         'wardProposals': wardProposals.map((p) => p.toJson()).toList(),
         'wardBallots': wardBallots.map((b) => b.toJson()).toList(),
         'nextWardProposalId': nextWardProposalId,
+        'pendingInboundTransfers':
+            pendingInboundTransfers.map((p) => p.toJson()).toList(),
       };
 
   factory PercLedger.fromJson(Map<String, dynamic> json) {
@@ -1166,6 +1254,14 @@ class PercLedger {
           .map((e) => WardBallot.fromJson(e as Map<String, dynamic>))
           .toList(),
       nextWardProposalId: json['nextWardProposalId'] as int? ?? 1,
+      pendingInboundTransfers:
+          (json['pendingInboundTransfers'] as List<dynamic>? ?? [])
+              .map(
+                (e) => PercPendingInboundTransfer.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
+              .toList(),
     )..repairForAppUpgrade();
   }
 

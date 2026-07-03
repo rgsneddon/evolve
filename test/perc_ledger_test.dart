@@ -88,7 +88,7 @@ void main() {
     );
   });
 
-  test('send transfers PERC between local accounts', () {
+  test('send queues PERC when recipient wallet is offline', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -102,8 +102,32 @@ void main() {
     );
 
     expect(sent.kind.wireName, 'transfer');
-    expect(ledger.account('bob')!.balance.microUnits, greaterThan(0));
+    expect(ledger.account('bob')!.balance, PercAmount.zero);
+    expect(ledger.pendingInboundFor('bob'), hasLength(1));
     expect(ledger.blocks.length, greaterThanOrEqualTo(2));
+  });
+
+  test('send credits recipient immediately when their wallet is online', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+    ledger.register('bob', 'password123');
+    ledger.creditScenario(username: 'alice', percentChance: 50);
+
+    ledger.login('bob', 'password123');
+
+    ledger.send(
+      fromUsername: 'alice',
+      toUsername: 'bob',
+      amount: PercAmount.fromPerc(0.00000005),
+    );
+
+    expect(ledger.pendingInboundFor('bob'), isEmpty);
+    final transfer = PercAmount.fromPerc(0.00000005);
+    expect(
+      ledger.account('bob')!.balance,
+      transfer + PercStaking.rewardPerBlock,
+    );
   });
 
   test('treasury username is evolve_treasury', () {

@@ -10,9 +10,11 @@ import '../services/perc_beam_privacy.dart';
 import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../models/perc_faucet_credit_result.dart';
+import '../models/perc_pending_inbound_transfer.dart';
 import '../models/perc_transaction.dart';
 
 import '../perc_chain_constants.dart';
+import '../services/perc_auth.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
 import '../services/perc_inflation.dart';
@@ -115,6 +117,11 @@ class PercWalletProvider extends ChangeNotifier {
   bool get isOnEvolutionaryChain => _ledger.isOnEvolutionaryChain;
   Duration? get averageTimePerBlock => _ledger.averageTimePerBlock;
 
+  List<PercPendingInboundTransfer> get pendingInboundTransfers =>
+      isLoggedIn
+          ? _ledger.pendingInboundFor(loggedInUsername!)
+          : const [];
+
   void _onHubLedgerChanged() => notifyListeners();
 
   Duration? get faucetCooldownRemaining {
@@ -154,6 +161,9 @@ class PercWalletProvider extends ChangeNotifier {
 
   Future<void> initialize() async {
     await PercLedgerHub.instance.initialize(_store);
+    if (_ledger.isLoggedIn) {
+      _ledger.refreshPendingInboundForSession();
+    }
     _ready = true;
     notifyListeners();
   }
@@ -235,6 +245,8 @@ class PercWalletProvider extends ChangeNotifier {
       return;
     }
     try {
+      final recipient = PercAuth.normalizeUsername(toUsername);
+      final recipientOnline = _ledger.sessionUsername == recipient;
       _ledger.send(
         fromUsername: _ledger.sessionUsername!,
         toUsername: toUsername,
@@ -242,9 +254,16 @@ class PercWalletProvider extends ChangeNotifier {
         memo: memo,
       );
       _captureGenesisRenewalEvent();
-      statusMessage = _pendingGenesisRenewalNotice
-          ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
-          : 'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername';
+      if (_pendingGenesisRenewalNotice) {
+        statusMessage =
+            'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})';
+      } else if (recipientOnline) {
+        statusMessage =
+            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername';
+      } else {
+        statusMessage =
+            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername — delivers after they bring their wallet online (${_formatReceiveDelay()})';
+      }
       notifyListeners();
       await _commit();
     } catch (e) {
@@ -348,6 +367,14 @@ class PercWalletProvider extends ChangeNotifier {
   void _clearMessages() {
     statusMessage = null;
     errorMessage = null;
+  }
+
+  String _formatReceiveDelay() {
+    const delay = PercChainConstants.walletOnlineReceiveDelay;
+    if (delay.inDays >= 365) return '12 months';
+    if (delay.inDays >= 30) return '${delay.inDays ~/ 30} months';
+    if (delay.inHours >= 1) return '${delay.inHours} hours';
+    return '${delay.inSeconds} seconds';
   }
 
   Future<void> _commit() => PercLedgerHub.instance.commit();

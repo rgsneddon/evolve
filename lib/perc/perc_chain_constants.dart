@@ -58,6 +58,17 @@ class PercChainConstants {
   /// Each wallet may draw the scenario faucet once per 450 minutes.
   static const Duration faucetCooldown = Duration(minutes: 450);
 
+  /// After a recipient brings their wallet online, inbound transfers settle
+  /// once this delay has elapsed (12 calendar months).
+  static const Duration walletOnlineReceiveDelay = Duration(days: 365);
+
+  /// Override for tests — never set in production code.
+  @visibleForTesting
+  static Duration? walletOnlineReceiveDelayOverride;
+
+  static Duration get walletOnlineReceiveDelayEffective =>
+      walletOnlineReceiveDelayOverride ?? walletOnlineReceiveDelay;
+
   /// Cumulative staking: flat 10% of 0.00000050 PERC (0.00000005) per block per holder.
   static const int stakingYieldPercent = 10;
 
