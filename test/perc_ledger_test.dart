@@ -68,7 +68,7 @@ void main() {
     expect(result.reward!.total, PercAmount.fromPerc(0.25));
   });
 
-  test('faucet draw blocked for 450 minutes per wallet', () {
+  test('faucet draw blocked for 7 minutes per wallet', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -79,7 +79,7 @@ void main() {
     final second = ledger.creditScenario(username: 'alice', percentChance: 20);
     expect(second.status, PercFaucetCreditStatus.onCooldown);
     expect(second.cooldownRemaining, isNotNull);
-    expect(second.cooldownRemaining!.inMinutes, greaterThan(440));
+    expect(second.cooldownRemaining!.inMinutes, greaterThan(6));
     expect(ledger.account('alice')!.balance, first.reward!.total);
   });
 

@@ -50,7 +50,7 @@ class PercChronofluxTimeConfirmations {
           name: 'Faucet draw',
           interval: faucetEpoch,
           confirmationsToSettle: 1,
-          principiaBinding: 'Scenario analysis reward epoch — 450 minutes',
+          principiaBinding: 'Scenario analysis reward epoch — 7 minutes',
         ),
         PercTimeConfirmationPermutation(
           name: 'Transfer settlement',

@@ -2,7 +2,7 @@
 class PercAppVersion {
   const PercAppVersion._();
 
-  static const String current = '2.2.6+56';
+  static const String current = '2.2.7+57';
 
   /// Semver label without `+build` (e.g. `1.2.0+34` → `1.2.0`).
   static String releaseOf(String version) {
