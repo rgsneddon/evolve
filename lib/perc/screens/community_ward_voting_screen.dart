@@ -60,12 +60,39 @@ class _WardVoteTab extends StatefulWidget {
 class _WardVoteTabState extends State<_WardVoteTab> {
   String? _selectedProposalId;
   final _commentController = TextEditingController();
+  final _proposalTitleController = TextEditingController();
+  final _proposalSummaryController = TextEditingController();
+  final _proposalWardController = TextEditingController();
   WardVoteChoice? _pendingChoice;
+  bool _submittingProposal = false;
 
   @override
   void dispose() {
     _commentController.dispose();
+    _proposalTitleController.dispose();
+    _proposalSummaryController.dispose();
+    _proposalWardController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitProposal(PercWalletProvider wallet) async {
+    setState(() => _submittingProposal = true);
+    final proposal = await wallet.submitWardProposal(
+      title: _proposalTitleController.text,
+      summary: _proposalSummaryController.text,
+      wardName: _proposalWardController.text,
+    );
+    if (!mounted) return;
+    setState(() => _submittingProposal = false);
+    if (proposal != null) {
+      setState(() => _selectedProposalId = proposal.id);
+      _proposalTitleController.clear();
+      _proposalSummaryController.clear();
+      _proposalWardController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(widget.strings.t('ward_proposal_listed_ok'))),
+      );
+    }
   }
 
   @override
@@ -103,12 +130,16 @@ class _WardVoteTabState extends State<_WardVoteTab> {
                   ),
                 ),
               )
-            else if (proposals.isEmpty)
+            else ...[
+              _submitProposalCard(wallet),
+              const SizedBox(height: 16),
+            ],
+            if (proposals.isEmpty)
               Text(
                 widget.strings.t('ward_voting_no_proposals'),
                 style: const TextStyle(color: Color(0xFF9BA3B8)),
-              )
-            else ...[
+              ),
+            if (proposals.isNotEmpty) ...[
               DropdownButtonFormField<String>(
                 value: _selectedProposalId,
                 decoration: InputDecoration(
@@ -131,6 +162,7 @@ class _WardVoteTabState extends State<_WardVoteTab> {
                 ),
                 const SizedBox(height: 12),
                 _tallyCard(wallet, _selectedProposalId!),
+                if (wallet.isLoggedIn) ...[
                 const SizedBox(height: 12),
                 TextField(
                   controller: _commentController,
@@ -144,42 +176,52 @@ class _WardVoteTabState extends State<_WardVoteTab> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: _pendingChoice != null
-                            ? null
-                            : () => _cast(wallet, WardVoteChoice.forProposal),
-                        child: Text(widget.strings.t('ward_voting_for')),
-                      ),
+                if (wallet.hasVotedOnWardProposal(_selectedProposalId!)) ...[
+                  Text(
+                    widget.strings.t('ward_voting_vote_locked'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF00D9C0),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _pendingChoice != null
-                            ? null
-                            : () => _cast(wallet, WardVoteChoice.against),
-                        child: Text(widget.strings.t('ward_voting_against')),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextButton(
-                        onPressed: _pendingChoice != null
-                            ? null
-                            : () => _cast(wallet, WardVoteChoice.abstain),
-                        child: Text(widget.strings.t('ward_voting_abstain')),
-                      ),
-                    ),
-                  ],
-                ),
-                if (wallet.wardBallotFor(_selectedProposalId!) != null) ...[
-                  const SizedBox(height: 10),
+                  ),
+                  const SizedBox(height: 6),
                   Text(
                     widget.strings.t('ward_voting_already_cast'),
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF00D9C0)),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
                   ),
+                ] else ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: _pendingChoice != null
+                              ? null
+                              : () => _cast(wallet, WardVoteChoice.forProposal),
+                          child: Text(widget.strings.t('ward_voting_for')),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _pendingChoice != null
+                              ? null
+                              : () => _cast(wallet, WardVoteChoice.against),
+                          child: Text(widget.strings.t('ward_voting_against')),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextButton(
+                          onPressed: _pendingChoice != null
+                              ? null
+                              : () => _cast(wallet, WardVoteChoice.abstain),
+                          child: Text(widget.strings.t('ward_voting_abstain')),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 ],
               ],
             ],
@@ -191,7 +233,62 @@ class _WardVoteTabState extends State<_WardVoteTab> {
     );
   }
 
+  Widget _submitProposalCard(PercWalletProvider wallet) {
+    return Card(
+      color: const Color(0xFF22C55E).withOpacity(0.08),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.strings.t('ward_proposal_submit_title'),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _proposalTitleController,
+              decoration: InputDecoration(
+                labelText: widget.strings.t('ward_proposal_title_label'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _proposalSummaryController,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: widget.strings.t('ward_proposal_summary_label'),
+                alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _proposalWardController,
+              decoration: InputDecoration(
+                labelText: widget.strings.t('ward_proposal_ward_label'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _submittingProposal ? null : () => _submitProposal(wallet),
+              icon: _submittingProposal
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.publish_outlined, size: 18),
+              label: Text(widget.strings.t('ward_proposal_submit_button')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _proposalDetail(WardProposal proposal) {
+    final daysLeft = proposal.listingDaysRemaining(DateTime.now());
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -204,6 +301,24 @@ class _WardVoteTabState extends State<_WardVoteTab> {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF6C63FF),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              widget.strings
+                  .t('ward_proposal_by')
+                  .replaceAll('{user}', proposal.proposerUsername),
+              style: const TextStyle(fontSize: 10, color: Color(0xFF9BA3B8)),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              widget.strings
+                  .t('ward_proposal_days_left')
+                  .replaceAll('{days}', '$daysLeft'),
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF22C55E),
               ),
             ),
             const SizedBox(height: 6),

@@ -128,6 +128,34 @@ class PercWalletProvider extends ChangeNotifier {
   Map<WardVoteChoice, int> wardTallyFor(String proposalId) =>
       _ledger.wardTallyFor(proposalId);
 
+  bool hasVotedOnWardProposal(String proposalId) =>
+      wardBallotFor(proposalId) != null;
+
+  Future<WardProposal?> submitWardProposal({
+    required String title,
+    required String summary,
+    required String wardName,
+  }) async {
+    if (!isLoggedIn) return null;
+    _clearMessages();
+    try {
+      final proposal = _ledger.submitWardProposal(
+        proposerUsername: loggedInUsername!,
+        title: title,
+        summary: summary,
+        wardName: wardName,
+      );
+      statusMessage = 'Ward proposal listed for ${WardProposal.listingDays} days';
+      notifyListeners();
+      await _commit();
+      return proposal;
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('StateError: ', '');
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<bool> castWardVote({
     required String proposalId,
     required WardVoteChoice choice,

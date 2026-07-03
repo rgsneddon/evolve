@@ -10,7 +10,7 @@ void _seedLedger(PercLedger ledger) {
   ledger.login(PercChainConstants.treasuryUsername, 'password123');
   ledger.consumeBlockchainLaunchEvent();
   ledger.register('voter1', 'password123');
-  ledger.login('voter1', 'password123');
+  ledger.register('voter2', 'password123');
 }
 
 void main() {
@@ -19,45 +19,99 @@ void main() {
     expect(PercDappSpec.featuredDapp.featured, isTrue);
   });
 
-  test('ledger seeds open ward proposals and records ballots', () {
+  test('user proposal lists for everyone for 10 days', () {
+    final now = DateTime.utc(2026, 7, 3, 12);
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
-    final proposals = ledger.openWardProposals();
-    expect(proposals, isNotEmpty);
 
-    final id = proposals.first.id;
-    final ballot = ledger.castWardVote(
-      proposalId: id,
-      voterUsername: 'voter1',
-      choice: WardVoteChoice.forProposal,
-      comment: 'Supports safer footpaths for families.',
+    final proposal = ledger.submitWardProposal(
+      proposerUsername: 'voter1',
+      title: 'New pocket park bench',
+      summary: 'Install seating by the ward green.',
+      wardName: 'Maple Ward',
+      now: now,
     );
-    expect(ballot.comment, contains('footpaths'));
-    expect(ledger.wardTallyFor(id)[WardVoteChoice.forProposal], 1);
+
+    expect(proposal.proposerUsername, 'voter1');
+    expect(
+      proposal.closesAt.difference(proposal.opensAt),
+      const Duration(days: WardProposal.listingDays),
+    );
+    expect(ledger.openWardProposals(now).length, 1);
+    expect(
+      ledger.openWardProposals(now.add(const Duration(days: 9))).length,
+      1,
+    );
+    expect(
+      ledger.openWardProposals(now.add(const Duration(days: 10))).length,
+      0,
+    );
+  });
+
+  test('one vote per wallet per proposal — no recast', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    final now = DateTime.utc(2026, 7, 3);
+
+    final proposal = ledger.submitWardProposal(
+      proposerUsername: 'voter1',
+      title: 'Traffic calming',
+      summary: 'Add speed cushions on school route.',
+      wardName: 'Riverside Ward',
+      now: now,
+    );
 
     ledger.castWardVote(
-      proposalId: id,
+      proposalId: proposal.id,
       voterUsername: 'voter1',
-      choice: WardVoteChoice.against,
-      comment: 'Prefer cycling lanes first.',
+      choice: WardVoteChoice.forProposal,
+      comment: 'Safer for children.',
+      now: now,
     );
-    expect(ledger.wardTallyFor(id)[WardVoteChoice.forProposal], 0);
-    expect(ledger.wardTallyFor(id)[WardVoteChoice.against], 1);
+
+    expect(
+      () => ledger.castWardVote(
+        proposalId: proposal.id,
+        voterUsername: 'voter1',
+        choice: WardVoteChoice.against,
+        comment: 'Too costly.',
+        now: now,
+      ),
+      throwsStateError,
+    );
+
+    ledger.castWardVote(
+      proposalId: proposal.id,
+      voterUsername: 'voter2',
+      choice: WardVoteChoice.against,
+      comment: 'Prefer alternative route.',
+      now: now,
+    );
+
+    final tally = ledger.wardTallyFor(proposal.id);
+    expect(tally[WardVoteChoice.forProposal], 1);
+    expect(tally[WardVoteChoice.against], 1);
   });
 
   test('ward proposals persist in ledger json round-trip', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
-    final id = ledger.openWardProposals().first.id;
+    final proposal = ledger.submitWardProposal(
+      proposerUsername: 'voter1',
+      title: 'Library hours',
+      summary: 'Open Saturday mornings.',
+      wardName: 'Hillcrest Ward',
+    );
     ledger.castWardVote(
-      proposalId: id,
+      proposalId: proposal.id,
       voterUsername: 'voter1',
       choice: WardVoteChoice.abstain,
-      comment: 'Need more data.',
+      comment: 'Need budget detail.',
     );
 
     final restored = PercLedger.fromJson(ledger.toJson());
+    expect(restored.wardProposals.length, 1);
     expect(restored.wardBallots.length, 1);
-    expect(restored.openWardProposals().length, greaterThanOrEqualTo(1));
+    expect(restored.openWardProposals().single.id, proposal.id);
   });
 }

@@ -1,45 +1,38 @@
 import '../models/ward_proposal.dart';
 
-/// Seeds and manages community ward proposals (v2.0 governance layer).
+/// User ward proposals — listed for everyone for 10 days; one vote per wallet.
 class WardVoting {
   const WardVoting._();
 
-  static List<WardProposal> defaultProposals(DateTime now) {
-    final open = now.toUtc();
-    return [
-      WardProposal(
-        id: 'ward-maple-pavement-2026',
-        title: 'Footpath resurfacing — Maple Ward',
-        summary:
-            'Allocate ward reserve to resurface cracked footpaths on Birch Lane and the community centre approach.',
-        wardName: 'Maple Ward',
-        opensAt: open.subtract(const Duration(days: 14)),
-        closesAt: open.add(const Duration(days: 30)),
-      ),
-      WardProposal(
-        id: 'ward-riverside-hours-2026',
-        title: 'Extend community centre evening hours',
-        summary:
-            'Fund two additional evening sessions per week for youth programmes and ward assembly meetings.',
-        wardName: 'Riverside Ward',
-        opensAt: open.subtract(const Duration(days: 7)),
-        closesAt: open.add(const Duration(days: 21)),
-      ),
-      WardProposal(
-        id: 'ward-hillcrest-green-2026',
-        title: 'Neighbourhood green space covenant',
-        summary:
-            'Ratify a ward covenant protecting the Hillcrest pocket park from development for twenty-five years.',
-        wardName: 'Hillcrest Ward',
-        opensAt: open.subtract(const Duration(days: 3)),
-        closesAt: open.add(const Duration(days: 45)),
-      ),
-    ];
+  static const Duration listingPeriod = Duration(days: WardProposal.listingDays);
+
+  static WardProposal createUserProposal({
+    required String id,
+    required String title,
+    required String summary,
+    required String wardName,
+    required String proposerUsername,
+    required DateTime now,
+  }) {
+    final t = now.toUtc();
+    return WardProposal(
+      id: id,
+      title: title.trim(),
+      summary: summary.trim(),
+      wardName: wardName.trim(),
+      proposerUsername: proposerUsername,
+      opensAt: t,
+      closesAt: t.add(listingPeriod),
+    );
   }
 
-  static void ensureProposals(List<WardProposal> proposals) {
-    if (proposals.isNotEmpty) return;
-    proposals.addAll(defaultProposals(DateTime.now().toUtc()));
+  static List<WardProposal> listedForAll({
+    required List<WardProposal> proposals,
+    DateTime? now,
+  }) {
+    final t = (now ?? DateTime.now()).toUtc();
+    return proposals.where((p) => p.isOpenAt(t)).toList()
+      ..sort((a, b) => b.opensAt.compareTo(a.opensAt));
   }
 
   static WardBallot? ballotFor({

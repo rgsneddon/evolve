@@ -49,6 +49,7 @@ class PercLedger {
     this.evolutionEpoch = 1,
     List<WardProposal>? wardProposals,
     List<WardBallot>? wardBallots,
+    this.nextWardProposalId = 1,
     PercChronofluxMicroVerifier? microVerifier,
   })  : walletPeers = walletPeers ?? <String, List<String>>{},
         evolvedAppVersions = evolvedAppVersions ?? [],
@@ -80,6 +81,7 @@ class PercLedger {
   int evolutionEpoch;
   final List<WardProposal> wardProposals;
   final List<WardBallot> wardBallots;
+  int nextWardProposalId;
   final PercChronofluxMicroVerifier _microVerifier;
 
   bool get isOnEvolutionaryChain =>
@@ -126,16 +128,39 @@ class PercLedger {
       treasuryCycle: 1,
       blockchainLaunched: false,
     );
-    ledger.ensureWardProposals();
     return ledger;
   }
 
-  void ensureWardProposals() => WardVoting.ensureProposals(wardProposals);
+  /// User proposals listed for all wallets for [WardProposal.listingDays] days.
+  List<WardProposal> openWardProposals([DateTime? now]) =>
+      WardVoting.listedForAll(proposals: wardProposals, now: now);
 
-  List<WardProposal> openWardProposals([DateTime? now]) {
-    ensureWardProposals();
+  WardProposal submitWardProposal({
+    required String proposerUsername,
+    required String title,
+    required String summary,
+    required String wardName,
+    DateTime? now,
+  }) {
+    final u = PercAuth.normalizeUsername(proposerUsername);
+    if (title.trim().isEmpty || summary.trim().isEmpty) {
+      throw StateError('Proposal title and summary are required');
+    }
+    if (wardName.trim().isEmpty) {
+      throw StateError('Ward name is required');
+    }
     final t = (now ?? DateTime.now()).toUtc();
-    return wardProposals.where((p) => p.isOpenAt(t)).toList();
+    final proposal = WardVoting.createUserProposal(
+      id: 'ward-user-$nextWardProposalId',
+      title: title,
+      summary: summary,
+      wardName: wardName,
+      proposerUsername: u,
+      now: t,
+    );
+    nextWardProposalId++;
+    wardProposals.add(proposal);
+    return proposal;
   }
 
   WardBallot? wardBallotFor({
@@ -151,7 +176,7 @@ class PercLedger {
   Map<WardVoteChoice, int> wardTallyFor(String proposalId) =>
       WardVoting.tallyFor(ballots: wardBallots, proposalId: proposalId);
 
-  /// One ballot per wallet per proposal; updates existing vote if recast.
+  /// One ballot per wallet per proposal — no recast once recorded.
   WardBallot castWardVote({
     required String proposalId,
     required String voterUsername,
@@ -159,7 +184,6 @@ class PercLedger {
     required String comment,
     DateTime? now,
   }) {
-    ensureWardProposals();
     final u = PercAuth.normalizeUsername(voterUsername);
     final proposal = wardProposals.firstWhere(
       (p) => p.id == proposalId,
@@ -167,12 +191,12 @@ class PercLedger {
     );
     final t = (now ?? DateTime.now()).toUtc();
     if (!proposal.isOpenAt(t)) {
-      throw StateError('Proposal is not open for voting');
+      throw StateError('Proposal listing has ended');
     }
     final trimmed = comment.trim();
     final existing = wardBallotFor(proposalId: proposalId, voterUsername: u);
     if (existing != null) {
-      wardBallots.remove(existing);
+      throw StateError('This wallet already voted on this proposal');
     }
     final ballot = WardBallot(
       proposalId: proposalId,
@@ -1078,6 +1102,7 @@ class PercLedger {
         ),
         'wardProposals': wardProposals.map((p) => p.toJson()).toList(),
         'wardBallots': wardBallots.map((b) => b.toJson()).toList(),
+        'nextWardProposalId': nextWardProposalId,
       };
 
   factory PercLedger.fromJson(Map<String, dynamic> json) {
@@ -1134,8 +1159,8 @@ class PercLedger {
       wardBallots: (json['wardBallots'] as List<dynamic>? ?? [])
           .map((e) => WardBallot.fromJson(e as Map<String, dynamic>))
           .toList(),
-    )..repairForAppUpgrade()
-      ..ensureWardProposals();
+      nextWardProposalId: json['nextWardProposalId'] as int? ?? 1,
+    )..repairForAppUpgrade();
   }
 
   static Map<String, List<String>> _walletPeersFromJson(Object? raw) {
