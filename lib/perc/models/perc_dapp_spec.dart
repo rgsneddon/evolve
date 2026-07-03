@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Beam Wallet localapp kinds — mirrored for the Perccent dapp suite.
 enum PercDappKind {
+  communityWardVoting,
   sendReceive,
   sideChain,
   explorer,
@@ -22,6 +23,7 @@ class PercDappSpec {
     required this.kind,
     required this.icon,
     required this.color,
+    this.featured = false,
   });
 
   final String guid;
@@ -30,9 +32,23 @@ class PercDappSpec {
   final PercDappKind kind;
   final IconData icon;
   final Color color;
+  final bool featured;
+
+  /// v2.0 main dapp — community ward voting portal.
+  static const PercDappSpec featuredDapp = PercDappSpec(
+    guid: 'perc-ward-voting-000',
+    name: 'Community Ward Voting',
+    description:
+        'Cast comment and vote on ward proposals — open scenario % chance & SCS checker',
+    kind: PercDappKind.communityWardVoting,
+    icon: Icons.ballot_outlined,
+    color: Color(0xFF22C55E),
+    featured: true,
+  );
 
   /// Full Beam-suite equivalent catalog for Perccent.
   static const List<PercDappSpec> beamSuite = [
+    featuredDapp,
     PercDappSpec(
       guid: 'perc-send-receive-001',
       name: 'Send / Receive',

@@ -24,7 +24,9 @@ void main() {
     expect(kinds, contains(PercDappKind.sideChain));
     expect(kinds, contains(PercDappKind.sideChainBridge));
     expect(kinds, contains(PercDappKind.meshBridge));
-    expect(PercDappSpec.beamSuite.length, greaterThanOrEqualTo(8));
+    expect(kinds, contains(PercDappKind.communityWardVoting));
+    expect(PercDappSpec.beamSuite.length, greaterThanOrEqualTo(9));
+    expect(PercDappSpec.featuredDapp.kind, PercDappKind.communityWardVoting);
   });
 
   test('side chain parents main chain and tracks microblocks', () {

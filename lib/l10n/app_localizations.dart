@@ -383,6 +383,33 @@ final _en = {
   'wallet_dapp_suite_title': 'Perccent dapp suite',
   'wallet_dapp_suite_subtitle':
       'Beam-suite structure — side chain, send/receive, bridges, and governance for all users',
+  'wallet_dapp_featured_label': 'MAIN DAPP · v2.0',
+  'wallet_dapp_ward_voting': 'Community Ward Voting',
+  'ward_voting_tab_vote': 'Vote',
+  'ward_voting_tab_scenario': 'Scenario checker',
+  'ward_voting_intro':
+      'Cast your comment and vote on open proposals in your community ward. Recast anytime before the ballot closes.',
+  'ward_voting_login_required': 'Register or sign in to your Perccent wallet to vote.',
+  'ward_voting_no_proposals': 'No open ward proposals at this time.',
+  'ward_voting_select_proposal': 'Select proposal',
+  'ward_voting_comment_label': 'Your comment',
+  'ward_voting_comment_hint': 'Explain how Chronoflux analysis informs your vote…',
+  'ward_voting_for': 'For',
+  'ward_voting_against': 'Against',
+  'ward_voting_abstain': 'Abstain',
+  'ward_voting_already_cast': 'You have cast a ballot — submit again to update your vote.',
+  'ward_voting_cast_ok': 'Vote and comment recorded on the ward ledger.',
+  'ward_scenario_intro':
+      'Free open scenario probability checker — runs both percent chance and social cohesion score (SCS) from the Chronoflux paper without treasury draw.',
+  'ward_scenario_topic_label': 'Scenario topic (optional)',
+  'ward_scenario_question_label': 'Posed question',
+  'ward_scenario_question_hint': 'What outcome should the ward weigh?',
+  'ward_scenario_run': 'Run open scenario check',
+  'ward_scenario_need_question': 'Enter a posed question to run the checker.',
+  'ward_scenario_percent_title': 'Percent chance',
+  'ward_scenario_scs_title': 'Social cohesion score',
+  'ward_scenario_free_note':
+      'Open checker only — does not credit PERC. Use the Analysis tab for faucet rewards.',
   'wallet_dapp_send_receive': 'Send / Receive',
   'wallet_dapp_send_receive_note':
       'Every registered wallet can receive PERC. Send to any mesh peer.',

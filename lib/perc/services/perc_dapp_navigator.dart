@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../models/perc_dapp_spec.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../screens/blockchain_explorer_screen.dart';
+import '../screens/community_ward_voting_screen.dart';
 import '../screens/perc_dapp_screens.dart';
 
 
@@ -20,6 +21,12 @@ class PercDappNavigator {
     required VoidCallback onReceive,
   }) {
     switch (spec.kind) {
+      case PercDappKind.communityWardVoting:
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => CommunityWardVotingScreen(strings: strings),
+          ),
+        );
       case PercDappKind.sendReceive:
         onSend();
       case PercDappKind.sideChain:

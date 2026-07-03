@@ -8,6 +8,8 @@ import '../models/perc_evolution_step.dart';
 import '../models/perc_microblock_record_result.dart';
 import '../perc_app_version.dart';
 import '../models/perc_transaction.dart';
+import '../models/ward_proposal.dart';
+import 'ward_voting.dart';
 import '../perc_chain_constants.dart';
 import 'perc_auth.dart';
 import 'perc_chronoflux_micro_verifier.dart';
@@ -45,10 +47,14 @@ class PercLedger {
     List<String>? evolvedAppVersions,
     List<PercEvolutionStep>? evolutionSteps,
     this.evolutionEpoch = 1,
+    List<WardProposal>? wardProposals,
+    List<WardBallot>? wardBallots,
     PercChronofluxMicroVerifier? microVerifier,
   })  : walletPeers = walletPeers ?? <String, List<String>>{},
         evolvedAppVersions = evolvedAppVersions ?? [],
         evolutionSteps = evolutionSteps ?? [],
+        wardProposals = wardProposals ?? [],
+        wardBallots = wardBallots ?? [],
         _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
 
   final Map<String, PercAccount> accounts;
@@ -72,6 +78,8 @@ class PercLedger {
   List<String> evolvedAppVersions;
   List<PercEvolutionStep> evolutionSteps;
   int evolutionEpoch;
+  final List<WardProposal> wardProposals;
+  final List<WardBallot> wardBallots;
   final PercChronofluxMicroVerifier _microVerifier;
 
   bool get isOnEvolutionaryChain =>
@@ -108,15 +116,74 @@ class PercLedger {
     walletPeers = PercWalletMesh.fullMesh(users);
   }
 
-  static PercLedger empty() => PercLedger(
-        accounts: {},
-        blocks: [],
-        lastScenarioAt: null,
-        treasuryGenesisDone: false,
-        cumulativeTreasuryMinted: PercAmount.zero,
-        treasuryCycle: 1,
-        blockchainLaunched: false,
+  static PercLedger empty() {
+    final ledger = PercLedger(
+      accounts: {},
+      blocks: [],
+      lastScenarioAt: null,
+      treasuryGenesisDone: false,
+      cumulativeTreasuryMinted: PercAmount.zero,
+      treasuryCycle: 1,
+      blockchainLaunched: false,
+    );
+    ledger.ensureWardProposals();
+    return ledger;
+  }
+
+  void ensureWardProposals() => WardVoting.ensureProposals(wardProposals);
+
+  List<WardProposal> openWardProposals([DateTime? now]) {
+    ensureWardProposals();
+    final t = (now ?? DateTime.now()).toUtc();
+    return wardProposals.where((p) => p.isOpenAt(t)).toList();
+  }
+
+  WardBallot? wardBallotFor({
+    required String proposalId,
+    required String voterUsername,
+  }) =>
+      WardVoting.ballotFor(
+        ballots: wardBallots,
+        proposalId: proposalId,
+        voterUsername: voterUsername,
       );
+
+  Map<WardVoteChoice, int> wardTallyFor(String proposalId) =>
+      WardVoting.tallyFor(ballots: wardBallots, proposalId: proposalId);
+
+  /// One ballot per wallet per proposal; updates existing vote if recast.
+  WardBallot castWardVote({
+    required String proposalId,
+    required String voterUsername,
+    required WardVoteChoice choice,
+    required String comment,
+    DateTime? now,
+  }) {
+    ensureWardProposals();
+    final u = PercAuth.normalizeUsername(voterUsername);
+    final proposal = wardProposals.firstWhere(
+      (p) => p.id == proposalId,
+      orElse: () => throw StateError('Unknown ward proposal'),
+    );
+    final t = (now ?? DateTime.now()).toUtc();
+    if (!proposal.isOpenAt(t)) {
+      throw StateError('Proposal is not open for voting');
+    }
+    final trimmed = comment.trim();
+    final existing = wardBallotFor(proposalId: proposalId, voterUsername: u);
+    if (existing != null) {
+      wardBallots.remove(existing);
+    }
+    final ballot = WardBallot(
+      proposalId: proposalId,
+      voterUsername: u,
+      choice: choice,
+      comment: trimmed,
+      castAt: t,
+    );
+    wardBallots.add(ballot);
+    return ballot;
+  }
 
   bool get isBlockchainLaunched => blockchainLaunched;
 
@@ -1009,6 +1076,8 @@ class PercLedger {
         'walletPeers': walletPeers.map(
           (k, v) => MapEntry(k, List<String>.from(v)),
         ),
+        'wardProposals': wardProposals.map((p) => p.toJson()).toList(),
+        'wardBallots': wardBallots.map((b) => b.toJson()).toList(),
       };
 
   factory PercLedger.fromJson(Map<String, dynamic> json) {
@@ -1059,7 +1128,14 @@ class PercLedger {
           .map((e) => PercEvolutionStep.fromJson(e as Map<String, dynamic>))
           .toList(),
       evolutionEpoch: json['evolutionEpoch'] as int? ?? 1,
-    )..repairForAppUpgrade();
+      wardProposals: (json['wardProposals'] as List<dynamic>? ?? [])
+          .map((e) => WardProposal.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      wardBallots: (json['wardBallots'] as List<dynamic>? ?? [])
+          .map((e) => WardBallot.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    )..repairForAppUpgrade()
+      ..ensureWardProposals();
   }
 
   static Map<String, List<String>> _walletPeersFromJson(Object? raw) {

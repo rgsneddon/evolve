@@ -11,6 +11,7 @@ import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../models/perc_faucet_credit_result.dart';
 import '../models/perc_transaction.dart';
+import '../models/ward_proposal.dart';
 import '../perc_chain_constants.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
@@ -113,6 +114,44 @@ class PercWalletProvider extends ChangeNotifier {
   int get evolutionEpoch => _ledger.evolutionEpoch;
   bool get isOnEvolutionaryChain => _ledger.isOnEvolutionaryChain;
   Duration? get averageTimePerBlock => _ledger.averageTimePerBlock;
+
+  List<WardProposal> get openWardProposals => _ledger.openWardProposals();
+
+  WardBallot? wardBallotFor(String proposalId) {
+    if (!isLoggedIn) return null;
+    return _ledger.wardBallotFor(
+      proposalId: proposalId,
+      voterUsername: loggedInUsername!,
+    );
+  }
+
+  Map<WardVoteChoice, int> wardTallyFor(String proposalId) =>
+      _ledger.wardTallyFor(proposalId);
+
+  Future<bool> castWardVote({
+    required String proposalId,
+    required WardVoteChoice choice,
+    required String comment,
+  }) async {
+    if (!isLoggedIn) return false;
+    _clearMessages();
+    try {
+      _ledger.castWardVote(
+        proposalId: proposalId,
+        voterUsername: loggedInUsername!,
+        choice: choice,
+        comment: comment,
+      );
+      statusMessage = 'Ward vote recorded';
+      notifyListeners();
+      await _commit();
+      return true;
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('StateError: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
 
   void _onHubLedgerChanged() => notifyListeners();
 
