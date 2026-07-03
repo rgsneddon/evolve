@@ -6,6 +6,7 @@ import '../../models/analysis_mode.dart';
 import '../../models/scenario_input.dart';
 import '../../providers/locale_provider.dart';
 import '../../services/evolve_engine.dart';
+import '../models/ward_conclusion_link.dart';
 import '../models/ward_proposal.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../widgets/chronoflux_five_point_graph_panel.dart';
@@ -13,9 +14,14 @@ import '../widgets/wallet_creator_credit.dart';
 
 /// v2.0 main dapp — community ward voting with open scenario probability checker.
 class CommunityWardVotingScreen extends StatelessWidget {
-  const CommunityWardVotingScreen({super.key, required this.strings});
+  const CommunityWardVotingScreen({
+    super.key,
+    required this.strings,
+    this.initialLink,
+  });
 
   final AppLocalizations strings;
+  final WardConclusionLink? initialLink;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +45,7 @@ class CommunityWardVotingScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            _WardVoteTab(strings: strings),
+            _WardVoteTab(strings: strings, initialLink: initialLink),
             _WardScenarioCheckerTab(strings: strings),
           ],
         ),
@@ -49,9 +55,10 @@ class CommunityWardVotingScreen extends StatelessWidget {
 }
 
 class _WardVoteTab extends StatefulWidget {
-  const _WardVoteTab({required this.strings});
+  const _WardVoteTab({required this.strings, this.initialLink});
 
   final AppLocalizations strings;
+  final WardConclusionLink? initialLink;
 
   @override
   State<_WardVoteTab> createState() => _WardVoteTabState();
@@ -65,6 +72,38 @@ class _WardVoteTabState extends State<_WardVoteTab> {
   final _proposalWardController = TextEditingController();
   WardVoteChoice? _pendingChoice;
   bool _submittingProposal = false;
+  bool _appliedConclusionLink = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applyConclusionLink());
+  }
+
+  void _applyConclusionLink() {
+    if (_appliedConclusionLink || !mounted) return;
+    final link = widget.initialLink ??
+        context.read<PercWalletProvider>().pendingWardConclusionLink;
+    if (link == null) return;
+
+    _appliedConclusionLink = true;
+    final wallet = context.read<PercWalletProvider>();
+    final match = wallet.openWardProposals
+        .where((p) => WardConclusionLink.normalizeTitle(p.title) == link.matchKey)
+        .toList();
+
+    setState(() {
+      if (match.isNotEmpty) {
+        _selectedProposalId = match.first.id;
+        _commentController.text = link.voteCommentPrefill;
+      } else {
+        _proposalTitleController.text = link.title;
+        _proposalSummaryController.text = link.summary;
+        _proposalWardController.text = link.wardName;
+        _commentController.text = link.voteCommentPrefill;
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -112,6 +151,12 @@ class _WardVoteTabState extends State<_WardVoteTab> {
               widget.strings.t('ward_voting_intro'),
               style: const TextStyle(fontSize: 13, color: Color(0xFF9BA3B8), height: 1.45),
             ),
+            if (widget.initialLink != null || wallet.pendingWardConclusionLink != null) ...[
+              const SizedBox(height: 12),
+              _conclusionLinkBanner(
+                widget.initialLink ?? wallet.pendingWardConclusionLink!,
+              ),
+            ],
             const SizedBox(height: 16),
             ChronofluxFivePointGraphPanel(
               wallet: wallet,
@@ -253,6 +298,68 @@ class _WardVoteTabState extends State<_WardVoteTab> {
             ],
             const SizedBox(height: 24),
             WalletCreatorCredit(strings: widget.strings),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _conclusionLinkBanner(WardConclusionLink link) {
+    final modeLabel = link.analysisMode == AnalysisMode.percentChance
+        ? widget.strings.t('mode_percent')
+        : widget.strings.t('mode_cohesion');
+    final outcomeLabel = link.analysisMode == AnalysisMode.percentChance
+        ? '${link.outcomeScore.round()}%'
+        : '${link.outcomeScore.round()}/100 SCS';
+
+    return Card(
+      color: const Color(0xFF6C63FF).withOpacity(0.1),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.link, size: 18, color: Color(0xFF6C63FF)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.strings.t('ward_conclusion_link_loaded'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFB8B5FF),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '$modeLabel · $outcomeLabel',
+              style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+            ),
+            if (link.grokEnriched) ...[
+              const SizedBox(height: 4),
+              Text(
+                widget.strings.t('ward_conclusion_link_grok_badge'),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF00D9C0),
+                ),
+              ),
+            ],
+            if (link.conclusionExcerpt.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                link.conclusionExcerpt,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, height: 1.4, color: Color(0xFFB8BFD0)),
+              ),
+            ],
           ],
         ),
       ),

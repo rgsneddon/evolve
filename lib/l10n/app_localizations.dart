@@ -418,6 +418,13 @@ final _en = {
   'ward_voting_already_cast': 'This wallet has voted — one vote per wallet per proposal.',
   'ward_voting_vote_locked': 'Vote recorded for this wallet',
   'ward_voting_cast_ok': 'Vote and comment recorded on the ward ledger.',
+  'ward_conclusion_link_button': 'Vote on this conclusion in Community Ward',
+  'ward_conclusion_link_loaded': 'Loaded from Evolve analysis conclusion',
+  'ward_conclusion_link_grok_badge': 'Includes Grok construal context',
+  'ward_conclusion_link_summary_header': 'Evolve analysis — ward proposal summary',
+  'ward_conclusion_link_vote_prefill_header': 'My vote is informed by this Evolve analysis:',
+  'ward_conclusion_link_question': 'Posed question',
+  'ward_conclusion_link_grok_note': 'Grok construal:',
   'ward_scenario_intro':
       'Free open scenario probability checker — runs both percent chance and social cohesion score (SCS) from the Chronoflux paper without treasury draw.',
   'ward_scenario_topic_label': 'Scenario topic (optional)',

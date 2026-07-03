@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../models/perc_dapp_spec.dart';
+import '../models/ward_conclusion_link.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../screens/blockchain_explorer_screen.dart';
 import '../screens/community_ward_voting_screen.dart';
@@ -19,12 +20,16 @@ class PercDappNavigator {
     required AppLocalizations strings,
     required VoidCallback onSend,
     required VoidCallback onReceive,
+    WardConclusionLink? conclusionLink,
   }) {
     switch (spec.kind) {
       case PercDappKind.communityWardVoting:
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => CommunityWardVotingScreen(strings: strings),
+            builder: (_) => CommunityWardVotingScreen(
+              strings: strings,
+              initialLink: conclusionLink ?? wallet.pendingWardConclusionLink,
+            ),
           ),
         );
       case PercDappKind.sendReceive:

@@ -11,6 +11,7 @@ import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../models/perc_faucet_credit_result.dart';
 import '../models/perc_transaction.dart';
+import '../models/ward_conclusion_link.dart';
 import '../models/ward_proposal.dart';
 import '../perc_chain_constants.dart';
 import '../services/perc_faucet.dart';
@@ -116,6 +117,21 @@ class PercWalletProvider extends ChangeNotifier {
   Duration? get averageTimePerBlock => _ledger.averageTimePerBlock;
 
   List<WardProposal> get openWardProposals => _ledger.openWardProposals();
+
+  WardConclusionLink? _pendingWardConclusionLink;
+
+  WardConclusionLink? get pendingWardConclusionLink => _pendingWardConclusionLink;
+
+  void setPendingWardConclusionLink(WardConclusionLink? link) {
+    _pendingWardConclusionLink = link;
+    notifyListeners();
+  }
+
+  void clearPendingWardConclusionLink() {
+    if (_pendingWardConclusionLink == null) return;
+    _pendingWardConclusionLink = null;
+    notifyListeners();
+  }
 
   WardBallot? wardBallotFor(String proposalId) {
     if (!isLoggedIn) return null;

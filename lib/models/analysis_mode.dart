@@ -3,6 +3,19 @@ enum AnalysisMode {
   percentChance,
 }
 
+extension AnalysisModeWire on AnalysisMode {
+  String get wireName => switch (this) {
+        AnalysisMode.cohesionScore => 'cohesionScore',
+        AnalysisMode.percentChance => 'percentChance',
+      };
+
+  static AnalysisMode fromWire(String raw) => switch (raw) {
+        'cohesionScore' => AnalysisMode.cohesionScore,
+        'percentChance' => AnalysisMode.percentChance,
+        _ => AnalysisMode.percentChance,
+      };
+}
+
 extension AnalysisModeLabel on AnalysisMode {
   String get title => switch (this) {
         AnalysisMode.percentChance => 'Percent Chance',
