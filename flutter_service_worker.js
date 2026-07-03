@@ -13,7 +13,7 @@ const RESOURCES = {"assets/AssetManifest.bin": "0bdce803bc467ccd515df0eaa99ee9fc
 "assets/assets/flags/gb.png": "5f94d206a4956ec58c461b2520f12887",
 "assets/assets/flags/us.png": "893a96612ae6640a35ecb21eb66c59da",
 "assets/FontManifest.json": "dc3d03800ccca4601324923c0b1d6d57",
-"assets/fonts/MaterialIcons-Regular.otf": "a3ce83ed8edd4f080796e5141e715ade",
+"assets/fonts/MaterialIcons-Regular.otf": "0f2c02d04eb2d739019cbd558c15f8dc",
 "assets/LICENSE": "9853d95e3f26635471cebcafb1f06db9",
 "assets/NOTICES": "4356f913edeb9ebaa3163c1a92f46435",
 "assets/packages/cupertino_icons/assets/CupertinoIcons.ttf": "33b7d9392238c04c131b6ce224e13711",
@@ -32,7 +32,7 @@ const RESOURCES = {"assets/AssetManifest.bin": "0bdce803bc467ccd515df0eaa99ee9fc
 "canvaskit/skwasm_st.wasm": "56c3973560dfcbf28ce47cebe40f3206",
 "favicon.png": "5d0ad25986aa320811c465d0b60dfe6b",
 "flutter.js": "76f08d47ff9f5715220992f993002504",
-"flutter_bootstrap.js": "4e0e6d2393a3ca53a2d644065e1d7b78",
+"flutter_bootstrap.js": "1e418297ed1a0a32f37d1c22d030b7dd",
 "icons/Icon-192.png": "2335bf87ddd65a5e86d14b2d4c791b4a",
 "icons/Icon-512.png": "941b8210b2e95803006ad1c285910e67",
 "icons/Icon-maskable-192.png": "638a6e5e58194982037f5170573d7b39",
@@ -40,10 +40,10 @@ const RESOURCES = {"assets/AssetManifest.bin": "0bdce803bc467ccd515df0eaa99ee9fc
 "index.html": "911d3ed117e1b7a1ac630888eb83cf43",
 "/": "911d3ed117e1b7a1ac630888eb83cf43",
 "LICENSE": "9853d95e3f26635471cebcafb1f06db9",
-"main.dart.js": "6f56d4335f68946af8be4a6661ac4276",
+"main.dart.js": "8d06d977e0474592954a6ea127b0bc4b",
 "manifest.json": "6abb496a5f8ecd7846edb92e8d3c3ac9",
 "README.md": "28b5f370dddf4a371abda7d5d3cac5c2",
-"version.json": "48846ff0f75427df29a3c5b890adc5ce"};
+"version.json": "876fce7f4c9e16377dd9d0a1a64d01dd"};
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = ["main.dart.js",
