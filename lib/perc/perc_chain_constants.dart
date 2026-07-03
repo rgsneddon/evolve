@@ -58,8 +58,8 @@ class PercChainConstants {
   /// Each wallet may draw the scenario faucet once per 450 minutes.
   static const Duration faucetCooldown = Duration(minutes: 450);
 
-  /// After a recipient brings their wallet online, inbound transfers settle
-  /// once this delay has elapsed (12 calendar months).
+  /// Offline inbound transfers must be collected by signing in within this
+  /// window after they were sent (12 calendar months).
   static const Duration walletOnlineReceiveDelay = Duration(days: 365);
 
   /// Override for tests — never set in production code.

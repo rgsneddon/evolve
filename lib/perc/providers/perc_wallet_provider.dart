@@ -262,7 +262,7 @@ class PercWalletProvider extends ChangeNotifier {
             'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername';
       } else {
         statusMessage =
-            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername — delivers after they bring their wallet online (${_formatReceiveDelay()})';
+            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $toUsername — delivers when they sign in within ${_formatReceiveDelay()}';
       }
       notifyListeners();
       await _commit();

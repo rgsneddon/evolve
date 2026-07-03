@@ -894,28 +894,16 @@ class PercLedger {
     sessionUsername = u;
     _launchBlockchainIfTreasurerFirstLogin(u);
     final t = (now ?? DateTime.now()).toUtc();
-    _markRecipientOnline(u, t);
     _settlePendingInbound(u, t);
     return acc;
   }
 
-  void _markRecipientOnline(String username, DateTime now) {
-    for (final pending in pendingInboundTransfers) {
-      if (pending.toUsername == username &&
-          pending.recipientBroughtOnlineAt == null) {
-        pending.recipientBroughtOnlineAt = now;
-      }
-    }
-  }
-
   void _settlePendingInbound(String username, DateTime now) {
-    final delay = PercChainConstants.walletOnlineReceiveDelayEffective;
+    final window = PercChainConstants.walletOnlineReceiveDelayEffective;
     final toSettle = pendingInboundTransfers
-        .where((p) =>
-            p.toUsername == username && p.recipientBroughtOnlineAt != null)
-        .where(
-          (p) => !now.isBefore(p.recipientBroughtOnlineAt!.add(delay)),
-        )
+        .where((p) => p.toUsername == username)
+        .where((p) => !now.isBefore(p.sentAt))
+        .where((p) => now.isBefore(p.sentAt.add(window)))
         .toList();
     if (toSettle.isEmpty) return;
 
@@ -947,12 +935,11 @@ class PercLedger {
 
   void logout() => sessionUsername = null;
 
-  /// Marks the signed-in user online and settles inbound transfers past the delay.
+  /// Settles inbound transfers for the signed-in user when still in receive window.
   void refreshPendingInboundForSession({DateTime? now}) {
     final u = sessionUsername;
     if (u == null) return;
     final t = (now ?? DateTime.now()).toUtc();
-    _markRecipientOnline(u, t);
     _settlePendingInbound(u, t);
   }
 
