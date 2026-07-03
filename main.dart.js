@@ -49260,7 +49260,7 @@ if(i.a.a0y())B.m.I(s,A.a([B.bE,A.iI(!1,A.B(b.n("wallet_treasury_setup_link"),n,n
 j.push(A.cL(new A.ap(B.bs,A.b6(s,B.bp,n,B.K,B.cd),n),n,B.bs))
 j.push(new A.pA(b,n))
 return A.ki(!0,A.fk(A.tz(new A.dW(B.uc,A.b6(j,B.aj,n,B.K,B.O),n),n),n,n),B.bg,!0)},
-amZ(b0,b1,b2){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a=this,a0=null,a1="2.2.0+49",a2=A.bZ(b0,B.dB,t.l).w.a.a<520,a3=a2?12:20,a4=a2?12:20,a5=A.dM(a0,B.a0E,B.a5,a0,new A.cm(a0,a0,a0,A.cr(12),a0,B.a1K,B.aZ),a0,44,a0,a0,a0,a0,44),a6=A.B(b2.n("wallet_title"),a0,a0,a0,B.b3N,a0,a0),a7=b2.n("wallet_signed_in_as"),a8=$.cZ(),a9=a8.a.w
+amZ(b0,b1,b2){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a=this,a0=null,a1="2.2.1+51",a2=A.bZ(b0,B.dB,t.l).w.a.a<520,a3=a2?12:20,a4=a2?12:20,a5=A.dM(a0,B.a0E,B.a5,a0,new A.cm(a0,a0,a0,A.cr(12),a0,B.a1K,B.aZ),a0,44,a0,a0,a0,a0,44),a6=A.B(b2.n("wallet_title"),a0,a0,a0,B.b3N,a0,a0),a7=b2.n("wallet_signed_in_as"),a8=$.cZ(),a9=a8.a.w
 if(a9==null)a9=""
 s=t.p
 a9=A.bR(A.a([a5,B.ji,A.cK(A.b6(A.a([a6,A.B(A.i(a7,"{user}",a9),a0,a0,a0,B.dX,a0,a0),B.hC,A.B(b2.n("wallet_creator_credit"),a0,a0,a0,B.b33,a0,a0)],s),B.ad,a0,B.K,B.O),1),A.iI(!1,A.B(b2.n("wallet_logout"),a0,a0,a0,a0,a0,a0),a0,a0,a0,a0,a0,a0,b1.gauj(),a0,a0)],s),B.aj,B.K,B.O)
@@ -49794,7 +49794,7 @@ n.h(0,"mainChainId",s.length===0?"perc-main-evolve-1":s)
 s=q.ch
 n.h(0,"sideChainId",s.length===0?"perc-chronoflux-side-1":s)
 s=q.CW
-n.h(0,"connectedAppVersion",s.length===0?"2.2.0+49":s)
+n.h(0,"connectedAppVersion",s.length===0?"2.2.1+51":s)
 n.h(0,"evolvedAppVersions",q.cx)
 s=q.cy
 r=A.U(s).j("G<1,aI<l,@>>")
@@ -49934,7 +49934,7 @@ return A.E(b.mQ(0),$async$wW)
 case 3:n=d
 o=n==null?A.apD():n
 p.a=o
-m=B.oI.Kf(o,"2.2.0+49")
+m=B.oI.Kf(o,"2.2.1+51")
 p.c=!0;++p.d
 p.P()
 s=m?4:5
@@ -49952,14 +49952,14 @@ break}s=3
 return A.E(n.mQ(0),$async$Dn)
 case 3:o=b
 if(o==null){s=1
-break}B.oI.Kf(o,"2.2.0+49")
+break}B.oI.Kf(o,"2.2.1+51")
 p.a=o;++p.d
 p.P()
 case 1:return A.L(q,r)}})
 return A.M($async$Dn,r)},
 ks(a){var s=0,r=A.N(t.H),q=this,p
 var $async$ks=A.O(function(b,c){if(b===1)return A.K(c,r)
-while(true)switch(s){case 0:B.oI.Kf(q.a,"2.2.0+49");++q.d
+while(true)switch(s){case 0:B.oI.Kf(q.a,"2.2.1+51");++q.d
 q.P()
 p=q.b
 p=p==null?null:p.ya(0,q.a)
@@ -117587,10 +117587,10 @@ m.h(0,"credit_parish_note","Use Evolve Chronoflux analysis to structure ward-lev
 m.h(0,"credit_cohesion_goal","Build release aims for 94% Social Cohesion within the British Isles.")
 m.h(0,"credit_peace_goal","Full committal across Earth will bring Peace on Earth at a scattered 93% Social Cohesion.")
 m.h(0,"credit_attribution_title","Attribution")
-m.h(0,"credit_attribution_body","Chronoflux Principia \u2014 Roy D Herbert. Perccent blockchain forked from Beam privacy architecture \u2014 Valdok and Beam CTO Alex Romanov.")
+m.h(0,"credit_attribution_body","Evolve \u2014 created by rgsneddon, utilising Grok construal. Chronoflux Principia \u2014 Roy D Herbert. Perccent blockchain forked from Beam privacy architecture \u2014 Valdok and Beam CTO Alex Romanov.")
 m.h(0,"wallet_title","Evolve Wallet")
 m.h(0,"wallet_subtitle","Perccent chain \xb7 scenario-driven treasury")
-m.h(0,"wallet_creator_credit","Roy D Herbert (Chronoflux Principia) \xb7 Valdok \xb7 Beam CTO Alex Romanov \u2014 Beam-privacy Perccent fork")
+m.h(0,"wallet_creator_credit","Created by rgsneddon \xb7 utilising Grok \xb7 Roy D Herbert (Chronoflux Principia) \xb7 Valdok \xb7 Beam CTO Alex Romanov \u2014 Beam-privacy Perccent fork")
 m.h(0,"wallet_privacy_title","Beam-confidential Perccent")
 m.h(0,"wallet_privacy_note","Perccent is forked from Beam privacy \u2014 confidential addresses and shielded balances on-device.")
 m.h(0,"wallet_avg_block_time","Average time per block: {time}")
@@ -118103,7 +118103,7 @@ n.h(0,"credit_parish_note","Use el an\xe1lisis Evolve Chronoflux para estructura
 n.h(0,"credit_cohesion_goal","La versi\xf3n de lanzamiento apunta al 94% de cohesi\xf3n social en las Islas Brit\xe1nicas.")
 n.h(0,"credit_peace_goal","El compromiso pleno en la Tierra traer\xe1 Paz en la Tierra con un 93% de cohesi\xf3n social dispersa.")
 n.h(0,"credit_attribution_title","Atribuci\xf3n")
-n.h(0,"credit_attribution_body","Chronoflux Principia \u2014 Roy D Herbert. Cadena Perccent bifurcada de la arquitectura de privacidad Beam \u2014 Valdok y el CTO de Beam Alex Romanov.")
+n.h(0,"credit_attribution_body","Evolve \u2014 creado por rgsneddon, con construcci\xf3n Grok. Chronoflux Principia \u2014 Roy D Herbert. Cadena Perccent bifurcada de la arquitectura de privacidad Beam \u2014 Valdok y el CTO de Beam Alex Romanov.")
 n.h(0,"wallet_privacy_title","Perccent confidencial Beam")
 n.h(0,"wallet_privacy_note","Perccent se bifurc\xf3 de Beam privacy \u2014 direcciones confidenciales y saldos protegidos en el dispositivo.")
 n.h(0,"wallet_avg_block_time","Tiempo medio por bloque: {time}")
@@ -118111,7 +118111,7 @@ n.h(0,"wallet_time_confirmations_title","Confirmaciones Chronoflux TIME")
 n.h(0,"wallet_supply_infinite","Suministro continuo infinito (\u221e PERC)")
 n.h(0,"wallet_title","Monedero Evolve")
 n.h(0,"wallet_subtitle","Cadena Perccent \xb7 tesorer\xeda por escenarios")
-n.h(0,"wallet_creator_credit","Roy D Herbert (Chronoflux Principia) \xb7 Valdok \xb7 CTO de Beam Alex Romanov \u2014 bifurcaci\xf3n Perccent con privacidad Beam")
+n.h(0,"wallet_creator_credit","Creado por rgsneddon \xb7 con Grok \xb7 Roy D Herbert (Chronoflux Principia) \xb7 Valdok \xb7 CTO de Beam Alex Romanov \u2014 bifurcaci\xf3n Perccent con privacidad Beam")
 n.h(0,"wallet_balance_label","Saldo disponible")
 n.h(0,"wallet_staking_title","Staking acumulativo")
 n.h(0,"wallet_staking_note","Cualquier PERC en cartera gana 5 cent por bloque (10% de la base de 50 cent). 1 PERC = 100.000.000 cent (0,00000001 PERC cada uno).")

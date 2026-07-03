@@ -325,11 +325,11 @@ final _en = {
       'Full committal across Earth will bring Peace on Earth at a scattered 93% Social Cohesion.',
   'credit_attribution_title': 'Attribution',
   'credit_attribution_body':
-      'Chronoflux Principia — Roy D Herbert. Perccent blockchain forked from Beam privacy architecture — Valdok and Beam CTO Alex Romanov.',
+      'Evolve — created by rgsneddon, utilising Grok construal. Chronoflux Principia — Roy D Herbert. Perccent blockchain forked from Beam privacy architecture — Valdok and Beam CTO Alex Romanov.',
   'wallet_title': 'Evolve Wallet',
   'wallet_subtitle': 'Perccent chain · scenario-driven treasury',
   'wallet_creator_credit':
-      'Roy D Herbert (Chronoflux Principia) · Valdok · Beam CTO Alex Romanov — Beam-privacy Perccent fork',
+      'Created by rgsneddon · utilising Grok · Roy D Herbert (Chronoflux Principia) · Valdok · Beam CTO Alex Romanov — Beam-privacy Perccent fork',
   'wallet_privacy_title': 'Beam-confidential Perccent',
   'wallet_privacy_note':
       'Perccent is forked from Beam privacy — confidential addresses and shielded balances on-device.',
@@ -973,7 +973,7 @@ final _es = {
       'El compromiso pleno en la Tierra traerá Paz en la Tierra con un 93% de cohesión social dispersa.',
   'credit_attribution_title': 'Atribución',
   'credit_attribution_body':
-      'Chronoflux Principia — Roy D Herbert. Cadena Perccent bifurcada de la arquitectura de privacidad Beam — Valdok y el CTO de Beam Alex Romanov.',
+      'Evolve — creado por rgsneddon, con construcción Grok. Chronoflux Principia — Roy D Herbert. Cadena Perccent bifurcada de la arquitectura de privacidad Beam — Valdok y el CTO de Beam Alex Romanov.',
   'wallet_privacy_title': 'Perccent confidencial Beam',
   'wallet_privacy_note':
       'Perccent se bifurcó de Beam privacy — direcciones confidenciales y saldos protegidos en el dispositivo.',
@@ -983,7 +983,7 @@ final _es = {
   'wallet_title': 'Monedero Evolve',
   'wallet_subtitle': 'Cadena Perccent · tesorería por escenarios',
   'wallet_creator_credit':
-      'Roy D Herbert (Chronoflux Principia) · Valdok · CTO de Beam Alex Romanov — bifurcación Perccent con privacidad Beam',
+      'Creado por rgsneddon · con Grok · Roy D Herbert (Chronoflux Principia) · Valdok · CTO de Beam Alex Romanov — bifurcación Perccent con privacidad Beam',
   'wallet_balance_label': 'Saldo disponible',
   'wallet_staking_title': 'Staking acumulativo',
   'wallet_staking_note':
