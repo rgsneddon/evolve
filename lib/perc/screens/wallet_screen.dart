@@ -1152,6 +1152,7 @@ class _WalletScreenState extends State<WalletScreen> {
         tx.kind == PercTxKind.transfer && tx.fromUsername == viewer;
     final isIn = tx.kind == PercTxKind.scenarioReward ||
         tx.kind == PercTxKind.stakingReward ||
+        tx.kind == PercTxKind.transferRevert ||
         (tx.kind == PercTxKind.transfer && tx.toUsername == viewer) ||
         (tx.kind == PercTxKind.treasuryEmission &&
             viewer == PercChainConstants.treasuryUsername);
@@ -1175,6 +1176,8 @@ class _WalletScreenState extends State<WalletScreen> {
             ? strings.t('wallet_tx_sent').replaceAll('{user}', tx.toUsername ?? '')
             : strings.t('wallet_tx_received')
                 .replaceAll('{user}', tx.fromUsername ?? '');
+      case PercTxKind.transferRevert:
+        title = tx.memo ?? strings.t('wallet_tx_revert');
       case PercTxKind.genesisRenewal:
         title = tx.memo ?? strings.t('wallet_tx_genesis');
       case PercTxKind.chronofluxMicroblock:
