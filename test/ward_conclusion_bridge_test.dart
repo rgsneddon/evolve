@@ -100,6 +100,66 @@ void main() {
     expect(link.voteCommentPrefill, contains(strings.t('ward_dual_vote_prefill_header')));
   });
 
+  test('buildBestEffortDual runs missing mode from single Evolve result', () {
+    const input = ScenarioInput(
+      posedQuestion: 'Will the farmers market permit be renewed?',
+    );
+    final percentResult = engine.analyze(
+      input,
+      mode: AnalysisMode.percentChance,
+      locale: locale,
+    );
+
+    final link = WardConclusionBridge.buildBestEffortDual(
+      currentResult: percentResult,
+      currentMode: AnalysisMode.percentChance,
+      input: input,
+      locale: locale,
+      strings: strings,
+      percentResult: percentResult,
+      cohesionResult: null,
+    );
+
+    expect(link.dualAnalysis, isTrue);
+    expect(link.percentChance, percentResult.percentChance);
+    expect(link.refinedScs, isNotNull);
+    expect(link.summary, contains(strings.t('ward_dual_summary_header')));
+  });
+
+  test('enrichLinkToDual upgrades single-mode conclusion link', () {
+    const input = ScenarioInput(
+      posedQuestion: 'Should the ward adopt the noise ordinance?',
+    );
+    final result = engine.analyze(
+      input,
+      mode: AnalysisMode.percentChance,
+      locale: locale,
+    );
+    final single = WardConclusionBridge.build(
+      result: result,
+      input: input,
+      mode: AnalysisMode.percentChance,
+      locale: locale,
+      strings: strings,
+    );
+
+    expect(single.dualAnalysis, isFalse);
+
+    final enriched = WardConclusionBridge.enrichLinkToDual(
+      seed: single,
+      locale: locale,
+      strings: strings,
+    );
+
+    expect(enriched.dualAnalysis, isTrue);
+    expect(enriched.title, single.title);
+    expect(enriched.conclusionExcerpt, single.conclusionExcerpt);
+    expect(enriched.percentChance, isNotNull);
+    expect(enriched.refinedScs, isNotNull);
+    expect(enriched.summary, contains('${enriched.percentChance!.round()}%'));
+    expect(enriched.summary, contains('${enriched.refinedScs!.round()}/100 SCS'));
+  });
+
   test('buildFromScenario produces dual link', () {
     const input = ScenarioInput(
       posedQuestion: 'Will the library expansion bond pass?',

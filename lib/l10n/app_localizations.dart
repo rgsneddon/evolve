@@ -428,9 +428,14 @@ final _en = {
   'ward_dual_populator_title': 'Dual analysis — % and SCS',
   'ward_dual_populator_note':
       'Run percent chance and social cohesion score together, then populate proposal and vote fields with both metrics.',
+  'ward_dual_populator_from_link_note':
+      'Using the Evolve conclusion link — runs % and SCS for that scenario and fills proposal and vote fields with both.',
   'ward_dual_run_button': 'Run % + SCS analysis',
+  'ward_dual_rerun_from_link_button': 'Re-run % + SCS for linked scenario',
   'ward_dual_populate_button': 'Populate proposal & vote fields',
   'ward_dual_populated_ok': 'Proposal and vote fields filled with % and SCS combined.',
+  'ward_dual_populated_from_link_ok':
+      'Linked conclusion enriched with % and SCS — proposal and vote fields updated.',
   'ward_dual_summary_header': 'Evolve dual analysis — ward proposal summary',
   'ward_dual_vote_prefill_header': 'My vote is informed by this dual Chronoflux analysis:',
   'ward_scenario_intro':

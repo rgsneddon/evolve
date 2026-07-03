@@ -42,6 +42,41 @@ class WardConclusionLink {
   static String normalizeTitle(String raw) =>
       raw.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 
+  WardConclusionLink copyWith({
+    String? title,
+    String? summary,
+    String? wardName,
+    String? voteCommentPrefill,
+    AnalysisMode? analysisMode,
+    double? outcomeScore,
+    String? conclusionExcerpt,
+    bool? grokEnriched,
+    String? posedQuestion,
+    String? topic,
+    bool? dualAnalysis,
+    double? percentChance,
+    String? percentPhrase,
+    double? refinedScs,
+    String? scsLean,
+  }) =>
+      WardConclusionLink(
+        title: title ?? this.title,
+        summary: summary ?? this.summary,
+        wardName: wardName ?? this.wardName,
+        voteCommentPrefill: voteCommentPrefill ?? this.voteCommentPrefill,
+        analysisMode: analysisMode ?? this.analysisMode,
+        outcomeScore: outcomeScore ?? this.outcomeScore,
+        conclusionExcerpt: conclusionExcerpt ?? this.conclusionExcerpt,
+        grokEnriched: grokEnriched ?? this.grokEnriched,
+        posedQuestion: posedQuestion ?? this.posedQuestion,
+        topic: topic ?? this.topic,
+        dualAnalysis: dualAnalysis ?? this.dualAnalysis,
+        percentChance: percentChance ?? this.percentChance,
+        percentPhrase: percentPhrase ?? this.percentPhrase,
+        refinedScs: refinedScs ?? this.refinedScs,
+        scsLean: scsLean ?? this.scsLean,
+      );
+
   Map<String, dynamic> toJson() => {
         'title': title,
         'summary': summary,

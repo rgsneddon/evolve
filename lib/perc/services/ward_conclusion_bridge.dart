@@ -174,6 +174,128 @@ class WardConclusionBridge {
     );
   }
 
+  /// Builds a dual link from Evolve, running the missing mode when only one is saved.
+  static WardConclusionLink buildBestEffortDual({
+    required EvolveResult currentResult,
+    required AnalysisMode currentMode,
+    required ScenarioInput input,
+    required LocaleConfig locale,
+    required AppLocalizations strings,
+    EvolveResult? percentResult,
+    EvolveResult? cohesionResult,
+    String? conclusionExcerptOverride,
+    bool grokConstrualEnabled = false,
+    EvolveEngine engine = const EvolveEngine(),
+  }) {
+    var pct = percentResult;
+    var scs = cohesionResult;
+    if (pct == null && currentMode == AnalysisMode.percentChance) {
+      pct = currentResult;
+    }
+    if (scs == null && currentMode == AnalysisMode.cohesionScore) {
+      scs = currentResult;
+    }
+
+    final hasScenario = _hasScenarioInput(input);
+    if (pct == null && hasScenario) {
+      pct = engine.analyze(
+        input,
+        mode: AnalysisMode.percentChance,
+        locale: locale,
+      );
+    }
+    if (scs == null && hasScenario) {
+      scs = engine.analyze(
+        input,
+        mode: AnalysisMode.cohesionScore,
+        locale: locale,
+      );
+    }
+
+    if (pct != null && scs != null) {
+      return buildDual(
+        percentResult: pct,
+        cohesionResult: scs,
+        input: input,
+        locale: locale,
+        strings: strings,
+        conclusionExcerptOverride: conclusionExcerptOverride,
+        grokConstrualEnabled: grokConstrualEnabled,
+      );
+    }
+
+    return build(
+      result: currentResult,
+      input: input,
+      mode: currentMode,
+      locale: locale,
+      strings: strings,
+      conclusionExcerptOverride: conclusionExcerptOverride,
+      grokConstrualEnabled: grokConstrualEnabled,
+    );
+  }
+
+  /// Upgrades a previously created single-mode conclusion link to dual % + SCS.
+  static WardConclusionLink enrichLinkToDual({
+    required WardConclusionLink seed,
+    required LocaleConfig locale,
+    required AppLocalizations strings,
+    EvolveEngine engine = const EvolveEngine(),
+  }) {
+    if (seed.dualAnalysis &&
+        seed.percentChance != null &&
+        seed.refinedScs != null) {
+      return seed;
+    }
+
+    final question = seed.posedQuestion.trim();
+    if (question.isEmpty) return seed;
+
+    final input = ScenarioInput(
+      topic: seed.topic,
+      posedQuestion: question,
+    );
+    final percentResult = engine.analyze(
+      input,
+      mode: AnalysisMode.percentChance,
+      locale: locale,
+    );
+    final cohesionResult = engine.analyze(
+      input,
+      mode: AnalysisMode.cohesionScore,
+      locale: locale,
+    );
+    final dual = buildDual(
+      percentResult: percentResult,
+      cohesionResult: cohesionResult,
+      input: input,
+      locale: locale,
+      strings: strings,
+      conclusionExcerptOverride: seed.conclusionExcerpt,
+      grokConstrualEnabled: seed.grokEnriched,
+    );
+
+    return WardConclusionLink(
+      title: seed.title.isNotEmpty ? seed.title : dual.title,
+      summary: dual.summary,
+      wardName: seed.wardName.isNotEmpty ? seed.wardName : dual.wardName,
+      voteCommentPrefill: dual.voteCommentPrefill,
+      analysisMode: seed.analysisMode,
+      outcomeScore: seed.outcomeScore,
+      conclusionExcerpt: seed.conclusionExcerpt.isNotEmpty
+          ? seed.conclusionExcerpt
+          : dual.conclusionExcerpt,
+      grokEnriched: seed.grokEnriched || dual.grokEnriched,
+      posedQuestion: seed.posedQuestion,
+      topic: seed.topic,
+      dualAnalysis: true,
+      percentChance: dual.percentChance,
+      percentPhrase: dual.percentPhrase,
+      refinedScs: dual.refinedScs,
+      scsLean: dual.scsLean,
+    );
+  }
+
   /// Runs open dual analysis (no PERC faucet) and returns a combined link.
   static WardConclusionLink buildFromScenario({
     required ScenarioInput input,
@@ -355,6 +477,11 @@ class WardConclusionBridge {
     }
     return buf.toString().trim();
   }
+
+  static bool _hasScenarioInput(ScenarioInput input) =>
+      input.posedQuestion.trim().isNotEmpty ||
+      input.topic.trim().isNotEmpty ||
+      input.scenarioQuery.trim().isNotEmpty;
 
   static String _firstNonEmpty(List<String?> values) {
     for (final v in values) {

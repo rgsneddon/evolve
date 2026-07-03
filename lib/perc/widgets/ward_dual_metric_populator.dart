@@ -13,11 +13,13 @@ class WardDualMetricPopulator extends StatefulWidget {
     super.key,
     required this.strings,
     required this.onPopulate,
+    this.seedLink,
     this.compact = false,
   });
 
   final AppLocalizations strings;
   final ValueChanged<WardConclusionLink> onPopulate;
+  final WardConclusionLink? seedLink;
   final bool compact;
 
   @override
@@ -30,6 +32,76 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
   bool _running = false;
   WardConclusionLink? _lastLink;
   String? _error;
+  bool _enrichedSeed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _applySeedLink(widget.seedLink);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _enrichSeedLinkIfNeeded());
+  }
+
+  @override
+  void didUpdateWidget(covariant WardDualMetricPopulator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.seedLink != widget.seedLink) {
+      _enrichedSeed = false;
+      _applySeedLink(widget.seedLink);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _enrichSeedLinkIfNeeded());
+    }
+  }
+
+  void _applySeedLink(WardConclusionLink? seed) {
+    if (seed == null) return;
+    _topicController.text = seed.topic;
+    _questionController.text = seed.posedQuestion;
+    if (seed.dualAnalysis && seed.percentChance != null && seed.refinedScs != null) {
+      _lastLink = seed;
+    }
+  }
+
+  Future<void> _enrichSeedLinkIfNeeded() async {
+    if (_enrichedSeed || !mounted) return;
+    final seed = widget.seedLink;
+    if (seed == null) return;
+    if (seed.dualAnalysis && seed.percentChance != null && seed.refinedScs != null) {
+      _enrichedSeed = true;
+      if (mounted) setState(() => _lastLink = seed);
+      return;
+    }
+    if (seed.posedQuestion.trim().isEmpty) return;
+
+    _enrichedSeed = true;
+    setState(() {
+      _running = true;
+      _error = null;
+    });
+
+    try {
+      final locale = context.read<LocaleProvider>().config;
+      final enriched = WardConclusionBridge.enrichLinkToDual(
+        seed: seed,
+        locale: locale,
+        strings: widget.strings,
+      );
+      if (!mounted) return;
+      setState(() {
+        _lastLink = enriched;
+        _running = false;
+      });
+      widget.onPopulate(enriched);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(widget.strings.t('ward_dual_populated_from_link_ok'))),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _running = false;
+        _enrichedSeed = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -58,11 +130,23 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
     );
 
     try {
-      final link = WardConclusionBridge.buildFromScenario(
-        input: input,
-        locale: locale,
-        strings: widget.strings,
-      );
+      WardConclusionLink link;
+      final seed = widget.seedLink;
+      if (seed != null &&
+          seed.posedQuestion.trim() == question &&
+          (seed.topic.trim().isEmpty || seed.topic.trim() == input.topic)) {
+        link = WardConclusionBridge.enrichLinkToDual(
+          seed: seed.copyWith(topic: input.topic, posedQuestion: question),
+          locale: locale,
+          strings: widget.strings,
+        );
+      } else {
+        link = WardConclusionBridge.buildFromScenario(
+          input: input,
+          locale: locale,
+          strings: widget.strings,
+        );
+      }
       if (!mounted) return;
       setState(() {
         _lastLink = link;
@@ -89,6 +173,7 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
   @override
   Widget build(BuildContext context) {
     final link = _lastLink;
+    final hasSeed = widget.seedLink != null;
 
     return Card(
       color: const Color(0xFF6C63FF).withOpacity(0.08),
@@ -103,7 +188,9 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
             ),
             const SizedBox(height: 4),
             Text(
-              widget.strings.t('ward_dual_populator_note'),
+              hasSeed
+                  ? widget.strings.t('ward_dual_populator_from_link_note')
+                  : widget.strings.t('ward_dual_populator_note'),
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8), height: 1.4),
             ),
             const SizedBox(height: 12),
@@ -134,7 +221,11 @@ class _WardDualMetricPopulatorState extends State<WardDualMetricPopulator> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.analytics_outlined, size: 18),
-              label: Text(widget.strings.t('ward_dual_run_button')),
+              label: Text(
+                hasSeed
+                    ? widget.strings.t('ward_dual_rerun_from_link_button')
+                    : widget.strings.t('ward_dual_run_button'),
+              ),
             ),
             if (_error != null) ...[
               const SizedBox(height: 8),

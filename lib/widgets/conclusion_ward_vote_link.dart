@@ -41,27 +41,17 @@ class ConclusionWardVoteLink extends StatelessWidget {
     final result = evolve.result;
     if (result == null) return;
 
-    final percentResult = evolve.resultForMode(AnalysisMode.percentChance);
-    final cohesionResult = evolve.resultForMode(AnalysisMode.cohesionScore);
-    final link = percentResult != null && cohesionResult != null
-        ? WardConclusionBridge.buildDual(
-            percentResult: percentResult,
-            cohesionResult: cohesionResult,
-            input: evolve.input,
-            locale: evolve.locale,
-            strings: evolve.strings,
-            conclusionExcerptOverride: conclusionExcerpt,
-            grokConstrualEnabled: evolve.grokConstrualEnabled,
-          )
-        : WardConclusionBridge.build(
-            result: result,
-            input: evolve.input,
-            mode: evolve.mode,
-            locale: evolve.locale,
-            strings: evolve.strings,
-            conclusionExcerptOverride: conclusionExcerpt,
-            grokConstrualEnabled: evolve.grokConstrualEnabled,
-          );
+    final link = WardConclusionBridge.buildBestEffortDual(
+      currentResult: result,
+      currentMode: evolve.mode,
+      input: evolve.input,
+      locale: evolve.locale,
+      strings: evolve.strings,
+      percentResult: evolve.resultForMode(AnalysisMode.percentChance),
+      cohesionResult: evolve.resultForMode(AnalysisMode.cohesionScore),
+      conclusionExcerptOverride: conclusionExcerpt,
+      grokConstrualEnabled: evolve.grokConstrualEnabled,
+    );
 
     final wallet = context.read<PercWalletProvider>();
     wallet.setPendingWardConclusionLink(link);

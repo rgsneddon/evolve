@@ -160,12 +160,19 @@ class _WardVoteTabState extends State<_WardVoteTab> {
 
   void _applyConclusionLink() {
     if (_appliedConclusionLink || !mounted) return;
-    final link = widget.initialLink ??
+    final raw = widget.initialLink ??
         context.read<PercWalletProvider>().pendingWardConclusionLink;
-    if (link == null) return;
+    if (raw == null) return;
 
     _appliedConclusionLink = true;
-    _applyLinkToFields(link);
+    final locale = context.read<LocaleProvider>().config;
+    final enriched = WardConclusionBridge.enrichLinkToDual(
+      seed: raw,
+      locale: locale,
+      strings: widget.strings,
+    );
+    context.read<PercWalletProvider>().setPendingWardConclusionLink(enriched);
+    _applyLinkToFields(enriched);
   }
 
   void _applyPopulateLink() {
@@ -233,6 +240,8 @@ class _WardVoteTabState extends State<_WardVoteTab> {
             const SizedBox(height: 16),
             WardDualMetricPopulator(
               strings: widget.strings,
+              seedLink: widget.initialLink ??
+                  wallet.pendingWardConclusionLink,
               onPopulate: _applyLinkToFields,
             ),
             const SizedBox(height: 16),
