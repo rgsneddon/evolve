@@ -10,6 +10,7 @@ import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_block_timing.dart';
 import '../widgets/chronoflux_five_point_graph_panel.dart';
+import '../widgets/lawful_frame_flow_shard_graph.dart';
 import '../widgets/wallet_creator_credit.dart';
 
 /// Historical Perccent chain blocks inside the wallet.
@@ -27,7 +28,7 @@ class BlockchainExplorerScreen extends StatelessWidget {
         title: Text(strings.t('wallet_explorer_title')),
       ),
       body: SafeArea(
-        child: blocks.isEmpty
+        child: blocks.isEmpty && !wallet.isBlockchainLaunched
             ? Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -46,6 +47,11 @@ class BlockchainExplorerScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        LawfulFrameFlowShardGraph(
+                          wallet: wallet,
+                          strings: strings,
+                        ),
+                        const SizedBox(height: 16),
                         _heightCard(wallet, strings),
                         const SizedBox(height: 16),
                         _graphCard(blocks, strings),
@@ -56,23 +62,25 @@ class BlockchainExplorerScreen extends StatelessWidget {
                           wallet: wallet,
                           strings: strings,
                         ),
-                        const SizedBox(height: 20),
-                        Text(
-                          strings.t('wallet_explorer_history'),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.6,
-                            color: Color(0xFF9BA3B8),
+                        if (blocks.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          Text(
+                            strings.t('wallet_explorer_history'),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.6,
+                              color: Color(0xFF9BA3B8),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        ...blocks.reversed.map(
-                          (b) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _blockTile(b, strings),
+                          const SizedBox(height: 8),
+                          ...blocks.reversed.map(
+                            (b) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _blockTile(b, strings),
+                            ),
                           ),
-                        ),
+                        ],
                         WalletCreatorCredit(strings: strings),
                       ],
                     ),

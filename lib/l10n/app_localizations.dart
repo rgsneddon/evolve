@@ -495,6 +495,25 @@ final _en = {
   'wallet_explorer_genesis_renewal': 'Genesis renewal — cycle #{cycle} (283M PERC Perccent)',
   'wallet_explorer_confirmations': '{count} confirmation(s) required — fully confirmed',
   'wallet_explorer_confirmed': 'Fully confirmed (1 block)',
+  'wallet_explorer_frame_flow_title': 'Lawful Frame-Flow Split — Chronoflux Shard Field',
+  'wallet_explorer_frame_flow_subtitle':
+      'Degenerate one-vector ansatz set aside; lawful continuity split retained — all microblock shards mapped.',
+  'wallet_explorer_frame_flow_center':
+      'Lawful frame-flow split — frame defines the slice; drift remains inside the slice',
+  'wallet_explorer_frame_flow_status':
+      'A2 status: lawful frame-flow split; projector built from frame only; drift remains measurable. '
+      'Structural consequence of the foundational continuity regime.',
+  'wallet_explorer_shard_count':
+      '{visible} / {visible} shards visible in field — {lit} lit in current seal cycle',
+  'wallet_explorer_degenerate_title':
+      'Degenerate one-vector ansatz — not an admissible frame-flow representation',
+  'wallet_explorer_degenerate_body':
+      'The same vector cannot define the frame and supply spatial drift. The drift is projected away when the projector is built from the direction it tests.',
+  'wallet_explorer_lawful_title': 'Lawful variables',
+  'wallet_explorer_label_frame': 'Frame normal nμ defines slicing',
+  'wallet_explorer_label_drift': 'Spatial drift vμ inside slice',
+  'wallet_explorer_label_split': 'Split nμ vμ = 0 orthogonal',
+  'wallet_explorer_label_projector': 'Projector h(n)μν from frame',
   'wallet_cooldown_popup_title': 'Treasury draw on cooldown',
   'wallet_cooldown_popup_body':
       'Your wallet already drew from treasury within the last 7 minutes. The Perccent chain advances on scenarios — your next eligible draw (and block) is in approximately {blockWait}. You can draw xx/100 PERC again after {wait}.',
@@ -543,13 +562,35 @@ final _en = {
   'wallet_send_title': 'Send Perccent',
   'wallet_send_to': 'To PERC address',
   'wallet_send_to_hint': 'Paste a registered PERC address',
+  'wallet_send_scan_qr': 'Scan QR code',
+  'wallet_send_scan_title': 'Scan PERC address',
+  'wallet_send_scan_body':
+      'Point your camera at another user\'s Receive QR code to fill in their PERC address.',
+  'wallet_send_scan_cancel': 'Cancel scan',
+  'wallet_send_scan_invalid': 'That QR code is not a valid PERC address.',
+  'wallet_send_scan_ready': 'Camera ready — align the QR code in the frame.',
+  'wallet_send_scan_camera_error':
+      'Could not access the camera. Allow camera permission in device settings, then try again.',
+  'wallet_send_scan_unavailable':
+      'QR scan needs a phone or tablet camera (Android/iOS). Paste the PERC address instead.',
+  'wallet_camera_permission_title': 'Allow camera access',
+  'wallet_camera_permission_body':
+      'Evolve needs your camera to scan another user\'s PERC Receive QR code when sending Perccent coins.',
+  'wallet_camera_permission_allow': 'Allow camera',
+  'wallet_camera_permission_not_now': 'Not now',
+  'wallet_camera_permission_denied':
+      'Camera access denied — allow camera in settings to scan PERC QR codes.',
+  'wallet_camera_permission_settings_body':
+      'Camera access is turned off for Evolve. Open settings and enable Camera to scan PERC QR codes.',
+  'wallet_camera_permission_open_settings': 'Open settings',
   'wallet_send_address_pick': 'Or pick a known address',
   'wallet_send_amount': 'Amount (PERC)',
   'wallet_send_memo': 'Memo (optional)',
   'wallet_send_confirm': 'Send Perccent',
   'wallet_receive_title': 'Receive Perccent',
   'wallet_receive_note':
-      'Share your PERC address so others can send Perccent (PERC) to you.',
+      'Others can scan this QR code or copy your PERC address to send Perccent (PERC) to you.',
+  'wallet_receive_qr_hint': 'Scan to send PERC',
   'wallet_tx_treasury': 'Treasury emission',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -1039,6 +1080,23 @@ final _es = {
   'wallet_explorer_genesis_renewal': 'Renovación génesis — ciclo #{cycle} (283M PERC Perccent)',
   'wallet_explorer_confirmations': '{count} confirmación(es) requerida(s) — totalmente confirmado',
   'wallet_explorer_confirmed': 'Totalmente confirmado (1 bloque)',
+  'wallet_explorer_frame_flow_title': 'División frame-flow lícita — campo de fragmentos Chronoflux',
+  'wallet_explorer_frame_flow_subtitle':
+      'Ansatz de un vector degenerado descartado; división de continuidad lícita — todos los fragmentos mapeados.',
+  'wallet_explorer_frame_flow_center':
+      'División frame-flow lícita — el marco define la rebanada; la deriva permanece dentro',
+  'wallet_explorer_frame_flow_status':
+      'Estado A2: división frame-flow lícita; proyector solo del marco; deriva medible.',
+  'wallet_explorer_shard_count':
+      '{visible} / {visible} fragmentos visibles — {lit} activos en el ciclo de sellado',
+  'wallet_explorer_degenerate_title': 'Ansatz de un vector degenerado — no admisible',
+  'wallet_explorer_degenerate_body':
+      'El mismo vector no puede definir el marco y la deriva espacial a la vez.',
+  'wallet_explorer_lawful_title': 'Variables lícitas',
+  'wallet_explorer_label_frame': 'Normal de marco nμ define corte',
+  'wallet_explorer_label_drift': 'Deriva espacial vμ dentro del corte',
+  'wallet_explorer_label_split': 'División nμ vμ = 0 ortogonal',
+  'wallet_explorer_label_projector': 'Proyector h(n)μν del marco',
   'wallet_cooldown_popup_title': 'Retiro de tesorería en espera',
   'wallet_cooldown_popup_body':
       'Su monedero ya retiró de la tesorería en los últimos 7 minutos. La cadena avanza con escenarios — su próximo retiro (y bloque) es en aproximadamente {blockWait}. Puede retirar xx/100 PERC de nuevo tras {wait}.',
@@ -1088,13 +1146,35 @@ final _es = {
   'wallet_send_title': 'Enviar Perccent',
   'wallet_send_to': 'Dirección PERC destino',
   'wallet_send_to_hint': 'Pegue una dirección PERC registrada',
+  'wallet_send_scan_qr': 'Escanear código QR',
+  'wallet_send_scan_title': 'Escanear dirección PERC',
+  'wallet_send_scan_body':
+      'Apunte la cámara al código QR de Recibir de otro usuario para rellenar su dirección PERC.',
+  'wallet_send_scan_cancel': 'Cancelar escaneo',
+  'wallet_send_scan_invalid': 'Ese código QR no es una dirección PERC válida.',
+  'wallet_send_scan_ready': 'Cámara lista — alinee el código QR en el marco.',
+  'wallet_send_scan_camera_error':
+      'No se pudo acceder a la cámara. Permita el acceso en ajustes del dispositivo e inténtelo de nuevo.',
+  'wallet_send_scan_unavailable':
+      'El escaneo QR requiere cámara en móvil (Android/iOS). Pegue la dirección PERC.',
+  'wallet_camera_permission_title': 'Permitir acceso a la cámara',
+  'wallet_camera_permission_body':
+      'Evolve necesita la cámara para escanear el código QR de Recibir de otro usuario al enviar Perccent.',
+  'wallet_camera_permission_allow': 'Permitir cámara',
+  'wallet_camera_permission_not_now': 'Ahora no',
+  'wallet_camera_permission_denied':
+      'Acceso a la cámara denegado — actívela en ajustes para escanear códigos QR PERC.',
+  'wallet_camera_permission_settings_body':
+      'El acceso a la cámara está desactivado para Evolve. Abra ajustes y active Cámara.',
+  'wallet_camera_permission_open_settings': 'Abrir ajustes',
   'wallet_send_address_pick': 'O elija una dirección conocida',
   'wallet_send_amount': 'Cantidad (PERC)',
   'wallet_send_memo': 'Nota (opcional)',
   'wallet_send_confirm': 'Enviar Perccent',
   'wallet_receive_title': 'Recibir Perccent',
   'wallet_receive_note':
-      'Comparta su dirección PERC para que otros le envíen Perccent (PERC).',
+      'Otros pueden escanear este código QR o copiar su dirección PERC para enviarle Perccent (PERC).',
+  'wallet_receive_qr_hint': 'Escanear para enviar PERC',
   'wallet_tx_treasury': 'Emisión de tesorería',
   'wallet_tx_reward': 'Recompensa de análisis',
   'wallet_tx_sent': 'Enviado a {user}',
