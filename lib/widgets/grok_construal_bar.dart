@@ -27,7 +27,7 @@ class GrokConstrualBar extends StatelessWidget {
         !heuristicMode && !signedIn && !busy && (enabled || proxyReady);
     final proxyMissing = provider.grokConfigReady && !proxyReady && !heuristicMode;
     final canBegin = enabled &&
-        signedIn &&
+        (signedIn || heuristicMode) &&
         provider.input.posedQuestion.trim().isNotEmpty;
 
     final switchRow = _buildGrokSwitchRow(context, provider, s, enabled);
@@ -69,7 +69,7 @@ class GrokConstrualBar extends StatelessWidget {
                   const SizedBox(height: 8),
                   _pendingSignInLink(context, provider, s),
                 ],
-                if (enabled && signedIn) ...[
+                if (enabled && (signedIn || heuristicMode)) ...[
                   const SizedBox(height: 10),
                   _beginButton(context, provider, s, canBegin, busy),
                 ],
@@ -149,7 +149,7 @@ class GrokConstrualBar extends StatelessWidget {
                     child: _signInButton(context, provider, s),
                   ),
                 ],
-                if (enabled && signedIn) ...[
+                if (enabled && (signedIn || heuristicMode)) ...[
                   const SizedBox(width: 10),
                   SizedBox(
                     width: 200,

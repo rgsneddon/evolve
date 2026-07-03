@@ -168,7 +168,7 @@ class EvolveProvider extends ChangeNotifier {
     await _ensureGrokProxyResolved();
     if (_usesInBrowserGrok) {
       _androidHeuristicFallback = false;
-      return grokSession.canConstrue;
+      return true;
     }
 
     if (!kIsWeb) {
@@ -210,7 +210,34 @@ class EvolveProvider extends ChangeNotifier {
   bool _activateAndroidHeuristicFallback() {
     _androidHeuristicFallback = true;
     notifyListeners();
-    return false;
+    return true;
+  }
+
+  @visibleForTesting
+  bool activateAndroidHeuristicFallbackForTest() =>
+      _activateAndroidHeuristicFallback();
+
+  String _heuristicReadyMessage() {
+    if (_androidHeuristicFallback) {
+      return strings.t('grok_android_heuristic_ready');
+    }
+    if (_usesInBrowserGrok) {
+      return strings.t('grok_web_heuristic_ready');
+    }
+    return strings.t('grok_online_ready');
+  }
+
+  void _finishHeuristicActivation(
+    BuildContext context, {
+    bool showSnackBar = true,
+  }) {
+    grokConstrualEnabled = true;
+    isConnectingGrok = false;
+    statusMessage = _heuristicReadyMessage();
+    notifyListeners();
+    if (showSnackBar && context.mounted) {
+      _showGrokSnackBar(context, statusMessage!);
+    }
   }
 
   void _showGrokSnackBar(
@@ -310,13 +337,7 @@ class EvolveProvider extends ChangeNotifier {
     }
 
     if (_usesHeuristicConstrual) {
-      grokConstrualEnabled = true;
-      isConnectingGrok = false;
-      statusMessage = strings.t('grok_sign_in_x_required');
-      notifyListeners();
-      if (context.mounted) {
-        _showGrokSnackBar(context, statusMessage!, isError: true);
-      }
+      _finishHeuristicActivation(context);
       return;
     }
 
@@ -328,6 +349,14 @@ class EvolveProvider extends ChangeNotifier {
 
     if (!grokSession.canConstrue) {
       if (!context.mounted) return;
+      if (!kIsWeb &&
+          defaultTargetPlatform == TargetPlatform.android &&
+          GrokProxyLauncher.instance.isEmbedded &&
+          GrokProxyLauncher.instance.usesMockConfig) {
+        _activateAndroidHeuristicFallback();
+        _finishHeuristicActivation(context);
+        return;
+      }
       final ok = await _connectGrok(context);
       if (!grokConstrualEnabled) return;
       if (!ok) {
@@ -373,10 +402,10 @@ class EvolveProvider extends ChangeNotifier {
 
     if (_usesHeuristicConstrual) {
       isConnectingGrok = false;
-      statusMessage = strings.t('grok_sign_in_x_required');
+      statusMessage = _heuristicReadyMessage();
       notifyListeners();
       if (context.mounted) {
-        _showGrokSnackBar(context, statusMessage!, isError: true);
+        _showGrokSnackBar(context, statusMessage!);
       }
       return;
     }
@@ -421,7 +450,7 @@ class EvolveProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (!grokSession.canConstrue) {
+    if (!grokSession.canConstrue && !_usesHeuristicConstrual) {
       statusMessage = strings.t('grok_premium_required');
       notifyListeners();
       return;
@@ -439,8 +468,17 @@ class EvolveProvider extends ChangeNotifier {
     try {
       final auth = _activeGrokAuth;
       final login = await auth.beginLogin();
+      if (login.mock &&
+          !kIsWeb &&
+          defaultTargetPlatform == TargetPlatform.android) {
+        _activateAndroidHeuristicFallback();
+        _finishHeuristicActivation(context);
+        return true;
+      }
+
       final authorize = login.authorizeUrl;
-      final mockCallback = GrokAuthClient.isEmbeddedMockCallback(authorize);
+      final mockCallback =
+          login.mock || GrokAuthClient.isEmbeddedMockCallback(authorize);
 
       if (mockCallback) {
         statusMessage = strings.t('grok_mock_signing_in');
@@ -758,7 +796,9 @@ class EvolveProvider extends ChangeNotifier {
       return;
     }
 
-    if (grokConstrualEnabled && !grokSession.canConstrue) {
+    if (grokConstrualEnabled &&
+        !grokSession.canConstrue &&
+        !_usesHeuristicConstrual) {
       statusMessage = strings.t('grok_premium_required');
       grokConstrualEnabled = false;
       notifyListeners();
@@ -883,7 +923,7 @@ class EvolveProvider extends ChangeNotifier {
 
   Future<void> _runConstrual() async {
     if (!grokConstrualEnabled || input.scenarioQuery.trim().isEmpty) return;
-    if (!grokSession.canConstrue) return;
+    if (!grokSession.canConstrue && !_usesHeuristicConstrual) return;
 
     final generation = ++_construeGeneration;
     isConstruing = true;

@@ -11,6 +11,7 @@ class GrokProxyLauncher {
   bool get supportsEmbeddedProxy => false;
   bool get isRunning => false;
   bool get isEmbedded => false;
+  bool get usesMockConfig => false;
   int get port => defaultPort;
 
   GrokSession get embeddedSession => const GrokSession();
