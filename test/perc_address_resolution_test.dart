@@ -63,6 +63,25 @@ void main() {
     );
   });
 
+  test('mergeDiscoverableAccounts stubs wallets from peer ledger', () {
+    final local = PercLedger.empty();
+    local.ensureTreasuryAccount();
+    local.setupTreasuryPassword('password12345');
+    local.launchBlockchain();
+    local.register('sender', 'password12345');
+
+    final remote = PercLedger.fromJson(local.toJson());
+    remote.register('receiver', 'password12345');
+
+    expect(local.accountForAddress(remote.account('receiver')!.address), isNull);
+
+    local.mergeDiscoverableAccounts(remote);
+
+    final receiverAddr = remote.account('receiver')!.address;
+    expect(local.accountForAddress(receiverAddr)?.username, 'receiver');
+    expect(local.account('receiver')?.passwordSet, isFalse);
+  });
+
   test('wallet send resolves remote stub before ledger transfer', () async {
     final store = PercWalletStoreMemory();
     final wallet = PercWalletProvider(store: store);

@@ -541,6 +541,23 @@ class PercLedger {
   PercAccount? accountForAddress(String address) =>
       _accountForAddress(PercAuth.normalizeAddress(address));
 
+  /// Stubs discoverable wallets from a peer/seed ledger so sends can target them.
+  void mergeDiscoverableAccounts(PercLedger remote) {
+    for (final acc in remote.accounts.values) {
+      if (acc.address.isEmpty) continue;
+      if (_accountForAddress(acc.address) != null) continue;
+      if (acc.username == PercChainConstants.treasuryUsername ||
+          acc.username == PercChainConstants.seedUsername) {
+        continue;
+      }
+      try {
+        ensureRemoteAccount(username: acc.username, address: acc.address);
+      } on StateError {
+        // Username collision with a different local address — skip.
+      }
+    }
+  }
+
   PercAccount? _accountForAddress(String address) {
     final normalized = PercAuth.normalizeAddress(address);
     if (normalized.isEmpty) return null;

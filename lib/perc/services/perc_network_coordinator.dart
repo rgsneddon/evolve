@@ -116,6 +116,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
     if (username != PercChainConstants.treasuryUsername) {
       await _rendezvous.register(status);
+      await _rendezvous.relayLedger(username: username, ledger: hub.ledger);
     }
     await syncToNetworkHeight();
     await hub.commit();
@@ -344,12 +345,46 @@ class PercNetworkCoordinator extends ChangeNotifier {
     local = hub.ledger.accountForAddress(normalized);
     if (local != null) return local;
 
+    local = await _discoverAccountOnNetwork(normalized);
+    if (local != null) return local;
+
+    return null;
+  }
+
+  Future<PercAccount?> _discoverAccountOnNetwork(String normalized) async {
+    final hub = _hub;
+    if (hub == null) return null;
+
+    PercAccount? _localHit() => hub.ledger.accountForAddress(normalized);
+
+    void _mergeRemote(PercLedger remote) =>
+        hub.ledger.mergeDiscoverableAccounts(remote);
+
+    PercAccount? _ensureFromRemote(PercLedger remote) {
+      final acc = remote.accountForAddress(normalized);
+      if (acc == null) return null;
+      return hub.ledger.ensureRemoteAccount(
+        username: acc.username,
+        address: acc.address,
+      );
+    }
+
     final indexed = await _rendezvous.lookupAddress(normalized);
     if (indexed != null) {
       return hub.ledger.ensureRemoteAccount(
         username: indexed.username,
         address: indexed.address,
       );
+    }
+
+    final base = await _rendezvous.baseUrl();
+    if (base != null) {
+      final seedLedger = await _client.fetchLedger(base);
+      if (seedLedger != null) {
+        _mergeRemote(seedLedger);
+        final hit = _localHit() ?? _ensureFromRemote(seedLedger);
+        if (hit != null) return hit;
+      }
     }
 
     final peers = await _rendezvous.fetchPeers();
@@ -368,31 +403,23 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
       final relayed = await _rendezvous.fetchRelayedLedger(username);
       if (relayed != null) {
-        final acc = relayed.accountForAddress(normalized);
-        if (acc != null) {
-          return hub.ledger.ensureRemoteAccount(
-            username: acc.username,
-            address: acc.address,
-          );
-        }
+        _mergeRemote(relayed);
+        final hit = _localHit() ?? _ensureFromRemote(relayed);
+        if (hit != null) return hit;
       }
 
       final endpoint = status.endpoint;
       if (endpoint != null && PercPublicEndpoint.isInternetEndpoint(endpoint)) {
         final remote = await _client.fetchLedger(endpoint);
         if (remote != null) {
-          final acc = remote.accountForAddress(normalized);
-          if (acc != null) {
-            return hub.ledger.ensureRemoteAccount(
-              username: acc.username,
-              address: acc.address,
-            );
-          }
+          _mergeRemote(remote);
+          final hit = _localHit() ?? _ensureFromRemote(remote);
+          if (hit != null) return hit;
         }
       }
     }
 
-    return null;
+    return _localHit();
   }
 
   List<PercPeerNode> get onlineNodes =>

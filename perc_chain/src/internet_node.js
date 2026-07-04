@@ -14,6 +14,10 @@ import { buildTreasuryWalletView } from './treasury_api.js';
 import { launchBlockchainFromTreasuryLogin } from './blockchain_launch.js';
 import { regenerateTreasuryIfLow } from './treasury_regeneration.js';
 import { maskEndpoint, sanitizeForPublicExplorer } from './endpoint_privacy.js';
+import {
+  findAddressInLedgerCollection,
+  indexLedgerAddresses,
+} from './address_index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -124,6 +128,7 @@ async function registerSeed() {
       ledger: store.ledger,
       updatedAt: Date.now(),
     });
+    indexLedgerAddresses(store.ledger, addresses);
   }
 }
 
@@ -330,6 +335,10 @@ const server = http.createServer(async (req, res) => {
     if (data.walletAddress) {
       addresses.set(data.walletAddress, data.sessionUsername);
     }
+    const relayed = ledgers.get(data.sessionUsername);
+    if (relayed?.ledger) {
+      indexLedgerAddresses(relayed.ledger, addresses);
+    }
     return json(res, 200, { ok: true });
   }
 
@@ -343,12 +352,26 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/address') {
-    const address = url.searchParams.get('address');
-    if (!address || !addresses.has(address)) {
+    const address = url.searchParams.get('address')?.trim();
+    if (!address) {
+      return json(res, 404, { error: 'address not found' });
+    }
+    let username = addresses.get(address);
+    if (!username) {
+      const found = findAddressInLedgerCollection(address, [
+        store.ledger,
+        ...[...ledgers.values()].map((entry) => entry.ledger),
+      ]);
+      if (found) {
+        username = found.username;
+        addresses.set(found.address, found.username);
+      }
+    }
+    if (!username) {
       return json(res, 404, { error: 'address not found' });
     }
     return json(res, 200, {
-      username: addresses.get(address),
+      username,
       address,
     });
   }
@@ -371,8 +394,10 @@ const server = http.createServer(async (req, res) => {
       ledger: data.ledger,
       updatedAt: Date.now(),
     });
+    indexLedgerAddresses(data.ledger, addresses);
     if (data.username !== SEED_USERNAME) {
       store.importLedger(data.ledger);
+      indexLedgerAddresses(store.ledger, addresses);
     }
     return json(res, 200, { ok: true });
   }
@@ -402,6 +427,7 @@ const server = http.createServer(async (req, res) => {
       return json(res, 400, { error: 'ledger body required' });
     }
     store.importLedger(remote);
+    indexLedgerAddresses(store.ledger, addresses);
     await registerSeed();
     return json(res, 200, { ok: true });
   }

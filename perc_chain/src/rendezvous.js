@@ -1,4 +1,8 @@
 import http from 'http';
+import {
+  findAddressInLedgerCollection,
+  indexLedgerAddresses,
+} from './address_index.js';
 
 const PORT = Number(process.env.PORT ?? process.env.PERC_RENDEZVOUS_PORT ?? 9478);
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
@@ -54,6 +58,10 @@ const server = http.createServer(async (req, res) => {
     if (data.walletAddress) {
       addresses.set(data.walletAddress, data.sessionUsername);
     }
+    const relayed = ledgers.get(data.sessionUsername);
+    if (relayed?.ledger) {
+      indexLedgerAddresses(relayed.ledger, addresses);
+    }
     return json(res, 200, { ok: true });
   }
 
@@ -84,16 +92,30 @@ const server = http.createServer(async (req, res) => {
       ledger: data.ledger,
       updatedAt: Date.now(),
     });
+    indexLedgerAddresses(data.ledger, addresses);
     return json(res, 200, { ok: true });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/address') {
-    const address = url.searchParams.get('address');
-    if (!address || !addresses.has(address)) {
+    const address = url.searchParams.get('address')?.trim();
+    if (!address) {
+      return json(res, 404, { error: 'address not found' });
+    }
+    let username = addresses.get(address);
+    if (!username) {
+      const found = findAddressInLedgerCollection(address, [
+        ...[...ledgers.values()].map((entry) => entry.ledger),
+      ]);
+      if (found) {
+        username = found.username;
+        addresses.set(found.address, found.username);
+      }
+    }
+    if (!username) {
       return json(res, 404, { error: 'address not found' });
     }
     return json(res, 200, {
-      username: addresses.get(address),
+      username,
       address,
     });
   }
