@@ -10,6 +10,7 @@ import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_block_timing.dart';
 import '../services/perc_ward_bundler.dart';
+import '../services/chronoflux_variable_history.dart';
 import '../widgets/chronoflux_five_point_graph_panel.dart';
 import '../widgets/lawful_frame_flow_shard_graph.dart';
 import '../widgets/wallet_creator_credit.dart';
@@ -55,17 +56,21 @@ class BlockchainExplorerScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         _heightCard(wallet, strings),
-                        if (blocks.isNotEmpty) ...[
+                        if (blocks.isNotEmpty && _chartsHaveData(blocks)) ...[
                           const SizedBox(height: 16),
                           _graphCard(blocks, strings),
                           const SizedBox(height: 16),
                           _cumulativeCard(blocks, strings),
                         ],
-                        const SizedBox(height: 16),
-                        ChronofluxFivePointGraphPanel(
-                          wallet: wallet,
-                          strings: strings,
-                        ),
+                        if (_hasChronofluxHistory(blocks)) ...[
+                          const SizedBox(height: 16),
+                          ChronofluxFivePointGraphPanel(
+                            wallet: wallet,
+                            strings: strings,
+                            compact: true,
+                            showSeriesCharts: false,
+                          ),
+                        ],
                         if (blocks.isNotEmpty) ...[
                           const SizedBox(height: 20),
                           Text(
@@ -92,6 +97,15 @@ class BlockchainExplorerScreen extends StatelessWidget {
                 ),
               ),
       ),
+    );
+  }
+
+  static bool _hasChronofluxHistory(List<PercBlock> blocks) =>
+      ChronofluxVariableHistory.fromBlocks(blocks).isNotEmpty;
+
+  static bool _chartsHaveData(List<PercBlock> blocks) {
+    return blocks.any(
+      (b) => b.treasuryEmitted.isPositive || b.transactions.isNotEmpty,
     );
   }
 

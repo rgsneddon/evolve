@@ -55,7 +55,14 @@ class PercLedgerHub extends ChangeNotifier {
     _cancelSync = hub_sync.bindCrossTabSync(
       onRemoteRevision: () => unawaited(reloadFromStore()),
     );
-    await network.bind(this);
+    // Load local ledger first; sync to the seed node in the background so the
+    // shell can appear without waiting on network I/O (especially on Windows).
+    final networkBind = network.bind(this);
+    if (PercNetworkCoordinator.disableLiveNodesForTests) {
+      await networkBind;
+    } else {
+      unawaited(networkBind);
+    }
   }
 
   Future<void> reloadFromStore() async {

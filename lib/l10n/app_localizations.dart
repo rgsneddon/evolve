@@ -327,6 +327,13 @@ final _en = {
   'credit_attribution_body':
       'Evolve — created by rgsneddon, utilising Grok construal. Chronoflux Principia — Roy D Herbert. Perccent blockchain forked from Beam privacy architecture — Valdok and Beam CTO Alex Romanov.',
   'wallet_title': 'Evolve Wallet',
+  'wallet_opening_title': 'Opening wallet',
+  'wallet_opening_message':
+      'Your Perccent wallet is loading. Please wait…',
+  'wallet_opening_error':
+      'The wallet could not open. Check your connection and try again.',
+  'wallet_opening_retry': 'Try again',
+  'wallet_details_section': 'Chain & network details',
   'wallet_subtitle': 'Perccent chain · scenario-driven treasury',
   'wallet_creator_credit':
       'Created by rgsneddon · utilising Grok · Roy D Herbert (Chronoflux Principia) · Valdok · Beam CTO Alex Romanov — Beam-privacy Perccent fork',

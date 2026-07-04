@@ -20,6 +20,7 @@ class EvolveShellScreen extends StatefulWidget {
 
 class _EvolveShellScreenState extends State<EvolveShellScreen> {
   int _index = 0;
+  bool _walletTabVisited = false;
   PercWalletProvider? _wallet;
 
   @override
@@ -77,12 +78,6 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
     final wallet = context.watch<PercWalletProvider>();
     final strings = AppLocalizations.of(context.watch<LocaleProvider>().config);
 
-    if (!wallet.isReady) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     final destinations = wallet.hasAppAccess
         ? [
             NavigationDestination(
@@ -114,19 +109,36 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
             ),
           ];
 
-    final screens = wallet.hasAppAccess
-        ? const [HomeScreen(), WalletScreen(), CreditScreen()]
-        : const [WalletScreen(), CreditScreen()];
-
+    final walletTabIndex = wallet.hasAppAccess ? 1 : 0;
     final navIndex = wallet.hasAppAccess
         ? _index
-        : _index.clamp(0, screens.length - 1);
+        : _index.clamp(0, destinations.length - 1);
+
+    if (navIndex == walletTabIndex) {
+      _walletTabVisited = true;
+    }
 
     return Scaffold(
-      body: IndexedStack(
-        index: navIndex,
-        children: screens,
-      ),
+      body: wallet.hasAppAccess
+          ? IndexedStack(
+              index: navIndex,
+              children: [
+                const HomeScreen(),
+                _walletTabVisited
+                    ? const WalletScreen()
+                    : const SizedBox.shrink(),
+                const CreditScreen(),
+              ],
+            )
+          : IndexedStack(
+              index: navIndex,
+              children: [
+                _walletTabVisited
+                    ? const WalletScreen()
+                    : const SizedBox.shrink(),
+                const CreditScreen(),
+              ],
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navIndex,
         onDestinationSelected: (i) => setState(() => _index = i),

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../platform/desktop_platform.dart';
 import '../../providers/locale_provider.dart';
 import '../models/perc_transaction.dart';
 import '../perc_chain_constants.dart';
@@ -19,6 +20,7 @@ import '../services/perc_chronoflux_time_confirmations.dart';
 import '../services/perc_send_receive_actions.dart';
 import '../widgets/blockchain_launch_balloon.dart';
 import '../widgets/wallet_creator_credit.dart';
+import '../widgets/wallet_opening_screen.dart';
 import 'blockchain_explorer_screen.dart';
 
 /// Evolve Wallet — Perccent accounts, scenario-driven chain, send/receive.
@@ -96,7 +98,7 @@ class _WalletScreenState extends State<WalletScreen> {
     _syncInflationTicker(wallet);
 
     if (!wallet.isReady) {
-      return const Center(child: CircularProgressIndicator());
+      return WalletOpeningScreen(strings: strings);
     }
 
     if (!wallet.isLoggedIn) {
@@ -467,99 +469,219 @@ class _WalletScreenState extends State<WalletScreen> {
     PercWalletProvider wallet,
     AppLocalizations strings,
   ) {
-    final compact = MediaQuery.sizeOf(context).width < 520;
+    final width = MediaQuery.sizeOf(context).width;
+    final compact = width < 520;
+    final desktop = isDesktopWindows || width >= 860;
 
+    if (desktop) {
+      return _walletHomeDesktop(context, wallet, strings, compact: compact);
+    }
+
+    return _walletHomeScroll(
+      context,
+      wallet,
+      strings,
+      compact: compact,
+      children: [
+        _header(wallet, strings),
+        const SizedBox(height: 16),
+        _balanceCard(wallet, strings, compact: true),
+        const SizedBox(height: 12),
+        _sendReceiveRow(context, wallet, strings),
+        const SizedBox(height: 12),
+        _walletMeshCard(wallet, strings),
+        const SizedBox(height: 12),
+        _treasuryCard(wallet, strings),
+        const SizedBox(height: 12),
+        _faucetCard(wallet, strings),
+        const SizedBox(height: 12),
+        _addressCard(context, wallet, strings),
+        const SizedBox(height: 12),
+        _explorerLink(context, wallet, strings),
+        const SizedBox(height: 12),
+        _walletDetailsExpansion(wallet, strings),
+        const SizedBox(height: 20),
+        _transactionsSection(wallet, strings),
+        WalletCreatorCredit(strings: strings),
+      ],
+    );
+  }
+
+  Widget _walletHomeDesktop(
+    BuildContext context,
+    PercWalletProvider wallet,
+    AppLocalizations strings, {
+    required bool compact,
+  }) {
+    return _walletHomeScroll(
+      context,
+      wallet,
+      strings,
+      compact: compact,
+      maxWidth: 1080,
+      children: [
+        _header(wallet, strings),
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _balanceCard(wallet, strings, compact: true),
+                  const SizedBox(height: 12),
+                  _sendReceiveRow(context, wallet, strings),
+                  const SizedBox(height: 16),
+                  _transactionsSection(wallet, strings),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _walletMeshCard(wallet, strings),
+                  const SizedBox(height: 12),
+                  _treasuryCard(wallet, strings),
+                  const SizedBox(height: 12),
+                  _faucetCard(wallet, strings),
+                  const SizedBox(height: 12),
+                  _addressCard(context, wallet, strings),
+                  const SizedBox(height: 12),
+                  _explorerLink(context, wallet, strings),
+                  const SizedBox(height: 12),
+                  _walletDetailsExpansion(wallet, strings),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        WalletCreatorCredit(strings: strings),
+      ],
+    );
+  }
+
+  Widget _walletHomeScroll(
+    BuildContext context,
+    PercWalletProvider wallet,
+    AppLocalizations strings, {
+    required bool compact,
+    required List<Widget> children,
+    double maxWidth = 720,
+  }) {
     return SafeArea(
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(compact ? 12 : 20, 12, compact ? 12 : 20, 24),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
+            constraints: BoxConstraints(maxWidth: maxWidth),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _header(wallet, strings),
-                const SizedBox(height: 16),
-                _balanceCard(wallet, strings),
-                const SizedBox(height: 12),
-                _stakingCard(wallet, strings),
-                const SizedBox(height: 12),
-                _burnedPercCard(wallet, strings),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: wallet.canSendFromSession
-                            ? () => PercSendReceiveActions.showSend(
-                                  context,
-                                  wallet: wallet,
-                                  strings: strings,
-                                )
-                            : wallet.isTreasuryAccount && wallet.isTreasurySendLocked
-                                ? () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          strings.t('wallet_treasury_send_locked'),
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                : null,
-                        icon: const Icon(Icons.send_rounded, size: 18),
-                        label: Text(strings.t('wallet_send')),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: wallet.canReceiveFromSession
-                            ? () => PercSendReceiveActions.showReceive(
-                                  context,
-                                  wallet: wallet,
-                                  strings: strings,
-                                )
-                            : null,
-                        icon: const Icon(Icons.qr_code_2_rounded, size: 18),
-                        label: Text(strings.t('wallet_receive')),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _privacyCard(strings),
-                const SizedBox(height: 12),
-                _timeConfirmationsCard(strings),
-                const SizedBox(height: 12),
-                _evolutionaryChainCard(wallet, strings),
-                const SizedBox(height: 12),
-                _treasuryCard(wallet, strings),
-                const SizedBox(height: 12),
-                _explorerLink(context, wallet, strings),
-                const SizedBox(height: 12),
-                _walletMeshCard(wallet, strings),
-                const SizedBox(height: 12),
-                _faucetCard(wallet, strings),
-                const SizedBox(height: 12),
-                _addressCard(context, wallet, strings),
-                const SizedBox(height: 20),
-                _transactionsHeader(strings),
-                const SizedBox(height: 8),
-                if (wallet.transactions.isEmpty)
-                  _emptyTx(strings)
-                else
-                  ...wallet.transactions.take(20).map(
-                        (tx) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _txTile(tx, wallet.loggedInUsername, strings),
-                        ),
-                      ),
-                WalletCreatorCredit(strings: strings),
-              ],
+              children: children,
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _sendReceiveRow(
+    BuildContext context,
+    PercWalletProvider wallet,
+    AppLocalizations strings,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: wallet.canSendFromSession
+                ? () => PercSendReceiveActions.showSend(
+                      context,
+                      wallet: wallet,
+                      strings: strings,
+                    )
+                : wallet.isTreasuryAccount && wallet.isTreasurySendLocked
+                    ? () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(strings.t('wallet_treasury_send_locked')),
+                          ),
+                        );
+                      }
+                    : null,
+            icon: const Icon(Icons.send_rounded, size: 18),
+            label: Text(strings.t('wallet_send')),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: wallet.canReceiveFromSession
+                ? () => PercSendReceiveActions.showReceive(
+                      context,
+                      wallet: wallet,
+                      strings: strings,
+                    )
+                : null,
+            icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+            label: Text(strings.t('wallet_receive')),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _transactionsSection(
+    PercWalletProvider wallet,
+    AppLocalizations strings,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _transactionsHeader(strings),
+        const SizedBox(height: 8),
+        if (wallet.transactions.isEmpty)
+          _emptyTx(strings)
+        else
+          ...wallet.transactions.take(20).map(
+                (tx) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _txTile(tx, wallet.loggedInUsername, strings),
+                ),
+              ),
+      ],
+    );
+  }
+
+  Widget _walletDetailsExpansion(
+    PercWalletProvider wallet,
+    AppLocalizations strings,
+  ) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        title: Text(
+          strings.t('wallet_details_section'),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+        children: [
+          _stakingCard(wallet, strings, embedded: true),
+          const SizedBox(height: 8),
+          _burnedPercCard(wallet, strings, embedded: true),
+          const SizedBox(height: 8),
+          _privacyCard(strings, embedded: true),
+          const SizedBox(height: 8),
+          _timeConfirmationsCard(strings, embedded: true),
+          const SizedBox(height: 8),
+          _evolutionaryChainCard(wallet, strings, embedded: true),
+        ],
       ),
     );
   }
@@ -613,10 +735,14 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget _balanceCard(PercWalletProvider wallet, AppLocalizations strings) {
+  Widget _balanceCard(
+    PercWalletProvider wallet,
+    AppLocalizations strings, {
+    bool compact = false,
+  }) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(compact ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -627,10 +753,10 @@ class _WalletScreenState extends State<WalletScreen> {
             const SizedBox(height: 8),
             Text(
               wallet.balance.displayFixed8,
-              style: const TextStyle(
-                fontSize: 36,
+              style: TextStyle(
+                fontSize: compact ? 30 : 36,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF00D9C0),
+                color: const Color(0xFF00D9C0),
                 height: 1,
               ),
             ),
@@ -712,9 +838,12 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget _burnedPercCard(PercWalletProvider wallet, AppLocalizations strings) {
-    return Card(
-      child: Padding(
+  Widget _burnedPercCard(
+    PercWalletProvider wallet,
+    AppLocalizations strings, {
+    bool embedded = false,
+  }) {
+    final body = Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,13 +882,16 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    return embedded ? body : Card(child: body);
   }
 
-  Widget _stakingCard(PercWalletProvider wallet, AppLocalizations strings) {
-    return Card(
-      child: Padding(
+  Widget _stakingCard(
+    PercWalletProvider wallet,
+    AppLocalizations strings, {
+    bool embedded = false,
+  }) {
+    final body = Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -792,8 +924,8 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    return embedded ? body : Card(child: body);
   }
 
   Widget _treasuryCard(PercWalletProvider wallet, AppLocalizations strings) {
@@ -862,9 +994,8 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget _privacyCard(AppLocalizations strings) {
-    return Card(
-      child: Padding(
+  Widget _privacyCard(AppLocalizations strings, {bool embedded = false}) {
+    final body = Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -886,14 +1017,13 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    return embedded ? body : Card(child: body);
   }
 
-  Widget _timeConfirmationsCard(AppLocalizations strings) {
+  Widget _timeConfirmationsCard(AppLocalizations strings, {bool embedded = false}) {
     final perms = PercChronofluxTimeConfirmations.allPermutations();
-    return Card(
-      child: Padding(
+    final body = Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -914,14 +1044,15 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    return embedded ? body : Card(child: body);
   }
 
   Widget _evolutionaryChainCard(
     PercWalletProvider wallet,
-    AppLocalizations strings,
-  ) {
+    AppLocalizations strings, {
+    bool embedded = false,
+  }) {
     final chainId = wallet.evolutionaryChainId.isEmpty
         ? PercChainConstants.evolutionaryChainId
         : wallet.evolutionaryChainId;
@@ -931,8 +1062,7 @@ class _WalletScreenState extends State<WalletScreen> {
     final versions = wallet.evolvedAppVersions.isEmpty
         ? wallet.currentAppVersion
         : wallet.evolvedAppVersions.join(', ');
-    return Card(
-      child: Padding(
+    final body = Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -981,8 +1111,8 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    return embedded ? body : Card(child: body);
   }
 
   Widget _walletMeshCard(PercWalletProvider wallet, AppLocalizations strings) {

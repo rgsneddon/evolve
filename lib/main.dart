@@ -12,7 +12,7 @@ import 'providers/evolve_provider.dart';
 import 'perc/providers/perc_wallet_provider.dart';
 import 'perc/services/perc_network_coordinator.dart';
 import 'platform/desktop_window_init.dart';
-import 'screens/evolve_shell_screen.dart';
+import 'screens/app_bootstrap_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/desktop_window_shell.dart';
 
@@ -24,7 +24,6 @@ Future<void> main() async {
   final evolveProvider = EvolveProvider();
   final walletProvider = PercWalletProvider();
   await evolveProvider.initialize();
-  await walletProvider.initialize();
   evolveProvider.analysisRewardHandler = ({
     required AnalysisMode mode,
     required double outcomeScore,
@@ -93,7 +92,7 @@ class EvolveApp extends StatelessWidget {
                 child: child ?? const SizedBox.shrink(),
               ),
             ),
-            home: const EvolveShellScreen(),
+            home: AppBootstrapScreen(walletProvider: walletProvider),
           );
         },
       ),

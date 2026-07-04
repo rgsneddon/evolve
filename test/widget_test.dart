@@ -26,7 +26,9 @@ void main() {
     await provider.initialize();
     await _unlockApp(wallet);
 
-    await tester.pumpWidget(EvolveApp(evolveProvider: provider, walletProvider: wallet));
+    await tester.pumpWidget(
+      EvolveApp(evolveProvider: provider, walletProvider: wallet),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 

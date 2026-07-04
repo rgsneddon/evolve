@@ -15,16 +15,23 @@ class ChronofluxFivePointGraphPanel extends StatelessWidget {
     required this.wallet,
     required this.strings,
     this.compact = false,
+    this.showSeriesCharts = true,
   });
 
   final PercWalletProvider wallet;
   final AppLocalizations strings;
   final bool compact;
+  /// Per-variable time-series strips (hidden in block explorer — they read as empty panels).
+  final bool showSeriesCharts;
 
   @override
   Widget build(BuildContext context) {
     final history = ChronofluxVariableHistory.fromBlocks(wallet.blocks);
     final latest = history.isNotEmpty ? history.last : null;
+
+    if (latest == null) {
+      return const SizedBox.shrink();
+    }
 
     return Card(
       child: Padding(
@@ -45,22 +52,17 @@ class ChronofluxFivePointGraphPanel extends StatelessWidget {
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8), height: 1.4),
             ),
             const SizedBox(height: 12),
-            if (latest == null)
-              Text(
-                strings.t('wallet_chronoflux_graph_empty'),
-                style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
-              )
-            else ...[
-              SizedBox(
-                height: compact ? 150 : 190,
-                child: CustomPaint(
-                  painter: _ChronofluxPentagonPainter(
-                    values: latest.orderedValues,
-                    labels: ChronofluxConstructSnapshot.symbols,
-                  ),
-                  child: const SizedBox.expand(),
+            SizedBox(
+              height: compact ? 150 : 190,
+              child: CustomPaint(
+                painter: _ChronofluxPentagonPainter(
+                  values: latest.orderedValues,
+                  labels: ChronofluxConstructSnapshot.symbols,
                 ),
+                child: const SizedBox.expand(),
               ),
+            ),
+            if (showSeriesCharts && history.length > 1) ...[
               const SizedBox(height: 12),
               ..._variableRows(history),
             ],
