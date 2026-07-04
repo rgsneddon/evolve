@@ -1,7 +1,9 @@
 import 'perc_ledger_hub.dart';
 import 'perc_node_server.dart';
 
-PercNodeServer createPercNodeServerStub() => _PercNodeServerStub();
+PercNodeServer createPercNodeServer() => _PercNodeServerStub();
+
+PercNodeServer createPercNodeServerStub() => createPercNodeServer();
 
 class _PercNodeServerStub implements PercNodeServer {
   @override
