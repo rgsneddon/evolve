@@ -1,8 +1,5 @@
 # Render Blueprint — Perccent internet node (rendezvous + seed sync)
-# FREE (Hobby): https://render.com/deploy?repo=https://github.com/rgsneddon/evolve
-#
-# Free/Hobby sleeps after ~15 min idle. Use scripts/setup_render_free.ps1 -KeepWarm
-# from your PC, or upgrade to Starter ($7/mo) for always-on.
+# Deploy: https://render.com/deploy?repo=https://github.com/rgsneddon/evolve
 services:
   - type: web
     name: evolve-perc-internet
@@ -12,11 +9,15 @@ services:
     startCommand: npm run start:internet
     healthCheckPath: /health
     autoDeploy: true
+    plan: standard
     envVars:
       - key: NODE_VERSION
         value: 20
       - key: PERC_SEED_USERNAME
         value: evolve_seed_node
       - key: PERC_DATA_DIR
-        value: /tmp/perc-data
-    plan: free
+        value: /var/data
+    disk:
+      name: perc-seed-data
+      mountPath: /var/data
+      sizeGB: 1

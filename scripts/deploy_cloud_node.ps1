@@ -69,6 +69,4 @@ Set-PercNetworkConfig -Url $ServiceUrl
 Write-Host ''
 Write-Host 'Configured. Rebuild/publish Evolve so assets/config/perc_network.json is bundled.' -ForegroundColor Green
 Write-Host ''
-Write-Host 'Free Render plan: service sleeps after ~15 min idle. First request may take 30-90s.' -ForegroundColor Yellow
-Write-Host 'Optional keep-warm: scripts\setup_render_free.ps1 -ServiceUrl URL -KeepWarm' -ForegroundColor Yellow
 Write-Host 'Treasury still runs in an Evolve wallet session (not on this cloud node).' -ForegroundColor Yellow
