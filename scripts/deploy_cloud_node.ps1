@@ -20,14 +20,14 @@ function Test-InternetNode {
     )
     foreach ($uri in $checks) {
         try {
-            $response = Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 25
+            $response = Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 90
             if ($response.StatusCode -ne 200) {
                 Write-Host "FAIL ($($response.StatusCode)): $uri" -ForegroundColor Red
                 return $false
             }
             Write-Host "OK: $uri" -ForegroundColor Green
         } catch {
-            Write-Host "FAIL: $uri — $_" -ForegroundColor Red
+            Write-Host "FAIL: $uri - $_" -ForegroundColor Red
             return $false
         }
     }
@@ -69,33 +69,6 @@ Set-PercNetworkConfig -Url $ServiceUrl
 Write-Host ''
 Write-Host 'Configured. Rebuild/publish Evolve so assets/config/perc_network.json is bundled.' -ForegroundColor Green
 Write-Host ''
-Write-Host @'
-PLATFORM COMPARISON (same Docker image / perc_chain):
-
-  Render FREE — easiest one-click deploy
-    https://render.com/deploy?repo=https://github.com/rgsneddon/evolve
-    Pros: zero setup, free HTTPS
-    Cons: sleeps after ~15 min idle; cold starts; ledger resets on redeploy
-
-  Render STARTER (~$7/mo) — recommended for production seed node
-    Same blueprint, change plan to Starter in dashboard
-    Pros: always on, no cold starts
-    Cons: monthly cost
-
-  Fly.io (~$0–3/mo) — cheapest true always-on
-    cd perc_chain
-    fly launch --no-deploy
-    fly volumes create perc_data --size 1 --region lhr
-    fly deploy
-    Pros: min_machines_running=1 keeps it awake; persistent volume
-    Cons: requires flyctl + card on file
-
-  Hetzner CX22 (~€4/mo) — cheapest VPS
-    docker build -t evolve-perc perc_chain
-    docker run -d -p 9478:9478 -v perc-data:/var/data -e PERC_PUBLIC_ENDPOINT=http://YOUR_IP:9478 evolve-perc
-    Pros: full control, always on, persistent disk
-    Cons: you manage updates/firewall
-
-The cloud service is BOTH rendezvous AND seed node (username evolve_seed_node).
-It is NOT the treasury — treasury still runs inside an Evolve wallet session.
-'@ -ForegroundColor Yellow
+Write-Host 'Free Render plan: service sleeps after ~15 min idle. First request may take 30-90s.' -ForegroundColor Yellow
+Write-Host 'Optional keep-warm: scripts\setup_render_free.ps1 -ServiceUrl URL -KeepWarm' -ForegroundColor Yellow
+Write-Host 'Treasury still runs in an Evolve wallet session (not on this cloud node).' -ForegroundColor Yellow
