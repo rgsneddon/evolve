@@ -1,6 +1,16 @@
+import fs from 'fs';
 import http from 'http';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import {
+  buildNetworkSnapshot,
+  getBlockDetail,
+  listBlocks,
+} from './explorer_api.js';
 import { LedgerStore, blockHeight, tipHash } from './ledger_store.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
 const PORT = Number(process.env.PORT ?? process.env.PERC_RENDEZVOUS_PORT ?? 9478);
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
@@ -31,6 +41,14 @@ function json(res, code, body) {
   res.end(JSON.stringify(body));
 }
 
+function html(res, code, body) {
+  res.writeHead(code, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-cache',
+  });
+  res.end(body);
+}
+
 function readBody(req) {
   return new Promise((resolve) => {
     let body = '';
@@ -43,6 +61,32 @@ function readBody(req) {
       }
     });
   });
+}
+
+function servePublic(relPath, res) {
+  const safe = path.normalize(relPath).replace(/^(\.\.[/\\])+/, '');
+  const filePath = path.join(PUBLIC_DIR, safe);
+  if (!filePath.startsWith(PUBLIC_DIR)) {
+    return false;
+  }
+  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+    return false;
+  }
+  const ext = path.extname(filePath).toLowerCase();
+  const types = {
+    '.html': 'text/html; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.ico': 'image/x-icon',
+  };
+  res.writeHead(200, {
+    'Content-Type': types[ext] ?? 'application/octet-stream',
+    'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600',
+  });
+  res.end(fs.readFileSync(filePath));
+  return true;
 }
 
 async function registerSeed() {
@@ -130,7 +174,7 @@ async function syncFromNetwork() {
 
   if (best && store.importLedger(best)) {
     console.log(
-      `Seed synced to height ${blockHeight(best)} from ${bestUsername ?? bestEndpoint ?? 'network'}`,
+      `Seed synced to height ${blockHeight(best)} from ${bestUsername ?? 'network'}`,
     );
     await registerSeed();
   }
@@ -142,6 +186,51 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+
+  if (req.method === 'GET' && url.pathname === '/api/network') {
+    return json(
+      res,
+      200,
+      buildNetworkSnapshot({
+        peers,
+        ledgers,
+        store,
+        seedUsername: SEED_USERNAME,
+        endpoint: publicEndpoint(),
+        chainId: CHAIN_ID,
+      }),
+    );
+  }
+
+  const blockMatch = url.pathname.match(/^\/api\/blocks\/(\d+)$/);
+  if (req.method === 'GET' && blockMatch) {
+    const index = Number(blockMatch[1]);
+    if (!store.hasLedger()) {
+      return json(res, 503, { error: 'ledger not ready' });
+    }
+    const detail = getBlockDetail(store.ledger, index);
+    if (!detail) return json(res, 404, { error: 'block not found' });
+    return json(res, 200, detail);
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/blocks') {
+    if (!store.hasLedger()) {
+      return json(res, 200, { total: 0, offset: 0, limit: 50, blocks: [] });
+    }
+    const offset = Number(url.searchParams.get('offset') ?? 0);
+    const limit = Math.min(Number(url.searchParams.get('limit') ?? 50), 200);
+    return json(res, 200, listBlocks(store.ledger, { offset, limit }));
+  }
+
+  if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/explorer')) {
+    if (servePublic('index.html', res)) return;
+    return json(res, 503, { error: 'explorer UI missing' });
+  }
+
+  if (req.method === 'GET' && url.pathname.startsWith('/public/')) {
+    if (servePublic(url.pathname.slice('/public/'.length), res)) return;
+    return json(res, 404, { error: 'not found' });
+  }
 
   if (req.method === 'POST' && url.pathname === '/perc/rendezvous/register') {
     const data = await readBody(req);
@@ -219,14 +308,26 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' && url.pathname === '/health') {
+    const snapshot = buildNetworkSnapshot({
+      peers,
+      ledgers,
+      store,
+      seedUsername: SEED_USERNAME,
+      endpoint: publicEndpoint(),
+      chainId: CHAIN_ID,
+    });
     return json(res, 200, {
       ok: true,
       service: 'perc-internet-node',
+      explorer: `${publicEndpoint()}/`,
       seedUsername: SEED_USERNAME,
-      endpoint: publicEndpoint(),
-      blockHeight: blockHeight(store.ledger),
-      tipHash: tipHash(store.ledger),
-      peers: peers.size,
+      endpoint: snapshot.endpoint,
+      blockHeight: snapshot.blockHeight,
+      networkHeight: snapshot.networkHeight,
+      tipHash: snapshot.tipHash,
+      peers: snapshot.peers.total,
+      peersOnline: snapshot.peers.online,
+      ledgerReady: snapshot.ledgerReady,
     });
   }
 
@@ -237,6 +338,7 @@ const bindHost = process.env.PERC_BIND_HOST ?? '0.0.0.0';
 server.listen(PORT, bindHost, async () => {
   console.log(`Perccent internet node listening on http://${bindHost}:${PORT}`);
   console.log(`Public endpoint: ${publicEndpoint()}`);
+  console.log(`Explorer UI: ${publicEndpoint()}/`);
   console.log(`Seed username: ${SEED_USERNAME}`);
   await registerSeed();
   await syncFromNetwork();
