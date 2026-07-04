@@ -62,4 +62,35 @@ test('buildWalletBlockChart lists every peer with effective block height', () =>
   const bob = chart.users.find((u) => u.username === 'bob');
   assert.equal(bob.displayBlock, 7);
   assert.ok(chart.maxBlock >= 12);
+  assert.equal(chart.visibleTimeoutSeconds, 420);
+});
+
+test('wallets older than 7 minutes are hidden from network nodes chart', () => {
+  const now = Date.now();
+  const peers = new Map([
+    ['fresh', {
+      sessionUsername: 'fresh',
+      evolutionaryChainId: 'evolve-chronoflux-principia-chain-1',
+      blockHeight: 3,
+      updatedAt: now - 60_000,
+    }],
+    ['stale', {
+      sessionUsername: 'stale',
+      evolutionaryChainId: 'evolve-chronoflux-principia-chain-1',
+      blockHeight: 9,
+      updatedAt: now - 8 * 60 * 1000,
+    }],
+  ]);
+
+  const chart = buildWalletBlockChart({
+    peers,
+    ledgers: new Map(),
+    store: { ledger: { cumulativeTreasuryMinted: { microUnits: 0 }, blocks: [] } },
+    seedUsername: 'evolve_seed_node',
+    now,
+  });
+
+  assert.ok(chart.users.some((u) => u.username === 'fresh'));
+  assert.ok(chart.users.some((u) => u.username === 'evolve_seed_node'));
+  assert.equal(chart.users.some((u) => u.username === 'stale'), false);
 });

@@ -21,6 +21,8 @@ services:
         value: "2"
       - key: PERC_DATA_DIR
         value: /var/data
+      - key: PERC_PEER_ONLINE_MS
+        value: "420000"
     disk:
       name: perc-seed-data
       mountPath: /var/data

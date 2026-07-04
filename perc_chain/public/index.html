@@ -196,9 +196,10 @@
 
     <section>
       <h2>Network nodes</h2>
-      <p class="hint" style="margin-bottom:12px">
+      <p class="hint" style="margin-bottom:12px" id="network-nodes-hint">
         Chronoflux five-point pentagon — every registered wallet by current block height
         (highest of scenario, chain, or relay). Five rings mark 0%–100% of network max.
+        Wallets appear for 7 minutes after their last heartbeat, then drop off.
       </p>
       <div class="card chart-layout">
         <svg id="wallet-pentagon-chart" viewBox="0 0 320 320" role="img" aria-label="Network nodes block pentagon chart"></svg>
@@ -492,6 +493,14 @@
       $('endpoint-line').textContent = maskIpAddresses(net.endpoint || '');
       renderTreasuryEmissionPublic(net);
       renderWalletBlockChart(net.walletBlockChart, net.peerList);
+      const timeoutSec = net.peerOnlineTimeoutSeconds ?? net.walletBlockChart?.visibleTimeoutSeconds ?? 420;
+      const timeoutMin = Math.max(1, Math.round(timeoutSec / 60));
+      const hint = $('network-nodes-hint');
+      if (hint) {
+        hint.textContent =
+          `Chronoflux five-point pentagon — wallets by current block height (scenario, chain, or relay). ` +
+          `Five rings mark 0%–100% of network max. Wallets show for ${timeoutMin} minutes after last heartbeat, then drop off.`;
+      }
       $('stats').innerHTML = `
         <div class="card"><div class="label">Node</div><div class="value">${pill(net.nodeStatus === 'online')}</div></div>
         <div class="card"><div class="label">Seed height</div><div class="value">${net.blockHeight}</div></div>

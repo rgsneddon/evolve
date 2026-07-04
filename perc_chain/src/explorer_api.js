@@ -3,7 +3,12 @@ import { blockHeight, tipHash } from './ledger_store.js';
 import { seedBlockHeightFromLedger } from './seed_block.js';
 
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
-const PEER_ONLINE_MS = Number(process.env.PERC_PEER_ONLINE_MS ?? 15 * 60 * 1000);
+/** Network nodes drop from the explorer after this idle period (default 7 minutes). */
+export const PEER_ONLINE_MS = Number(process.env.PERC_PEER_ONLINE_MS ?? 7 * 60 * 1000);
+
+export function peerOnlineTimeoutSeconds() {
+  return Math.round(PEER_ONLINE_MS / 1000);
+}
 
 export function hiddenPeerUsernames() {
   const treasury = (process.env.PERC_TREASURY_USERNAME ?? 'evolve_treasury').trim();
@@ -20,6 +25,16 @@ export function isHiddenPeer(username) {
 
 export function isPeerOnline(peer, now = Date.now()) {
   const updated = peer?.updatedAt ?? 0;
+  return updated > 0 && now - updated <= PEER_ONLINE_MS;
+}
+
+/** Seed always visible; other wallets only while recently heartbeating. */
+export function isNetworkNodeVisible(username, peerOrLastSeenMs, seedUsername, now = Date.now()) {
+  if (username === seedUsername) return true;
+  const updated =
+    typeof peerOrLastSeenMs === 'number'
+      ? peerOrLastSeenMs
+      : peerOrLastSeenMs?.updatedAt ?? 0;
   return updated > 0 && now - updated <= PEER_ONLINE_MS;
 }
 
@@ -204,6 +219,12 @@ export function buildWalletBlockChart({
       );
       return { ...row, displayBlock };
     })
+    .filter((row) => {
+      if (row.username === seedUsername) return true;
+      if (!row.lastSeen) return false;
+      const seenMs = new Date(row.lastSeen).getTime();
+      return isNetworkNodeVisible(row.username, seenMs, seedUsername, now);
+    })
     .sort((a, b) => b.displayBlock - a.displayBlock || a.username.localeCompare(b.username));
 
   const maxBlock = Math.max(1, seedAnchorBlock, ...users.map((u) => u.displayBlock));
@@ -213,6 +234,7 @@ export function buildWalletBlockChart({
     seedAnchorBlock,
     maxBlock,
     pentagonScale,
+    visibleTimeoutSeconds: peerOnlineTimeoutSeconds(),
     users,
   };
 }
@@ -231,6 +253,7 @@ export function buildNetworkSnapshot({
   const peerRows = [...peers.values()]
     .filter((p) => (p.evolutionaryChainId ?? chainId) === chainId)
     .filter((p) => !isHiddenPeer(p.sessionUsername))
+    .filter((p) => isNetworkNodeVisible(p.sessionUsername, p, seedUsername, now))
     .map((p) => {
       const username = p.sessionUsername ?? 'unknown';
       const relayed = ledgers.get(username);
@@ -263,6 +286,7 @@ export function buildNetworkSnapshot({
     revision: store.revision,
     networkGenesisRevision: store.getGenesisRevision(),
     ledgerReady: store.hasLedger(),
+    peerOnlineTimeoutSeconds: peerOnlineTimeoutSeconds(),
     peers: {
       total: peerRows.length,
       online: onlineCount,
