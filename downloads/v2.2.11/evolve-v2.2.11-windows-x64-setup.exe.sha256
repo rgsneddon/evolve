@@ -1,0 +1,7 @@
+﻿2c9dafaf48a83128cd05a83d44840d95a5074fb516bf05498d9e93e34451cf4f  evolve-v2.2.11-windows-x64-setup.exe
+algorithm=SHA256
+algorithm_secondary=SHA512
+sha512=553e8d0d5ebb0321381c45fab60a50f2646a6c9dbc5ae39ac213d52643aa7acf2f74174c2b5472ef07d6569d218177bd0d0f0852d8430219e53eb7acd7331a65
+version=2.2.11
+platform=windows
+url=https://rgsneddon.github.io/evolve/downloads/v2.2.11/evolve-v2.2.11-windows-x64-setup.exe
