@@ -44,8 +44,11 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
   @override
   void didUpdateWidget(covariant LawfulFrameFlowShardGraph oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final oldSide = oldWidget.wallet.sideChain;
+    final newSide = widget.wallet.sideChain;
     if (oldWidget.wallet.microblockCount != widget.wallet.microblockCount ||
-        oldWidget.wallet.totalMicroblocks != widget.wallet.totalMicroblocks) {
+        oldWidget.wallet.totalMicroblocks != widget.wallet.totalMicroblocks ||
+        oldSide.pendingMicroblocks != newSide.pendingMicroblocks) {
       _rebuildDensity();
     }
   }
@@ -132,75 +135,9 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
             },
           ),
           const SizedBox(height: 10),
-          _wardExplorerPanel(strings, wards),
-          const SizedBox(height: 10),
           Text(
             strings.t('wallet_explorer_frame_flow_status'),
             style: const TextStyle(fontSize: 10, color: Color(0xFF7A8299), height: 1.35),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _wardExplorerPanel(AppLocalizations strings, PercWardView wards) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF5CE0A8).withOpacity(0.45)),
-        color: const Color(0xFF0A1218),
-      ),
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            strings.t('wallet_explorer_ward_title'),
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF5CE0A8),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            strings
-                .t('wallet_explorer_ward_subtitle')
-                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
-            style: const TextStyle(fontSize: 9, color: Color(0xFF9BA3B8), height: 1.35),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            strings
-                .t('wallet_explorer_ward_cycle')
-                .replaceAll('{completed}', '${wards.completedWardsInCycle}')
-                .replaceAll('{total}', '${wards.wardsPerSealCycle}')
-                .replaceAll('{ward}', '${wards.currentWardIndex}')
-                .replaceAll('{pending}', '${wards.microblocksInCurrentWard}')
-                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
-            style: const TextStyle(fontSize: 10, color: Color(0xFFB8D4FF)),
-          ),
-          Text(
-            strings
-                .t('wallet_explorer_ward_lifetime')
-                .replaceAll('{count}', '${wards.totalWardsEver}'),
-            style: const TextStyle(fontSize: 9, color: Color(0xFF7A8299)),
-          ),
-          const SizedBox(height: 8),
-          AspectRatio(
-            aspectRatio: 2.4,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: CustomPaint(
-                painter: _WardHeatmapPainter(wards: wards),
-                child: const SizedBox.expand(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            strings.t('wallet_explorer_ward_legend'),
-            style: const TextStyle(fontSize: 8, color: Color(0xFF6C7A8F), height: 1.3),
           ),
         ],
       ),
@@ -238,22 +175,40 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
               borderRadius: BorderRadius.circular(8),
               child: _density == null
                   ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                  : AnimatedBuilder(
-                      animation: _spin,
-                      builder: (context, child) => CustomPaint(
-                        painter: _LawfulFrameFlowPainter(
-                          density: _density!,
-                          rotation: _spin.value * math.pi * 2,
-                          pulse: (math.sin(_spin.value * math.pi * 4) + 1) / 2,
-                          progress: progress,
+                  : Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        AnimatedBuilder(
+                          animation: _spin,
+                          builder: (context, _) => CustomPaint(
+                            painter: _LawfulFrameFlowPainter(
+                              density: _density!,
+                              wards: wards,
+                              rotation: _spin.value * math.pi * 2,
+                              pulse:
+                                  (math.sin(_spin.value * math.pi * 4) + 1) / 2,
+                              progress: progress,
+                            ),
+                            child: const SizedBox.expand(),
+                          ),
                         ),
-                        child: child,
-                      ),
-                      child: _graphOverlayLabels(strings),
+                        _graphOverlay(strings, wards),
+                      ],
                     ),
             ),
           ),
           const SizedBox(height: 8),
+          Text(
+            strings
+                .t('wallet_explorer_ward_cycle')
+                .replaceAll('{completed}', '${wards.completedWardsInCycle}')
+                .replaceAll('{total}', '${wards.wardsPerSealCycle}')
+                .replaceAll('{ward}', '${wards.currentWardIndex}')
+                .replaceAll('{pending}', '${wards.microblocksInCurrentWard}')
+                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 10, color: Color(0xFFB8D4FF)),
+          ),
           Text(
             strings
                 .t('wallet_explorer_ward_field_count')
@@ -262,6 +217,13 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
                 .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 10, color: Color(0xFF9BA3B8)),
+          ),
+          Text(
+            strings
+                .t('wallet_explorer_ward_lifetime')
+                .replaceAll('{count}', '${wards.totalWardsEver}'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 9, color: Color(0xFF7A8299)),
           ),
           Text(
             '${strings.t('wallet_sidechain_id')}: ${side.sideChainId}',
@@ -273,8 +235,9 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     );
   }
 
-  Widget _graphOverlayLabels(AppLocalizations strings) {
+  Widget _graphOverlay(AppLocalizations strings, PercWardView wards) {
     return Stack(
+      fit: StackFit.expand,
       children: [
         Positioned(
           top: 8,
@@ -294,7 +257,15 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
         ),
         Positioned(
           left: 8,
-          bottom: 48,
+          top: 56,
+          child: _labelChip(
+            strings.t('wallet_explorer_ward_title'),
+            const Color(0xFF5CE0A8),
+          ),
+        ),
+        Positioned(
+          left: 8,
+          bottom: 72,
           child: _labelChip(
             strings.t('wallet_explorer_label_split'),
             const Color(0xFFB388FF),
@@ -306,6 +277,42 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
           child: _labelChip(
             strings.t('wallet_explorer_label_projector'),
             const Color(0xFFFFB347),
+          ),
+        ),
+        Positioned(
+          left: 10,
+          right: 10,
+          bottom: 28,
+          height: 52,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF060A10).withOpacity(0.82),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: const Color(0xFF5CE0A8).withOpacity(0.45),
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: CustomPaint(
+                painter: _WardHeatmapPainter(wards: wards),
+                child: const SizedBox.expand(),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 12,
+          right: 12,
+          bottom: 8,
+          child: Text(
+            strings.t('wallet_explorer_ward_legend'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 7,
+              color: Color(0xFF6C7A8F),
+              height: 1.2,
+            ),
           ),
         ),
       ],
@@ -436,12 +443,14 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
 class _LawfulFrameFlowPainter extends CustomPainter {
   _LawfulFrameFlowPainter({
     required this.density,
+    required this.wards,
     required this.rotation,
     required this.pulse,
     required this.progress,
   });
 
   final PercShardDensity density;
+  final PercWardView wards;
   final double rotation;
   final double pulse;
   final double progress;
@@ -453,10 +462,113 @@ class _LawfulFrameFlowPainter extends CustomPainter {
 
     _paintBackground(canvas, size);
     _paintWedges(canvas, center, radius);
+    _paintWardAnnulus(canvas, center, radius);
     _paintSpokes(canvas, center, radius);
     _paintShardField(canvas, center, radius);
     _paintCore(canvas, center, radius);
     _paintProgressRing(canvas, center, radius);
+    _paintWardProgressRing(canvas, center, radius);
+  }
+
+  /// Ward bundle fill inside the microblock shard field (aggregate, not per-ward).
+  void _paintWardAnnulus(Canvas canvas, Offset center, double radius) {
+    final total = wards.wardsPerSealCycle;
+    if (total <= 0) return;
+
+    final inner = radius * 0.24;
+    final outer = radius * 0.86;
+    final start = -math.pi / 2;
+    final completedSweep = math.pi * 2 * wards.sealCycleWardProgress;
+
+    void drawSector(double sweep, Color color, double opacity) {
+      if (sweep <= 0) return;
+      final path = Path()
+        ..moveTo(
+          center.dx + math.cos(start) * inner,
+          center.dy + math.sin(start) * inner,
+        )
+        ..arcTo(
+          Rect.fromCircle(center: center, radius: outer),
+          start,
+          sweep,
+          false,
+        )
+        ..arcTo(
+          Rect.fromCircle(center: center, radius: inner),
+          start + sweep,
+          -sweep,
+          false,
+        )
+        ..close();
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color.withOpacity(opacity)
+          ..style = PaintingStyle.fill,
+      );
+    }
+
+    drawSector(completedSweep, const Color(0xFF5CE0A8), 0.16);
+
+    if (wards.microblocksInCurrentWard > 0) {
+      final wardSlice = math.pi * 2 / total;
+      final currentSweep = wardSlice * wards.currentWardProgress;
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(start + completedSweep);
+      canvas.translate(-center.dx, -center.dy);
+      drawSector(currentSweep, const Color(0xFF3BC9FF), 0.22);
+      canvas.restore();
+    }
+  }
+
+  /// Outer ward seal ring — green = bundled wards, blue = active ward fill.
+  void _paintWardProgressRing(Canvas canvas, Offset center, double radius) {
+    final ring = radius * 1.08;
+    const stroke = 3.0;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: ring),
+      -math.pi / 2,
+      math.pi * 2,
+      false,
+      Paint()
+        ..color = const Color(0xFF1A2840)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke,
+    );
+
+    final wardSweep = math.pi * 2 * wards.sealCycleWardProgress;
+    if (wardSweep > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: ring),
+        -math.pi / 2,
+        wardSweep,
+        false,
+        Paint()
+          ..color = const Color(0xFF5CE0A8).withOpacity(0.9)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+
+    if (wards.microblocksInCurrentWard > 0 && wards.wardsPerSealCycle > 0) {
+      final wardSlice = math.pi * 2 / wards.wardsPerSealCycle;
+      final start = -math.pi / 2 + wardSweep;
+      final currentSweep = wardSlice * wards.currentWardProgress;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: ring),
+        start,
+        currentSweep,
+        false,
+        Paint()
+          ..color = const Color(0xFF3BC9FF).withOpacity(0.95)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..strokeCap = StrokeCap.round,
+      );
+    }
   }
 
   void _paintBackground(Canvas canvas, Size size) {
@@ -634,6 +746,9 @@ class _LawfulFrameFlowPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _LawfulFrameFlowPainter old) =>
       old.density != density ||
+      old.wards.completedWardsInCycle != wards.completedWardsInCycle ||
+      old.wards.microblocksInCurrentWard != wards.microblocksInCurrentWard ||
+      old.wards.pendingMicroblocks != wards.pendingMicroblocks ||
       old.rotation != rotation ||
       old.pulse != pulse ||
       old.progress != progress;
