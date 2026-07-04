@@ -989,6 +989,8 @@ class PercLedger {
 
   /// Mints toward 1 PERC when the pool drops below 0.66 PERC.
   List<PercTransaction> _regenerateTreasuryIfNeeded(DateTime now) {
+    // Genesis scenario emission mints the first 1 PERC — skip regen until then.
+    if (!treasuryGenesisDone) return [];
     if (!treasuryNeedsRegeneration || treasuryCapped) return [];
 
     final treasury = _ensureTreasury();
