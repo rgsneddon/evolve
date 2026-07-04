@@ -59,6 +59,9 @@ class PercChainConstants {
   /// Peer status / ledger gossip timeout.
   static const Duration networkRequestTimeout = Duration(seconds: 8);
 
+  /// Seed treats a wallet as online while its heartbeat is newer than this (7 min).
+  static const Duration peerOnlineWindow = Duration(minutes: 7);
+
   /// One block confirmation fully settles PERC (Chronoflux Principia TIME).
   static const int confirmationsRequired = 1;
 

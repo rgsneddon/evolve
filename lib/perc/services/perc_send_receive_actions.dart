@@ -28,14 +28,9 @@ class PercSendReceiveActions {
       return;
     }
 
-    final addresses = wallet.sendableAddresses;
     final toCtrl = TextEditingController();
     final amountCtrl = TextEditingController();
     final memoCtrl = TextEditingController();
-    String? selectedAddress = addresses.isNotEmpty ? addresses.first : null;
-    if (selectedAddress != null) {
-      toCtrl.text = selectedAddress;
-    }
 
     await showDialog<void>(
       context: context,
@@ -56,7 +51,6 @@ class PercSendReceiveActions {
                         hintText: strings.t('wallet_send_to_hint'),
                       ),
                       style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-                      onChanged: (_) => setState(() => selectedAddress = null),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -79,42 +73,12 @@ class PercSendReceiveActions {
                         builder: (_) => PercAddressQrScannerDialog(strings: strings),
                       );
                       if (scanned == null || !ctx.mounted) return;
-                      setState(() {
-                        selectedAddress = null;
-                        toCtrl.text = scanned;
-                      });
+                      setState(() => toCtrl.text = scanned);
                     },
                     icon: const Icon(Icons.qr_code_scanner_rounded),
                   ),
                 ],
               ),
-              if (addresses.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  value: selectedAddress,
-                  decoration: InputDecoration(
-                    labelText: strings.t('wallet_send_address_pick'),
-                  ),
-                  items: addresses
-                      .map(
-                        (addr) => DropdownMenuItem(
-                          value: addr,
-                          child: Text(
-                            PercBeamPrivacy.shieldAddress(addr),
-                            style: const TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() {
-                    selectedAddress = v;
-                    toCtrl.text = v ?? '';
-                  }),
-                ),
-              ],
               const SizedBox(height: 10),
               TextField(
                 controller: amountCtrl,
@@ -138,11 +102,8 @@ class PercSendReceiveActions {
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             FilledButton(
               onPressed: () async {
-                final to = toCtrl.text.trim().isNotEmpty
-                    ? toCtrl.text
-                    : (selectedAddress ?? '');
                 await wallet.send(
-                  toAddress: to,
+                  toAddress: toCtrl.text.trim(),
                   amountText: amountCtrl.text,
                   memo: memoCtrl.text,
                 );

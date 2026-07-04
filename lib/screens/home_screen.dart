@@ -17,6 +17,7 @@ import '../widgets/mode_advisory_panel.dart';
 import '../widgets/narrative_link_field.dart';
 import '../widgets/part_three_conclusion_panel.dart';
 import '../widgets/percent_chance_panel.dart';
+import '../platform/desktop_platform.dart';
 import '../widgets/synopsis_export_panel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -46,31 +47,36 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Consumer<EvolveProvider>(
-          builder: (context, provider, _) {
-            final s = provider.strings;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s.t('app_title'),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-                ),
-                Text(
-                  s.t('app_subtitle'),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF9BA3B8),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        toolbarHeight: 56,
-      ),
+      appBar: isDesktopWindows
+          ? null
+          : AppBar(
+              title: Consumer<EvolveProvider>(
+                builder: (context, provider, _) {
+                  final s = provider.strings;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s.t('app_title'),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        s.t('app_subtitle'),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF9BA3B8),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              toolbarHeight: 56,
+            ),
       body: Consumer<EvolveProvider>(
         builder: (context, provider, _) {
           final s = provider.strings;
@@ -105,7 +111,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (isDesktopWindows) ...[
+                          Text(
+                            s.t('app_subtitle'),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF9BA3B8),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         const EvolveBanner(),
+                        const SizedBox(height: 14),
+                        _prominentAnalysisModeTabs(provider, s, compact),
+                        const SizedBox(height: 10),
+                        ModeAdvisoryPanel(
+                          mode: provider.mode,
+                          strings: s,
+                          grokEnabled: provider.grokConstrualEnabled,
+                        ),
                         const SizedBox(height: 16),
                         _startFreshButton(context, provider, s),
                         const SizedBox(height: 12),
@@ -143,14 +169,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 20),
                         _sectionHeader(s.t('scenario_section')),
                         const SizedBox(height: 8),
-                        _modeSelector(provider, s),
-                        const SizedBox(height: 10),
-                        ModeAdvisoryPanel(
-                          mode: provider.mode,
-                          strings: s,
-                          grokEnabled: provider.grokConstrualEnabled,
-                        ),
-                        const SizedBox(height: 12),
                         _constructInputs(provider, s),
                         const SizedBox(height: 12),
                         ConstructCompletionBanner(
@@ -211,20 +229,126 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _modeSelector(EvolveProvider provider, dynamic s) {
-    return SegmentedButton<AnalysisMode>(
-      segments: [
-        ButtonSegment(
-          value: AnalysisMode.cohesionScore,
-          label: Text(s.t('mode_cohesion')),
+  Widget _prominentAnalysisModeTabs(
+    EvolveProvider provider,
+    dynamic s,
+    bool compact,
+  ) {
+    const percentAccent = Color(0xFF00D9C0);
+    const cohesionAccent = Color(0xFF6C63FF);
+
+    Widget tab({
+      required AnalysisMode mode,
+      required String label,
+      required IconData icon,
+      required Color accent,
+    }) {
+      final selected = provider.mode == mode;
+      return Expanded(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => provider.setMode(mode),
+            borderRadius: BorderRadius.circular(12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 10 : 16,
+                vertical: compact ? 14 : 18,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: selected ? accent.withOpacity(0.22) : const Color(0xFF1A2030),
+                border: Border.all(
+                  color: selected ? accent : const Color(0xFF3A4258),
+                  width: selected ? 2.2 : 1.2,
+                ),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: accent.withOpacity(0.35),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: compact ? 26 : 30,
+                    color: selected ? accent : const Color(0xFF9BA3B8),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: compact ? 13 : 15,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                      letterSpacing: 0.2,
+                      color: selected ? Colors.white : const Color(0xFFB8C0D4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        ButtonSegment(
-          value: AnalysisMode.percentChance,
-          label: Text(s.t('mode_percent')),
+      );
+    }
+
+    final percentLabel = compact ? s.t('mode_percent_short') : s.t('mode_percent');
+    final cohesionLabel =
+        compact ? s.t('mode_cohesion_short') : s.t('mode_cohesion');
+
+    return Card(
+      elevation: 6,
+      shadowColor: const Color(0xFF6C63FF).withOpacity(0.35),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFF3A4258)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              s.t('analysis_mode_heading'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+                color: Color(0xFFE8ECF4),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                tab(
+                  mode: AnalysisMode.cohesionScore,
+                  label: cohesionLabel,
+                  icon: Icons.groups_rounded,
+                  accent: cohesionAccent,
+                ),
+                const SizedBox(width: 10),
+                tab(
+                  mode: AnalysisMode.percentChance,
+                  label: percentLabel,
+                  icon: Icons.percent_rounded,
+                  accent: percentAccent,
+                ),
+              ],
+            ),
+          ],
         ),
-      ],
-      selected: {provider.mode},
-      onSelectionChanged: (sel) => provider.setMode(sel.first),
+      ),
     );
   }
 

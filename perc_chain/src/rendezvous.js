@@ -3,6 +3,7 @@ import {
   findAddressInLedgerCollection,
   indexLedgerAddresses,
 } from './address_index.js';
+import { isRecipientOnlineOnSeed } from './peer_online.js';
 
 const PORT = Number(process.env.PORT ?? process.env.PERC_RENDEZVOUS_PORT ?? 9478);
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
@@ -94,6 +95,35 @@ const server = http.createServer(async (req, res) => {
     });
     indexLedgerAddresses(data.ledger, addresses);
     return json(res, 200, { ok: true });
+  }
+
+  if (req.method === 'POST' && url.pathname === '/perc/rendezvous/address') {
+    const data = await readBody(req);
+    const address = data.address?.trim();
+    if (!address) {
+      return json(res, 400, { error: 'address required' });
+    }
+    const username = data.username?.trim();
+    if (username) {
+      addresses.set(address, username);
+    }
+    return json(res, 200, { ok: true });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/perc/rendezvous/online') {
+    const username = url.searchParams.get('username')?.trim();
+    const address = url.searchParams.get('address')?.trim();
+    const online = isRecipientOnlineOnSeed({
+      peers,
+      addresses,
+      username,
+      address,
+    });
+    return json(res, 200, {
+      online,
+      username: username ?? null,
+      address: address ?? null,
+    });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/address') {

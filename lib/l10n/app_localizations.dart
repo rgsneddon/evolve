@@ -610,7 +610,7 @@ final _en = {
   'wallet_receive': 'Receive',
   'wallet_send_title': 'Send Perccent',
   'wallet_send_to': 'To PERC address',
-  'wallet_send_to_hint': 'Paste a registered PERC address',
+  'wallet_send_to_hint': 'Paste or scan the recipient PERC address',
   'wallet_send_scan_qr': 'Scan QR code',
   'wallet_send_scan_title': 'Scan PERC address',
   'wallet_send_scan_body':
@@ -789,8 +789,11 @@ final _en = {
   'lang_zh': '中文',
   'lang_hi': 'हिन्दी',
   'lang_ja': '日本語',
+  'analysis_mode_heading': 'Choose your analysis',
   'mode_percent': 'Percent Chance',
   'mode_cohesion': 'Social Cohesion Score',
+  'mode_percent_short': 'Percent chance',
+  'mode_cohesion_short': 'Social cohesion',
   'banner_percent':
       'Pose any ω question or scenario. Optional σ/Iτ/Jμ fields. Chronoflux percent output.',
   'banner_cohesion':
@@ -1238,7 +1241,7 @@ final _es = {
   'wallet_receive': 'Recibir',
   'wallet_send_title': 'Enviar Perccent',
   'wallet_send_to': 'Dirección PERC destino',
-  'wallet_send_to_hint': 'Pegue una dirección PERC registrada',
+  'wallet_send_to_hint': 'Pegue o escanee la dirección PERC del destinatario',
   'wallet_send_scan_qr': 'Escanear código QR',
   'wallet_send_scan_title': 'Escanear dirección PERC',
   'wallet_send_scan_body':
@@ -1360,8 +1363,11 @@ final _es = {
   'region_label': 'Región',
   'language_label': 'Idioma',
   'lang_en': 'English',
+  'analysis_mode_heading': 'Elija su análisis',
   'mode_percent': 'Probabilidad %',
   'mode_cohesion': 'Cohesión social',
+  'mode_percent_short': 'Probabilidad %',
+  'mode_cohesion_short': 'Cohesión social',
   'calc_percent': 'Calcular probabilidad',
   'calc_cohesion': 'Calcular cohesión social',
   'part3_headline_pct': 'PARTE TRES — Acciones recomendadas para el/la {agent}',

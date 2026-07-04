@@ -41,6 +41,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   String? _activeUsername;
   String? _publicEndpoint;
   bool _seedConnected = false;
+  Timer? _receivePollTimer;
 
   PercNetworkSyncState get syncState => _syncState;
   bool get isConnectedToSeed => _seedConnected;
@@ -60,6 +61,16 @@ class PercNetworkCoordinator extends ChangeNotifier {
     instance._detach();
   }
 
+  @visibleForTesting
+  void setNetworkBlockHeightForTest(int height) {
+    _networkBlockHeight = height;
+  }
+
+  @visibleForTesting
+  void setSyncStateForTest(PercNetworkSyncState state) {
+    _syncState = state;
+  }
+
   static final PercNetworkCoordinator instance = PercNetworkCoordinator();
 
   /// Disabled in tests by default; enabled from [main] for production wallets.
@@ -72,6 +83,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   }
 
   void _detach() {
+    _stopReceivePolling();
     _hub?.removeListener(_onHubChanged);
     _hub = null;
     _syncState = PercNetworkSyncState.idle;
@@ -94,7 +106,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (hub == null) return;
     _activeUsername = username;
 
-    await _connectToSeedNode(hub);
+    if (!disableLiveNodesForTests) {
+      await _connectToSeedNode(hub);
+    }
 
     if (!disableLiveNodesForTests && _serverOrCreate.supportsLiveServing) {
       await _serverOrCreate.start(hub);
@@ -114,12 +128,19 @@ class PercNetworkCoordinator extends ChangeNotifier {
       tipHash: PercChainTip.hash(hub.ledger),
     );
 
-    if (username != PercChainConstants.treasuryUsername) {
+    if (!disableLiveNodesForTests &&
+        username != PercChainConstants.treasuryUsername) {
       await _rendezvous.register(status);
+      final addr = hub.ledger.sessionAccount?.address;
+      if (addr != null && addr.isNotEmpty) {
+        await _rendezvous.publishAddress(address: addr);
+      }
       await _rendezvous.relayLedger(username: username, ledger: hub.ledger);
     }
     await syncToNetworkHeight();
+    hub.ledger.refreshPendingInboundTransfers();
     await hub.commit();
+    _startReceivePolling();
     notifyListeners();
   }
 
@@ -127,10 +148,12 @@ class PercNetworkCoordinator extends ChangeNotifier {
     final hub = _hub;
     final ended = username ?? _activeUsername;
     _activeUsername = null;
+    _stopReceivePolling();
     if (!disableLiveNodesForTests && _serverOrCreate.supportsLiveServing) {
       await _serverOrCreate.stop();
     }
-    if (ended != null &&
+    if (!disableLiveNodesForTests &&
+        ended != null &&
         ended != PercChainConstants.treasuryUsername &&
         ended != PercChainConstants.seedUsername) {
       await _rendezvous.unregister(ended);
@@ -155,25 +178,32 @@ class PercNetworkCoordinator extends ChangeNotifier {
     _syncState = PercNetworkSyncState.syncing;
     notifyListeners();
 
-    await _connectToSeedNode(hub);
+    if (!disableLiveNodesForTests) {
+      await _connectToSeedNode(hub);
+    }
     hub.ledger.refreshPendingInboundTransfers();
     await syncToNetworkHeight();
 
     final session = hub.ledger.sessionUsername;
-    if (session != null &&
+    if (!disableLiveNodesForTests &&
+        session != null &&
         session != PercChainConstants.treasuryUsername &&
         session != PercChainConstants.seedUsername) {
       _publicEndpoint ??= await _resolveAdvertisedEndpoint();
-      await _rendezvous.register(
-        PercNetworkStatus.fromLedger(
-          hub.ledger,
-          revision: hub.revision,
-          endpoint: _publicEndpoint,
-        ),
+      final status = PercNetworkStatus.fromLedger(
+        hub.ledger,
+        revision: hub.revision,
+        endpoint: _publicEndpoint,
       );
+      await _rendezvous.register(status);
+      final addr = hub.ledger.sessionAccount?.address;
+      if (addr != null && addr.isNotEmpty) {
+        await _rendezvous.publishAddress(address: addr);
+      }
       await _rendezvous.relayLedger(username: session, ledger: hub.ledger);
     }
 
+    hub.ledger.refreshPendingInboundTransfers();
     await gossipToPeers();
     notifyListeners();
   }
@@ -181,6 +211,13 @@ class PercNetworkCoordinator extends ChangeNotifier {
   Future<void> syncToNetworkHeight() async {
     final hub = _hub;
     if (hub == null) return;
+
+    if (disableLiveNodesForTests) {
+      _networkBlockHeight = _maxKnownHeight();
+      _syncState = PercNetworkSyncState.synced;
+      notifyListeners();
+      return;
+    }
 
     _syncState = PercNetworkSyncState.syncing;
     notifyListeners();
@@ -272,20 +309,23 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
   Future<void> gossipToPeers() async {
     final hub = _hub;
-    if (hub == null) return;
+    if (hub == null || disableLiveNodesForTests) return;
     final ledger = hub.ledger;
     final localEndpoint = nodeEndpoint;
     final session = ledger.sessionUsername;
 
     if (session != null) {
       await _rendezvous.relayLedger(username: session, ledger: ledger);
-      await _rendezvous.register(
-        PercNetworkStatus.fromLedger(
-          ledger,
-          revision: hub.revision,
-          endpoint: localEndpoint,
-        ),
+      final status = PercNetworkStatus.fromLedger(
+        ledger,
+        revision: hub.revision,
+        endpoint: localEndpoint,
       );
+      await _rendezvous.register(status);
+      final addr = ledger.sessionAccount?.address;
+      if (addr != null && addr.isNotEmpty) {
+        await _rendezvous.publishAddress(address: addr);
+      }
     }
 
     final gossipTargets = ledger.networkNodes.values
@@ -319,7 +359,12 @@ class PercNetworkCoordinator extends ChangeNotifier {
     await syncToNetworkHeight();
   }
 
+  /// Blocks commits only when the local chain is strictly behind the network.
   void requireSyncedForMutation() {
+    final hub = _hub;
+    if (hub == null) return;
+    final localHeight = PercChainTip.height(hub.ledger);
+    if (localHeight >= _networkBlockHeight) return;
     if (!isSyncedToNetwork) {
       throw StateError(
         'Wallet syncing to network block height $_networkBlockHeight — try again shortly',
@@ -327,8 +372,108 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
   }
 
+  /// Pulls network state and settles inbound PERC for the signed-in wallet.
+  Future<void> pollForInboundTransfers() async {
+    final hub = _hub;
+    if (hub == null || _activeUsername == null) return;
+
+    await _heartbeatSessionToSeed();
+
+    final heightBefore = PercChainTip.height(hub.ledger);
+    final pendingBefore = hub.ledger.pendingInboundFor(_activeUsername!).length;
+    final balanceBefore = hub.ledger.sessionBalance;
+
+    await syncToNetworkHeight();
+    hub.ledger.refreshPendingInboundTransfers();
+
+    final changed = PercChainTip.height(hub.ledger) != heightBefore ||
+        hub.ledger.pendingInboundFor(_activeUsername!).length != pendingBefore ||
+        hub.ledger.sessionBalance != balanceBefore;
+
+    if (changed) {
+      await hub.commitWithoutSessionPromotion(promoteSessionNode: true);
+    }
+    notifyListeners();
+  }
+
+  void _startReceivePolling() {
+    if (disableLiveNodesForTests || _activeUsername == null) return;
+    _receivePollTimer?.cancel();
+    _receivePollTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) {
+        pollForInboundTransfers();
+      },
+    );
+  }
+
+  void _stopReceivePolling() {
+    _receivePollTimer?.cancel();
+    _receivePollTimer = null;
+  }
+
   bool isWalletOnlineOnNetwork(String username) {
     return _hub?.ledger.isWalletOnlineOnNetwork(username) ?? false;
+  }
+
+  /// Instant delivery only when the seed node sees the recipient address/user online.
+  Future<bool> isRecipientOnlineOnSeed({
+    required String username,
+    required String address,
+  }) async {
+    final hub = _hub;
+    if (hub == null) return false;
+
+    if (disableLiveNodesForTests) {
+      return hub.ledger.isWalletOnlineOnNetwork(username);
+    }
+
+    final online = await _rendezvous.fetchRecipientOnlineOnSeed(
+      username: username,
+      address: address,
+    );
+
+    final height = PercChainTip.height(hub.ledger);
+    final tip = PercChainTip.hash(hub.ledger);
+    if (online) {
+      hub.ledger.setWalletOnline(
+        username,
+        blockHeight: height,
+        tipHash: tip,
+      );
+    } else {
+      hub.ledger.setWalletOffline(
+        username,
+        blockHeight: height,
+        tipHash: tip,
+      );
+    }
+    notifyListeners();
+    return online;
+  }
+
+  Future<void> _heartbeatSessionToSeed() async {
+    if (disableLiveNodesForTests) return;
+    final hub = _hub;
+    final session = _activeUsername;
+    if (hub == null || session == null) return;
+    if (session == PercChainConstants.treasuryUsername ||
+        session == PercChainConstants.seedUsername) {
+      return;
+    }
+
+    _publicEndpoint ??= await _resolveAdvertisedEndpoint();
+    await _rendezvous.register(
+      PercNetworkStatus.fromLedger(
+        hub.ledger,
+        revision: hub.revision,
+        endpoint: _publicEndpoint,
+      ),
+    );
+    final addr = hub.ledger.sessionAccount?.address;
+    if (addr != null && addr.isNotEmpty) {
+      await _rendezvous.publishAddress(address: addr);
+    }
   }
 
   /// Resolves a PERC address to an account — local first, then network rendezvous.
@@ -353,7 +498,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
   Future<PercAccount?> _discoverAccountOnNetwork(String normalized) async {
     final hub = _hub;
-    if (hub == null) return null;
+    if (hub == null || disableLiveNodesForTests) return null;
 
     PercAccount? _localHit() => hub.ledger.accountForAddress(normalized);
 
@@ -371,10 +516,14 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
     final indexed = await _rendezvous.lookupAddress(normalized);
     if (indexed != null) {
-      return hub.ledger.ensureRemoteAccount(
-        username: indexed.username,
-        address: indexed.address,
-      );
+      final hit = _localHit();
+      if (hit != null) return hit;
+      if (indexed.username.isNotEmpty) {
+        return hub.ledger.ensureRemoteAccount(
+          username: indexed.username,
+          address: indexed.address,
+        );
+      }
     }
 
     final base = await _rendezvous.baseUrl();
@@ -427,6 +576,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
   /// Connects to the internet seed node on every sync (including app launch).
   Future<void> _connectToSeedNode(PercLedgerHub hub) async {
+    if (disableLiveNodesForTests) return;
     final base = await _rendezvous.baseUrl();
     if (base == null) {
       _seedConnected = false;
@@ -456,7 +606,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
       sessionUsername: seedStatus.sessionUsername ?? seedUser,
       endpoint: base,
     );
-    hub.ledger.updatePeerFromStatus(seedStatus);
+    hub.ledger.updatePeerFromStatus(seedStatus, online: true);
     _seedConnected = true;
 
     var remote = await _client.fetchLedger(base);
@@ -498,7 +648,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
     final peers = await _rendezvous.fetchPeers();
     for (final status in peers) {
       if (status.sessionUsername == null) continue;
-      ledger.updatePeerFromStatus(status);
+      ledger.updatePeerFromStatus(
+        status,
+        online: status.isFreshOnSeedPeer,
+      );
     }
   }
 
@@ -525,7 +678,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
       final status = await _client.fetchStatus(endpoint);
       if (status != null) {
         results.add(status);
-        ledger.updatePeerFromStatus(status);
+        ledger.updatePeerFromStatus(status, online: false);
       }
     }
 

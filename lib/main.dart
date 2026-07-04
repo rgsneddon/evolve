@@ -11,11 +11,14 @@ import 'models/analysis_mode.dart';
 import 'providers/evolve_provider.dart';
 import 'perc/providers/perc_wallet_provider.dart';
 import 'perc/services/perc_network_coordinator.dart';
+import 'platform/desktop_window_init.dart';
 import 'screens/evolve_shell_screen.dart';
 import 'theme/app_theme.dart';
+import 'widgets/desktop_window_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initDesktopWindow();
   PercNetworkCoordinator.disableLiveNodesForTests = false;
   await OutcomeRegistry.ensureLoaded();
   final evolveProvider = EvolveProvider();
@@ -85,7 +88,10 @@ class EvolveApp extends StatelessWidget {
             ],
             builder: (context, child) => Directionality(
               textDirection: localeProv.config.textDirection,
-              child: child ?? const SizedBox.shrink(),
+              child: DesktopWindowShell(
+                title: strings.t('app_title'),
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
             home: const EvolveShellScreen(),
           );

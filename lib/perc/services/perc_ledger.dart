@@ -217,11 +217,15 @@ class PercLedger {
     );
   }
 
-  void updatePeerFromStatus(PercNetworkStatus status) {
+  void updatePeerFromStatus(
+    PercNetworkStatus status, {
+    bool? online,
+  }) {
     final username = status.sessionUsername;
     if (username == null) return;
     final key = PercAuth.normalizeUsername(username);
     final existing = networkNodes[key];
+    final isOnline = online ?? status.isFreshOnSeedPeer;
     networkNodes[key] = (existing ??
             PercPeerNode.offline(
               username: key,
@@ -232,8 +236,8 @@ class PercLedger {
       endpoint: status.endpoint ?? existing?.endpoint,
       blockHeight: status.blockHeight,
       tipHash: status.tipHash,
-      online: true,
-      lastSeen: DateTime.now().toUtc(),
+      online: isOnline,
+      lastSeen: status.updatedAt?.toUtc() ?? DateTime.now().toUtc(),
     );
   }
 
@@ -1542,6 +1546,7 @@ class PercLedger {
     required String toAddress,
     required PercAmount amount,
     String? memo,
+    bool? deliverInstantly,
   }) {
     if (!blockchainLaunched) {
       throw StateError(
@@ -1605,7 +1610,8 @@ class PercLedger {
       sender: sender,
     );
 
-    final recipientOnline = isWalletOnlineOnNetwork(to);
+    final recipientOnline =
+        deliverInstantly ?? isWalletOnlineOnNetwork(to);
     if (recipientOnline) {
       _credit(receiver, amount);
       receiver.transactions.insert(0, tx);

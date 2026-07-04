@@ -3,8 +3,9 @@ import { blockHeight, tipHash } from './ledger_store.js';
 import { seedBlockHeightFromLedger } from './seed_block.js';
 
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
-/** Network nodes drop from the explorer after this idle period (default 7 minutes). */
-export const PEER_ONLINE_MS = Number(process.env.PERC_PEER_ONLINE_MS ?? 7 * 60 * 1000);
+import { isPeerOnline, PEER_ONLINE_MS } from './peer_online.js';
+
+export { isPeerOnline, PEER_ONLINE_MS };
 
 export function peerOnlineTimeoutSeconds() {
   return Math.round(PEER_ONLINE_MS / 1000);
@@ -21,11 +22,6 @@ export function hiddenPeerUsernames() {
 export function isHiddenPeer(username) {
   if (!username) return true;
   return hiddenPeerUsernames().has(username);
-}
-
-export function isPeerOnline(peer, now = Date.now()) {
-  const updated = peer?.updatedAt ?? 0;
-  return updated > 0 && now - updated <= PEER_ONLINE_MS;
 }
 
 /** Seed always visible; other wallets only while recently heartbeating. */

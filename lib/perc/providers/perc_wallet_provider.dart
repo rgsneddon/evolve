@@ -106,17 +106,6 @@ class PercWalletProvider extends ChangeNotifier {
     return list;
   }
 
-  /// Registered PERC addresses excluding the signed-in wallet — for send picker.
-  List<String> get sendableAddresses {
-    if (!isLoggedIn) return const [];
-    final self = address;
-    return allRegisteredWallets
-        .where((name) => name != loggedInUsername)
-        .map((name) => _ledger.account(name)?.address ?? '')
-        .where((addr) => addr.isNotEmpty && addr != self)
-        .toList(growable: false);
-  }
-
   String addressForUsername(String username) =>
       _ledger.account(username)?.address ?? '';
   int get confirmationsRequired => PercChainConstants.confirmationsRequired;
@@ -342,17 +331,22 @@ class PercWalletProvider extends ChangeNotifier {
       );
       if (resolved == null) {
         errorMessage =
-            'Recipient address not found on the network — they must register a wallet and sign in so their address is discoverable';
+            'Recipient PERC address not found on the network — the owner must register and sign in once so the address is discoverable';
         notifyListeners();
         return;
       }
       final recipient = resolved.username;
-      final recipientOnline = _ledger.isWalletOnlineOnNetwork(recipient);
+      final recipientOnline =
+          await PercLedgerHub.instance.network.isRecipientOnlineOnSeed(
+        username: recipient,
+        address: normalizedAddress,
+      );
       _ledger.send(
         fromUsername: _ledger.sessionUsername!,
         toAddress: normalizedAddress,
         amount: amount,
         memo: memo,
+        deliverInstantly: recipientOnline,
       );
       _captureGenesisRenewalEvent();
       final dest = PercBeamPrivacy.shieldAddress(normalizedAddress);
@@ -367,7 +361,7 @@ class PercWalletProvider extends ChangeNotifier {
         statusMessage =
             'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $dest '
             '(network fee ${fee.displayFixed8} ${PercChainConstants.currencySymbol}) — '
-            'delivers when they sign in within ${_formatReceiveDelay()}, otherwise returns to your wallet';
+            'queued until they sign in on the network within ${_formatReceiveDelay()}, otherwise returns to your wallet';
       }
       notifyListeners();
       await _commit();

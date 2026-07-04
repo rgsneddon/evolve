@@ -1,7 +1,7 @@
 name: evolve
 description: Evolve Chronoflux framework — percent chance and social cohesion analysis.
 publish_to: 'none'
-version: 3.1.0+66
+version: 3.1.1+67
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -24,6 +24,7 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.2.0
   permission_handler: ^12.0.3
+  window_manager: ^0.5.2
 
 dev_dependencies:
   flutter_test:

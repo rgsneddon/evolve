@@ -13,6 +13,7 @@ class PercNetworkStatus {
     this.sessionUsername,
     this.endpoint,
     this.walletAddress,
+    this.updatedAt,
   });
 
   final String evolutionaryChainId;
@@ -23,6 +24,15 @@ class PercNetworkStatus {
   final String? sessionUsername;
   final String? endpoint;
   final String? walletAddress;
+  final DateTime? updatedAt;
+
+  /// True when the seed node has seen this peer heartbeat within [PercChainConstants.peerOnlineWindow].
+  bool get isFreshOnSeedPeer {
+    final at = updatedAt;
+    if (at == null) return false;
+    return DateTime.now().toUtc().difference(at.toUtc()) <=
+        PercChainConstants.peerOnlineWindow;
+  }
 
   Map<String, dynamic> toJson() => {
         'evolutionaryChainId': evolutionaryChainId,
@@ -33,6 +43,7 @@ class PercNetworkStatus {
         if (sessionUsername != null) 'sessionUsername': sessionUsername,
         if (endpoint != null) 'endpoint': endpoint,
         if (walletAddress != null) 'walletAddress': walletAddress,
+        if (updatedAt != null) 'updatedAt': updatedAt!.millisecondsSinceEpoch,
       };
 
   factory PercNetworkStatus.fromJson(Map<String, dynamic> json) =>
@@ -45,7 +56,19 @@ class PercNetworkStatus {
         sessionUsername: json['sessionUsername'] as String?,
         endpoint: json['endpoint'] as String?,
         walletAddress: json['walletAddress'] as String?,
+        updatedAt: _parseUpdatedAt(json['updatedAt']),
       );
+
+  static DateTime? _parseUpdatedAt(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is int) {
+      return DateTime.fromMillisecondsSinceEpoch(raw, isUtc: true);
+    }
+    if (raw is String) {
+      return DateTime.tryParse(raw)?.toUtc();
+    }
+    return null;
+  }
 
   static PercNetworkStatus fromLedger(
     PercLedger ledger, {
