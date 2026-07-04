@@ -195,34 +195,14 @@
     </section>
 
     <section>
-      <h2>Wallet blocks — five-point chart</h2>
+      <h2>Network nodes</h2>
       <p class="hint" style="margin-bottom:12px">
-        Chronoflux pentagon — every registered wallet plotted by current block height
+        Chronoflux five-point pentagon — every registered wallet by current block height
         (highest of scenario, chain, or relay). Five rings mark 0%–100% of network max.
       </p>
       <div class="card chart-layout">
-        <svg id="wallet-pentagon-chart" viewBox="0 0 320 320" role="img" aria-label="Wallet block pentagon chart"></svg>
+        <svg id="wallet-pentagon-chart" viewBox="0 0 320 320" role="img" aria-label="Network nodes block pentagon chart"></svg>
         <div class="wallet-legend" id="wallet-block-legend"></div>
-      </div>
-    </section>
-
-    <section>
-      <h2>Network nodes</h2>
-      <div class="card" style="padding:0; overflow:hidden">
-        <table>
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Wallet</th>
-              <th>Block</th>
-              <th>Scenario</th>
-              <th>Chain</th>
-              <th>Node</th>
-              <th>Last seen</th>
-            </tr>
-          </thead>
-          <tbody id="peers"></tbody>
-        </table>
       </div>
     </section>
 
@@ -414,16 +394,28 @@
       return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
     }
 
-    function renderWalletBlockChart(chart) {
+    function renderWalletBlockChart(chart, peerList = []) {
       const svg = $('wallet-pentagon-chart');
       const legend = $('wallet-block-legend');
+      const peerByName = new Map((peerList ?? []).map((p) => [p.username, p]));
+
       if (!chart || !chart.users) {
         svg.innerHTML = '';
         legend.innerHTML = '<p class="muted">No wallets registered yet.</p>';
         return;
       }
 
-      const users = chart.users;
+      const users = chart.users.map((u) => {
+        const p = peerByName.get(u.username);
+        return {
+          ...u,
+          online: u.online ?? p?.online ?? false,
+          endpoint: u.endpoint ?? p?.endpoint ?? null,
+          lastSeen: u.lastSeen ?? p?.lastSeen ?? null,
+          chainBlockHeight: u.chainBlockHeight ?? p?.blockHeight ?? 0,
+          relayHeight: Math.max(u.relayHeight ?? 0, p?.relayHeight ?? 0),
+        };
+      });
       const maxBlock = Math.max(1, chart.maxBlock ?? 1);
       const cx = 160;
       const cy = 160;
@@ -472,15 +464,23 @@
       legend.innerHTML = users.length
         ? users.map((user, index) => {
             const color = WALLET_CHART_COLORS[index % WALLET_CHART_COLORS.length];
+            const chain = user.chainBlockHeight ?? 0;
+            const relay = user.relayHeight ?? 0;
+            const nodeLine = user.endpoint
+              ? renderEndpoint(user.endpoint)
+              : '<span class="muted">—</span>';
+            const seen = user.lastSeen ? fmtTime(user.lastSeen) : '—';
             return `<div class="wallet-legend-item">
               <span class="wallet-swatch" style="background:${color}"></span>
               <div>
-                <strong>${user.username}</strong>
+                <strong>${user.username}</strong> ${pill(user.online)}
                 <div class="wallet-legend-meta">
-                  ${user.online ? 'Online' : 'Offline'}
+                  Block ${user.displayBlock ?? 0}
                   · scenario ${user.scenarioBlockHeight ?? 0}
-                  · chain ${user.chainBlockHeight ?? 0}${user.relayHeight > (user.chainBlockHeight ?? 0) ? ` · relay ${user.relayHeight}` : ''}
+                  · chain ${chain}${relay > chain ? ` · relay ${relay}` : ''}
                 </div>
+                <div class="wallet-legend-meta mono">${nodeLine}</div>
+                <div class="wallet-legend-meta">Last seen ${seen}</div>
               </div>
               <span class="wallet-legend-block">${user.displayBlock ?? 0}</span>
             </div>`;
@@ -491,7 +491,7 @@
     function renderStats(net) {
       $('endpoint-line').textContent = maskIpAddresses(net.endpoint || '');
       renderTreasuryEmissionPublic(net);
-      renderWalletBlockChart(net.walletBlockChart);
+      renderWalletBlockChart(net.walletBlockChart, net.peerList);
       $('stats').innerHTML = `
         <div class="card"><div class="label">Node</div><div class="value">${pill(net.nodeStatus === 'online')}</div></div>
         <div class="card"><div class="label">Seed height</div><div class="value">${net.blockHeight}</div></div>
@@ -500,28 +500,6 @@
         <div class="card"><div class="label">Ledger</div><div class="value">${net.ledgerReady ? 'Synced' : 'Pending'}</div></div>
         <div class="card"><div class="label">Chain</div><div class="value mono" style="font-size:0.75rem">${net.chainId}</div></div>
       `;
-      const peerByName = new Map((net.peerList ?? []).map((p) => [p.username, p]));
-      const allUsers = net.walletBlockChart?.users ?? [];
-      $('peers').innerHTML = allUsers.length
-        ? allUsers.map((u) => {
-            const p = peerByName.get(u.username);
-            const online = u.online ?? p?.online ?? false;
-            const chain = u.chainBlockHeight ?? p?.blockHeight ?? 0;
-            const relay = u.relayHeight ?? p?.relayHeight ?? 0;
-            const endpoint = u.endpoint ?? p?.endpoint ?? null;
-            const lastSeen = u.lastSeen ?? p?.lastSeen ?? null;
-            return `
-          <tr>
-            <td>${pill(online)}</td>
-            <td><strong>${u.username}</strong></td>
-            <td><strong>${u.displayBlock ?? 0}</strong></td>
-            <td>${u.scenarioBlockHeight ?? 0}</td>
-            <td>${chain}${relay > chain ? ` <span class="muted">(relay ${relay})</span>` : ''}</td>
-            <td class="mono">${renderEndpoint(endpoint)}</td>
-            <td class="muted">${lastSeen ? fmtTime(lastSeen) : '—'}</td>
-          </tr>`;
-          }).join('')
-        : '<tr><td colspan="7" class="muted">No wallets registered yet. Open Evolve and log in.</td></tr>';
     }
 
     function renderBlocks(data) {
