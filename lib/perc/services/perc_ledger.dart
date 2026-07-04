@@ -607,6 +607,9 @@ class PercLedger {
   bool get treasuryPoolCritical =>
       PercInflation.isPoolCritical(treasuryBalance);
 
+  bool get treasuryNeedsRegeneration =>
+      blockchainLaunched && PercInflation.needsRegeneration(treasuryBalance);
+
   bool get isTreasurySendLocked => blockchainLaunched;
 
   bool get isTreasuryAtReserve =>
@@ -919,6 +922,32 @@ class PercLedger {
 
   bool _needsTreasuryPoolRenewal() => isTreasuryAtReserve;
 
+  /// Mints toward 1 PERC when the pool drops below 0.66 PERC.
+  List<PercTransaction> _regenerateTreasuryIfNeeded(DateTime now) {
+    if (!treasuryNeedsRegeneration || treasuryCapped) return [];
+
+    final treasury = _ensureTreasury();
+    final target = PercChainConstants.treasuryEmissionPerSecond;
+    final shortfall = target - treasury.balance;
+    if (!shortfall.isPositive) return [];
+
+    cumulativeTreasuryMinted = cumulativeTreasuryMinted + shortfall;
+    _credit(treasury, shortfall);
+    final tx = PercTransaction(
+      id: _newTxId(),
+      kind: PercTxKind.treasuryEmission,
+      amount: shortfall,
+      timestamp: now,
+      toUsername: PercChainConstants.treasuryUsername,
+      memo:
+          'Treasury regeneration — balance below ${PercChainConstants.treasuryRegenerationThreshold.display} ${PercChainConstants.currencySymbol}',
+      blockIndex: blocks.length,
+      confirmations: _txConfirmations,
+    );
+    treasury.transactions.insert(0, tx);
+    return [tx];
+  }
+
   List<PercTransaction> _renewTreasuryPoolIfNeeded(DateTime now) {
     if (!_needsTreasuryPoolRenewal()) return [];
 
@@ -1101,6 +1130,7 @@ class PercLedger {
 
   List<PercTransaction> _treasuryEmissionTxs(DateTime now) {
     if (treasuryCapped) return [];
+    final regenTxs = _regenerateTreasuryIfNeeded(now);
     final perSecond = PercChainConstants.treasuryEmissionPerSecond;
     if (!treasuryGenesisDone) {
       treasuryGenesisDone = true;
@@ -1108,6 +1138,7 @@ class PercLedger {
       final treasury = _ensureTreasury();
       _credit(treasury, perSecond);
       return [
+        ...regenTxs,
         PercTransaction(
           id: _newTxId(),
           kind: PercTxKind.treasuryEmission,
@@ -1119,7 +1150,7 @@ class PercLedger {
         ),
       ];
     }
-    if (lastScenarioAt == null) return [];
+    if (lastScenarioAt == null) return regenTxs;
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
     if (elapsed <= 0) return [];
     var emission = perSecond * elapsed;
@@ -1127,7 +1158,7 @@ class PercLedger {
         emission > treasuryRemaining) {
       emission = treasuryRemaining;
     }
-    if (!emission.isPositive) return [];
+    if (!emission.isPositive) return regenTxs;
 
     cumulativeTreasuryMinted = cumulativeTreasuryMinted + emission;
     final treasury = _ensureTreasury();
@@ -1142,7 +1173,7 @@ class PercLedger {
       confirmations: _txConfirmations,
     );
     treasury.transactions.insert(0, tx);
-    return [tx];
+    return [...regenTxs, tx];
   }
 
   /// Each keystroke verifies the Chronoflux continuum and advances one microblock.
@@ -1485,17 +1516,23 @@ class PercLedger {
     final treasury = _ensureTreasury();
     final renewalTxs = _renewTreasuryPoolIfNeeded(now);
     final isGenesisRenewal = renewalTxs.isNotEmpty;
-    final blockTxs = <PercTransaction>[...renewalTxs];
-    final emitted = _treasuryEmissionForScenario(now);
+    final regenTxs = _regenerateTreasuryIfNeeded(now);
+    final blockTxs = <PercTransaction>[...renewalTxs, ...regenTxs];
+    var emitted = regenTxs.fold<PercAmount>(
+      PercAmount.zero,
+      (sum, tx) => sum + tx.amount,
+    );
+    final scenarioEmission = _treasuryEmissionForScenario(now);
 
-    if (emitted.isPositive) {
+    if (scenarioEmission.isPositive) {
+      emitted = emitted + scenarioEmission;
       treasuryGenesisDone = true;
-      cumulativeTreasuryMinted = cumulativeTreasuryMinted + emitted;
-      _credit(treasury, emitted);
+      cumulativeTreasuryMinted = cumulativeTreasuryMinted + scenarioEmission;
+      _credit(treasury, scenarioEmission);
       final tx = PercTransaction(
         id: _newTxId(),
         kind: PercTxKind.treasuryEmission,
-        amount: emitted,
+        amount: scenarioEmission,
         timestamp: now,
         toUsername: PercChainConstants.treasuryUsername,
         blockIndex: blocks.length,

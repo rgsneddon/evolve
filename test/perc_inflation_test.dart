@@ -48,6 +48,32 @@ void main() {
     expect(wait, const Duration(milliseconds: 600));
   });
 
+  test('treasury below 0.66 PERC triggers regeneration toward 1 PERC', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+    ledger.creditScenario(username: 'alice', percentChance: 10);
+
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    treasury.balance = PercAmount.fromPerc(0.50);
+
+    expect(ledger.treasuryNeedsRegeneration, isTrue);
+    expect(ledger.timeToNextInflation(), Duration.zero);
+
+    final result = ledger.creditScenario(username: 'alice', percentChance: 10);
+    expect(result.status.name, 'onCooldown');
+    expect(
+      treasury.balance.microUnits,
+      greaterThan(PercChainConstants.treasuryRegenerationThreshold.microUnits),
+    );
+    expect(
+      treasury.transactions.any(
+        (tx) => tx.memo?.contains('Treasury regeneration') ?? false,
+      ),
+      isTrue,
+    );
+  });
+
   test('critical treasury pool shows zero time to next inflation', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);

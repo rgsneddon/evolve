@@ -72,6 +72,7 @@ class PercWalletProvider extends ChangeNotifier {
   int get treasuryCycle => _ledger.treasuryCycle;
   DateTime? get lastInflationEpoch => _ledger.lastInflationEpoch;
   bool get treasuryPoolCritical => _ledger.treasuryPoolCritical;
+  bool get treasuryNeedsRegeneration => _ledger.treasuryNeedsRegeneration;
   Duration? get timeToNextInflation => _ledger.timeToNextInflation();
   bool get inflationReady =>
       PercInflation.isInflationReady(timeToNextInflation);

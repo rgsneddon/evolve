@@ -12,6 +12,7 @@ import { LedgerStore, blockHeight, tipHash } from './ledger_store.js';
 import { TreasuryAdmin } from './treasury_admin.js';
 import { buildTreasuryWalletView } from './treasury_api.js';
 import { launchBlockchainFromTreasuryLogin } from './blockchain_launch.js';
+import { regenerateTreasuryIfLow } from './treasury_regeneration.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -22,6 +23,7 @@ const SEED_USERNAME = process.env.PERC_SEED_USERNAME ?? 'evolve_seed_node';
 const TREASURY_USERNAME = process.env.PERC_TREASURY_USERNAME ?? 'evolve_treasury';
 const DATA_DIR = process.env.PERC_DATA_DIR ?? path.join(process.cwd(), 'data');
 const SYNC_INTERVAL_MS = Number(process.env.PERC_SYNC_INTERVAL_MS ?? 120_000);
+const TREASURY_REGEN_INTERVAL_MS = Number(process.env.PERC_TREASURY_REGEN_INTERVAL_MS ?? 30_000);
 const CHAIN_GENESIS_REVISION = Number(process.env.PERC_CHAIN_GENESIS_REVISION ?? 2);
 
 /** @type {Map<string, object>} */
@@ -431,8 +433,19 @@ server.listen(PORT, bindHost, async () => {
   }
   await registerSeed();
   await syncFromNetwork();
+  if (regenerateTreasuryIfLow(store, TREASURY_USERNAME)) {
+    await registerSeed();
+  }
   setInterval(async () => {
     await syncFromNetwork();
+    if (regenerateTreasuryIfLow(store, TREASURY_USERNAME)) {
+      await registerSeed();
+    }
     await registerSeed();
   }, SYNC_INTERVAL_MS);
+  setInterval(() => {
+    if (regenerateTreasuryIfLow(store, TREASURY_USERNAME)) {
+      registerSeed().catch((err) => console.warn('Treasury regen register failed:', err));
+    }
+  }, TREASURY_REGEN_INTERVAL_MS);
 });

@@ -62,6 +62,9 @@ class PercChainConstants {
   /// Minimum treasury reserve — 1 cent (0.00000001 PERC); pool renews at this level.
   static const PercAmount minimumTreasuryReserve = PercAmount(1);
 
+  /// Treasury tops up toward [treasuryEmissionPerSecond] when balance falls below this.
+  static final PercAmount treasuryRegenerationThreshold = PercAmount.fromPerc(0.66);
+
   /// Smallest send/receive amount — 1 cent (0.00000001 PERC). All wallets accept this.
   static const PercAmount minimumTransferAmount = PercAmount.smallestUnit;
 

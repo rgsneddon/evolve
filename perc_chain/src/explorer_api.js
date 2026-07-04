@@ -41,6 +41,8 @@ export function formatPercAmount(amount) {
 export function buildPublicTreasuryEmission(ledger, treasuryUsername = 'evolve_treasury') {
   if (!ledger?.blockchainLaunched) return null;
   const treasury = ledger.accounts?.[treasuryUsername];
+  const balanceMicro = treasury?.balance?.microUnits ?? 0;
+  const regenThresholdMicro = Math.round(0.66 * 100_000_000);
   return {
     emissionPerSecond: '1',
     balance: formatPercAmount(treasury?.balance),
@@ -48,6 +50,8 @@ export function buildPublicTreasuryEmission(ledger, treasuryUsername = 'evolve_t
     treasuryCycle: ledger.treasuryCycle ?? 1,
     treasuryLocked: true,
     disclaimer: 'TREASURY IS LOCKED',
+    regenerationThreshold: '0.66',
+    needsRegeneration: balanceMicro < regenThresholdMicro,
   };
 }
 
