@@ -51366,20 +51366,22 @@ return p}s=A.ari()
 r=A.VM(A.aPx(q,s),B.bd,B.bd,null,"",!1,s,0,null,q)
 p.h(0,q,r)
 return r},
-alZ(a){var s,r,q,p,o,n=this,m=null,l=n.w&&n.guw().a<$.aNq().a
-if(!l)return A.a([],t.Zc)
-s=n.lp()
-r=$.aRK()
-l=s.f.a
-q=r.a-l
-if(q<=0)return A.a([],t.Zc)
-n.e=new A.bP(n.e.a+q)
-s.f=new A.bP(l+q)
-l=n.rB()
-p=$.aNq().gxk(0)
-o=A.tH(new A.bP(q),n.b.length,m,1,m,m,m,l,B.nC,"Treasury regeneration \u2014 balance below "+p+" PERC",m,m,m,m,m,a,"evolve_treasury",m)
-B.m.fl(s.y,0,o)
-return A.a([o],t.Zc)},
+alZ(a){var s,r,q,p,o,n,m=this,l=null
+if(!m.d)return A.a([],t.Zc)
+s=m.w&&m.guw().a<$.aNq().a
+if(!s)return A.a([],t.Zc)
+r=m.lp()
+q=$.aRK()
+s=r.f.a
+p=q.a-s
+if(p<=0)return A.a([],t.Zc)
+m.e=new A.bP(m.e.a+p)
+r.f=new A.bP(s+p)
+s=m.rB()
+o=$.aNq().gxk(0)
+n=A.tH(new A.bP(p),m.b.length,l,1,l,l,l,s,B.nC,"Treasury regeneration \u2014 balance below "+o+" PERC",l,l,l,l,l,a,"evolve_treasury",l)
+B.m.fl(r.y,0,n)
+return A.a([n],t.Zc)},
 Vt(a){var s,r,q,p,o,n=this,m=null
 if(n.guw().a!==1)return A.a([],t.Zc);++n.r
 n.e=B.bd
