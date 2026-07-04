@@ -630,12 +630,11 @@ class _LawfulFrameFlowPainter extends CustomPainter {
         center,
         end,
         Paint()
-          ..color = (Color.lerp(
+          ..color = Color.lerp(
                 const Color(0xFF3BC9FF),
                 const Color(0xFFFFB347),
                 (i % 11) / 11.0,
-              ) ??
-              const Color(0xFF3BC9FF))
+              )
               .withOpacity(0.12 + pulse * 0.08)
           ..strokeWidth = 0.6,
       );
@@ -669,8 +668,7 @@ class _LawfulFrameFlowPainter extends CustomPainter {
               ),
               const Color(0xFF5CE0A8),
               litMix * 0.85,
-            ) ??
-            const Color(0xFF3BC9FF);
+            );
 
         final path = Path()
           ..moveTo(
@@ -786,7 +784,7 @@ class _WardHeatmapPainter extends CustomPainter {
                     const Color(0xFF1A2840),
                     const Color(0xFF3BC9FF),
                     fill,
-                  )!
+                  )
               : const Color(0xFF121820);
 
       canvas.drawRect(
