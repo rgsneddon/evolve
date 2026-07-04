@@ -1,14 +1,1 @@
-# Render Blueprint — Perccent internet rendezvous
-# Deploy: https://dashboard.render.com/select-repo?type=blueprint
-services:
-  - type: web
-    name: evolve-perc-rendezvous
-    runtime: node
-    rootDir: perc_chain
-    buildCommand: npm install
-    startCommand: npm run start:rendezvous
-    healthCheckPath: /health
-    envVars:
-      - key: NODE_VERSION
-        value: 20
-    plan: free
+# See ../render.yaml at repo root — Render Blueprint lives there.

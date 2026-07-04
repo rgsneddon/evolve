@@ -93,12 +93,12 @@ if ($RendezvousUrl) {
 Write-Host @'
 No rendezvous URL configured yet.
 
-RECOMMENDED — Render (free public HTTPS host, permanent):
+RECOMMENDED — Render (free HTTPS; use Starter for always-on):
   1. Open https://render.com/deploy?repo=https://github.com/rgsneddon/evolve
-  2. Sign in to Render and approve the blueprint (creates evolve-perc-rendezvous)
-  3. After deploy finishes, copy the service URL (e.g. https://evolve-perc-rendezvous.onrender.com)
+  2. Sign in and approve the blueprint (creates evolve-perc-internet)
+  3. Copy the service URL (e.g. https://evolve-perc-internet.onrender.com)
   4. Run:
-       scripts\deploy_rendezvous.ps1 -RendezvousUrl "https://YOUR-SERVICE.onrender.com"
+       scripts\deploy_cloud_node.ps1 -ServiceUrl "https://YOUR-SERVICE.onrender.com"
 
 INTERIM — Cloudflare quick tunnel (this PC must stay online):
   scripts\start_rendezvous_public.ps1 -UpdateConfig

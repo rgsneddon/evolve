@@ -2,6 +2,8 @@ FROM node:20-alpine
 WORKDIR /app
 COPY package.json ./
 COPY src ./src
-ENV PERC_RENDEZVOUS_PORT=9478
+RUN mkdir -p /var/data
+ENV PERC_DATA_DIR=/var/data
+ENV PERC_BIND_HOST=0.0.0.0
 EXPOSE 9478
-CMD ["npm", "run", "start:rendezvous"]
+CMD ["npm", "run", "start:internet"]

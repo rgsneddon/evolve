@@ -54,5 +54,6 @@ code_sign.local.env
 *.p12
 tools/nuget.exe
 perc_chain/cloudflared.exe
+perc_chain/data/
 tools/Microsoft.ArtifactSigning.Client/
 tools/trusted-signing/metadata.json

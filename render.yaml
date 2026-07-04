@@ -1,14 +1,21 @@
-# Render Blueprint — Perccent internet rendezvous
-# Deploy: https://dashboard.render.com/select-repo?type=blueprint
+# Render Blueprint — Perccent internet node (rendezvous + always-on seed)
+# Deploy: https://render.com/deploy?repo=https://github.com/rgsneddon/evolve
+#
+# Free tier sleeps after ~15 min idle (cold starts). For true always-on use Starter ($7/mo)
+# or deploy the same Docker image to Fly.io / a Hetzner VPS (see scripts/deploy_cloud_node.ps1).
 services:
   - type: web
-    name: evolve-perc-rendezvous
+    name: evolve-perc-internet
     runtime: node
     rootDir: perc_chain
     buildCommand: npm install
-    startCommand: npm run start:rendezvous
+    startCommand: npm run start:internet
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: 20
+      - key: PERC_SEED_USERNAME
+        value: evolve_seed_node
+      - key: PERC_DATA_DIR
+        value: /tmp/perc-data
     plan: free
