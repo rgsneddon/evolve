@@ -1,0 +1,400 @@
+EVOLVE CHRONOFLUX — PRIVACY POLICY
+===================================
+
+Effective date: 3 July 2026
+Last updated: 4 July 2026
+
+This Privacy Policy describes how Evolve Chronoflux ("Evolve", "we", "us", or "our")
+collects, uses, stores, and shares information when you use the Evolve application
+on Windows, Android, iOS, or the web (including the GitHub Pages deployment), and
+when you use the public Perccent Internet seed node and network explorer hosted on
+Render at https://evolve-perc-internet.onrender.com.
+
+By using Evolve, you agree to this Privacy Policy. If you do not agree, do not use
+the app or the hosted network services.
+
+
+1. WHO WE ARE
+-------------
+
+Evolve is a cross-platform application for social and political scenario analysis
+using the Chronoflux hydrodynamic framework. Evolve is proprietary software
+copyright (c) 2026 Evolve Chronoflux.
+
+The Perccent (PERC) wallet connects to an internet seed node that provides
+rendezvous peer discovery, chain synchronisation, and a public network explorer.
+That seed node is operated on Render Standard hosting with persistent disk storage.
+
+Privacy enquiries:
+  - GitHub issues: https://github.com/rgsneddon/evolve/issues
+  - Licensing / general contact: licensing@evolve-chronoflux.dev
+
+
+2. SUMMARY
+----------
+
+- Core Chronoflux calculations run locally on your device.
+- We do not operate advertising, sell personal data, or run third-party analytics
+  or crash-reporting SDKs inside Evolve.
+- PERC wallet ledgers are stored locally on your device. Wallets operate
+  independently per device and user, but synchronise chain state with the seed
+  node on app launch and when you sign in.
+- Optional online features (Grok construal, narrative links, PERC network sync,
+  and the hosted explorer) send only what is needed for the feature you enable
+  or trigger.
+- The treasury wallet on the seed node is hidden from public peer listings. A
+  one-time blockchain launch is performed only when the designated treasury
+  administrator signs in on the hosted Treasury tab. After launch, treasury
+  emission statistics are shown publicly on the explorer with a "TREASURY IS
+  LOCKED" notice; outbound treasury sends remain disabled.
+
+
+3. INFORMATION WE COLLECT AND HOW WE USE IT
+-------------------------------------------
+
+3.1 Information you provide in the app
+
+When you use Evolve, you may enter:
+
+  - Scenario questions and optional construct fields (sigma, I-tau, J-mu, omega)
+  - Region and language preferences
+  - PERC wallet username, password, and transfer details
+  - Narrative URLs for cohesion analysis (when you paste a link)
+  - Exported synopsis files you choose to save (PDF, HTML, or text)
+
+This content is used to run analysis, maintain your local PERC ledger, and produce
+reports. Unless you enable an optional online feature (Sections 3.3 and 3.7),
+scenario text is processed on your device and is not transmitted to Evolve-operated
+servers for routine analysis.
+
+
+3.2 Information stored locally on your device
+
+Evolve may store the following on your device:
+
+  PERC wallet ledger
+    - Username, password hash and salt, confidential PERC address (Beam-privacy
+      fork), balances, transaction history, blockchain state, wallet peer mesh,
+      network node metadata, and related wallet data.
+    - Each device keeps its own ledger file. Your wallet credentials stay on your
+      device when the chain synchronises from the network; only chain consensus
+      data is merged from the seed node.
+    - Windows / Android / iOS: application support directory as a JSON file.
+    - Web: browser localStorage for the same origin (shared across tabs on that
+      origin).
+
+  Optional Grok / X sign-in session (desktop and mobile only)
+    - OAuth tokens and session metadata needed to keep you signed in.
+    - Stored locally (for example grok_session.json) until you sign out or clear
+      app data.
+
+  In-session analysis state
+    - Your current scenario inputs and results while the app is open.
+
+We do not automatically upload your full local ledger to Evolve Chronoflux for
+routine scenario analysis. PERC network sync (Section 3.7) may transmit ledger
+and status data when you use the wallet online features.
+
+
+3.3 Optional online features (only when you enable or trigger them)
+
+Grok construal (optional)
+  - If you turn on "Grok construal" and sign in with X on supported platforms,
+    Evolve sends your scenario question and blank construct fields to Grok via an
+    embedded or configured Grok proxy, using X OAuth.
+  - X (Twitter) processes sign-in under its own privacy policy:
+    https://twitter.com/privacy
+  - xAI / Grok processes construal requests under its own terms and policies when
+    live Grok is used.
+  - On web (including GitHub Pages), Grok construal uses local heuristic suggestions
+    in the browser and does not require X sign-in unless you host a remote proxy.
+
+Narrative link reading
+  - If you provide a public narrative URL, Evolve may fetch that page (or request
+    it via your configured Grok proxy) to extract text for cohesion scoring.
+  - Only the URL you supply is used for that fetch.
+
+Synopsis export
+  - When you export a synopsis, you choose where the file is saved. Evolve does not
+    receive a copy unless you separately share it.
+
+
+3.4 Camera access (Android and iOS)
+
+Evolve requests camera permission only when you open the PERC "Send" QR scanner to
+read a PERC wallet address from a QR code.
+
+  - Camera images are processed on your device for barcode detection.
+  - We do not record, store, or transmit camera video or photos to our servers.
+
+
+3.5 Device permissions
+
+  Android
+    - INTERNET — Grok construal, narrative links, PERC seed-node sync, optional
+      proxy communication
+    - CAMERA — PERC QR scanner (optional; only when you use Send scan)
+
+  iOS
+    - Camera — PERC QR scanner (optional; only when you use Send scan)
+
+  Windows / Web
+    - No camera permission is required on Windows desktop. Web scanning follows
+      your browser's camera permission prompt when supported.
+
+
+3.6 Technical data from third-party services
+
+Evolve uses open-source packages and hosted services that may contact third parties
+when you use network features:
+
+  - X / Twitter (api.x.com, x.com) — OAuth and API calls when Grok construal with
+    sign-in is enabled
+  - Public websites — when you submit a narrative URL
+  - Google Fonts — the app may download font files from Google when typography is
+    loaded (see https://policies.google.com/privacy)
+  - GitHub Pages — when you use the hosted web build, GitHub may log standard web
+    server data (see https://docs.github.com/en/site-policy/privacy-policies)
+  - Render (https://render.com) — hosts the Perccent Internet seed node, explorer
+    UI, rendezvous API, and treasury administration endpoints (see Render privacy
+    policy: https://render.com/privacy)
+  - Public IP lookup services (for example api.ipify.org and ifconfig.me) — used
+    only to discover your device's public internet endpoint when your wallet
+    registers as an online node; your IP address may be sent to those services
+
+These third parties process data under their own policies. Evolve Chronoflux does
+not control their practices.
+
+
+3.7 Perccent Internet seed node and wallet network sync
+
+When you launch Evolve or sign in to a PERC wallet, the app may connect to the
+configured seed node (default: https://evolve-perc-internet.onrender.com) to:
+
+  - Fetch seed status and ledger data (block height, chain tip, genesis revision)
+  - Align your local chain with the network, including resetting to block 0 when a
+    new network genesis revision is published
+  - Register your wallet as an online peer (username, public endpoint, block
+    height, tip hash, chain id, revision)
+  - Gossip or relay ledger updates to other peers via the rendezvous service
+
+Data your wallet may send to the seed node when you are signed in:
+
+  - Session username and advertised node endpoint (which may include your public IP
+    and port, or an internet URL resolved via third-party IP lookup)
+  - Network status JSON (block height, tip hash, evolutionary chain id, revision)
+  - Full ledger JSON when syncing or relaying to peers
+
+Data your wallet does not send for peer registration:
+
+  - Your wallet password or password hash (credentials remain on your device)
+  - The evolve_treasury wallet is not registered to the public rendezvous peer list
+
+The evolve_treasury account on the seed node is excluded from public peer listings
+on the explorer and rendezvous API. Other registered usernames may appear in the
+public network explorer when online.
+
+Independent wallets: each user/device maintains its own stored ledger and login
+credentials. Network import merges shared chain blocks and balances but preserves
+your local wallet passwords unless you have not yet gossiped a new registration.
+
+
+3.8 Hosted network explorer (public)
+
+The seed node serves a public explorer at https://evolve-perc-internet.onrender.com/
+that displays:
+
+  - Seed and network block height, peer online status, and chain identifiers
+  - A block list and block detail API
+  - Auto-refreshing network statistics (approximately every 30 seconds)
+
+Before the blockchain is launched, the explorer shows no chain blocks. After the
+one-time treasury launch (Section 3.9), the explorer shows treasury emission
+statistics for all visitors, including emission rate, treasury balance, and
+cumulative minted PERC, together with a notice that manual sends from
+evolve_treasury are disabled (emission and faucet payouts continue). These
+figures are chain consensus data, not treasury administrator credentials.
+
+Standard web server logs (IP address, user agent, request path, timestamps) may be
+collected by Render when you visit the explorer.
+
+
+3.9 Treasury administrator access (hosted, restricted)
+
+The seed node provides a separate Treasury tab on the explorer for the designated
+treasury administrator account (configured as username "rgsnedds"). This is not
+the same as registering that username as a PERC wallet inside the Evolve app
+(that username is reserved in the app).
+
+When you use the Treasury tab:
+
+  First login (one-time password creation)
+    - You choose an administrator password (minimum 8 characters). Only a salted
+      password hash is stored on the seed node's persistent disk at
+      /var/data/treasury_admin.json. We do not store your plaintext password.
+    - On first successful login, the blockchain launches once: a genesis treasury
+      block is created, the evolve_treasury wallet password is set on the seed
+      ledger using the same password you chose, and treasury outbound sends are
+      permanently locked.
+
+  Later logins
+    - You authenticate with your administrator username and password.
+    - The server issues a session bearer token stored in your browser
+      sessionStorage for up to 24 hours.
+    - Authenticated sessions can view treasury wallet details (shielded address,
+      balance, transactions, emission data) via /api/treasury/wallet.
+
+  Sign out
+    - Ends the browser session token on the server.
+
+The Treasury tab and treasury wallet details are not public. Only the emission
+summary on the Explorer tab becomes public after launch (Section 3.8).
+
+
+3.10 Beam-confidential Perccent addresses
+
+PERC uses confidential-style addresses derived on-device (percpriv1…). Balances
+may be shielded in the UI. Address derivation uses your username and wallet salt
+locally; confidential addresses appear in ledger data that may be relayed during
+network sync as described in Section 3.7.
+
+
+4. WHAT WE DO NOT COLLECT
+-------------------------
+
+Evolve does not intentionally collect:
+
+  - Precise geolocation or GPS coordinates
+  - Contacts, photos, or files outside features you explicitly use
+  - Payment card or banking details (PERC is an in-app ledger, not a regulated
+    payment processor)
+  - Advertising identifiers for targeted advertising
+  - Analytics or crash reports sent to Evolve Chronoflux
+  - Plaintext treasury administrator passwords (only salted hashes are stored on
+    the seed node)
+
+
+5. HOW LONG WE KEEP INFORMATION
+-------------------------------
+
+  Local device (Evolve app)
+    - Wallet and session data remain on your device until you uninstall the app,
+      clear site data (web), or delete the stored files.
+
+  Seed node (Render persistent disk)
+    - Seed ledger, relayed peer ledgers, rendezvous peer registrations, treasury
+      administrator password hash, and blockchain-launch flag persist on the
+      mounted data volume until reset, redeployment with a new genesis revision,
+      or manual deletion.
+    - Treasury administrator session tokens expire after 24 hours of inactivity.
+    - Peer "online" status uses a freshness window (default 15 minutes since last
+      registration).
+
+  Third-party providers
+    - Data sent to X, Grok, Google, GitHub, Render, public IP lookup services, or
+      public websites is retained according to those providers' policies.
+
+We do not retain copies of your scenario text on Evolve-operated servers. PERC
+ledger copies may exist on the seed node when you sync or relay as described in
+Section 3.7.
+
+
+6. SHARING OF INFORMATION
+-------------------------
+
+We do not sell your personal information.
+
+Information may be shared only in these situations:
+
+  - With third-party services you choose to use (X OAuth, Grok construal, narrative
+    URL fetching, Google Fonts, Render hosting, public IP lookup), as described in
+    Section 3
+  - With other PERC network participants through rendezvous registration and ledger
+    gossip you trigger by using an online wallet (username, endpoint, chain state)
+  - Publicly on the network explorer after blockchain launch (treasury emission
+    statistics only — not treasury login credentials)
+  - When required by law, regulation, or valid legal process
+  - To protect the rights, safety, or security of users or the public, where permitted
+    by law
+
+Evolve does not share your PERC wallet password with other users. PERC transfers
+you initiate may reveal your username, address, and amounts to recipients on the
+shared chain.
+
+
+7. CHILDREN'S PRIVACY
+---------------------
+
+Evolve is not directed at children under 13 (or the minimum age required in your
+country). We do not knowingly collect personal information from children. If you
+believe a child has provided information through the app, contact us using the
+details in Section 1.
+
+
+8. SECURITY
+-----------
+
+We use reasonable measures to protect information stored on your device (local
+files, browser storage) and on the seed node (password hashing for treasury admin,
+HTTPS via Render, persistent disk for ledger data). No method of storage or
+transmission is completely secure. You are responsible for securing your device,
+X account, treasury administrator password, PERC wallet password, and any
+exported files.
+
+If a network genesis reset is published, your device may replace local chain data
+with the seed ledger at block 0. Local wallet credentials on your device are
+handled as described in Section 3.7.
+
+
+9. YOUR CHOICES AND RIGHTS
+--------------------------
+
+You can:
+
+  - Use Evolve without Grok construal ("Don't use") for fully local analysis
+  - Decline camera permission and enter PERC addresses manually
+  - Sign out of X / Grok construal and clear local session files
+  - Delete local wallet data by clearing app data or removing stored JSON /
+    localStorage entries
+  - Export or delete synopsis files you saved
+  - Avoid signing in to a PERC wallet if you do not want rendezvous registration
+    or ledger gossip (offline-only use limits network features)
+  - Sign out of the hosted Treasury tab and clear browser sessionStorage
+
+Depending on your location, you may have rights to access, correct, delete, or
+restrict processing of personal data. Because most app data is stored locally on
+your device, you can exercise many of these rights directly. For seed-node or
+treasury-admin data, contact us at the addresses in Section 1.
+
+
+10. INTERNATIONAL USERS
+-----------------------
+
+Evolve may be used worldwide. If you use optional online features or the PERC seed
+node, data may be processed in countries where X, Grok, Google, GitHub, Render,
+public IP lookup providers, or narrative site hosts operate. By using those
+features, you understand that cross-border transfer may occur. The Render seed
+node is hosted in Render's infrastructure regions according to Render's deployment
+configuration.
+
+
+11. CHANGES TO THIS POLICY
+--------------------------
+
+We may update this Privacy Policy from time to time. The "Last updated" date at the
+top will change when we do. Continued use of Evolve or the hosted seed node after
+an update means you accept the revised policy. The current version is published in
+the Evolve GitHub repository at privacy_policy.txt.
+
+
+12. OPEN-SOURCE COMPONENTS
+--------------------------
+
+Evolve includes third-party open-source software (Flutter, mobile_scanner,
+permission_handler, qr_flutter, Node.js seed-node components, and others). Those
+components are subject to their own licenses. See NOTICES in build outputs for
+attribution.
+
+
+---
+Copyright (c) 2026 Evolve Chronoflux. All rights reserved.
