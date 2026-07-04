@@ -1,0 +1,8 @@
+{
+    "rendezvousUrl":  "https://evolve-perc-internet.onrender.com",
+    "publicIpLookupUrls":  [
+                               "https://api.ipify.org",
+                               "https://ifconfig.me/ip"
+                           ],
+    "publicEndpointOverride":  ""
+}
