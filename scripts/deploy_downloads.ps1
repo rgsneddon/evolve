@@ -50,9 +50,14 @@ foreach ($page in @('downloads\index.html', 'download.html')) {
     }
 }
 
+# Bump a sentinel so GitHub Pages always rebuilds after download-only pushes.
+$pagesDeploy = Join-Path $GhPagesWorktree '.pages-deploy'
+$stamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ'
+Set-Content -Path $pagesDeploy -Value "downloads-index-v$Version`nrebuilt=$stamp" -NoNewline
+
 Set-Location $GhPagesWorktree
 Ensure-GitIdentity -Root $GhPagesWorktree
-git add "downloads/v$Version" downloads/index.html download.html
+git add "downloads/v$Version" downloads/index.html download.html .pages-deploy
 $status = git status --porcelain
 if (-not $status) {
     Write-Host 'Downloads unchanged on gh-pages.' -ForegroundColor Yellow
