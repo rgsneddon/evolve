@@ -670,7 +670,9 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
             ),
             Text(
-              strings.t('wallet_seed_block_anchor'),
+              strings
+                  .t('wallet_seed_block_anchor')
+                  .replaceAll('{block}', '${wallet.seedAnchorBlock}'),
               style: const TextStyle(fontSize: 10, color: Color(0xFF7A8299)),
             ),
             const SizedBox(height: 8),

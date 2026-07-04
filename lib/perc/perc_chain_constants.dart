@@ -29,6 +29,9 @@ class PercChainConstants {
   /// Each wallet accrues one progressive scenario block per concluded analysis (max 100M).
   static const int maxScenarioBlocksPerWallet = 100000000;
 
+  /// Seed anchor advances by one block per 100M PERC treasury emission.
+  static const int percPerSeedBlock = 100000000;
+
   /// Override for tests — never set in production code.
   @visibleForTesting
   static int? microblocksPerBlockOverride;

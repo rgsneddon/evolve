@@ -437,19 +437,20 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (remote == null) return;
 
     final localHeight = PercChainTip.height(hub.ledger);
+    final remoteHeight = PercChainTip.height(remote);
     final seedGenesis = remote.networkGenesisRevision;
     final mustResetGenesis =
         seedGenesis > hub.ledger.networkGenesisRevision ||
         (seedGenesis >= targetGenesis &&
-            localHeight > seedStatus.blockHeight &&
-            seedStatus.blockHeight == 0);
+            localHeight > remoteHeight &&
+            remoteHeight == 0);
 
     if (mustResetGenesis) {
       hub.resetFromSeedLedger(remote, expectedTipHash: seedStatus.tipHash);
       return;
     }
 
-    if (seedStatus.blockHeight > localHeight) {
+    if (remoteHeight > localHeight) {
       hub.importPeerLedger(remote, expectedTipHash: seedStatus.tipHash);
     }
   }

@@ -1,5 +1,6 @@
 import { maskEndpoint } from './endpoint_privacy.js';
 import { blockHeight, tipHash } from './ledger_store.js';
+import { seedBlockHeightFromLedger } from './seed_block.js';
 
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
 const PEER_ONLINE_MS = Number(process.env.PERC_PEER_ONLINE_MS ?? 15 * 60 * 1000);
@@ -153,7 +154,7 @@ export function buildNetworkSnapshot({
     chainId,
     seedUsername,
     endpoint: maskEndpoint(endpoint),
-    blockHeight: 1,
+    blockHeight: seedBlockHeightFromLedger(ledger),
     tipHash: tipHash(ledger),
     revision: store.revision,
     networkGenesisRevision: store.getGenesisRevision(),

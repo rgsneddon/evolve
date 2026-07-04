@@ -373,7 +373,7 @@ final _en = {
       'Your scenario block: {current} / {max}',
   'wallet_scenario_block_capped':
       'Scenario block cap reached ({max} scenario checks)',
-  'wallet_seed_block_anchor': 'Seed anchor: block 1',
+  'wallet_seed_block_anchor': 'Seed anchor: block {block}',
   'wallet_faucet_title': 'Analysis faucet',
   'wallet_faucet_note':
       'Tap Calculate percent chance or Calculate social cohesion score to draw xx/100 PERC from treasury — xx is the two-digit outcome (percent or SCS) — once every 7 minutes.',
@@ -1105,7 +1105,7 @@ final _es = {
       'Tu bloque de escenario: {current} / {max}',
   'wallet_scenario_block_capped':
       'Límite de bloques de escenario alcanzado ({max} análisis)',
-  'wallet_seed_block_anchor': 'Ancla semilla: bloque 1',
+  'wallet_seed_block_anchor': 'Ancla semilla: bloque {block}',
   'wallet_faucet_title': 'Grifo de análisis',
   'wallet_faucet_note':
       'Pulse Calcular probabilidad % o Calcular puntuación de cohesión social para retirar xx/100 PERC de la tesorería — xx es el resultado de dos dígitos (porcentaje o SCS) — una vez cada 7 minutos.',

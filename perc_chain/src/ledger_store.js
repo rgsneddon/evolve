@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { createGenesisLedger } from './genesis.js';
+import { seedBlockHeightFromLedger } from './seed_block.js';
 
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
 
@@ -90,8 +91,7 @@ export class LedgerStore {
     const ledger = this.ledger;
     return {
       evolutionaryChainId: ledger?.evolutionaryChainId || CHAIN_ID,
-      // Seed anchor is always block 1 — user wallets accrue scenario blocks locally.
-      blockHeight: 1,
+      blockHeight: seedBlockHeightFromLedger(ledger),
       tipHash: tipHash(ledger),
       revision: this.revision,
       networkGenesisRevision: this.genesisRevision,

@@ -22,6 +22,7 @@ import '../services/perc_ledger.dart';
 import '../models/perc_peer_node.dart';
 import '../services/perc_ledger_hub.dart';
 import '../services/perc_network_protocol.dart';
+import '../services/perc_seed_block.dart';
 import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
 
@@ -66,6 +67,8 @@ class PercWalletProvider extends ChangeNotifier {
   int get blockHeight => _ledger.blockHeight;
   int get scenarioBlockHeight =>
       _ledger.sessionAccount?.scenarioBlockHeight ?? 0;
+  int get seedAnchorBlock =>
+      PercSeedBlock.fromTreasuryMinted(_ledger.cumulativeTreasuryMinted);
   List<PercBlock> get blocks => _ledger.chainBlocks;
   double get treasuryProgress => _ledger.treasuryProgress;
   PercAmount get treasuryMinted => _ledger.cumulativeTreasuryMinted;
