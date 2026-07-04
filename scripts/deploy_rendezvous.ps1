@@ -12,8 +12,9 @@ $PercChain = Join-Path $Root 'perc_chain'
 $ConfigPath = Join-Path $Root 'assets\config\perc_network.json'
 
 function Get-NodeExe {
+    $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
     $candidates = @(
-        (Get-Command node -ErrorAction SilentlyContinue)?.Source,
+        $(if ($nodeCmd) { $nodeCmd.Source } else { $null }),
         'C:\Program Files\nodejs\node.exe',
         "$env:ProgramFiles\nodejs\node.exe"
     ) | Where-Object { $_ -and (Test-Path $_) }
@@ -37,7 +38,8 @@ function Set-PercNetworkConfig {
         Write-Host $content
         return
     }
-    Set-Content -Path $ConfigPath -Value $content -Encoding UTF8
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($ConfigPath, $content + "`n", $utf8NoBom)
     Write-Host "Updated $ConfigPath" -ForegroundColor Green
     Write-Host "  rendezvousUrl: $($json.rendezvousUrl)"
 }
@@ -91,14 +93,15 @@ if ($RendezvousUrl) {
 Write-Host @'
 No rendezvous URL configured yet.
 
-RECOMMENDED — Render (free public HTTPS host):
-  1. Push this repo to GitHub (main branch).
-  2. Open https://dashboard.render.com/select-repo?type=blueprint
-  3. Connect github.com/rgsneddon/evolve
-  4. Render reads perc_chain/render.yaml and creates evolve-perc-rendezvous
-  5. After deploy, copy the service URL (e.g. https://evolve-perc-rendezvous.onrender.com)
-  6. Run:
+RECOMMENDED — Render (free public HTTPS host, permanent):
+  1. Open https://render.com/deploy?repo=https://github.com/rgsneddon/evolve
+  2. Sign in to Render and approve the blueprint (creates evolve-perc-rendezvous)
+  3. After deploy finishes, copy the service URL (e.g. https://evolve-perc-rendezvous.onrender.com)
+  4. Run:
        scripts\deploy_rendezvous.ps1 -RendezvousUrl "https://YOUR-SERVICE.onrender.com"
+
+INTERIM — Cloudflare quick tunnel (this PC must stay online):
+  scripts\start_rendezvous_public.ps1 -UpdateConfig
 
 Then rebuild/publish Evolve installers and web.
 

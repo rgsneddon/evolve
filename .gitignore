@@ -53,5 +53,6 @@ code_sign.local.env
 *.pfx
 *.p12
 tools/nuget.exe
+perc_chain/cloudflared.exe
 tools/Microsoft.ArtifactSigning.Client/
 tools/trusted-signing/metadata.json
