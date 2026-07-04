@@ -107,8 +107,13 @@ if (-not $SkipPages) {
     }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+    # Keep download packages and static pages alongside the Flutter web bundle.
+    $preserveNames = @(
+        '.git', '.gitignore', 'README.md',
+        'downloads', 'download.html', 'privacy_policy.txt'
+    )
     Get-ChildItem -Force | Where-Object {
-        $_.Name -notin '.git', '.gitignore', 'README.md'
+        $_.Name -notin $preserveNames
     } | Remove-Item -Recurse -Force
 
     Copy-Item -Path (Join-Path $webDir '*') -Destination $DeployDir -Recurse -Force
@@ -116,6 +121,21 @@ if (-not $SkipPages) {
     $readmeSrc = Join-Path $Root 'README.md'
     if (Test-Path $readmeSrc) {
         Copy-Item $readmeSrc (Join-Path $DeployDir 'README.md') -Force
+    }
+
+    foreach ($extra in @('download.html', 'privacy_policy.txt')) {
+        $src = Join-Path $Root $extra
+        if (Test-Path $src) {
+            Copy-Item $src (Join-Path $DeployDir $extra) -Force
+        }
+    }
+    $downloadsSrc = Join-Path $Root 'downloads'
+    if (Test-Path $downloadsSrc) {
+        $downloadsDst = Join-Path $DeployDir 'downloads'
+        if (-not (Test-Path $downloadsDst)) {
+            New-Item -ItemType Directory -Path $downloadsDst -Force | Out-Null
+        }
+        Copy-Item (Join-Path $downloadsSrc '*') $downloadsDst -Recurse -Force
     }
 
     git add -A
