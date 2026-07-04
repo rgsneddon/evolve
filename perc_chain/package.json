@@ -9,7 +9,8 @@
     "start:rendezvous": "node src/rendezvous.js",
     "start:chain": "node src/server.js",
     "dev": "node --watch src/internet_node.js",
-    "health": "node -e \"fetch('http://127.0.0.1:'+(process.env.PORT||process.env.PERC_RENDEZVOUS_PORT||9478)+'/health').then(r=>r.json()).then(j=>{console.log(j);if(!j.ok)process.exit(1)}).catch(e=>{console.error(e);process.exit(1)})\""
+    "health": "node -e \"fetch('http://127.0.0.1:'+(process.env.PORT||process.env.PERC_RENDEZVOUS_PORT||9478)+'/health').then(r=>r.json()).then(j=>{console.log(j);if(!j.ok)process.exit(1)}).catch(e=>{console.error(e);process.exit(1)})\"",
+    "test": "node --test src/wallet_block_chart.test.js"
   },
   "engines": {
     "node": ">=18"

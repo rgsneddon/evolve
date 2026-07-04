@@ -113,6 +113,110 @@ export function getBlockDetail(ledger, index) {
   };
 }
 
+export function scenarioBlockFromLedger(ledger, username) {
+  const acc = ledger?.accounts?.[username];
+  return Number(acc?.scenarioBlockHeight ?? 0);
+}
+
+/** Collect every visible wallet and its block heights for the five-point chart. */
+export function buildWalletBlockChart({
+  peers,
+  ledgers,
+  store,
+  seedUsername,
+  chainId = CHAIN_ID,
+  now = Date.now(),
+}) {
+  const rows = new Map();
+
+  const upsert = (username, patch) => {
+    const u = (username ?? '').trim();
+    if (!u || isHiddenPeer(u)) return;
+    const prev = rows.get(u) ?? {
+      username: u,
+      chainBlockHeight: 0,
+      scenarioBlockHeight: 0,
+      relayHeight: 0,
+      online: false,
+      lastSeen: null,
+      endpoint: null,
+    };
+    rows.set(u, { ...prev, ...patch });
+  };
+
+  const seedLedger = store?.ledger ?? null;
+  const seedAnchorBlock = seedBlockHeightFromLedger(seedLedger);
+
+  upsert(seedUsername, {
+    chainBlockHeight: seedAnchorBlock,
+    scenarioBlockHeight: scenarioBlockFromLedger(seedLedger, seedUsername),
+    relayHeight: blockHeight(seedLedger),
+    online: true,
+    lastSeen: new Date(now).toISOString(),
+    endpoint: null,
+  });
+
+  for (const p of peers.values()) {
+    if ((p.evolutionaryChainId ?? chainId) !== chainId) continue;
+    const u = p.sessionUsername;
+    if (!u) continue;
+    const relayed = ledgers.get(u);
+    const relayLedger = relayed?.ledger ?? null;
+    const relayHeight = relayLedger ? blockHeight(relayLedger) : 0;
+    upsert(u, {
+      chainBlockHeight: p.blockHeight ?? 0,
+      relayHeight,
+      scenarioBlockHeight: Math.max(
+        scenarioBlockFromLedger(relayLedger, u),
+        rows.get(u)?.scenarioBlockHeight ?? 0,
+      ),
+      online: isPeerOnline(p, now),
+      lastSeen: p.updatedAt ? new Date(p.updatedAt).toISOString() : null,
+      endpoint: maskEndpoint(p.endpoint ?? null),
+    });
+  }
+
+  for (const [relayUser, relayed] of ledgers) {
+    const ledger = relayed?.ledger;
+    if (!ledger?.accounts) continue;
+    const relayHeight = blockHeight(ledger);
+    for (const [accName, acc] of Object.entries(ledger.accounts)) {
+      upsert(accName, {
+        scenarioBlockHeight: Math.max(
+          rows.get(accName)?.scenarioBlockHeight ?? 0,
+          Number(acc.scenarioBlockHeight ?? 0),
+        ),
+        relayHeight: Math.max(rows.get(accName)?.relayHeight ?? 0, relayHeight),
+        chainBlockHeight: Math.max(
+          rows.get(accName)?.chainBlockHeight ?? 0,
+          relayUser === accName ? relayHeight : 0,
+        ),
+      });
+    }
+  }
+
+  const users = [...rows.values()]
+    .map((row) => {
+      const displayBlock = Math.max(
+        row.chainBlockHeight,
+        row.relayHeight,
+        row.scenarioBlockHeight,
+      );
+      return { ...row, displayBlock };
+    })
+    .sort((a, b) => b.displayBlock - a.displayBlock || a.username.localeCompare(b.username));
+
+  const maxBlock = Math.max(1, seedAnchorBlock, ...users.map((u) => u.displayBlock));
+  const pentagonScale = [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(maxBlock * t));
+
+  return {
+    seedAnchorBlock,
+    maxBlock,
+    pentagonScale,
+    users,
+  };
+}
+
 export function buildNetworkSnapshot({
   peers,
   ledgers,
@@ -168,6 +272,14 @@ export function buildNetworkSnapshot({
     peerList: peerRows,
     blockchainLaunched: ledger?.blockchainLaunched ?? false,
     treasuryEmission: buildPublicTreasuryEmission(ledger),
+    walletBlockChart: buildWalletBlockChart({
+      peers,
+      ledgers,
+      store,
+      seedUsername,
+      chainId,
+      now,
+    }),
     updatedAt: new Date(now).toISOString(),
   };
 }

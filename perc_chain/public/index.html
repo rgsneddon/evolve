@@ -122,6 +122,53 @@
       margin-bottom: 16px;
       font-size: 0.9rem;
     }
+    .chart-layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 340px) 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 760px) {
+      .chart-layout { grid-template-columns: 1fr; }
+    }
+    #wallet-pentagon-chart {
+      width: 100%;
+      max-width: 340px;
+      height: auto;
+      display: block;
+    }
+    .wallet-legend {
+      display: grid;
+      gap: 8px;
+      max-height: 360px;
+      overflow-y: auto;
+    }
+    .wallet-legend-item {
+      display: grid;
+      grid-template-columns: 12px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(20,24,36,0.6);
+      font-size: 0.85rem;
+    }
+    .wallet-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .wallet-legend-meta {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+    .wallet-legend-block {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -148,6 +195,18 @@
     </section>
 
     <section>
+      <h2>Wallet blocks — five-point chart</h2>
+      <p class="hint" style="margin-bottom:12px">
+        Chronoflux pentagon — every registered wallet plotted by current block height
+        (highest of scenario, chain, or relay). Five rings mark 0%–100% of network max.
+      </p>
+      <div class="card chart-layout">
+        <svg id="wallet-pentagon-chart" viewBox="0 0 320 320" role="img" aria-label="Wallet block pentagon chart"></svg>
+        <div class="wallet-legend" id="wallet-block-legend"></div>
+      </div>
+    </section>
+
+    <section>
       <h2>Network nodes</h2>
       <div class="card" style="padding:0; overflow:hidden">
         <table>
@@ -155,7 +214,9 @@
             <tr>
               <th>Status</th>
               <th>Wallet</th>
-              <th>Block height</th>
+              <th>Block</th>
+              <th>Scenario</th>
+              <th>Chain</th>
               <th>Node</th>
               <th>Last seen</th>
             </tr>
@@ -340,9 +401,97 @@
       `;
     }
 
+    const WALLET_CHART_COLORS = [
+      '#00D9C0', '#6C63FF', '#F59E0B', '#38BDF8', '#F472B6',
+      '#A3E635', '#FB7185', '#C084FC', '#2DD4BF', '#FACC15',
+    ];
+
+    function pentagonAngles() {
+      return Array.from({ length: 5 }, (_, i) => -Math.PI / 2 + i * 2 * Math.PI / 5);
+    }
+
+    function pentagonPoint(cx, cy, radius, angle) {
+      return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
+    }
+
+    function renderWalletBlockChart(chart) {
+      const svg = $('wallet-pentagon-chart');
+      const legend = $('wallet-block-legend');
+      if (!chart || !chart.users) {
+        svg.innerHTML = '';
+        legend.innerHTML = '<p class="muted">No wallets registered yet.</p>';
+        return;
+      }
+
+      const users = chart.users;
+      const maxBlock = Math.max(1, chart.maxBlock ?? 1);
+      const cx = 160;
+      const cy = 160;
+      const radius = 118;
+      const angles = pentagonAngles();
+      const scale = chart.pentagonScale ?? [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(maxBlock * t));
+
+      let svgParts = '';
+
+      for (let ring = 1; ring <= 4; ring++) {
+        const r = radius * ring / 4;
+        const pts = angles.map((a) => pentagonPoint(cx, cy, r, a));
+        svgParts += `<polygon points="${pts.map((p) => `${p.x},${p.y}`).join(' ')}" fill="none" stroke="#2A3142" stroke-width="1"/>`;
+      }
+
+      for (const a of angles) {
+        const outer = pentagonPoint(cx, cy, radius, a);
+        svgParts += `<line x1="${cx}" y1="${cy}" x2="${outer.x}" y2="${outer.y}" stroke="#2A3142" stroke-width="1"/>`;
+      }
+
+      for (let i = 0; i < 5; i++) {
+        const labelR = radius + 16;
+        const lp = pentagonPoint(cx, cy, labelR, angles[i]);
+        const blockLabel = scale[i] ?? 0;
+        svgParts += `<text x="${lp.x}" y="${lp.y}" text-anchor="middle" dominant-baseline="middle" fill="#9BA3B8" font-size="9" font-family="Segoe UI, system-ui, sans-serif">B${blockLabel}</text>`;
+      }
+
+      svgParts += `<text x="${cx}" y="${18}" text-anchor="middle" fill="#9BA3B8" font-size="10" font-family="Segoe UI, system-ui, sans-serif">Seed anchor ${chart.seedAnchorBlock ?? 1} · max ${maxBlock}</text>`;
+
+      users.forEach((user, index) => {
+        const frac = (user.displayBlock ?? 0) / maxBlock;
+        const angle = -Math.PI / 2 + index * 2 * Math.PI / Math.max(users.length, 1);
+        const r = radius * Math.max(0.04, Math.min(1, frac));
+        const p = pentagonPoint(cx, cy, r, angle);
+        const color = WALLET_CHART_COLORS[index % WALLET_CHART_COLORS.length];
+        svgParts += `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="${color}" stroke="#0b0d14" stroke-width="1.5"><title>${user.username}: block ${user.displayBlock}</title></circle>`;
+        if (users.length <= 8) {
+          const lx = p.x + 8 * Math.cos(angle);
+          const ly = p.y + 8 * Math.sin(angle);
+          svgParts += `<text x="${lx}" y="${ly}" fill="${color}" font-size="8" font-family="Segoe UI, system-ui, sans-serif">${user.username}</text>`;
+        }
+      });
+
+      svg.innerHTML = svgParts;
+
+      legend.innerHTML = users.length
+        ? users.map((user, index) => {
+            const color = WALLET_CHART_COLORS[index % WALLET_CHART_COLORS.length];
+            return `<div class="wallet-legend-item">
+              <span class="wallet-swatch" style="background:${color}"></span>
+              <div>
+                <strong>${user.username}</strong>
+                <div class="wallet-legend-meta">
+                  ${user.online ? 'Online' : 'Offline'}
+                  · scenario ${user.scenarioBlockHeight ?? 0}
+                  · chain ${user.chainBlockHeight ?? 0}${user.relayHeight > (user.chainBlockHeight ?? 0) ? ` · relay ${user.relayHeight}` : ''}
+                </div>
+              </div>
+              <span class="wallet-legend-block">${user.displayBlock ?? 0}</span>
+            </div>`;
+          }).join('')
+        : '<p class="muted">No wallets registered yet. Open Evolve and log in.</p>';
+    }
+
     function renderStats(net) {
       $('endpoint-line').textContent = maskIpAddresses(net.endpoint || '');
       renderTreasuryEmissionPublic(net);
+      renderWalletBlockChart(net.walletBlockChart);
       $('stats').innerHTML = `
         <div class="card"><div class="label">Node</div><div class="value">${pill(net.nodeStatus === 'online')}</div></div>
         <div class="card"><div class="label">Seed height</div><div class="value">${net.blockHeight}</div></div>
@@ -351,16 +500,28 @@
         <div class="card"><div class="label">Ledger</div><div class="value">${net.ledgerReady ? 'Synced' : 'Pending'}</div></div>
         <div class="card"><div class="label">Chain</div><div class="value mono" style="font-size:0.75rem">${net.chainId}</div></div>
       `;
-      $('peers').innerHTML = net.peerList.length
-        ? net.peerList.map((p) => `
+      const peerByName = new Map((net.peerList ?? []).map((p) => [p.username, p]));
+      const allUsers = net.walletBlockChart?.users ?? [];
+      $('peers').innerHTML = allUsers.length
+        ? allUsers.map((u) => {
+            const p = peerByName.get(u.username);
+            const online = u.online ?? p?.online ?? false;
+            const chain = u.chainBlockHeight ?? p?.blockHeight ?? 0;
+            const relay = u.relayHeight ?? p?.relayHeight ?? 0;
+            const endpoint = u.endpoint ?? p?.endpoint ?? null;
+            const lastSeen = u.lastSeen ?? p?.lastSeen ?? null;
+            return `
           <tr>
-            <td>${pill(p.online)}</td>
-            <td><strong>${p.username}</strong></td>
-            <td>${p.blockHeight}${p.relayHeight > p.blockHeight ? ` <span class="muted">(relay ${p.relayHeight})</span>` : ''}</td>
-            <td class="mono">${renderEndpoint(p.endpoint)}</td>
-            <td class="muted">${p.lastSeen ? fmtTime(p.lastSeen) : '—'}</td>
-          </tr>`).join('')
-        : '<tr><td colspan="5" class="muted">No peers registered yet. Open Evolve and log in to a wallet.</td></tr>';
+            <td>${pill(online)}</td>
+            <td><strong>${u.username}</strong></td>
+            <td><strong>${u.displayBlock ?? 0}</strong></td>
+            <td>${u.scenarioBlockHeight ?? 0}</td>
+            <td>${chain}${relay > chain ? ` <span class="muted">(relay ${relay})</span>` : ''}</td>
+            <td class="mono">${renderEndpoint(endpoint)}</td>
+            <td class="muted">${lastSeen ? fmtTime(lastSeen) : '—'}</td>
+          </tr>`;
+          }).join('')
+        : '<tr><td colspan="7" class="muted">No wallets registered yet. Open Evolve and log in.</td></tr>';
     }
 
     function renderBlocks(data) {
