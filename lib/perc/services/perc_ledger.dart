@@ -9,12 +9,15 @@ import '../models/perc_microblock_record_result.dart';
 import '../perc_app_version.dart';
 import '../models/perc_transaction.dart';
 import '../models/perc_pending_inbound_transfer.dart';
+import '../models/perc_peer_node.dart';
 import '../models/ward_proposal.dart';
 import 'ward_voting.dart';
 import '../perc_chain_constants.dart';
 import 'perc_auth.dart';
 import 'perc_chronoflux_micro_verifier.dart';
 import 'perc_block_timing.dart';
+import 'perc_chain_tip.dart';
+import 'perc_network_protocol.dart';
 import 'perc_wallet_mesh.dart';
 import 'perc_faucet.dart';
 import 'perc_faucet_cooldown.dart';
@@ -41,6 +44,7 @@ class PercLedger {
     this.totalMicroblocks = 0,
     this.lastChronofluxFingerprint,
     Map<String, List<String>>? walletPeers,
+    Map<String, PercPeerNode>? networkNodes,
     this.evolutionaryChainId = '',
     this.chronofluxPrincipiaId = '',
     this.mainChainId = '',
@@ -55,6 +59,7 @@ class PercLedger {
     List<PercPendingInboundTransfer>? pendingInboundTransfers,
     PercChronofluxMicroVerifier? microVerifier,
   })  : walletPeers = walletPeers ?? <String, List<String>>{},
+        networkNodes = networkNodes ?? <String, PercPeerNode>{},
         evolvedAppVersions = evolvedAppVersions ?? [],
         evolutionSteps = evolutionSteps ?? [],
         wardProposals = wardProposals ?? [],
@@ -77,6 +82,7 @@ class PercLedger {
   int totalMicroblocks;
   String? lastChronofluxFingerprint;
   Map<String, List<String>> walletPeers;
+  Map<String, PercPeerNode> networkNodes;
   String evolutionaryChainId;
   String chronofluxPrincipiaId;
   String mainChainId;
@@ -127,9 +133,198 @@ class PercLedger {
     final users = accounts.keys.toList();
     if (users.isEmpty) {
       walletPeers = {};
+      networkNodes = {};
       return;
     }
     walletPeers = PercWalletMesh.fullMesh(users);
+    ensureNetworkNodes(
+      blockHeight: blockHeight,
+      tipHash: PercChainTip.hash(this),
+    );
+  }
+
+  /// Registers every account as an offline network node at the current chain tip.
+  void ensureNetworkNodes({
+    required int blockHeight,
+    required String tipHash,
+  }) {
+    final now = DateTime.now().toUtc();
+    final updated = <String, PercPeerNode>{};
+    for (final username in accounts.keys) {
+      final existing = networkNodes[username];
+      updated[username] = existing?.copyWith(
+            blockHeight: blockHeight,
+            tipHash: tipHash,
+            lastSeen: now,
+          ) ??
+          PercPeerNode.offline(
+            username: username,
+            blockHeight: blockHeight,
+            tipHash: tipHash,
+            lastSeen: now,
+          );
+    }
+    networkNodes = updated;
+  }
+
+  void setWalletOnline(
+    String username, {
+    String? endpoint,
+    required int blockHeight,
+    required String tipHash,
+  }) {
+    final key = PercAuth.normalizeUsername(username);
+    final now = DateTime.now().toUtc();
+    final existing = networkNodes[key];
+    networkNodes[key] = (existing ??
+            PercPeerNode.offline(
+              username: key,
+              blockHeight: blockHeight,
+              tipHash: tipHash,
+            ))
+        .copyWith(
+      endpoint: endpoint,
+      blockHeight: blockHeight,
+      tipHash: tipHash,
+      online: true,
+      lastSeen: now,
+    );
+  }
+
+  void setWalletOffline(
+    String username, {
+    required int blockHeight,
+    required String tipHash,
+  }) {
+    final key = PercAuth.normalizeUsername(username);
+    final existing = networkNodes[key];
+    if (existing == null) return;
+    networkNodes[key] = existing.copyWith(
+      online: false,
+      endpoint: null,
+      blockHeight: blockHeight,
+      tipHash: tipHash,
+      lastSeen: DateTime.now().toUtc(),
+    );
+  }
+
+  void updatePeerFromStatus(PercNetworkStatus status) {
+    final username = status.sessionUsername;
+    if (username == null) return;
+    final key = PercAuth.normalizeUsername(username);
+    final existing = networkNodes[key];
+    networkNodes[key] = (existing ??
+            PercPeerNode.offline(
+              username: key,
+              blockHeight: status.blockHeight,
+              tipHash: status.tipHash,
+            ))
+        .copyWith(
+      endpoint: status.endpoint ?? existing?.endpoint,
+      blockHeight: status.blockHeight,
+      tipHash: status.tipHash,
+      online: true,
+      lastSeen: DateTime.now().toUtc(),
+    );
+  }
+
+  bool isWalletOnlineOnNetwork(String username) {
+    final key = PercAuth.normalizeUsername(username);
+    if (key == PercChainConstants.treasuryUsername && blockchainLaunched) {
+      return true;
+    }
+    return networkNodes[key]?.online ?? false;
+  }
+
+  List<PercPeerNode> get onlineNetworkNodes => networkNodes.values
+      .where((node) => node.online)
+      .toList(growable: false);
+
+  int get networkCanonicalHeight {
+    var maxHeight = blockHeight;
+    for (final node in networkNodes.values) {
+      if (node.blockHeight > maxHeight) maxHeight = node.blockHeight;
+    }
+    return maxHeight;
+  }
+
+  bool get isAlignedToNetworkHeight => blockHeight >= networkCanonicalHeight;
+
+  /// Replaces local chain state with a taller peer ledger on the evolutionary chain.
+  void importPeerLedger(
+    PercLedger remote, {
+    String? expectedTipHash,
+  }) {
+    final remoteChainId = remote.evolutionaryChainId.isEmpty
+        ? PercChainConstants.evolutionaryChainId
+        : remote.evolutionaryChainId;
+    final localChainId = evolutionaryChainId.isEmpty
+        ? PercChainConstants.evolutionaryChainId
+        : evolutionaryChainId;
+    if (remoteChainId != localChainId) {
+      throw StateError('Peer chain id mismatch');
+    }
+    if (remote.blockHeight < blockHeight) return;
+    if (remote.blockHeight == blockHeight) {
+      final remoteTip = PercChainTip.hash(remote);
+      if (expectedTipHash != null &&
+          expectedTipHash.isNotEmpty &&
+          remoteTip != expectedTipHash) {
+        throw StateError('Peer chain tip mismatch at equal height');
+      }
+      return;
+    }
+
+    final session = sessionUsername;
+    accounts
+      ..clear()
+      ..addAll(remote.accounts);
+    blocks
+      ..clear()
+      ..addAll(remote.blocks);
+    lastScenarioAt = remote.lastScenarioAt;
+    treasuryGenesisDone = remote.treasuryGenesisDone;
+    cumulativeTreasuryMinted = remote.cumulativeTreasuryMinted;
+    cumulativeBurnedPerc = remote.cumulativeBurnedPerc;
+    treasuryCycle = remote.treasuryCycle;
+    blockchainLaunched = remote.blockchainLaunched;
+    nextTxId = remote.nextTxId;
+    microblockCount = remote.microblockCount;
+    totalMicroblocks = remote.totalMicroblocks;
+    lastChronofluxFingerprint = remote.lastChronofluxFingerprint;
+    walletPeers
+      ..clear()
+      ..addAll(
+        remote.walletPeers.map(
+          (k, v) => MapEntry(k, List<String>.from(v)),
+        ),
+      );
+    networkNodes
+      ..clear()
+      ..addAll(remote.networkNodes);
+    evolutionaryChainId = remote.evolutionaryChainId;
+    chronofluxPrincipiaId = remote.chronofluxPrincipiaId;
+    mainChainId = remote.mainChainId;
+    sideChainId = remote.sideChainId;
+    connectedAppVersion = remote.connectedAppVersion;
+    evolvedAppVersions = List<String>.from(remote.evolvedAppVersions);
+    evolutionSteps = List<PercEvolutionStep>.from(remote.evolutionSteps);
+    evolutionEpoch = remote.evolutionEpoch;
+    wardProposals
+      ..clear()
+      ..addAll(remote.wardProposals);
+    wardBallots
+      ..clear()
+      ..addAll(remote.wardBallots);
+    nextWardProposalId = remote.nextWardProposalId;
+    pendingInboundTransfers
+      ..clear()
+      ..addAll(remote.pendingInboundTransfers);
+
+    if (session != null && !accounts.containsKey(session)) {
+      sessionUsername = null;
+    }
+    repairForAppUpgrade();
   }
 
   static PercLedger empty() {
@@ -1148,7 +1343,7 @@ class PercLedger {
       sender: sender,
     );
 
-    final recipientOnline = sessionUsername == to;
+    final recipientOnline = isWalletOnlineOnNetwork(to);
     if (recipientOnline) {
       _credit(receiver, amount);
       receiver.transactions.insert(0, tx);
@@ -1308,7 +1503,7 @@ class PercLedger {
   }
 
   Map<String, dynamic> toJson() => {
-        'version': 8,
+        'version': 9,
         'evolutionaryChainId': evolutionaryChainId.isEmpty
             ? PercChainConstants.evolutionaryChainId
             : evolutionaryChainId,
@@ -1342,6 +1537,9 @@ class PercLedger {
         'walletPeers': walletPeers.map(
           (k, v) => MapEntry(k, List<String>.from(v)),
         ),
+        'networkNodes': networkNodes.map(
+          (k, v) => MapEntry(k, v.toJson()),
+        ),
         'wardProposals': wardProposals.map((p) => p.toJson()).toList(),
         'wardBallots': wardBallots.map((b) => b.toJson()).toList(),
         'nextWardProposalId': nextWardProposalId,
@@ -1355,6 +1553,7 @@ class PercLedger {
     }
     final version = json['version'] as int? ?? 1;
     if (version < 2) return _migrateFromV1(json);
+    if (version < 9) return _migrateToV9(json);
 
     final accts = <String, PercAccount>{};
     final raw = json['accounts'] as Map<String, dynamic>? ?? {};
@@ -1389,6 +1588,7 @@ class PercLedger {
       totalMicroblocks: json['totalMicroblocks'] as int? ?? 0,
       lastChronofluxFingerprint: json['lastChronofluxFingerprint'] as String?,
       walletPeers: _walletPeersFromJson(json['walletPeers']),
+      networkNodes: _networkNodesFromJson(json['networkNodes']),
       evolutionaryChainId: json['evolutionaryChainId'] as String? ?? '',
       chronofluxPrincipiaId: json['chronofluxPrincipiaId'] as String? ?? '',
       mainChainId: json['mainChainId'] as String? ?? '',
@@ -1430,6 +1630,57 @@ class PercLedger {
       }
     }
     return mesh;
+  }
+
+  static Map<String, PercPeerNode> _networkNodesFromJson(Object? raw) {
+    if (raw is! Map) return {};
+    final nodes = <String, PercPeerNode>{};
+    for (final entry in raw.entries) {
+      final value = entry.value;
+      if (value is Map) {
+        nodes[entry.key as String] =
+            PercPeerNode.fromJson(Map<String, dynamic>.from(value));
+      }
+    }
+    return nodes;
+  }
+
+  static PercLedger _migrateToV9(Map<String, dynamic> json) {
+    final migrated = Map<String, dynamic>.from(json)..['version'] = 9;
+    final walletPeers = _walletPeersFromJson(json['walletPeers']);
+    final blocks = (json['blocks'] as List<dynamic>? ?? [])
+        .map((e) => PercBlock.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final height = blocks.length;
+    final tip = height == 0
+        ? PercChainTip.hash(
+            PercLedger(
+              accounts: {},
+              blocks: [],
+              lastScenarioAt: null,
+              treasuryGenesisDone: false,
+              cumulativeTreasuryMinted: PercAmount.zero,
+            ),
+          )
+        : PercChainTip.hash(
+            PercLedger(
+              accounts: {},
+              blocks: blocks,
+              lastScenarioAt: null,
+              treasuryGenesisDone: false,
+              cumulativeTreasuryMinted: PercAmount.zero,
+            ),
+          );
+    final nodes = <String, PercPeerNode>{};
+    for (final username in walletPeers.keys) {
+      nodes[username] = PercPeerNode.offline(
+        username: username,
+        blockHeight: height,
+        tipHash: tip,
+      );
+    }
+    migrated['networkNodes'] = nodes.map((k, v) => MapEntry(k, v.toJson()));
+    return PercLedger.fromJson(migrated);
   }
 
   static PercLedger _migrateFromChainService(Map<String, dynamic> json) {

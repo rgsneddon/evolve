@@ -1,11 +1,14 @@
 {
   "name": "perc-chain",
   "version": "0.1.0",
-  "description": "Perccent (PERC) blockchain node — 1 cent = 0.00000001 PERC for Evolve",
+  "description": "Perccent (PERC) blockchain node and internet rendezvous for Evolve",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "start": "node src/rendezvous.js",
+    "start:chain": "node src/server.js",
+    "start:rendezvous": "node src/rendezvous.js",
+    "dev": "node --watch src/rendezvous.js",
+    "health": "node -e \"fetch('http://127.0.0.1:'+(process.env.PORT||process.env.PERC_RENDEZVOUS_PORT||9478)+'/perc/rendezvous/peers').then(r=>console.log('status',r.status)).catch(e=>{console.error(e);process.exit(1)})\""
   },
   "engines": {
     "node": ">=18"

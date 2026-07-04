@@ -19,7 +19,9 @@ import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
 import '../services/perc_inflation.dart';
 import '../services/perc_ledger.dart';
+import '../models/perc_peer_node.dart';
 import '../services/perc_ledger_hub.dart';
+import '../services/perc_network_protocol.dart';
 import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
 
@@ -111,6 +113,14 @@ class PercWalletProvider extends ChangeNotifier {
   bool get isWalletMeshComplete => _ledger.isWalletMeshComplete;
   List<String> get connectedPeerWallets => _ledger.sessionConnectedPeers;
   int get connectedWalletCount => connectedPeerWallets.length;
+  PercNetworkSyncState get networkSyncState =>
+      PercLedgerHub.instance.network.syncState;
+  int get networkBlockHeight => PercLedgerHub.instance.network.networkBlockHeight;
+  bool get isNetworkSynced => PercLedgerHub.instance.network.isSyncedToNetwork;
+  bool get isWalletNodeOnline => PercLedgerHub.instance.network.isNodeServing;
+  String? get walletNodeEndpoint => PercLedgerHub.instance.network.nodeEndpoint;
+  List<PercPeerNode> get onlineNetworkNodes =>
+      PercLedgerHub.instance.network.onlineNodes;
   String get evolutionaryChainId => _ledger.evolutionaryChainId;
   String get chronofluxPrincipiaId => _ledger.chronofluxPrincipiaId;
   String get connectedAppVersion => _ledger.connectedAppVersion;
@@ -176,6 +186,9 @@ class PercWalletProvider extends ChangeNotifier {
     try {
       _ledger.setupTreasuryPassword(password);
       _ledger.login(PercChainConstants.treasuryUsername, password);
+      await PercLedgerHub.instance.onWalletSessionStarted(
+        PercChainConstants.treasuryUsername,
+      );
       _captureTreasuryLaunchEvent();
       statusMessage = 'Treasury secured — blockchain launched';
       notifyListeners();
@@ -191,6 +204,7 @@ class PercWalletProvider extends ChangeNotifier {
     try {
       _ledger.register(username, password);
       _ledger.login(username, password);
+      await PercLedgerHub.instance.onWalletSessionStarted(username);
       statusMessage = 'Account created';
       notifyListeners();
       await _commit();
@@ -204,6 +218,7 @@ class PercWalletProvider extends ChangeNotifier {
     _clearMessages();
     try {
       _ledger.login(username, password);
+      await PercLedgerHub.instance.onWalletSessionStarted(username);
       _captureTreasuryLaunchEvent();
       statusMessage = 'Signed in as ${_ledger.sessionUsername}';
       notifyListeners();
@@ -215,7 +230,11 @@ class PercWalletProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    final username = _ledger.sessionUsername;
     _ledger.logout();
+    if (username != null) {
+      await PercLedgerHub.instance.onWalletSessionEnded(username);
+    }
     lastReward = null;
     _clearMessages();
     notifyListeners();
@@ -271,8 +290,8 @@ class PercWalletProvider extends ChangeNotifier {
     final normalizedAddress = PercAuth.normalizeAddress(toAddress);
     try {
       final recipient = _ledger.accountForAddress(normalizedAddress)?.username;
-      final recipientOnline = recipient != null &&
-          _ledger.sessionUsername == recipient;
+      final recipientOnline =
+          recipient != null && _ledger.isWalletOnlineOnNetwork(recipient);
       _ledger.send(
         fromUsername: _ledger.sessionUsername!,
         toAddress: normalizedAddress,

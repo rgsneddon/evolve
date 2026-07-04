@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 
 import '../perc_app_version.dart';
 import 'perc_chain_evolution.dart';
+import 'perc_chain_tip.dart';
 import 'perc_ledger.dart';
 import 'perc_ledger_hub_sync_stub.dart'
     if (dart.library.html) 'perc_ledger_hub_sync_web.dart' as hub_sync;
+import 'perc_network_coordinator.dart';
 import 'perc_wallet_store.dart';
 
 /// Shared Perccent ledger — all wallets read/write the same chain concurrently.
@@ -21,6 +23,7 @@ class PercLedgerHub extends ChangeNotifier {
   int _revision = 0;
   void Function()? _cancelSync;
   final PercChainEvolution _evolution = const PercChainEvolution();
+  final PercNetworkCoordinator network = PercNetworkCoordinator.instance;
 
   PercLedger get ledger => _ledger;
   int get revision => _revision;
@@ -34,6 +37,8 @@ class PercLedgerHub extends ChangeNotifier {
     instance._store = null;
     instance._ready = false;
     instance._revision = 0;
+    PercNetworkCoordinator.resetForTest();
+    PercNetworkCoordinator.disableLiveNodesForTests = true;
   }
 
   Future<void> initialize(PercWalletStore store) async {
@@ -50,6 +55,7 @@ class PercLedgerHub extends ChangeNotifier {
     _cancelSync = hub_sync.bindCrossTabSync(
       onRemoteRevision: () => unawaited(reloadFromStore()),
     );
+    await network.bind(this);
   }
 
   Future<void> reloadFromStore() async {
@@ -61,13 +67,55 @@ class PercLedgerHub extends ChangeNotifier {
     _ledger = loaded;
     _revision++;
     notifyListeners();
+    await network.syncToNetworkHeight();
   }
 
+  Future<void> onWalletSessionStarted(String username) async {
+    await network.onSessionStarted(username);
+  }
+
+  Future<void> onWalletSessionEnded([String? username]) async {
+    await network.onSessionEnded(username);
+  }
+
+  void importPeerLedger(PercLedger remote, {String? expectedTipHash}) {
+    final session = _ledger.sessionUsername;
+    _ledger.importPeerLedger(remote, expectedTipHash: expectedTipHash);
+    if (session != null && _ledger.accounts.containsKey(session)) {
+      _ledger.sessionUsername = session;
+    }
+    _revision++;
+    notifyListeners();
+  }
+
+  void requireSyncedForMutation() => network.requireSyncedForMutation();
+
   Future<void> commit() async {
+    await commitWithoutSessionPromotion(promoteSessionNode: true);
+  }
+
+  Future<void> commitWithoutSessionPromotion({
+    bool promoteSessionNode = false,
+  }) async {
+    await network.syncToNetworkHeight();
+    network.requireSyncedForMutation();
     _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ledger.ensureNetworkNodes(
+      blockHeight: PercChainTip.height(_ledger),
+      tipHash: PercChainTip.hash(_ledger),
+    );
+    if (promoteSessionNode && _ledger.sessionUsername != null) {
+      _ledger.setWalletOnline(
+        _ledger.sessionUsername!,
+        endpoint: network.nodeEndpoint,
+        blockHeight: PercChainTip.height(_ledger),
+        tipHash: PercChainTip.hash(_ledger),
+      );
+    }
     _revision++;
     notifyListeners();
     await _store?.save(_ledger);
     hub_sync.broadcastRevision();
+    await network.gossipToPeers();
   }
 }

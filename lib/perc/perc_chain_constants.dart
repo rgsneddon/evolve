@@ -37,6 +37,16 @@ class PercChainConstants {
   static const String treasuryUsername = 'evolve_treasury';
   static const bool treasuryRequiresExternalChain = false;
 
+  /// Default HTTP port for an online Perccent wallet node (bind 0.0.0.0).
+  static const int defaultNodePort = 9477;
+
+  /// Optional internet rendezvous for peer discovery + ledger relay (port 9478).
+  /// Set in assets/config/perc_network.json or PERC_RENDEZVOUS_URL dart-define.
+  static const int defaultRendezvousPort = 9478;
+
+  /// Peer status / ledger gossip timeout.
+  static const Duration networkRequestTimeout = Duration(seconds: 8);
+
   /// One block confirmation fully settles PERC (Chronoflux Principia TIME).
   static const int confirmationsRequired = 1;
 

@@ -38,6 +38,7 @@ flutter:
     - assets/banner/evolve.jpg
     - assets/data/outcome_registry.json
     - assets/config/grok_proxy.json
+    - assets/config/perc_network.json
     - assets/flags/gb.png
     - assets/flags/us.png
     - assets/flags/eu.png

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/main.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
+import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
 import 'package:evolve/widgets/evolve_banner.dart';
@@ -13,6 +14,8 @@ Future<void> _unlockApp(PercWalletProvider wallet) async {
 }
 
 void main() {
+  setUp(() => PercLedgerHub.resetForTest());
+
   testWidgets('app shows wallet gate until PERC address is registered', (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));

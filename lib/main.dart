@@ -10,11 +10,13 @@ import 'providers/locale_provider.dart';
 import 'models/analysis_mode.dart';
 import 'providers/evolve_provider.dart';
 import 'perc/providers/perc_wallet_provider.dart';
+import 'perc/services/perc_network_coordinator.dart';
 import 'screens/evolve_shell_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PercNetworkCoordinator.disableLiveNodesForTests = false;
   await OutcomeRegistry.ensureLoaded();
   final evolveProvider = EvolveProvider();
   final walletProvider = PercWalletProvider();

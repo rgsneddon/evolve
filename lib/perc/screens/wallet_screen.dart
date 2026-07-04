@@ -980,6 +980,21 @@ class _WalletScreenState extends State<WalletScreen> {
                   : strings.t('wallet_mesh_incomplete'),
               style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
             ),
+            const SizedBox(height: 4),
+            Text(
+              wallet.isNetworkSynced
+                  ? 'Internet height ${wallet.networkBlockHeight} — node ${wallet.isWalletNodeOnline ? "online" : "offline"}'
+                  : 'Syncing to internet block height ${wallet.networkBlockHeight}…',
+              style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
+            ),
+            if (wallet.walletNodeEndpoint != null &&
+                wallet.walletNodeEndpoint!.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                'Endpoint: ${wallet.walletNodeEndpoint}',
+                style: const TextStyle(fontSize: 10, color: Color(0xFF5E6678)),
+              ),
+            ],
             if (peers.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(

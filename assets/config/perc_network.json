@@ -1,0 +1,8 @@
+{
+  "rendezvousUrl": "",
+  "publicEndpointOverride": "",
+  "publicIpLookupUrls": [
+    "https://api.ipify.org",
+    "https://ifconfig.me/ip"
+  ]
+}

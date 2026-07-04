@@ -4,6 +4,7 @@ import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
+import 'package:evolve/perc/services/perc_chain_tip.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
@@ -127,6 +128,11 @@ void main() {
     ledger.creditScenario(username: 'alice', percentChance: 50);
 
     ledger.login('bob', 'password123');
+    ledger.setWalletOnline(
+      'bob',
+      blockHeight: ledger.blockHeight,
+      tipHash: PercChainTip.hash(ledger),
+    );
 
     ledger.send(
       fromUsername: 'alice',

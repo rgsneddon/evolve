@@ -43,7 +43,7 @@ void main() {
     final restored = PercLedger.fromJson(ledger.toJson());
     expect(restored.evolutionaryChainId, PercChainConstants.evolutionaryChainId);
     expect(restored.evolvedAppVersions, contains('1.2.4+30'));
-    expect(restored.toJson()['version'], 8);
+    expect(restored.toJson()['version'], 9);
   });
 
   test('repairForAppUpgrade restores mesh after stale peer keys', () {
