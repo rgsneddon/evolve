@@ -34,6 +34,9 @@ Privacy enquiries:
 ----------
 
 - Core Chronoflux calculations run locally on your device.
+- When you are signed in to a PERC wallet and the network blockchain is launched,
+  your posed scenario question (or topic) is recorded on the shared chain and shown
+  publicly on the seed-node explorer for all visitors.
 - We do not operate advertising, sell personal data, or run third-party analytics
   or crash-reporting SDKs inside Evolve.
 - PERC wallet ledgers are stored locally on your device. Wallets operate
@@ -63,9 +66,13 @@ When you use Evolve, you may enter:
   - Exported synopsis files you choose to save (PDF, HTML, or text)
 
 This content is used to run analysis, maintain your local PERC ledger, and produce
-reports. Unless you enable an optional online feature (Sections 3.3 and 3.7),
-scenario text is processed on your device and is not transmitted to Evolve-operated
-servers for routine analysis.
+reports. Chronoflux calculations run on your device. When you are signed in to a
+PERC wallet and the network blockchain is launched, completing a scenario records
+your posed question (or topic) as a public scenario label on the shared chain and
+syncs it to the Evolve-operated seed node (Section 3.7). Anyone can read that
+label on the public network explorer at https://evolve-perc-internet.onrender.com/
+(Section 3.8). Optional Grok construal and narrative links (Section 3.3) may send
+additional scenario text to third-party services you enable.
 
 
 3.2 Information stored locally on your device
@@ -91,9 +98,10 @@ Evolve may store the following on your device:
   In-session analysis state
     - Your current scenario inputs and results while the app is open.
 
-We do not automatically upload your full local ledger to Evolve Chronoflux for
-routine scenario analysis. PERC network sync (Section 3.7) may transmit ledger
-and status data when you use the wallet online features.
+We do not automatically upload your full local ledger to Evolve Chronoflux except
+through PERC network sync (Section 3.7), which transmits ledger data — including
+public scenario labels when you complete analysis while signed in — when you use
+wallet online features.
 
 
 3.3 Optional online features (only when you enable or trigger them)
@@ -183,7 +191,8 @@ Data your wallet may send to the seed node when you are signed in:
   - Session username and advertised node endpoint (which may include your public IP
     and port, or an internet URL resolved via third-party IP lookup)
   - Network status JSON (block height, tip hash, evolutionary chain id, revision)
-  - Full ledger JSON when syncing or relaying to peers
+  - Full ledger JSON when syncing or relaying to peers (includes block scenario
+    labels — your posed question or topic text — visible on the public explorer)
 
 Data your wallet does not send for peer registration:
 
@@ -205,7 +214,8 @@ The seed node serves a public explorer at https://evolve-perc-internet.onrender.
 that displays:
 
   - Seed and network block height, peer online status, and chain identifiers
-  - A block list and block detail API
+  - A block list and block detail API, including scenario labels (posed questions or
+    topics) and triggering usernames from all users who complete scenarios on-chain
   - Auto-refreshing network statistics (approximately every 30 seconds)
 
 Before the blockchain is launched, the explorer shows no chain blocks. After the
@@ -294,9 +304,10 @@ Evolve does not intentionally collect:
     - Data sent to X, Grok, Google, GitHub, Render, public IP lookup services, or
       public websites is retained according to those providers' policies.
 
-We do not retain copies of your scenario text on Evolve-operated servers. PERC
-ledger copies may exist on the seed node when you sync or relay as described in
-Section 3.7.
+Scenario labels you submit while signed in persist in blockchain blocks on the seed
+node's ledger as part of PERC network sync (Section 3.7) and remain publicly
+visible on the explorer (Section 3.8) until a genesis reset, redeployment, or
+manual deletion.
 
 
 6. SHARING OF INFORMATION
@@ -311,8 +322,9 @@ Information may be shared only in these situations:
     Section 3
   - With other PERC network participants through rendezvous registration and ledger
     gossip you trigger by using an online wallet (username, endpoint, chain state)
-  - Publicly on the network explorer after blockchain launch (treasury emission
-    statistics only — not treasury login credentials)
+  - Publicly on the network explorer after blockchain launch (scenario labels and
+    triggering usernames from on-chain analysis, plus treasury emission statistics
+    — not treasury login credentials)
   - When required by law, regulation, or valid legal process
   - To protect the rights, safety, or security of users or the public, where permitted
     by law
@@ -351,14 +363,15 @@ handled as described in Section 3.7.
 
 You can:
 
-  - Use Evolve without Grok construal ("Don't use") for fully local analysis
+  - Use Evolve without Grok construal ("Don't use") to keep construal requests local
   - Decline camera permission and enter PERC addresses manually
   - Sign out of X / Grok construal and clear local session files
   - Delete local wallet data by clearing app data or removing stored JSON /
     localStorage entries
   - Export or delete synopsis files you saved
-  - Avoid signing in to a PERC wallet if you do not want rendezvous registration
-    or ledger gossip (offline-only use limits network features)
+  - Avoid signing in to a PERC wallet or completing on-chain scenarios if you do
+    not want your posed question visible on the public explorer, rendezvous
+    registration, or ledger gossip (offline-only use limits network features)
   - Sign out of the hosted Treasury tab and clear browser sessionStorage
 
 Depending on your location, you may have rights to access, correct, delete, or
