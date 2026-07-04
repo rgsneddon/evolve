@@ -392,6 +392,7 @@ class PercLedger {
         balance: acc.balance,
         lastFaucetDrawAt: acc.lastFaucetDrawAt,
         cumulativeStakingEarned: acc.cumulativeStakingEarned,
+        scenarioBlockHeight: acc.scenarioBlockHeight,
         transactions: List<PercTransaction>.from(acc.transactions),
       );
     }
@@ -539,6 +540,38 @@ class PercLedger {
     return null;
   }
 
+  /// Registers a network-discovered wallet so sends can target QR-scanned addresses.
+  PercAccount ensureRemoteAccount({
+    required String username,
+    required String address,
+  }) {
+    final u = PercAuth.normalizeUsername(username);
+    final addr = PercAuth.normalizeAddress(address);
+    if (PercAuth.validateAddress(addr) != null) {
+      throw StateError('Invalid remote wallet address');
+    }
+
+    final byAddr = _accountForAddress(addr);
+    if (byAddr != null) return byAddr;
+
+    final existing = accounts[u];
+    if (existing != null) {
+      if (existing.address == addr) return existing;
+      throw StateError('Username already registered with a different address');
+    }
+
+    final acc = PercAccount(
+      username: u,
+      passwordHash: '',
+      salt: '',
+      address: addr,
+      passwordSet: false,
+    );
+    accounts[u] = acc;
+    connectAllWalletsConcurrently();
+    return acc;
+  }
+
   bool get isLoggedIn => sessionUsername != null;
 
   PercAccount? get sessionAccount => sessionUsername == null
@@ -646,6 +679,38 @@ class PercLedger {
     connectAllWalletsConcurrently();
     _migrateLegacyTransferFeesToBurn();
     _reconcileCumulativeBurnedPerc();
+    _backfillScenarioBlockHeights();
+  }
+
+  /// Advances the user's numerically progressive scenario block (1 per conclusion, max 100M).
+  int advanceScenarioBlock(String username) {
+    final acc = _accountFor(PercAuth.normalizeUsername(username));
+    if (acc == null) return 0;
+    if (acc.scenarioBlockHeight >= PercChainConstants.maxScenarioBlocksPerWallet) {
+      return acc.scenarioBlockHeight;
+    }
+    acc.scenarioBlockHeight++;
+    return acc.scenarioBlockHeight;
+  }
+
+  void _backfillScenarioBlockHeights() {
+    for (final acc in accounts.values) {
+      if (acc.scenarioBlockHeight > 0) continue;
+      final concluded = blocks
+          .where(
+            (b) =>
+                b.triggerUsername == acc.username &&
+                b.scenarioLabel != null &&
+                !b.microblockSeal,
+          )
+          .length;
+      if (concluded > 0) {
+        acc.scenarioBlockHeight = concluded.clamp(
+          0,
+          PercChainConstants.maxScenarioBlocksPerWallet,
+        );
+      }
+    }
   }
 
   PercTransaction _burnTransactionFee({
@@ -1559,11 +1624,13 @@ class PercLedger {
         );
         lastScenarioAt = now;
       }
+      final scenarioBlock = advanceScenarioBlock(u);
       return PercFaucetCreditResult(
         status: PercFaucetCreditStatus.onCooldown,
         cooldownRemaining: cooldownLeft,
         nextBlockEstimate: cooldownLeft,
         blockIndex: blocks.isEmpty ? null : blocks.last.index,
+        scenarioBlockHeight: scenarioBlock,
       );
     }
 
@@ -1609,18 +1676,21 @@ class PercLedger {
     }
 
     lastScenarioAt = now;
+    final scenarioBlock = advanceScenarioBlock(u);
 
     if (credited != null) {
       return PercFaucetCreditResult(
         status: PercFaucetCreditStatus.credited,
         reward: credited,
         blockIndex: blocks.isEmpty ? null : blocks.last.index,
+        scenarioBlockHeight: scenarioBlock,
       );
     }
 
     return PercFaucetCreditResult(
       status: PercFaucetCreditStatus.treasuryEmpty,
       blockIndex: blocks.isEmpty ? null : blocks.last.index,
+      scenarioBlockHeight: scenarioBlock,
     );
   }
 

@@ -202,6 +202,17 @@ class LocalizedOutput {
     return strings.t('weight_construal_intro').replaceAll('{reasons}', parts);
   }
 
+  String forecastLineForeclosed({
+    required int pct,
+    required String subject,
+    required String reason,
+  }) =>
+      strings
+          .t('forecast_line_foreclosed')
+          .replaceAll('{pct}', '$pct')
+          .replaceAll('{subject}', subject)
+          .replaceAll('{reason}', reason);
+
   String forecastLine({
     required int pct,
     required int ciLow,

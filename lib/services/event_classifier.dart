@@ -51,6 +51,13 @@ class EventClassifier {
     if (RegExp(r'\b(policy|legislation|bill|passage|law|regulation)\b').hasMatch(lower)) {
       return 'policy_passage';
     }
+    if (RegExp(
+      r'\b(world cup|fifa|champions league|euro|olympics|super bowl|stanley cup|'
+      r'premier league title|grand slam)\b',
+    ).hasMatch(lower) &&
+        RegExp(r'\b(win|champion|victory)\b').hasMatch(lower)) {
+      return 'sports_championship';
+    }
     return 'general_scenario';
   }
 

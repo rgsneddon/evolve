@@ -12,6 +12,7 @@ class PercNetworkStatus {
     this.networkGenesisRevision = 1,
     this.sessionUsername,
     this.endpoint,
+    this.walletAddress,
   });
 
   final String evolutionaryChainId;
@@ -21,6 +22,7 @@ class PercNetworkStatus {
   final int networkGenesisRevision;
   final String? sessionUsername;
   final String? endpoint;
+  final String? walletAddress;
 
   Map<String, dynamic> toJson() => {
         'evolutionaryChainId': evolutionaryChainId,
@@ -30,6 +32,7 @@ class PercNetworkStatus {
         'networkGenesisRevision': networkGenesisRevision,
         if (sessionUsername != null) 'sessionUsername': sessionUsername,
         if (endpoint != null) 'endpoint': endpoint,
+        if (walletAddress != null) 'walletAddress': walletAddress,
       };
 
   factory PercNetworkStatus.fromJson(Map<String, dynamic> json) =>
@@ -41,6 +44,7 @@ class PercNetworkStatus {
         networkGenesisRevision: json['networkGenesisRevision'] as int? ?? 1,
         sessionUsername: json['sessionUsername'] as String?,
         endpoint: json['endpoint'] as String?,
+        walletAddress: json['walletAddress'] as String?,
       );
 
   static PercNetworkStatus fromLedger(
@@ -58,6 +62,7 @@ class PercNetworkStatus {
         networkGenesisRevision: ledger.networkGenesisRevision,
         sessionUsername: ledger.sessionUsername,
         endpoint: endpoint,
+        walletAddress: ledger.sessionAccount?.address,
       );
 }
 

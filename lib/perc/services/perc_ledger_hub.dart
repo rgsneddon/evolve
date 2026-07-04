@@ -112,6 +112,27 @@ class PercLedgerHub extends ChangeNotifier {
     await commitWithoutSessionPromotion(promoteSessionNode: true);
   }
 
+  /// Persists ledger after a manual seed sync without requiring network-sync gate.
+  Future<void> commitAfterForceSync() async {
+    _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ledger.ensureNetworkNodes(
+      blockHeight: PercChainTip.height(_ledger),
+      tipHash: PercChainTip.hash(_ledger),
+    );
+    if (_ledger.sessionUsername != null) {
+      _ledger.setWalletOnline(
+        _ledger.sessionUsername!,
+        endpoint: network.nodeEndpoint,
+        blockHeight: PercChainTip.height(_ledger),
+        tipHash: PercChainTip.hash(_ledger),
+      );
+    }
+    _revision++;
+    notifyListeners();
+    await _store?.save(_ledger);
+    hub_sync.broadcastRevision();
+  }
+
   Future<void> commitWithoutSessionPromotion({
     bool promoteSessionNode = false,
   }) async {

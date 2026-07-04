@@ -23,6 +23,12 @@ class PercChainConstants {
   /// Side-chain microblocks seal a main block at 100M (scenario-driven, not analysis keystrokes).
   static const int microblocksPerBlock = 100000000;
 
+  /// Explorer wards — each ward bundles 10,000 microblocks (10,000 wards per seal cycle).
+  static const int microblocksPerWard = 10000;
+
+  /// Each wallet accrues one progressive scenario block per concluded analysis (max 100M).
+  static const int maxScenarioBlocksPerWallet = 100000000;
+
   /// Override for tests — never set in production code.
   @visibleForTesting
   static int? microblocksPerBlockOverride;

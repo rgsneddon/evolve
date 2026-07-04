@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/perc_account.dart';
 import '../models/perc_peer_node.dart';
 import '../perc_chain_constants.dart';
 import 'perc_chain_tip.dart';
@@ -13,6 +14,7 @@ import 'perc_network_protocol.dart';
 import 'perc_network_rendezvous.dart';
 import 'perc_node_server.dart';
 import 'perc_node_server_factory.dart';
+import 'perc_auth.dart';
 import 'perc_public_endpoint.dart';
 
 /// Aligns every wallet to the same block height over the internet.
@@ -141,6 +143,37 @@ class PercNetworkCoordinator extends ChangeNotifier {
       );
       await hub.commitWithoutSessionPromotion();
     }
+    notifyListeners();
+  }
+
+  /// Manual sync — pull from seed, merge peers, re-publish wallet, gossip chain.
+  Future<void> forceSyncWalletToSeed() async {
+    final hub = _hub;
+    if (hub == null) return;
+
+    _syncState = PercNetworkSyncState.syncing;
+    notifyListeners();
+
+    await _connectToSeedNode(hub);
+    hub.ledger.refreshPendingInboundTransfers();
+    await syncToNetworkHeight();
+
+    final session = hub.ledger.sessionUsername;
+    if (session != null &&
+        session != PercChainConstants.treasuryUsername &&
+        session != PercChainConstants.seedUsername) {
+      _publicEndpoint ??= await _resolveAdvertisedEndpoint();
+      await _rendezvous.register(
+        PercNetworkStatus.fromLedger(
+          hub.ledger,
+          revision: hub.revision,
+          endpoint: _publicEndpoint,
+        ),
+      );
+      await _rendezvous.relayLedger(username: session, ledger: hub.ledger);
+    }
+
+    await gossipToPeers();
     notifyListeners();
   }
 
@@ -295,6 +328,71 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
   bool isWalletOnlineOnNetwork(String username) {
     return _hub?.ledger.isWalletOnlineOnNetwork(username) ?? false;
+  }
+
+  /// Resolves a PERC address to an account — local first, then network rendezvous.
+  Future<PercAccount?> resolveAccountByAddress(String address) async {
+    final hub = _hub;
+    if (hub == null) return null;
+    final normalized = PercAuth.normalizeAddress(address);
+    if (PercAuth.validateAddress(normalized) != null) return null;
+
+    var local = hub.ledger.accountForAddress(normalized);
+    if (local != null) return local;
+
+    await syncToNetworkHeight();
+    local = hub.ledger.accountForAddress(normalized);
+    if (local != null) return local;
+
+    final indexed = await _rendezvous.lookupAddress(normalized);
+    if (indexed != null) {
+      return hub.ledger.ensureRemoteAccount(
+        username: indexed.username,
+        address: indexed.address,
+      );
+    }
+
+    final peers = await _rendezvous.fetchPeers();
+    for (final status in peers) {
+      if (status.walletAddress == normalized && status.sessionUsername != null) {
+        return hub.ledger.ensureRemoteAccount(
+          username: status.sessionUsername!,
+          address: normalized,
+        );
+      }
+    }
+
+    for (final status in peers) {
+      final username = status.sessionUsername;
+      if (username == null) continue;
+
+      final relayed = await _rendezvous.fetchRelayedLedger(username);
+      if (relayed != null) {
+        final acc = relayed.accountForAddress(normalized);
+        if (acc != null) {
+          return hub.ledger.ensureRemoteAccount(
+            username: acc.username,
+            address: acc.address,
+          );
+        }
+      }
+
+      final endpoint = status.endpoint;
+      if (endpoint != null && PercPublicEndpoint.isInternetEndpoint(endpoint)) {
+        final remote = await _client.fetchLedger(endpoint);
+        if (remote != null) {
+          final acc = remote.accountForAddress(normalized);
+          if (acc != null) {
+            return hub.ledger.ensureRemoteAccount(
+              username: acc.username,
+              address: acc.address,
+            );
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   List<PercPeerNode> get onlineNodes =>

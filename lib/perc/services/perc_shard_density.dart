@@ -3,8 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 import '../perc_chain_constants.dart';
+import 'perc_ward_bundler.dart';
 
-/// Maps every Chronoflux microblock shard into a polar density field for rendering.
+/// Maps Chronoflux ward bundles (10,000 microblocks each) into a polar density field.
 class PercShardDensity {
   const PercShardDensity({
     required this.totalShards,
@@ -56,6 +57,19 @@ class PercShardDensity {
     }
     return compute(_buildSync, params);
   }
+
+  /// Ward-level field — one shard per ward (10,000 microblocks bundled).
+  static Future<PercShardDensity> buildForWards({
+    required PercWardView wards,
+    int angularBins = 360,
+    int radialBins = 280,
+  }) =>
+      build(
+        totalShards: wards.wardsPerSealCycle,
+        litShards: wards.completedWardsInCycle,
+        angularBins: angularBins,
+        radialBins: radialBins,
+      );
 }
 
 @immutable

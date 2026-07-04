@@ -5,6 +5,7 @@ import '../models/scenario_input.dart';
 import '../models/evolve_result.dart';
 import 'base_rate_service.dart';
 import 'event_classifier.dart';
+import 'outcome_feasibility.dart';
 
 /// Blends historical base rates with Chronoflux heuristic outputs.
 class ForecastCalibrator {
@@ -26,7 +27,38 @@ class ForecastCalibrator {
     required double heuristicPercent,
     required HydrodynamicCore core,
     required LocalizedOutput output,
+    OutcomeFeasibility feasibility = const OutcomeFeasibility.open(),
   }) {
+    if (feasibility.isForeclosed) {
+      final classification = classifier.classify(input, regionId: locale.regionId);
+      final pct = OutcomeFeasibility.foreclosedPercent.round();
+      final line = output.forecastLineForeclosed(
+        pct: pct,
+        subject: classification.displayEvent,
+        reason: feasibility.reason ?? 'Outcome no longer achievable',
+      );
+      return ForecastResult(
+        calibratedPercent: OutcomeFeasibility.foreclosedPercent,
+        heuristicPercent: OutcomeFeasibility.foreclosedPercent,
+        baseRatePercent: 0,
+        baseCiLow: 0,
+        baseCiHigh: 0,
+        ciLow: OutcomeFeasibility.foreclosedCiLow,
+        ciHigh: OutcomeFeasibility.foreclosedCiHigh,
+        horizonDays: classification.horizonDays,
+        eventClass: classification.eventClass,
+        regionId: locale.regionId,
+        sampleSize: 0,
+        successCount: 0,
+        brierScore: 0,
+        provenance: 'settled outcome',
+        yearMin: 0,
+        yearMax: 0,
+        matchedCaseLines: const [],
+        forecastLine: line,
+      );
+    }
+
     final classification = classifier.classify(input, regionId: locale.regionId);
     final base = baseRates.lookup(
       eventClass: classification.eventClass,

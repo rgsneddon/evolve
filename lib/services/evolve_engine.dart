@@ -11,6 +11,7 @@ import 'grok_style_formatter.dart';
 import 'chronoflux_weight_construal.dart';
 import 'conclusion_explainer_data_builder.dart';
 import 'continuum_conclusion_builder.dart';
+import 'outcome_feasibility.dart';
 import 'scenario_calculation_context.dart';
 import 'input_parser.dart';
 import 'part_three_conclusion_formatter.dart';
@@ -52,10 +53,17 @@ class EvolveEngine {
   }) {
     final out = LocalizedOutput.of(locale);
     final input = parser.enrich(raw, locale: locale, output: out);
+    final feasibility = const OutcomeFeasibilityChecker().check(
+      input,
+      regionId: locale.regionId,
+    );
     final narratives = parser.narratives(input, locale: locale, output: out);
     final baseline = _hydrodynamicCore(input);
     final partOne = _partOne(input, narratives, baseline);
     var partTwo = runPartTwo(input, baseline, out, locale);
+    if (feasibility.isForeclosed) {
+      partTwo = _applyForeclosedPartTwo(partTwo);
+    }
     NarrativePartyRefinement? partyRefinement;
     if (mode == AnalysisMode.cohesionScore && input.sourceUrl.trim().isNotEmpty) {
       partyRefinement = _refineFromPartyResponses(
@@ -76,6 +84,7 @@ class EvolveEngine {
       heuristicPercent: heuristicPct,
       core: partTwo.core,
       output: out,
+      feasibility: feasibility,
     );
     final pct = forecast.calibratedPercent;
     final phrase = _percentPhrase(pct, input, out, locale);
@@ -171,7 +180,14 @@ class EvolveEngine {
       );
       final input = parser.enrich(scoped, locale: locale, output: output);
       final baseline = _hydrodynamicCore(input);
-      final partTwo = runPartTwo(input, baseline, output, locale);
+      var partTwo = runPartTwo(input, baseline, output, locale);
+      final partFeasibility = const OutcomeFeasibilityChecker().check(
+        input,
+        regionId: locale.regionId,
+      );
+      if (partFeasibility.isForeclosed) {
+        partTwo = _applyForeclosedPartTwo(partTwo);
+      }
       final heuristicPct = _percentChance(partTwo, input);
       final forecast = forecastCalibrator.calibrate(
         input: input,
@@ -179,6 +195,7 @@ class EvolveEngine {
         heuristicPercent: heuristicPct,
         core: partTwo.core,
         output: output,
+        feasibility: partFeasibility,
       );
       final reflectiveWeight = PartPathwayWeightConstrual.reflectivePartitionWeight(
         pathwayInput: input,
@@ -208,6 +225,39 @@ class EvolveEngine {
       outcomeContext: multi.outcomeContext,
       output: output,
       locale: locale,
+    );
+  }
+
+  PartTwoSection _applyForeclosedPartTwo(PartTwoSection partTwo) {
+    final core = _foreclosedCore(partTwo.core);
+    return PartTwoSection(
+      core: core,
+      expandedVortex: partTwo.expandedVortex,
+      shearRefinement: partTwo.shearRefinement,
+      resistanceFlow: partTwo.resistanceFlow,
+      refinedScs: core.refinedScs,
+      progressivePct: core.progressivePct,
+      regressivePct: core.regressivePct,
+      lean: core.lean,
+    );
+  }
+
+  HydrodynamicCore _foreclosedCore(HydrodynamicCore core) {
+    return HydrodynamicCore(
+      overallScs: core.overallScs,
+      baselineScs: core.baselineScs,
+      refinedScs: core.refinedScs,
+      progressivePct: 3,
+      regressivePct: 97,
+      netMomentum: -0.94,
+      lean: 'REGRESSIVE',
+      continuumScs: core.continuumScs,
+      flowScs: core.flowScs,
+      shearScs: core.shearScs,
+      resistanceScs: core.resistanceScs,
+      vortexScs: core.vortexScs,
+      positive: core.positive,
+      dissipative: core.dissipative,
     );
   }
 

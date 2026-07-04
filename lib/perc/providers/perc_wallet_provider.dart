@@ -40,8 +40,10 @@ class PercWalletProvider extends ChangeNotifier {
   PercFaucetCreditResult? _pendingCooldownPopup;
   bool _pendingLaunchBalloon = false;
   bool _pendingGenesisRenewalNotice = false;
+  bool _syncingWallet = false;
 
   bool get isReady => _ready;
+  bool get isSyncingWallet => _syncingWallet;
   bool get isBlockchainLaunched => _ledger.isBlockchainLaunched;
   bool get isLoggedIn => _ledger.isLoggedIn;
   String? get loggedInUsername => _ledger.sessionUsername;
@@ -62,6 +64,8 @@ class PercWalletProvider extends ChangeNotifier {
   List<PercTransaction> get transactions =>
       List.unmodifiable(_ledger.sessionAccount?.transactions ?? const []);
   int get blockHeight => _ledger.blockHeight;
+  int get scenarioBlockHeight =>
+      _ledger.sessionAccount?.scenarioBlockHeight ?? 0;
   List<PercBlock> get blocks => _ledger.chainBlocks;
   double get treasuryProgress => _ledger.treasuryProgress;
   PercAmount get treasuryMinted => _ledger.cumulativeTreasuryMinted;
@@ -233,6 +237,35 @@ class PercWalletProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> syncWalletToSeed() async {
+    if (!_ready) return;
+    _clearMessages();
+    _syncingWallet = true;
+    notifyListeners();
+    try {
+      await PercLedgerHub.instance.network.forceSyncWalletToSeed();
+      _ledger.refreshPendingInboundTransfers();
+      await PercLedgerHub.instance.commitAfterForceSync();
+
+      final network = PercLedgerHub.instance.network;
+      if (!network.isConnectedToSeed) {
+        errorMessage =
+            'Cannot reach the seed node — check your internet connection and try again';
+      } else if (network.isSyncedToNetwork) {
+        statusMessage =
+            'Wallet synced to seed — block height $networkBlockHeight';
+      } else {
+        statusMessage =
+            'Partial sync — local height $blockHeight, network height $networkBlockHeight';
+      }
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('StateError: ', '');
+    } finally {
+      _syncingWallet = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> logout() async {
     final username = _ledger.sessionUsername;
     _ledger.logout();
@@ -293,9 +326,19 @@ class PercWalletProvider extends ChangeNotifier {
     }
     final normalizedAddress = PercAuth.normalizeAddress(toAddress);
     try {
-      final recipient = _ledger.accountForAddress(normalizedAddress)?.username;
-      final recipientOnline =
-          recipient != null && _ledger.isWalletOnlineOnNetwork(recipient);
+      await PercLedgerHub.instance.network.syncToNetworkHeight();
+      final resolved =
+          await PercLedgerHub.instance.network.resolveAccountByAddress(
+        normalizedAddress,
+      );
+      if (resolved == null) {
+        errorMessage =
+            'Recipient address not found on the network — they must register a wallet and sign in so their address is discoverable';
+        notifyListeners();
+        return;
+      }
+      final recipient = resolved.username;
+      final recipientOnline = _ledger.isWalletOnlineOnNetwork(recipient);
       _ledger.send(
         fromUsername: _ledger.sessionUsername!,
         toAddress: normalizedAddress,

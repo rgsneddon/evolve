@@ -11,6 +11,7 @@ class PercAccount {
     this.balance = PercAmount.zero,
     this.lastFaucetDrawAt,
     this.cumulativeStakingEarned = PercAmount.zero,
+    this.scenarioBlockHeight = 0,
     List<PercTransaction>? transactions,
   }) : transactions = transactions ?? [];
 
@@ -22,6 +23,7 @@ class PercAccount {
   PercAmount balance;
   DateTime? lastFaucetDrawAt;
   PercAmount cumulativeStakingEarned;
+  int scenarioBlockHeight;
   final List<PercTransaction> transactions;
 
   Map<String, dynamic> toJson() => {
@@ -34,6 +36,7 @@ class PercAccount {
         if (lastFaucetDrawAt != null)
           'lastFaucetDrawAt': lastFaucetDrawAt!.toIso8601String(),
         'cumulativeStakingEarned': cumulativeStakingEarned.toJson(),
+        if (scenarioBlockHeight > 0) 'scenarioBlockHeight': scenarioBlockHeight,
         'transactions': transactions.map((t) => t.toJson()).toList(),
       };
 
@@ -53,6 +56,7 @@ class PercAccount {
             ? PercAmount.fromJson(
                 json['cumulativeStakingEarned'] as Map<String, dynamic>)
             : PercAmount.zero,
+        scenarioBlockHeight: json['scenarioBlockHeight'] as int? ?? 0,
         transactions: (json['transactions'] as List<dynamic>? ?? [])
             .map((t) =>
                 PercTransaction.fromJson(Map<String, dynamic>.from(t as Map)))

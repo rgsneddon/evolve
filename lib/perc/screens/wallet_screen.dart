@@ -648,6 +648,33 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
             const SizedBox(height: 8),
             Text(
+              wallet.scenarioBlockHeight >=
+                      PercChainConstants.maxScenarioBlocksPerWallet
+                  ? strings
+                      .t('wallet_scenario_block_capped')
+                      .replaceAll(
+                        '{max}',
+                        '${PercChainConstants.maxScenarioBlocksPerWallet}',
+                      )
+                  : strings
+                      .t('wallet_scenario_block_height')
+                      .replaceAll('{current}', '${wallet.scenarioBlockHeight}')
+                      .replaceAll(
+                        '{max}',
+                        '${PercChainConstants.maxScenarioBlocksPerWallet}',
+                      ),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF6C63FF),
+              ),
+            ),
+            Text(
+              strings.t('wallet_seed_block_anchor'),
+              style: const TextStyle(fontSize: 10, color: Color(0xFF7A8299)),
+            ),
+            const SizedBox(height: 8),
+            Text(
               strings
                   .t('wallet_avg_block_time')
                   .replaceAll(
@@ -989,8 +1016,16 @@ class _WalletScreenState extends State<WalletScreen> {
             const SizedBox(height: 4),
             Text(
               wallet.isNetworkSynced
-                  ? 'Internet height ${wallet.networkBlockHeight} — node ${wallet.isWalletNodeOnline ? "online" : "offline"}'
-                  : 'Syncing to internet block height ${wallet.networkBlockHeight}…',
+                  ? strings
+                      .t('wallet_mesh_network_synced')
+                      .replaceAll('{height}', '${wallet.networkBlockHeight}')
+                      .replaceAll(
+                        '{node}',
+                        wallet.isWalletNodeOnline ? 'online' : 'offline',
+                      )
+                  : strings
+                      .t('wallet_mesh_network_syncing')
+                      .replaceAll('{height}', '${wallet.networkBlockHeight}'),
               style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
             ),
             if (wallet.walletNodeEndpoint != null &&
@@ -1008,6 +1043,25 @@ class _WalletScreenState extends State<WalletScreen> {
                 style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
               ),
             ],
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: wallet.isSyncingWallet ? null : wallet.syncWalletToSeed,
+                icon: wallet.isSyncingWallet
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.sync_rounded, size: 18),
+                label: Text(
+                  wallet.isSyncingWallet
+                      ? strings.t('wallet_sync_syncing')
+                      : strings.t('wallet_sync_button'),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -1068,7 +1122,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     Text(
                       strings
                           .t('wallet_explorer_block_current')
-                          .replaceAll('{height}', '${wallet.blockHeight}'),
+                          .replaceAll('{height}', '${wallet.scenarioBlockHeight}'),
                       style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
                     ),
                   ],

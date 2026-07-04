@@ -31,6 +31,8 @@ const CHAIN_GENESIS_REVISION = Number(process.env.PERC_CHAIN_GENESIS_REVISION ??
 const peers = new Map();
 /** @type {Map<string, object>} */
 const ledgers = new Map();
+/** @type {Map<string, string>} wallet address → sessionUsername */
+const addresses = new Map();
 
 const store = new LedgerStore(DATA_DIR);
 const treasuryAdmin = new TreasuryAdmin(DATA_DIR);
@@ -325,6 +327,9 @@ const server = http.createServer(async (req, res) => {
       evolutionaryChainId: data.evolutionaryChainId ?? CHAIN_ID,
       updatedAt: Date.now(),
     });
+    if (data.walletAddress) {
+      addresses.set(data.walletAddress, data.sessionUsername);
+    }
     return json(res, 200, { ok: true });
   }
 
@@ -332,9 +337,20 @@ const server = http.createServer(async (req, res) => {
     const data = await readBody(req);
     if (data.username) {
       peers.delete(data.username);
-      ledgers.delete(data.username);
+      // Keep address + ledger entries so offline wallets stay discoverable for sends.
     }
     return json(res, 200, { ok: true });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/perc/rendezvous/address') {
+    const address = url.searchParams.get('address');
+    if (!address || !addresses.has(address)) {
+      return json(res, 404, { error: 'address not found' });
+    }
+    return json(res, 200, {
+      username: addresses.get(address),
+      address,
+    });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/peers') {

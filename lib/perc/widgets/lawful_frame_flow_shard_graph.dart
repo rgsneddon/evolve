@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../models/perc_side_chain.dart';
-import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_shard_density.dart';
+import '../services/perc_ward_bundler.dart';
 
-/// Animated lawful frame-flow split graph — all [PercChainConstants.microblocksPerBlock] shards.
+/// Animated lawful frame-flow split graph — wards bundle 10,000 microblocks each.
 class LawfulFrameFlowShardGraph extends StatefulWidget {
   const LawfulFrameFlowShardGraph({
     super.key,
@@ -44,7 +44,8 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
   @override
   void didUpdateWidget(covariant LawfulFrameFlowShardGraph oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.wallet.microblockCount != widget.wallet.microblockCount) {
+    if (oldWidget.wallet.microblockCount != widget.wallet.microblockCount ||
+        oldWidget.wallet.totalMicroblocks != widget.wallet.totalMicroblocks) {
       _rebuildDensity();
     }
   }
@@ -52,8 +53,8 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
   Future<void> _rebuildDensity() async {
     if (_building) return;
     _building = true;
-    final lit = widget.wallet.sideChain.pendingMicroblocks;
-    final built = await PercShardDensity.build(litShards: lit);
+    final wards = PercWardBundler.fromSideChain(widget.wallet.sideChain);
+    final built = await PercShardDensity.buildForWards(wards: wards);
     if (!mounted) return;
     setState(() {
       _density = built;
@@ -71,8 +72,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
   Widget build(BuildContext context) {
     final side = widget.wallet.sideChain;
     final strings = widget.strings;
-    final total = PercChainConstants.microblocksPerBlock;
-    final pending = side.pendingMicroblocks;
+    final wards = PercWardBundler.fromSideChain(side);
     final progress = side.sealProgress;
 
     return Container(
@@ -96,7 +96,9 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
           ),
           const SizedBox(height: 4),
           Text(
-            strings.t('wallet_explorer_frame_flow_subtitle'),
+            strings
+                .t('wallet_explorer_frame_flow_subtitle')
+                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
             style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
           ),
           const SizedBox(height: 12),
@@ -111,24 +113,26 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
                     const SizedBox(width: 10),
                     Expanded(
                       flex: 3,
-                      child: _graphPanel(side, strings, total, pending, progress),
+                      child: _graphPanel(side, strings, wards, progress),
                     ),
                     const SizedBox(width: 10),
-                    Expanded(child: _lawfulPanel(side, strings, total, pending)),
+                    Expanded(child: _lawfulPanel(side, strings, wards)),
                   ],
                 );
               }
               return Column(
                 children: [
-                  _graphPanel(side, strings, total, pending, progress),
+                  _graphPanel(side, strings, wards, progress),
                   const SizedBox(height: 10),
-                  _lawfulPanel(side, strings, total, pending),
+                  _lawfulPanel(side, strings, wards),
                   const SizedBox(height: 10),
                   _degeneratePanel(strings),
                 ],
               );
             },
           ),
+          const SizedBox(height: 10),
+          _wardExplorerPanel(strings, wards),
           const SizedBox(height: 10),
           Text(
             strings.t('wallet_explorer_frame_flow_status'),
@@ -139,11 +143,74 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     );
   }
 
+  Widget _wardExplorerPanel(AppLocalizations strings, PercWardView wards) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF5CE0A8).withOpacity(0.45)),
+        color: const Color(0xFF0A1218),
+      ),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            strings.t('wallet_explorer_ward_title'),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF5CE0A8),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            strings
+                .t('wallet_explorer_ward_subtitle')
+                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
+            style: const TextStyle(fontSize: 9, color: Color(0xFF9BA3B8), height: 1.35),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            strings
+                .t('wallet_explorer_ward_cycle')
+                .replaceAll('{completed}', '${wards.completedWardsInCycle}')
+                .replaceAll('{total}', '${wards.wardsPerSealCycle}')
+                .replaceAll('{ward}', '${wards.currentWardIndex}')
+                .replaceAll('{pending}', '${wards.microblocksInCurrentWard}')
+                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
+            style: const TextStyle(fontSize: 10, color: Color(0xFFB8D4FF)),
+          ),
+          Text(
+            strings
+                .t('wallet_explorer_ward_lifetime')
+                .replaceAll('{count}', '${wards.totalWardsEver}'),
+            style: const TextStyle(fontSize: 9, color: Color(0xFF7A8299)),
+          ),
+          const SizedBox(height: 8),
+          AspectRatio(
+            aspectRatio: 2.4,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: CustomPaint(
+                painter: _WardHeatmapPainter(wards: wards),
+                child: const SizedBox.expand(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            strings.t('wallet_explorer_ward_legend'),
+            style: const TextStyle(fontSize: 8, color: Color(0xFF6C7A8F), height: 1.3),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _graphPanel(
     PercSideChainState side,
     AppLocalizations strings,
-    int total,
-    int pending,
+    PercWardView wards,
     double progress,
   ) {
     return Container(
@@ -189,9 +256,10 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
           const SizedBox(height: 8),
           Text(
             strings
-                .t('wallet_explorer_shard_count')
-                .replaceAll('{visible}', _formatShardCount(total))
-                .replaceAll('{lit}', _formatShardCount(pending)),
+                .t('wallet_explorer_ward_field_count')
+                .replaceAll('{wards}', '${wards.wardsPerSealCycle}')
+                .replaceAll('{lit}', '${wards.completedWardsInCycle}')
+                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 10, color: Color(0xFF9BA3B8)),
           ),
@@ -291,8 +359,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
   Widget _lawfulPanel(
     PercSideChainState side,
     AppLocalizations strings,
-    int total,
-    int pending,
+    PercWardView wards,
   ) {
     return Container(
       padding: const EdgeInsets.all(10),
@@ -319,10 +386,18 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
           const SizedBox(height: 6),
           Text(
             strings
-                .t('wallet_sidechain_pending')
-                .replaceAll('{pending}', _formatShardCount(pending))
-                .replaceAll('{total}', _formatShardCount(total)),
+                .t('wallet_explorer_ward_pending')
+                .replaceAll('{ward}', '${wards.currentWardIndex}')
+                .replaceAll('{pending}', '${wards.microblocksInCurrentWard}')
+                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
             style: const TextStyle(fontSize: 9, color: Color(0xFF5CE0A8)),
+          ),
+          Text(
+            strings
+                .t('wallet_sidechain_pending')
+                .replaceAll('{pending}', _formatShardCount(wards.pendingMicroblocks))
+                .replaceAll('{total}', _formatShardCount(wards.microblocksPerBlock)),
+            style: const TextStyle(fontSize: 9, color: Color(0xFF9BA3B8)),
           ),
           Text(
             '${strings.t('wallet_sidechain_height')}: ${side.microblockHeight}',
@@ -562,4 +637,53 @@ class _LawfulFrameFlowPainter extends CustomPainter {
       old.rotation != rotation ||
       old.pulse != pulse ||
       old.progress != progress;
+}
+
+/// Heatmap of all wards in the current seal cycle (100 × 100 = 10,000 wards).
+class _WardHeatmapPainter extends CustomPainter {
+  _WardHeatmapPainter({required this.wards});
+
+  final PercWardView wards;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final total = wards.wardsPerSealCycle;
+    if (total <= 0) return;
+
+    final cols = math.sqrt(total).ceil().clamp(1, 200);
+    final rows = (total / cols).ceil();
+    final cellW = size.width / cols;
+    final cellH = size.height / rows;
+
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFF060A10),
+    );
+
+    for (var i = 0; i < total; i++) {
+      final col = i % cols;
+      final row = i ~/ cols;
+      final fill = wards.wardFillRatio(i);
+      final color = fill >= 1
+          ? const Color(0xFF5CE0A8)
+          : fill > 0
+              ? Color.lerp(
+                    const Color(0xFF1A2840),
+                    const Color(0xFF3BC9FF),
+                    fill,
+                  )!
+              : const Color(0xFF121820);
+
+      canvas.drawRect(
+        Rect.fromLTWH(col * cellW, row * cellH, cellW - 0.5, cellH - 0.5),
+        Paint()..color = color,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WardHeatmapPainter old) =>
+      old.wards.completedWardsInCycle != wards.completedWardsInCycle ||
+      old.wards.microblocksInCurrentWard != wards.microblocksInCurrentWard ||
+      old.wards.wardsPerSealCycle != wards.wardsPerSealCycle;
 }

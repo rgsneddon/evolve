@@ -101,6 +101,30 @@ class PercNetworkRendezvous {
     } catch (_) {}
   }
 
+  Future<({String username, String address})?> lookupAddress(
+    String address,
+  ) async {
+    final base = await baseUrl();
+    if (base == null) return null;
+    final uri = Uri.parse(
+      '$base/perc/rendezvous/address?address=${Uri.encodeComponent(address)}',
+    );
+    try {
+      final response = await _http
+          .get(uri)
+          .timeout(PercChainConstants.networkRequestTimeout);
+      if (response.statusCode != 200) return null;
+      final json = jsonDecode(response.body);
+      if (json is! Map) return null;
+      final username = json['username'] as String?;
+      final resolved = json['address'] as String? ?? address;
+      if (username == null || username.isEmpty) return null;
+      return (username: username, address: resolved);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<PercLedger?> fetchRelayedLedger(String username) async {
     final base = await baseUrl();
     if (base == null) return null;

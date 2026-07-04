@@ -2,6 +2,7 @@ import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
 import 'event_classifier.dart';
 import 'field_calculation_context.dart';
+import 'outcome_feasibility.dart';
 import 'question_semantics.dart';
 
 /// Scenario + field **context** for Chronoflux — not σ/Iτ/Jμ field prose keywords.
@@ -45,6 +46,12 @@ class ScenarioCalculationContext {
       input,
       regionId: regionId,
     );
+    final feasibility = const OutcomeFeasibilityChecker().check(
+      input,
+      regionId: regionId,
+    );
+    final resolvedLean = lean ??
+        (feasibility.isForeclosed ? 'REGRESSIVE' : null);
     return ScenarioCalculationContext(
       regionId: regionId,
       hasPosedQuestion: input.scenarioQuery.trim().isNotEmpty,
@@ -54,7 +61,7 @@ class ScenarioCalculationContext {
       eventClass: classification.eventClass,
       horizonDays: classification.horizonDays,
       fields: FieldCalculationContext.from(input),
-      lean: lean,
+      lean: resolvedLean,
     );
   }
 

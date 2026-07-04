@@ -15,6 +15,7 @@ class PercFaucetCreditResult {
     this.cooldownRemaining,
     this.nextBlockEstimate,
     this.blockIndex,
+    this.scenarioBlockHeight,
   });
 
   final PercFaucetCreditStatus status;
@@ -22,6 +23,7 @@ class PercFaucetCreditResult {
   final Duration? cooldownRemaining;
   final Duration? nextBlockEstimate;
   final int? blockIndex;
+  final int? scenarioBlockHeight;
 
   bool get showCooldownPopup => status == PercFaucetCreditStatus.onCooldown;
 }

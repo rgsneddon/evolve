@@ -90,7 +90,8 @@ export class LedgerStore {
     const ledger = this.ledger;
     return {
       evolutionaryChainId: ledger?.evolutionaryChainId || CHAIN_ID,
-      blockHeight: blockHeight(ledger),
+      // Seed anchor is always block 1 — user wallets accrue scenario blocks locally.
+      blockHeight: 1,
       tipHash: tipHash(ledger),
       revision: this.revision,
       networkGenesisRevision: this.genesisRevision,

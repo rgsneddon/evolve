@@ -369,6 +369,11 @@ final _en = {
   'wallet_treasury_offline_note':
       'Treasury awaits blockchain launch. Run analysis after launch to draw from the faucet.',
   'wallet_block_height': 'Block height: {height}',
+  'wallet_scenario_block_height':
+      'Your scenario block: {current} / {max}',
+  'wallet_scenario_block_capped':
+      'Scenario block cap reached ({max} scenario checks)',
+  'wallet_seed_block_anchor': 'Seed anchor: block 1',
   'wallet_faucet_title': 'Analysis faucet',
   'wallet_faucet_note':
       'Tap Calculate percent chance or Calculate social cohesion score to draw xx/100 PERC from treasury — xx is the two-digit outcome (percent or SCS) — once every 7 minutes.',
@@ -379,6 +384,17 @@ final _en = {
       'Connected to {count} other wallet(s) on the shared Perccent chain',
   'wallet_mesh_peers': 'Peers: {peers}',
   'wallet_mesh_incomplete': 'Mesh linking wallets…',
+  'wallet_mesh_network_synced':
+      'Seed connected — internet height {height} — node {node}',
+  'wallet_mesh_network_syncing':
+      'Syncing to internet block height {height}…',
+  'wallet_sync_button': 'Sync wallet',
+  'wallet_sync_syncing': 'Syncing…',
+  'wallet_sync_success': 'Wallet synced to seed — block height {height}',
+  'wallet_sync_partial':
+      'Partial sync — local height {local}, network height {network}',
+  'wallet_sync_seed_offline':
+      'Cannot reach the seed node — check your internet connection and try again',
   'wallet_evolution_title': 'Evolutionary blockchain',
   'wallet_evolution_note':
       'Every app version connects to the same chain — evolution verified by the Chronoflux Principia.',
@@ -503,7 +519,19 @@ final _en = {
   'wallet_explorer_confirmed': 'Fully confirmed (1 block)',
   'wallet_explorer_frame_flow_title': 'Lawful Frame-Flow Split — Chronoflux Shard Field',
   'wallet_explorer_frame_flow_subtitle':
-      'Degenerate one-vector ansatz set aside; lawful continuity split retained — all microblock shards mapped.',
+      'Degenerate one-vector ansatz set aside; lawful continuity split retained — microblocks bundled into wards of {bundle}.',
+  'wallet_explorer_ward_title': 'Ward bundles — dynamic microblock explorer',
+  'wallet_explorer_ward_subtitle':
+      'Each ward seals {bundle} Chronoflux microblocks. 10,000 wards complete one main-chain seal cycle.',
+  'wallet_explorer_ward_cycle':
+      'Current cycle: {completed} / {total} wards bundled — ward #{ward} filling ({pending} / {bundle} microblocks)',
+  'wallet_explorer_ward_lifetime': 'Lifetime wards sealed: {count}',
+  'wallet_explorer_ward_pending':
+      'Active ward #{ward}: {pending} / {bundle} microblocks',
+  'wallet_explorer_ward_field_count':
+      '{wards} wards in field — {lit} bundled ({bundle} microblocks each)',
+  'wallet_explorer_ward_legend':
+      'Green = sealed ward · Blue = ward in progress · Dark = pending',
   'wallet_explorer_frame_flow_center':
       'Lawful frame-flow split — frame defines the slice; drift remains inside the slice',
   'wallet_explorer_frame_flow_status':
@@ -873,6 +901,8 @@ final _en = {
       'Policy adjustments — review programmes with local input.',
   'forecast_line':
       'Calibrated forecast: {pct}% (95% CI: {ci_low}–{ci_high}%) for {subject} over a {horizon}-day horizon. Based on {sample} historical cases ({year_min}–{year_max}), Brier={brier}. Chronoflux refined SCS {refined}/100; regressive continuum {regressive}%. Sources: {provenance}. No betting markets.',
+  'forecast_line_foreclosed':
+      'Foreclosed outcome: ~{pct}% for {subject}. {reason}. Historical base rates do not apply — the outcome is no longer achievable. No betting markets.',
   'continuum_hints_clause': '; discourse signals from question: {hints}',
   'continuum_conclusion_signals':
       'Construal data — posed question: "{question}"; {frame} frame, {polarity}, event class {event_class}, {horizon}-day horizon, region {region}{hints_clause}.',
@@ -897,6 +927,7 @@ final _en = {
   'event_class_cohesion_decline': 'cohesion decline',
   'event_class_policy_passage': 'policy passage',
   'event_class_general_scenario': 'general scenario',
+  'event_class_sports_championship': 'sports championship',
   'explainer_percent_lead':
       'The ~{pct}% headline{subject_clause} is not a poll or betting odd. Chronoflux regressive momentum is {reg}% of THE CONTINUUM; σ {shear}/100 and cohesion strain {strain} shape the heuristic. Net momentum {momentum} → {lean}; transport favours {transport}.',
   'explainer_data_points_intro': 'Data points used to construe and calibrate this outcome:',
@@ -1070,6 +1101,11 @@ final _es = {
   'wallet_treasury_offline_note':
       'La tesorería espera el lanzamiento de la cadena. Ejecute un análisis tras el lanzamiento para usar el grifo.',
   'wallet_block_height': 'Altura de bloque: {height}',
+  'wallet_scenario_block_height':
+      'Tu bloque de escenario: {current} / {max}',
+  'wallet_scenario_block_capped':
+      'Límite de bloques de escenario alcanzado ({max} análisis)',
+  'wallet_seed_block_anchor': 'Ancla semilla: bloque 1',
   'wallet_faucet_title': 'Grifo de análisis',
   'wallet_faucet_note':
       'Pulse Calcular probabilidad % o Calcular puntuación de cohesión social para retirar xx/100 PERC de la tesorería — xx es el resultado de dos dígitos (porcentaje o SCS) — una vez cada 7 minutos.',
@@ -1098,7 +1134,19 @@ final _es = {
   'wallet_explorer_confirmed': 'Totalmente confirmado (1 bloque)',
   'wallet_explorer_frame_flow_title': 'División frame-flow lícita — campo de fragmentos Chronoflux',
   'wallet_explorer_frame_flow_subtitle':
-      'Ansatz de un vector degenerado descartado; división de continuidad lícita — todos los fragmentos mapeados.',
+      'Ansatz de un vector degenerado descartado; microbloques agrupados en wards de {bundle}.',
+  'wallet_explorer_ward_title': 'Wards — explorador dinámico de microbloques',
+  'wallet_explorer_ward_subtitle':
+      'Cada ward sella {bundle} microbloques Chronoflux. 10.000 wards completan un ciclo de sellado.',
+  'wallet_explorer_ward_cycle':
+      'Ciclo actual: {completed} / {total} wards — ward #{ward} ({pending} / {bundle} microbloques)',
+  'wallet_explorer_ward_lifetime': 'Wards sellados (total): {count}',
+  'wallet_explorer_ward_pending':
+      'Ward activo #{ward}: {pending} / {bundle} microbloques',
+  'wallet_explorer_ward_field_count':
+      '{wards} wards en campo — {lit} agrupados ({bundle} microbloques cada uno)',
+  'wallet_explorer_ward_legend':
+      'Verde = ward sellado · Azul = ward en progreso · Oscuro = pendiente',
   'wallet_explorer_frame_flow_center':
       'División frame-flow lícita — el marco define la rebanada; la deriva permanece dentro',
   'wallet_explorer_frame_flow_status':
