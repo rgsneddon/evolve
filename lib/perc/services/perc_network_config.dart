@@ -6,6 +6,8 @@ import 'package:flutter/services.dart' show rootBundle;
 class PercNetworkConfig {
   const PercNetworkConfig({
     this.rendezvousUrl = '',
+    this.seedUsername = '',
+    this.networkGenesisRevision = 1,
     this.publicEndpointOverride = '',
     this.publicIpLookupUrls = const [
       'https://api.ipify.org',
@@ -14,6 +16,8 @@ class PercNetworkConfig {
   });
 
   final String rendezvousUrl;
+  final String seedUsername;
+  final int networkGenesisRevision;
   final String publicEndpointOverride;
   final List<String> publicIpLookupUrls;
 
@@ -27,6 +31,9 @@ class PercNetworkConfig {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       _cached = PercNetworkConfig(
         rendezvousUrl: (json['rendezvousUrl'] as String? ?? '').trim(),
+        seedUsername: (json['seedUsername'] as String? ?? '').trim(),
+        networkGenesisRevision:
+            json['networkGenesisRevision'] as int? ?? 1,
         publicEndpointOverride:
             (json['publicEndpointOverride'] as String? ?? '').trim(),
         publicIpLookupUrls: (json['publicIpLookupUrls'] as List<dynamic>? ?? [])

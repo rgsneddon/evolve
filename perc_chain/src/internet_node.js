@@ -5,9 +5,13 @@ import { fileURLToPath } from 'url';
 import {
   buildNetworkSnapshot,
   getBlockDetail,
+  isHiddenPeer,
   listBlocks,
 } from './explorer_api.js';
 import { LedgerStore, blockHeight, tipHash } from './ledger_store.js';
+import { TreasuryAdmin } from './treasury_admin.js';
+import { buildTreasuryWalletView } from './treasury_api.js';
+import { launchBlockchainFromTreasuryLogin } from './blockchain_launch.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -15,8 +19,10 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const PORT = Number(process.env.PORT ?? process.env.PERC_RENDEZVOUS_PORT ?? 9478);
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
 const SEED_USERNAME = process.env.PERC_SEED_USERNAME ?? 'evolve_seed_node';
+const TREASURY_USERNAME = process.env.PERC_TREASURY_USERNAME ?? 'evolve_treasury';
 const DATA_DIR = process.env.PERC_DATA_DIR ?? path.join(process.cwd(), 'data');
 const SYNC_INTERVAL_MS = Number(process.env.PERC_SYNC_INTERVAL_MS ?? 120_000);
+const CHAIN_GENESIS_REVISION = Number(process.env.PERC_CHAIN_GENESIS_REVISION ?? 2);
 
 /** @type {Map<string, object>} */
 const peers = new Map();
@@ -24,6 +30,11 @@ const peers = new Map();
 const ledgers = new Map();
 
 const store = new LedgerStore(DATA_DIR);
+const treasuryAdmin = new TreasuryAdmin(DATA_DIR);
+
+function requireTreasuryAuth(req) {
+  return treasuryAdmin.sessionFromAuthHeader(req.headers.authorization ?? '');
+}
 
 function publicEndpoint() {
   const explicit = (process.env.PERC_PUBLIC_ENDPOINT ?? process.env.RENDER_EXTERNAL_URL ?? '').trim();
@@ -36,7 +47,7 @@ function json(res, code, body) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   });
   res.end(JSON.stringify(body));
 }
@@ -145,7 +156,7 @@ async function syncFromNetwork() {
     const username = peer.sessionUsername;
     const endpoint = peer.endpoint;
     const height = peer.blockHeight ?? 0;
-    if (!username || username === SEED_USERNAME) continue;
+    if (!username || username === SEED_USERNAME || isHiddenPeer(username)) continue;
     if (height < blockHeight(best)) continue;
 
     let candidate = null;
@@ -186,6 +197,70 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+
+  if (req.method === 'GET' && url.pathname === '/api/treasury/auth/setup-needed') {
+    return json(res, 200, {
+      needsPasswordSetup: treasuryAdmin.needsPasswordSetup(),
+      blockchainLaunched:
+        treasuryAdmin.isBlockchainLaunched() || (store.ledger?.blockchainLaunched ?? false),
+    });
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/treasury/auth/login') {
+    const data = await readBody(req);
+    const result = treasuryAdmin.login({
+      username: data.username,
+      password: data.password,
+      confirmPassword: data.confirmPassword,
+    });
+    if (!result.ok) {
+      return json(res, result.needsSetup ? 400 : 401, result);
+    }
+
+    let launch = null;
+    if (!treasuryAdmin.isBlockchainLaunched()) {
+      launch = launchBlockchainFromTreasuryLogin(store, {
+        adminPassword: data.password,
+        launchedBy: result.username,
+      });
+      if (launch.ok && launch.launched) {
+        treasuryAdmin.markBlockchainLaunched();
+        await registerSeed();
+      } else if (!launch.ok) {
+        return json(res, 500, { ...result, launchError: launch.error });
+      }
+    }
+
+    return json(res, 200, {
+      ...result,
+      blockchainLaunched: treasuryAdmin.isBlockchainLaunched(),
+      launch,
+    });
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/treasury/auth/logout') {
+    const session = requireTreasuryAuth(req);
+    const data = await readBody(req);
+    treasuryAdmin.logout(data.token ?? (req.headers.authorization ?? '').replace('Bearer ', ''));
+    return json(res, 200, { ok: true, username: session?.username ?? null });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/treasury/auth/status') {
+    const session = requireTreasuryAuth(req);
+    if (!session) return json(res, 401, { ok: false, authenticated: false });
+    return json(res, 200, {
+      ok: true,
+      authenticated: true,
+      username: session.username,
+      needsPasswordSetup: treasuryAdmin.needsPasswordSetup(),
+    });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/treasury/wallet') {
+    const session = requireTreasuryAuth(req);
+    if (!session) return json(res, 401, { ok: false, error: 'Treasury login required' });
+    return json(res, 200, buildTreasuryWalletView(store));
+  }
 
   if (req.method === 'GET' && url.pathname === '/api/network') {
     return json(
@@ -237,6 +312,9 @@ const server = http.createServer(async (req, res) => {
     if (!data.sessionUsername || !data.endpoint) {
       return json(res, 400, { error: 'sessionUsername and endpoint required' });
     }
+    if (isHiddenPeer(data.sessionUsername)) {
+      return json(res, 200, { ok: true, hidden: true });
+    }
     peers.set(data.sessionUsername, {
       ...data,
       evolutionaryChainId: data.evolutionaryChainId ?? CHAIN_ID,
@@ -256,9 +334,9 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/peers') {
     const chainId = url.searchParams.get('chainId') ?? CHAIN_ID;
-    const list = [...peers.values()].filter(
-      (p) => (p.evolutionaryChainId ?? CHAIN_ID) === chainId,
-    );
+    const list = [...peers.values()]
+      .filter((p) => (p.evolutionaryChainId ?? CHAIN_ID) === chainId)
+      .filter((p) => !isHiddenPeer(p.sessionUsername));
     return json(res, 200, list);
   }
 
@@ -292,7 +370,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'GET' && url.pathname === '/perc/ledger') {
     if (!store.hasLedger()) {
-      return json(res, 503, { error: 'seed ledger not ready — sync pending' });
+      store.resetToGenesis(CHAIN_GENESIS_REVISION);
     }
     return json(res, 200, store.ledger);
   }
@@ -340,6 +418,17 @@ server.listen(PORT, bindHost, async () => {
   console.log(`Public endpoint: ${publicEndpoint()}`);
   console.log(`Explorer UI: ${publicEndpoint()}/`);
   console.log(`Seed username: ${SEED_USERNAME}`);
+  console.log(`Treasury username: ${TREASURY_USERNAME} (hidden from public peers)`);
+  console.log(`Chain genesis revision: ${CHAIN_GENESIS_REVISION}`);
+  if (store.ensureGenesisRevision(CHAIN_GENESIS_REVISION)) {
+    peers.clear();
+    ledgers.clear();
+    if (treasuryAdmin.record) {
+      treasuryAdmin.record.blockchainLaunched = false;
+      treasuryAdmin.save();
+    }
+    console.log('Chain reset to block 0 with new treasury wallet');
+  }
   await registerSeed();
   await syncFromNetwork();
   setInterval(async () => {

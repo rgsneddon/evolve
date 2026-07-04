@@ -35,6 +35,9 @@ class PercChainConstants {
 
   /// Treasury holder — offline wallet; no external chain until a user runs analysis.
   static const String treasuryUsername = 'evolve_treasury';
+
+  /// Internet seed node — canonical chain anchor on the rendezvous host.
+  static const String seedUsername = 'evolve_seed_node';
   static const bool treasuryRequiresExternalChain = false;
 
   /// Default HTTP port for an online Perccent wallet node (bind 0.0.0.0).

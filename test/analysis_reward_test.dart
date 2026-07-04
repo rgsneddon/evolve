@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/models/analysis_mode.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
+import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
 
@@ -9,6 +10,7 @@ import 'test_helpers.dart';
 
 Future<void> _seedWallet(PercWalletProvider wallet) async {
   await wallet.setupTreasuryPassword('password12345');
+  PercLedgerHub.instance.ledger.launchBlockchain();
   await wallet.register('analyst', 'password12345');
 }
 

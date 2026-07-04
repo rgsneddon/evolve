@@ -3,6 +3,19 @@ import { blockHeight, tipHash } from './ledger_store.js';
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
 const PEER_ONLINE_MS = Number(process.env.PERC_PEER_ONLINE_MS ?? 15 * 60 * 1000);
 
+export function hiddenPeerUsernames() {
+  const treasury = (process.env.PERC_TREASURY_USERNAME ?? 'evolve_treasury').trim();
+  const hidden = new Set([treasury, 'rgsneddon']);
+  const extra = (process.env.PERC_HIDDEN_PEERS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  for (const name of extra) hidden.add(name);
+  return hidden;
+}
+
+export function isHiddenPeer(username) {
+  if (!username) return true;
+  return hiddenPeerUsernames().has(username);
+}
+
 export function isPeerOnline(peer, now = Date.now()) {
   const updated = peer?.updatedAt ?? 0;
   return updated > 0 && now - updated <= PEER_ONLINE_MS;
@@ -10,11 +23,32 @@ export function isPeerOnline(peer, now = Date.now()) {
 
 export function formatPercAmount(amount) {
   if (!amount || typeof amount !== 'object') return '0';
+  if (amount.microUnits != null) {
+    const mu = Number(amount.microUnits);
+    const whole = Math.floor(mu / 100_000_000);
+    const fraction = mu % 100_000_000;
+    if (!fraction) return String(whole);
+    const frac = String(fraction).padStart(8, '0').replace(/0+$/, '');
+    return frac ? `${whole}.${frac}` : String(whole);
+  }
   const whole = amount.whole ?? 0;
   const fraction = amount.fraction ?? 0;
   if (!fraction) return String(whole);
   const frac = String(fraction).padStart(8, '0').replace(/0+$/, '');
   return frac ? `${whole}.${frac}` : String(whole);
+}
+
+export function buildPublicTreasuryEmission(ledger, treasuryUsername = 'evolve_treasury') {
+  if (!ledger?.blockchainLaunched) return null;
+  const treasury = ledger.accounts?.[treasuryUsername];
+  return {
+    emissionPerSecond: '1',
+    balance: formatPercAmount(treasury?.balance),
+    cumulativeMinted: formatPercAmount(ledger.cumulativeTreasuryMinted),
+    treasuryCycle: ledger.treasuryCycle ?? 1,
+    treasuryLocked: true,
+    disclaimer: 'TREASURY IS LOCKED',
+  };
 }
 
 export function summarizeBlock(block, ledger) {
@@ -86,6 +120,7 @@ export function buildNetworkSnapshot({
   const height = blockHeight(ledger);
   const peerRows = [...peers.values()]
     .filter((p) => (p.evolutionaryChainId ?? chainId) === chainId)
+    .filter((p) => !isHiddenPeer(p.sessionUsername))
     .map((p) => {
       const username = p.sessionUsername ?? 'unknown';
       const relayed = ledgers.get(username);
@@ -116,6 +151,7 @@ export function buildNetworkSnapshot({
     blockHeight: height,
     tipHash: tipHash(ledger),
     revision: store.revision,
+    networkGenesisRevision: store.getGenesisRevision(),
     ledgerReady: store.hasLedger(),
     peers: {
       total: peerRows.length,
@@ -124,6 +160,8 @@ export function buildNetworkSnapshot({
     },
     networkHeight: Math.max(height, maxPeerHeight),
     peerList: peerRows,
+    blockchainLaunched: ledger?.blockchainLaunched ?? false,
+    treasuryEmission: buildPublicTreasuryEmission(ledger),
     updatedAt: new Date(now).toISOString(),
   };
 }

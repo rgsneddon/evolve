@@ -9,6 +9,7 @@ class PercNetworkStatus {
     required this.blockHeight,
     required this.tipHash,
     required this.revision,
+    this.networkGenesisRevision = 1,
     this.sessionUsername,
     this.endpoint,
   });
@@ -17,6 +18,7 @@ class PercNetworkStatus {
   final int blockHeight;
   final String tipHash;
   final int revision;
+  final int networkGenesisRevision;
   final String? sessionUsername;
   final String? endpoint;
 
@@ -25,6 +27,7 @@ class PercNetworkStatus {
         'blockHeight': blockHeight,
         'tipHash': tipHash,
         'revision': revision,
+        'networkGenesisRevision': networkGenesisRevision,
         if (sessionUsername != null) 'sessionUsername': sessionUsername,
         if (endpoint != null) 'endpoint': endpoint,
       };
@@ -35,6 +38,7 @@ class PercNetworkStatus {
         blockHeight: json['blockHeight'] as int? ?? 0,
         tipHash: json['tipHash'] as String? ?? '',
         revision: json['revision'] as int? ?? 0,
+        networkGenesisRevision: json['networkGenesisRevision'] as int? ?? 1,
         sessionUsername: json['sessionUsername'] as String?,
         endpoint: json['endpoint'] as String?,
       );
@@ -51,6 +55,7 @@ class PercNetworkStatus {
         blockHeight: PercChainTip.height(ledger),
         tipHash: PercChainTip.hash(ledger),
         revision: revision,
+        networkGenesisRevision: ledger.networkGenesisRevision,
         sessionUsername: ledger.sessionUsername,
         endpoint: endpoint,
       );

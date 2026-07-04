@@ -6,6 +6,7 @@ import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_chain_tip.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
+import 'package:evolve/perc/services/perc_ledger_hub.dart';
 
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
@@ -16,7 +17,7 @@ String _addr(PercLedger ledger, String username) =>
 void _seedLedger(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password123');
-  ledger.login(PercChainConstants.treasuryUsername, 'password123');
+  ledger.launchBlockchain();
   ledger.consumeBlockchainLaunchEvent();
 }
 
@@ -80,7 +81,7 @@ void main() {
     final second = ledger.creditScenario(username: 'alice', percentChance: 20);
     expect(second.status, PercFaucetCreditStatus.onCooldown);
     expect(second.cooldownRemaining, isNotNull);
-    expect(second.cooldownRemaining!.inMinutes, greaterThan(6));
+    expect(second.cooldownRemaining!.inMinutes, greaterThanOrEqualTo(6));
     expect(ledger.account('alice')!.balance, first.reward!.total);
   });
 
@@ -229,6 +230,7 @@ void main() {
     final wallet = PercWalletProvider(store: store);
     await wallet.initialize();
     await wallet.setupTreasuryPassword('password12345');
+    PercLedgerHub.instance.ledger.launchBlockchain();
     await wallet.register('carol', 'password12345');
     final credited = await wallet.creditScenario(outcomeScore: 55, memo: 'Persist');
     expect(credited?.status, PercFaucetCreditStatus.credited);

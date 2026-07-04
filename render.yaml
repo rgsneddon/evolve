@@ -15,6 +15,10 @@ services:
         value: 20
       - key: PERC_SEED_USERNAME
         value: evolve_seed_node
+      - key: PERC_TREASURY_ADMIN_USER
+        value: rgsnedds
+      - key: PERC_CHAIN_GENESIS_REVISION
+        value: "2"
       - key: PERC_DATA_DIR
         value: /var/data
     disk:

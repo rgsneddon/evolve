@@ -4,14 +4,14 @@
     "platform":  "android",
     "version":  "3.0.0",
     "sizeMb":  75.1,
-    "sha512":  "1cca910ce503adaa3597a55fe22b25b6b6342021341101e3458b04c11ed4c3061aae501dc194a06d42bd8c6c9eb1510d0c73fe6854dabc134e43d2d126b19a03",
+    "sha512":  "557fd9fe12b10ab07b03622c567d38efc3812c4fb0ba3ce5ca7d07af128e600ee3c883aa14bb61ab7b0430e151a0c915d5d8d99d00fb4740ced0de8085b90450",
     "name":  "evolve-v3.0.0-android-setup.apk",
     "minSdk":  23,
-    "sha256":  "59a475694564c86f31d30d9645579fb5b01e50cc6149ca39172f33a37dad6ec2",
+    "sha256":  "c097bbce47e4c408bddae033e91b3b54a2bbcc163b7429e58de8fa4358238afc",
     "abis":  [
                  "arm64-v8a",
                  "armeabi-v7a",
                  "x86_64"
              ],
-    "sizeBytes":  78740152
+    "sizeBytes":  78756564
 }

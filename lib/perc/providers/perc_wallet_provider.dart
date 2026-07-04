@@ -117,6 +117,8 @@ class PercWalletProvider extends ChangeNotifier {
       PercLedgerHub.instance.network.syncState;
   int get networkBlockHeight => PercLedgerHub.instance.network.networkBlockHeight;
   bool get isNetworkSynced => PercLedgerHub.instance.network.isSyncedToNetwork;
+  bool get isConnectedToSeed =>
+      PercLedgerHub.instance.network.isConnectedToSeed;
   bool get isWalletNodeOnline => PercLedgerHub.instance.network.isNodeServing;
   String? get walletNodeEndpoint => PercLedgerHub.instance.network.nodeEndpoint;
   List<PercPeerNode> get onlineNetworkNodes =>
@@ -190,7 +192,7 @@ class PercWalletProvider extends ChangeNotifier {
         PercChainConstants.treasuryUsername,
       );
       _captureTreasuryLaunchEvent();
-      statusMessage = 'Treasury secured — blockchain launched';
+      statusMessage = 'Treasury secured — awaiting seed treasury sign-in to launch chain';
       notifyListeners();
       await _commit();
     } catch (e) {
@@ -397,7 +399,7 @@ class PercWalletProvider extends ChangeNotifier {
 
       if (result.status == PercFaucetCreditStatus.blockchainNotLaunched) {
         statusMessage =
-            'Blockchain awaiting treasurer first sign-in';
+            'Blockchain awaiting rgsnedds sign-in on the seed treasury tab';
       } else if (result.status == PercFaucetCreditStatus.treasuryEmpty) {
         statusMessage = _pendingGenesisRenewalNotice
             ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'

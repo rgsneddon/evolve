@@ -523,7 +523,7 @@ final _en = {
       'Your wallet already drew from treasury within the last 7 minutes. The Perccent chain advances on scenarios — your next eligible draw (and block) is in approximately {blockWait}. You can draw xx/100 PERC again after {wait}.',
   'wallet_cooldown_popup_ok': 'OK',
   'wallet_blockchain_awaiting_launch':
-      'Blockchain awaits treasurer first sign-in to launch.',
+      'Blockchain awaits rgsnedds sign-in on the seed treasury tab to launch.',
   'wallet_blockchain_launch_title': 'Blockchain launched!',
   'wallet_blockchain_launch_body':
       'Treasurer signed in — the Perccent chain is live. Run scenarios to advance blocks.',

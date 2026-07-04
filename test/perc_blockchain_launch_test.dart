@@ -4,7 +4,7 @@ import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 
 void main() {
-  test('blockchain does not launch until treasurer first sign-in', () {
+  test('blockchain does not launch from local treasury login', () {
     final ledger = PercLedger.empty();
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password123');
@@ -21,22 +21,21 @@ void main() {
     expect(ledger.isBlockchainLaunched, isFalse);
 
     ledger.login(PercChainConstants.treasuryUsername, 'password123');
-    expect(ledger.isBlockchainLaunched, isTrue);
-    expect(ledger.consumeBlockchainLaunchEvent(), isTrue);
+    expect(ledger.isBlockchainLaunched, isFalse);
     expect(ledger.consumeBlockchainLaunchEvent(), isFalse);
   });
 
-  test('treasury password setup login launches blockchain once', () {
+  test('launchBlockchain is a one-time seed treasury action', () {
     final ledger = PercLedger.empty();
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password12345');
-    ledger.login(PercChainConstants.treasuryUsername, 'password12345');
 
+    ledger.launchBlockchain();
     expect(ledger.isBlockchainLaunched, isTrue);
     expect(ledger.consumeBlockchainLaunchEvent(), isTrue);
+    expect(ledger.consumeBlockchainLaunchEvent(), isFalse);
 
-    ledger.logout();
-    ledger.login(PercChainConstants.treasuryUsername, 'password12345');
+    ledger.launchBlockchain();
     expect(ledger.consumeBlockchainLaunchEvent(), isFalse);
   });
 
@@ -45,7 +44,7 @@ void main() {
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password123');
     ledger.register('bob', 'password123');
-    ledger.login(PercChainConstants.treasuryUsername, 'password123');
+    ledger.launchBlockchain();
     ledger.consumeBlockchainLaunchEvent();
 
     ledger.login('bob', 'password123');

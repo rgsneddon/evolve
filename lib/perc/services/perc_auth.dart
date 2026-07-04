@@ -37,6 +37,7 @@ class PercAuth {
   static const reservedUsernames = <String>{
     PercChainConstants.treasuryUsername,
     'rgsneddon',
+    'rgsnedds',
   };
 
   static String? validateUsername(String username) {

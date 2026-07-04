@@ -78,9 +78,27 @@ class PercLedgerHub extends ChangeNotifier {
     await network.onSessionEnded(username);
   }
 
-  void importPeerLedger(PercLedger remote, {String? expectedTipHash}) {
+  void resetFromSeedLedger(PercLedger remote, {String? expectedTipHash}) {
     final session = _ledger.sessionUsername;
-    _ledger.importPeerLedger(remote, expectedTipHash: expectedTipHash);
+    _ledger.resetFromSeedLedger(remote, expectedTipHash: expectedTipHash);
+    if (session != null && _ledger.accounts.containsKey(session)) {
+      _ledger.sessionUsername = session;
+    }
+    _revision++;
+    notifyListeners();
+  }
+
+  void importPeerLedger(
+    PercLedger remote, {
+    String? expectedTipHash,
+    bool force = false,
+  }) {
+    final session = _ledger.sessionUsername;
+    _ledger.importPeerLedger(
+      remote,
+      expectedTipHash: expectedTipHash,
+      force: force,
+    );
     if (session != null && _ledger.accounts.containsKey(session)) {
       _ledger.sessionUsername = session;
     }

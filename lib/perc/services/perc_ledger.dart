@@ -53,6 +53,7 @@ class PercLedger {
     List<String>? evolvedAppVersions,
     List<PercEvolutionStep>? evolutionSteps,
     this.evolutionEpoch = 1,
+    this.networkGenesisRevision = 1,
     List<WardProposal>? wardProposals,
     List<WardBallot>? wardBallots,
     this.nextWardProposalId = 1,
@@ -91,6 +92,7 @@ class PercLedger {
   List<String> evolvedAppVersions;
   List<PercEvolutionStep> evolutionSteps;
   int evolutionEpoch;
+  int networkGenesisRevision;
   final List<WardProposal> wardProposals;
   final List<WardBallot> wardBallots;
   int nextWardProposalId;
@@ -254,6 +256,7 @@ class PercLedger {
   void importPeerLedger(
     PercLedger remote, {
     String? expectedTipHash,
+    bool force = false,
   }) {
     final remoteChainId = remote.evolutionaryChainId.isEmpty
         ? PercChainConstants.evolutionaryChainId
@@ -264,8 +267,12 @@ class PercLedger {
     if (remoteChainId != localChainId) {
       throw StateError('Peer chain id mismatch');
     }
-    if (remote.blockHeight < blockHeight) return;
-    if (remote.blockHeight == blockHeight) {
+    if (remote.networkGenesisRevision > networkGenesisRevision) {
+      _applyRemoteLedger(remote, preserveLocalWallets: false);
+      return;
+    }
+    if (!force && remote.blockHeight < blockHeight) return;
+    if (!force && remote.blockHeight == blockHeight) {
       final remoteTip = PercChainTip.hash(remote);
       if (expectedTipHash != null &&
           expectedTipHash.isNotEmpty &&
@@ -275,7 +282,43 @@ class PercLedger {
       return;
     }
 
+    _applyRemoteLedger(
+      remote,
+      preserveLocalWallets: !force,
+      expectedTipHash: expectedTipHash,
+      force: force,
+    );
+  }
+
+  void resetFromSeedLedger(PercLedger seed, {String? expectedTipHash}) {
+    _applyRemoteLedger(
+      seed,
+      preserveLocalWallets: false,
+      expectedTipHash: expectedTipHash,
+      force: true,
+    );
+  }
+
+  void _applyRemoteLedger(
+    PercLedger remote, {
+    required bool preserveLocalWallets,
+    String? expectedTipHash,
+    bool force = false,
+  }) {
+    if (!force && remote.blockHeight == blockHeight) {
+      final remoteTip = PercChainTip.hash(remote);
+      if (expectedTipHash != null &&
+          expectedTipHash.isNotEmpty &&
+          remoteTip != expectedTipHash) {
+        throw StateError('Peer chain tip mismatch at equal height');
+      }
+      if (!force) return;
+    }
+
     final session = sessionUsername;
+    final localWallets = preserveLocalWallets
+        ? _snapshotIndependentWallets()
+        : <String, PercAccount>{};
     accounts
       ..clear()
       ..addAll(remote.accounts);
@@ -310,6 +353,7 @@ class PercLedger {
     evolvedAppVersions = List<String>.from(remote.evolvedAppVersions);
     evolutionSteps = List<PercEvolutionStep>.from(remote.evolutionSteps);
     evolutionEpoch = remote.evolutionEpoch;
+    networkGenesisRevision = remote.networkGenesisRevision;
     wardProposals
       ..clear()
       ..addAll(remote.wardProposals);
@@ -321,10 +365,52 @@ class PercLedger {
       ..clear()
       ..addAll(remote.pendingInboundTransfers);
 
+    if (preserveLocalWallets) {
+      _restoreIndependentWallets(localWallets);
+    }
+
     if (session != null && !accounts.containsKey(session)) {
       sessionUsername = null;
     }
     repairForAppUpgrade();
+  }
+
+  /// Local wallets with credentials — preserved across network chain imports.
+  Map<String, PercAccount> _snapshotIndependentWallets() {
+    final snap = <String, PercAccount>{};
+    for (final entry in accounts.entries) {
+      final username = entry.key;
+      if (username == PercChainConstants.seedUsername) continue;
+      final acc = entry.value;
+      if (!acc.passwordSet) continue;
+      snap[username] = PercAccount(
+        username: acc.username,
+        passwordHash: acc.passwordHash,
+        salt: acc.salt,
+        address: acc.address,
+        passwordSet: true,
+        balance: acc.balance,
+        lastFaucetDrawAt: acc.lastFaucetDrawAt,
+        cumulativeStakingEarned: acc.cumulativeStakingEarned,
+        transactions: List<PercTransaction>.from(acc.transactions),
+      );
+    }
+    return snap;
+  }
+
+  void _restoreIndependentWallets(Map<String, PercAccount> localWallets) {
+    for (final entry in localWallets.entries) {
+      final username = entry.key;
+      final local = entry.value;
+      final remote = accounts[username];
+      if (remote == null) {
+        accounts[username] = local;
+        continue;
+      }
+      remote.passwordHash = local.passwordHash;
+      remote.salt = local.salt;
+      remote.passwordSet = true;
+    }
   }
 
   static PercLedger empty() {
@@ -1154,8 +1240,8 @@ class PercLedger {
     return acc;
   }
 
-  void _launchBlockchainIfTreasurerFirstLogin(String username) {
-    if (username != PercChainConstants.treasuryUsername) return;
+  /// One-time launch — only invoked when the seed treasury admin signs in on Render.
+  void launchBlockchain() {
     if (blockchainLaunched) return;
     blockchainLaunched = true;
     _blockchainLaunchEventPending = true;
@@ -1173,7 +1259,6 @@ class PercLedger {
       throw StateError('Invalid password');
     }
     sessionUsername = u;
-    _launchBlockchainIfTreasurerFirstLogin(u);
     final t = (now ?? DateTime.now()).toUtc();
     refreshPendingInboundTransfers(now: t);
     return acc;
@@ -1283,7 +1368,7 @@ class PercLedger {
   }) {
     if (!blockchainLaunched) {
       throw StateError(
-        'Blockchain not launched — treasurer must sign in first',
+        'Blockchain not launched — rgsnedds must sign in on the seed treasury tab first',
       );
     }
     final from = PercAuth.normalizeUsername(fromUsername);
@@ -1520,6 +1605,7 @@ class PercLedger {
         'evolvedAppVersions': evolvedAppVersions,
         'evolutionSteps': evolutionSteps.map((e) => e.toJson()).toList(),
         'evolutionEpoch': evolutionEpoch,
+        'networkGenesisRevision': networkGenesisRevision,
         'accounts': accounts.map((k, v) => MapEntry(k, v.toJson())),
         'blocks': blocks.map((b) => b.toJson()).toList(),
         'lastScenarioAt': lastScenarioAt?.toIso8601String(),
@@ -1601,6 +1687,7 @@ class PercLedger {
           .map((e) => PercEvolutionStep.fromJson(e as Map<String, dynamic>))
           .toList(),
       evolutionEpoch: json['evolutionEpoch'] as int? ?? 1,
+      networkGenesisRevision: json['networkGenesisRevision'] as int? ?? 1,
       wardProposals: (json['wardProposals'] as List<dynamic>? ?? [])
           .map((e) => WardProposal.fromJson(e as Map<String, dynamic>))
           .toList(),

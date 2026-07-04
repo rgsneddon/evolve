@@ -8,7 +8,7 @@ import 'package:evolve/perc/perc_chain_constants.dart';
 void _seedLedger(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password123');
-  ledger.login(PercChainConstants.treasuryUsername, 'password123');
+  ledger.launchBlockchain();
   ledger.consumeBlockchainLaunchEvent();
 }
 

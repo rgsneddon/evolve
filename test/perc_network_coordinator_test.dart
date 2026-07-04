@@ -10,6 +10,10 @@ import 'package:evolve/perc/services/perc_network_protocol.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 
+void _launchChainForTests() {
+  PercLedgerHub.instance.ledger.launchBlockchain();
+}
+
 void main() {
   setUp(() {
     PercNetworkConfig.resetForTest();
@@ -50,8 +54,7 @@ void main() {
     final local = PercLedger.empty();
     local.ensureTreasuryAccount();
     local.setupTreasuryPassword('password12345');
-    local.login(PercChainConstants.treasuryUsername, 'password12345');
-    local.consumeBlockchainLaunchEvent();
+    local.launchBlockchain();
     local.register('alice', 'password12345');
 
     final remote = PercLedger.fromJson(local.toJson());
@@ -84,6 +87,7 @@ void main() {
     final receiverAddr = wallet.addressForUsername('receiver');
     await wallet.logout();
     await wallet.login('sender', 'password12345');
+    _launchChainForTests();
     await wallet.creditScenario(outcomeScore: 50, memo: 'fund sender');
 
     final receiverOnlineBefore = wallet.onlineNetworkNodes
