@@ -13,6 +13,7 @@ import { TreasuryAdmin } from './treasury_admin.js';
 import { buildTreasuryWalletView } from './treasury_api.js';
 import { launchBlockchainFromTreasuryLogin } from './blockchain_launch.js';
 import { regenerateTreasuryIfLow } from './treasury_regeneration.js';
+import { maskEndpoint, sanitizeForPublicExplorer } from './endpoint_privacy.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -268,14 +269,16 @@ const server = http.createServer(async (req, res) => {
     return json(
       res,
       200,
-      buildNetworkSnapshot({
-        peers,
-        ledgers,
-        store,
-        seedUsername: SEED_USERNAME,
-        endpoint: publicEndpoint(),
-        chainId: CHAIN_ID,
-      }),
+      sanitizeForPublicExplorer(
+        buildNetworkSnapshot({
+          peers,
+          ledgers,
+          store,
+          seedUsername: SEED_USERNAME,
+          endpoint: publicEndpoint(),
+          chainId: CHAIN_ID,
+        }),
+      ),
     );
   }
 
@@ -287,7 +290,7 @@ const server = http.createServer(async (req, res) => {
     }
     const detail = getBlockDetail(store.ledger, index);
     if (!detail) return json(res, 404, { error: 'block not found' });
-    return json(res, 200, detail);
+    return json(res, 200, sanitizeForPublicExplorer(detail));
   }
 
   if (req.method === 'GET' && url.pathname === '/api/blocks') {
@@ -296,7 +299,7 @@ const server = http.createServer(async (req, res) => {
     }
     const offset = Number(url.searchParams.get('offset') ?? 0);
     const limit = Math.min(Number(url.searchParams.get('limit') ?? 50), 200);
-    return json(res, 200, listBlocks(store.ledger, { offset, limit }));
+    return json(res, 200, sanitizeForPublicExplorer(listBlocks(store.ledger, { offset, limit })));
   }
 
   if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/explorer')) {
@@ -399,7 +402,7 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, {
       ok: true,
       service: 'perc-internet-node',
-      explorer: `${publicEndpoint()}/`,
+      explorer: maskEndpoint(`${publicEndpoint()}/`),
       seedUsername: SEED_USERNAME,
       endpoint: snapshot.endpoint,
       blockHeight: snapshot.blockHeight,

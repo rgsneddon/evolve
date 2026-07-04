@@ -158,7 +158,7 @@
               <th>Status</th>
               <th>Wallet</th>
               <th>Block height</th>
-              <th>Endpoint</th>
+              <th>Node</th>
               <th>Last seen</th>
             </tr>
           </thead>
@@ -272,6 +272,53 @@
       try { return new Date(iso).toLocaleString(); } catch { return iso; }
     }
 
+    const IPV4_RE = /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\b/g;
+
+    function maskIpAddresses(text) {
+      if (text == null || typeof text !== 'string') return text ?? '';
+      return text.replace(IPV4_RE, '[hidden]');
+    }
+
+    function endpointHost(endpoint) {
+      if (!endpoint) return '';
+      try { return new URL(endpoint).hostname; } catch {
+        const m = endpoint.match(/^https?:\/\/([^/:]+)/i);
+        return m ? m[1] : '';
+      }
+    }
+
+    function renderEndpoint(endpoint) {
+      if (!endpoint) return '—';
+      const host = endpointHost(endpoint);
+      if (host && IPV4_RE.test(host)) {
+        return '<span class="muted">Private node</span>';
+      }
+      if (endpoint === 'Private node') {
+        return '<span class="muted">Private node</span>';
+      }
+      const safe = maskIpAddresses(endpoint);
+      if (safe.includes('[hidden]')) {
+        return `<span class="mono muted">${safe}</span>`;
+      }
+      return `<a href="${safe}/perc/status" target="_blank" rel="noopener">${safe}</a>`;
+    }
+
+    function sanitizeExplorerJson(value) {
+      if (value == null) return value;
+      if (typeof value === 'string') return maskIpAddresses(value);
+      if (Array.isArray(value)) return value.map(sanitizeExplorerJson);
+      if (typeof value === 'object') {
+        const out = {};
+        for (const [k, v] of Object.entries(value)) {
+          out[k] = k === 'endpoint' && typeof v === 'string'
+            ? (IPV4_RE.test(endpointHost(v)) ? 'Private node' : maskIpAddresses(v))
+            : sanitizeExplorerJson(v);
+        }
+        return out;
+      }
+      return value;
+    }
+
     function showError(msg) {
       const el = $('error');
       if (!msg) { el.style.display = 'none'; return; }
@@ -296,7 +343,7 @@
     }
 
     function renderStats(net) {
-      $('endpoint-line').textContent = net.endpoint || '';
+      $('endpoint-line').textContent = maskIpAddresses(net.endpoint || '');
       renderTreasuryEmissionPublic(net);
       $('stats').innerHTML = `
         <div class="card"><div class="label">Node</div><div class="value">${pill(net.nodeStatus === 'online')}</div></div>
@@ -312,7 +359,7 @@
             <td>${pill(p.online)}</td>
             <td><strong>${p.username}</strong></td>
             <td>${p.blockHeight}${p.relayHeight > p.blockHeight ? ` <span class="muted">(relay ${p.relayHeight})</span>` : ''}</td>
-            <td class="mono">${p.endpoint ? `<a href="${p.endpoint}/perc/status" target="_blank" rel="noopener">${p.endpoint}</a>` : '—'}</td>
+            <td class="mono">${renderEndpoint(p.endpoint)}</td>
             <td class="muted">${p.lastSeen ? fmtTime(p.lastSeen) : '—'}</td>
           </tr>`).join('')
         : '<tr><td colspan="5" class="muted">No peers registered yet. Open Evolve and log in to a wallet.</td></tr>';
@@ -345,7 +392,7 @@
       const block = await res.json();
       $('block-detail').classList.add('open');
       $('detail-title').textContent = `Block #${block.index}`;
-      $('detail-body').textContent = JSON.stringify(block, null, 2);
+      $('detail-body').textContent = JSON.stringify(sanitizeExplorerJson(block), null, 2);
     }
 
     const REFRESH_INTERVAL_SEC = 30;

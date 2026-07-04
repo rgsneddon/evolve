@@ -1,3 +1,4 @@
+import { maskEndpoint } from './endpoint_privacy.js';
 import { blockHeight, tipHash } from './ledger_store.js';
 
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
@@ -131,7 +132,7 @@ export function buildNetworkSnapshot({
       const relayHeight = relayed?.ledger ? blockHeight(relayed.ledger) : 0;
       return {
         username,
-        endpoint: p.endpoint ?? null,
+        endpoint: maskEndpoint(p.endpoint ?? null),
         blockHeight: p.blockHeight ?? 0,
         tipHash: p.tipHash ?? '',
         relayHeight,
@@ -151,7 +152,7 @@ export function buildNetworkSnapshot({
     nodeStatus: 'online',
     chainId,
     seedUsername,
-    endpoint,
+    endpoint: maskEndpoint(endpoint),
     blockHeight: height,
     tipHash: tipHash(ledger),
     revision: store.revision,
