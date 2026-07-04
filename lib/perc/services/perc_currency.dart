@@ -11,6 +11,9 @@ class PercCurrency {
   static String denominationNote() =>
       '1 ${PercChainConstants.centName} = ${PercChainConstants.centValueInPerc} ${PercChainConstants.currencySymbol}';
 
+  static String minimumTransferNote() =>
+      'Minimum transfer: ${PercChainConstants.minimumTransferAmount.displayFixed8} ${PercChainConstants.currencySymbol}';
+
   static String formatPerc(PercAmount amount) =>
       '${amount.displayFixed8} ${PercChainConstants.currencySymbol}';
 

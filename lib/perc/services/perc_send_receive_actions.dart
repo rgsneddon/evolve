@@ -5,6 +5,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../l10n/app_localizations.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../widgets/perc_address_qr_scanner_dialog.dart';
+import '../widgets/perc_amount_input_formatter.dart';
+import '../perc_chain_constants.dart';
 import 'perc_beam_privacy.dart';
 import 'perc_camera_permission.dart';
 import 'perc_qr_scanner_support.dart';
@@ -116,7 +118,12 @@ class PercSendReceiveActions {
               TextField(
                 controller: amountCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: strings.t('wallet_send_amount')),
+                inputFormatters: const [PercAmountInputFormatter()],
+                decoration: InputDecoration(
+                  labelText: strings.t('wallet_send_amount'),
+                  hintText: strings.t('wallet_send_amount_hint'),
+                  helperText: strings.t('wallet_send_amount_helper'),
+                ),
               ),
               const SizedBox(height: 10),
               TextField(
@@ -173,6 +180,12 @@ class PercSendReceiveActions {
               Text(
                 strings.t('wallet_receive_note'),
                 style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Receives amounts down to ${PercChainConstants.centValueInPerc} ${PercChainConstants.currencySymbol}',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),

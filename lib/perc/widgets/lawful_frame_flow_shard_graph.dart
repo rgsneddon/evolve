@@ -105,7 +105,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
               final wide = constraints.maxWidth >= 760;
               if (wide) {
                 return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(child: _degeneratePanel(strings)),
                     const SizedBox(width: 10),

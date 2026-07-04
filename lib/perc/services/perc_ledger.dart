@@ -1038,7 +1038,11 @@ class PercLedger {
     final addrErr = PercAuth.validateAddress(toAddress);
     if (addrErr != null) throw StateError(addrErr);
     final toAddr = PercAuth.normalizeAddress(toAddress);
-    if (!amount.isPositive) throw StateError('Amount must be positive');
+    if (!amount.isAtLeastSmallestUnit) {
+      throw StateError(
+        'Amount must be at least ${PercChainConstants.centValueInPerc} ${PercChainConstants.currencySymbol}',
+      );
+    }
     final sender = _accountFor(from);
     final receiver = _accountForAddress(toAddr);
     if (sender == null) {

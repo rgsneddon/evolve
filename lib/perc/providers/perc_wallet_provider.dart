@@ -240,9 +240,15 @@ class PercWalletProvider extends ChangeNotifier {
       return;
     }
     final amount = PercAmount.tryParseDisplay(amountText);
-    if (amount == null || !amount.isPositive) {
+    if (amount == null) {
       errorMessage =
-          'Enter a valid ${PercChainConstants.currencySymbol} amount';
+          'Enter a valid ${PercChainConstants.currencySymbol} amount (up to 8 decimal places)';
+      notifyListeners();
+      return;
+    }
+    if (!amount.isAtLeastSmallestUnit) {
+      errorMessage =
+          'Minimum send is ${PercChainConstants.centValueInPerc} ${PercChainConstants.currencySymbol} (1 cent)';
       notifyListeners();
       return;
     }

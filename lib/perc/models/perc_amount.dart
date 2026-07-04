@@ -11,7 +11,13 @@ class PercAmount {
 
   static const zero = PercAmount(0);
 
+  /// Smallest transferable unit — 1 cent = 0.00000001 PERC.
+  static const smallestUnit = PercAmount(1);
+
   bool get isPositive => microUnits > 0;
+
+  /// True when [amount] is at least one cent (0.00000001 PERC).
+  bool get isAtLeastSmallestUnit => microUnits >= smallestUnit.microUnits;
 
   Map<String, dynamic> toJson() => {'microUnits': microUnits};
 
@@ -30,9 +36,40 @@ class PercAmount {
   static PercAmount fromPerc(double perc) =>
       PercAmount((perc * unitsPerPerc).round());
 
+  /// Parses a display amount with up to [decimals] fractional digits (no float drift).
+  static PercAmount? tryParseDecimalString(String text) {
+    var cleaned = text.trim().replaceAll(',', '').replaceAll(' ', '');
+    if (cleaned.isEmpty || cleaned.startsWith('-')) return null;
+
+    if (cleaned.startsWith('.')) {
+      final fracRaw = cleaned.substring(1);
+      if (fracRaw.isEmpty || !RegExp(r'^\d+$').hasMatch(fracRaw)) return null;
+      if (fracRaw.length > decimals) return null;
+      return PercAmount(int.parse(fracRaw.padRight(decimals, '0')));
+    }
+
+    final match = RegExp(r'^(\d+)(?:\.(\d+))?$').firstMatch(cleaned);
+    if (match == null) return null;
+
+    final wholePart = int.tryParse(match.group(1)!);
+    if (wholePart == null) return null;
+
+    final fracRaw = match.group(2) ?? '';
+    if (fracRaw.isNotEmpty && !RegExp(r'^\d+$').hasMatch(fracRaw)) {
+      return null;
+    }
+    if (fracRaw.length > decimals) return null;
+
+    final fracPart =
+        fracRaw.isEmpty ? 0 : int.parse(fracRaw.padRight(decimals, '0'));
+    return PercAmount(wholePart * unitsPerPerc + fracPart);
+  }
+
   static PercAmount? tryParseDisplay(String text) {
     final cleaned = text.trim().replaceAll(',', '');
     if (cleaned.isEmpty) return null;
+    final precise = tryParseDecimalString(cleaned);
+    if (precise != null) return precise;
     final value = double.tryParse(cleaned);
     if (value == null || value < 0) return null;
     return fromPerc(value);

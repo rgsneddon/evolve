@@ -585,6 +585,9 @@ final _en = {
   'wallet_camera_permission_open_settings': 'Open settings',
   'wallet_send_address_pick': 'Or pick a known address',
   'wallet_send_amount': 'Amount (PERC)',
+  'wallet_send_amount_hint': '0.00000001',
+  'wallet_send_amount_helper':
+      'Divisible to 0.00000001 PERC (1 cent). All wallets can receive any amount down to 1 cent.',
   'wallet_send_memo': 'Memo (optional)',
   'wallet_send_confirm': 'Send Perccent',
   'wallet_receive_title': 'Receive Perccent',
@@ -1169,6 +1172,9 @@ final _es = {
   'wallet_camera_permission_open_settings': 'Abrir ajustes',
   'wallet_send_address_pick': 'O elija una dirección conocida',
   'wallet_send_amount': 'Cantidad (PERC)',
+  'wallet_send_amount_hint': '0.00000001',
+  'wallet_send_amount_helper':
+      'Divisible hasta 0.00000001 PERC (1 cent). Todas las carteras pueden recibir desde 1 cent.',
   'wallet_send_memo': 'Nota (opcional)',
   'wallet_send_confirm': 'Enviar Perccent',
   'wallet_receive_title': 'Recibir Perccent',

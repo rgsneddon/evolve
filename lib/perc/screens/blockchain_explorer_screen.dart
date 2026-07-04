@@ -41,7 +41,8 @@ class BlockchainExplorerScreen extends StatelessWidget {
               )
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: Center(
+                child: Align(
+                  alignment: Alignment.topCenter,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 900),
                     child: Column(
@@ -53,10 +54,12 @@ class BlockchainExplorerScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         _heightCard(wallet, strings),
-                        const SizedBox(height: 16),
-                        _graphCard(blocks, strings),
-                        const SizedBox(height: 16),
-                        _cumulativeCard(blocks, strings),
+                        if (blocks.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          _graphCard(blocks, strings),
+                          const SizedBox(height: 16),
+                          _cumulativeCard(blocks, strings),
+                        ],
                         const SizedBox(height: 16),
                         ChronofluxFivePointGraphPanel(
                           wallet: wallet,
