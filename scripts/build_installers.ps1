@@ -2,7 +2,8 @@
 param(
     [switch]$SkipWindowsBuild,
     [switch]$SkipApkBuild,
-    [switch]$SkipDeploy
+    [switch]$SkipDeploy,
+    [switch]$SkipCodeSign
 )
 
 $ErrorActionPreference = 'Stop'

@@ -2,13 +2,15 @@
 param(
     [string]$Version = '',
     [string]$Build = '',
-    [switch]$SkipWindowsBuild
+    [switch]$SkipWindowsBuild,
+    [switch]$SkipCodeSign
 )
 
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
 . "$PSScriptRoot\lib\package_checksum.ps1"
+. "$PSScriptRoot\lib\code_sign.ps1"
 
 Set-Location $Root
 
@@ -33,6 +35,8 @@ if (-not $SkipWindowsBuild) {
 if (-not (Test-Path $exePath)) {
     throw "Missing Windows release build: $exePath"
 }
+
+Sign-WindowsPeBinaries -Directory $releaseDir -Root $Root -SkipCodeSign:$SkipCodeSign
 
 function Find-InnoSetupCompiler {
     $candidates = @(
@@ -67,6 +71,12 @@ $setupName = "evolve-v$Version-windows-x64-setup.exe"
 $setupPath = Join-Path $outDir $setupName
 if (-not (Test-Path $setupPath)) {
     throw "Installer not produced: $setupPath"
+}
+
+if (-not $SkipCodeSign) {
+    $signTool = Find-SignTool
+    $signConfig = Get-CodeSignConfig -Root $Root
+    Sign-AuthenticodeFile -FilePath $setupPath -Config $signConfig -SignTool $signTool | Out-Null
 }
 
 $versionedDir = Join-Path $Root "build\downloads\v$Version"

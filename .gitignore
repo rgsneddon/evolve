@@ -46,3 +46,8 @@ app.*.map.json
 
 # Local Grok proxy secrets (copy from grok_proxy.local.env.example)
 grok_proxy.local.env
+
+# Windows Authenticode signing secrets (copy from code_sign.local.env.example)
+code_sign.local.env
+*.pfx
+*.p12

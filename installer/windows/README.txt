@@ -8,6 +8,16 @@ The Windows installer is a versioned setup executable:
 Build:
   scripts\build_windows_installer.ps1
 
+Authenticode signing (required for release):
+  1. Obtain a code-signing certificate from a Microsoft-trusted CA
+     (DigiCert, Sectigo, SSL.com, or Azure Trusted Signing).
+  2. Copy code_sign.local.env.example to code_sign.local.env and configure.
+  3. scripts\build_windows_installer.ps1 signs every PE in Release\ and the setup.exe.
+  4. Verify: scripts\verify_windows_signatures.ps1
+
+Dev builds without a cert:
+  scripts\build_windows_installer.ps1 -SkipCodeSign
+
 Deploy (GitHub Pages):
   scripts\deploy_downloads.ps1
 
