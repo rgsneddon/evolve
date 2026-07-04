@@ -1,5 +1,7 @@
 {
     "rendezvousUrl":  "https://evolve-perc-internet.onrender.com",
+    "seedUsername":  "evolve_seed_node",
+    "networkGenesisRevision":  2,
     "publicIpLookupUrls":  [
                                "https://api.ipify.org",
                                "https://ifconfig.me/ip"

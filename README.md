@@ -1,7 +1,7 @@
 # Evolve — Social Science Chronoflux Framework
 
 **Web** · **Releases** (see this repository’s GitHub Pages site and Releases tab)
-
+BITCOIN TALK [ANN] https://bitcointalk.org/index.php?topic=5587544.msg66906190#msg66906190
 Evolve is a cross-platform app for analysing social and political scenarios using the **Chronoflux** hydrodynamic framework.
 
 All core Chronoflux calculations run **locally** on your device. Optional **Grok construal** can fill blank σ / Iτ / Jμ / ω fields before each Calculate — behaviour depends on platform (see [Grok construal](#2-grok-construal-optional)).
