@@ -13,9 +13,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
+. "$PSScriptRoot\lib\github.ps1"
 
 $tag = if ($Version -match '^v') { $Version } else { "v$Version" }
-$owner = if ($env:GITHUB_REPOSITORY_OWNER) { $env:GITHUB_REPOSITORY_OWNER } else { 'YOUR_GITHUB_USER' }
+$owner = Get-GitHubOwner -Root $Root
 $remote = "https://github.com/$owner/$RepoName.git"
 
 if (-not $DeployDir) {
@@ -93,10 +94,7 @@ if (-not $SkipPages) {
     }
 
     Set-Location $DeployDir
-    if (-not (git config user.email)) {
-        git config user.email "$owner@users.noreply.github.com"
-        git config user.name $owner
-    }
+    Ensure-GitIdentity -Root $DeployDir -Owner $owner
     $pagesBranch = 'gh-pages'
     git fetch origin
     if (git show-ref --verify --quiet "refs/remotes/origin/$pagesBranch") {
@@ -141,11 +139,7 @@ if (-not $SkipPages) {
 
 Set-Location $Root
 
-$cred = "protocol=https`nhost=github.com`n" | git credential fill 2>$null
-if (-not $cred) { throw 'GitHub credentials not found. Run: gh auth login' }
-$token = ($cred | Select-String '^password=(.+)$').Matches.Groups[1].Value
-if (-not $token) { throw 'Could not read GitHub token from git credential helper.' }
-$env:GH_TOKEN = $token
+$env:GH_TOKEN = Get-GitHubToken
 
 $assets = Get-ChildItem $releaseDir -File | Where-Object {
     $_.Extension -notin '.sha256', '.sha512', '.json' -and $_.Name -notlike 'CHECKSUMS*'

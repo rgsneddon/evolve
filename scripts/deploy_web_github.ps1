@@ -1,7 +1,7 @@
 # Build and package Evolve web output for GitHub Pages.
 param(
     [string]$RepoName = 'evolve',
-    [string]$GitHubOwner = $(if ($env:GITHUB_REPOSITORY_OWNER) { $env:GITHUB_REPOSITORY_OWNER } else { 'YOUR_GITHUB_USER' }),
+    [string]$GitHubOwner = '',
     [string]$GrokProxyUrl = $env:GROK_PROXY_URL,
     [switch]$SkipBuild
 )
@@ -9,6 +9,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
+. "$PSScriptRoot\lib\github.ps1"
+
+if (-not $GitHubOwner) {
+    $GitHubOwner = Get-GitHubOwner -Root $Root
+}
 
 $flutter = (Set-BuildEnvironment).FlutterExe
 $baseHref = "/$RepoName/"

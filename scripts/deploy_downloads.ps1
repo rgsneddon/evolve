@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\package_checksum.ps1"
+. "$PSScriptRoot\lib\github.ps1"
 Set-Location $Root
 
 if (-not $Version) {
@@ -50,6 +51,7 @@ foreach ($page in @('downloads\index.html', 'download.html')) {
 }
 
 Set-Location $GhPagesWorktree
+Ensure-GitIdentity -Root $GhPagesWorktree
 git add "downloads/v$Version" downloads/index.html download.html
 $status = git status --porcelain
 if (-not $status) {
