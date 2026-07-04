@@ -211,7 +211,8 @@ that displays:
 Before the blockchain is launched, the explorer shows no chain blocks. After the
 one-time treasury launch (Section 3.9), the explorer shows treasury emission
 statistics for all visitors, including emission rate, treasury balance, and
-cumulative minted PERC, together with the notice "TREASURY IS LOCKED". These
+cumulative minted PERC, together with a notice that manual sends from
+evolve_treasury are disabled (emission and faucet payouts continue). These
 figures are chain consensus data, not treasury administrator credentials.
 
 Standard web server logs (IP address, user agent, request path, timestamps) may be

@@ -363,9 +363,11 @@ final _en = {
   'wallet_treasury_inflation_critical':
       'Treasury at 1 cent reserve — pool renewal mint on next scenario',
   'wallet_treasury_send_locked':
-      'Treasury account is locked — manual sends disabled after blockchain launch',
+      'Manual sends from evolve_treasury are disabled. Emission and faucet payouts continue.',
+  'wallet_treasury_manual_send_note':
+      'Treasury is active — 1 PERC/s emission and scenario faucet payouts continue. Manual sends from evolve_treasury are disabled.',
   'wallet_treasury_offline_note':
-      'Treasury is offline (no external chain) until a user runs analysis. Only staking drains the pool until 1 cent remains.',
+      'Treasury awaits blockchain launch. Run analysis after launch to draw from the faucet.',
   'wallet_block_height': 'Block height: {height}',
   'wallet_faucet_title': 'Analysis faucet',
   'wallet_faucet_note':
@@ -1062,9 +1064,11 @@ final _es = {
   'wallet_treasury_inflation_critical':
       'Tesorería en reserva de 1 cent — acuñación de 283M en el próximo escenario',
   'wallet_treasury_send_locked':
-      'Cuenta de tesorería bloqueada — envíos manuales deshabilitados tras el lanzamiento',
+      'Los envíos manuales desde evolve_treasury están deshabilitados. La emisión y el grifo continúan.',
+  'wallet_treasury_manual_send_note':
+      'La tesorería está activa — emisión de 1 PERC/s y pagos del grifo continúan. Los envíos manuales desde evolve_treasury están deshabilitados.',
   'wallet_treasury_offline_note':
-      'La tesorería está offline (sin cadena externa) hasta que un usuario ejecute un análisis. Solo el staking reduce el fondo hasta 1 cent.',
+      'La tesorería espera el lanzamiento de la cadena. Ejecute un análisis tras el lanzamiento para usar el grifo.',
   'wallet_block_height': 'Altura de bloque: {height}',
   'wallet_faucet_title': 'Grifo de análisis',
   'wallet_faucet_note':

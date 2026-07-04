@@ -25,6 +25,20 @@ void main() {
     expect(PercChainConstants.minimumTreasuryReserve.displayFixed8, '0.00000001');
   });
 
+  test('treasury faucet payouts continue when manual sends are locked', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+
+    final result = ledger.creditScenario(username: 'alice', percentChance: 25);
+    expect(result.status.name, 'credited');
+    expect(ledger.isTreasurySendLocked, isTrue);
+    expect(
+      ledger.account('alice')!.balance.isPositive,
+      isTrue,
+    );
+  });
+
   test('treasury evolve_treasury cannot send manually after blockchain launch', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);

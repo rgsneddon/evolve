@@ -813,10 +813,16 @@ class _WalletScreenState extends State<WalletScreen> {
                   .replaceAll('{pct}', pct.toStringAsFixed(2)),
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
             ),
-            if (wallet.isTreasurySendLocked) ...[
+            if (!wallet.blockchainLaunched) ...[
               const SizedBox(height: 6),
               Text(
                 strings.t('wallet_treasury_offline_note'),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8), height: 1.4),
+              ),
+            ] else if (wallet.isTreasurySendLocked) ...[
+              const SizedBox(height: 6),
+              Text(
+                strings.t('wallet_treasury_manual_send_note'),
                 style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8), height: 1.4),
               ),
             ],

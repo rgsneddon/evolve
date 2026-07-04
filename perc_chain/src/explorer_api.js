@@ -49,8 +49,8 @@ export function buildPublicTreasuryEmission(ledger, treasuryUsername = 'evolve_t
     balance: formatPercAmount(treasury?.balance),
     cumulativeMinted: formatPercAmount(ledger.cumulativeTreasuryMinted),
     treasuryCycle: ledger.treasuryCycle ?? 1,
-    treasuryLocked: true,
-    disclaimer: 'TREASURY IS LOCKED',
+    manualSendsLocked: true,
+    disclaimer: 'Manual sends from evolve_treasury are disabled; emission and faucet payouts continue.',
     regenerationThreshold: '0.66',
     needsRegeneration: balanceMicro < regenThresholdMicro,
   };

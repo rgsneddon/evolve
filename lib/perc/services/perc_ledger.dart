@@ -979,7 +979,7 @@ class PercLedger {
   void _assertTreasuryCanSend(String from) {
     if (from == PercChainConstants.treasuryUsername && isTreasurySendLocked) {
       throw StateError(
-        'Treasury account locked — ${PercChainConstants.treasuryUsername} cannot send manually after blockchain launch',
+        'Manual sends disabled — ${PercChainConstants.treasuryUsername} cannot transfer PERC by hand after blockchain launch',
       );
     }
   }

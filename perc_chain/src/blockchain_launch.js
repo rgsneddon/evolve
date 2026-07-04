@@ -80,6 +80,6 @@ export function launchBlockchainFromTreasuryLogin(store, { adminPassword, launch
     blockHeight: blockHeight(ledger),
     treasuryBalance: formatPercAmount(treasury.balance),
     emissionPerSecond: '1',
-    disclaimer: 'TREASURY IS LOCKED',
+    disclaimer: 'Manual sends from evolve_treasury are disabled; emission and faucet payouts continue.',
   };
 }

@@ -78,6 +78,7 @@ class PercWalletProvider extends ChangeNotifier {
       PercInflation.isInflationReady(timeToNextInflation);
   bool get isTreasuryAccount =>
       loggedInUsername == PercChainConstants.treasuryUsername;
+  bool get blockchainLaunched => _ledger.blockchainLaunched;
   bool get isTreasurySendLocked => _ledger.isTreasurySendLocked;
   bool get canSendFromSession =>
       isLoggedIn && !(isTreasuryAccount && isTreasurySendLocked);
@@ -258,7 +259,7 @@ class PercWalletProvider extends ChangeNotifier {
     }
     if (!canSendFromSession) {
       errorMessage =
-          'Treasury ${PercChainConstants.treasuryUsername} is locked — outbound sends disabled after blockchain launch';
+          'Manual sends from ${PercChainConstants.treasuryUsername} are disabled — treasury emission and faucet payouts continue';
       notifyListeners();
       return;
     }
