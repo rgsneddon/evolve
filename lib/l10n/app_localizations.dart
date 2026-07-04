@@ -341,6 +341,10 @@ final _en = {
   'wallet_staking_note':
       'Confirmed held PERC earns 5 cent each block (10% of the 50 cent base) after 1 block confirmation. 1 PERC = 100,000,000 cent (0.00000001 PERC each).',
   'wallet_staking_earned': 'Total staking earned: {amount} PERC',
+  'wallet_burned_title': 'Burned PERC',
+  'wallet_burned_note':
+      'Every send network fee (0.00000001 PERC) is permanently burned — removed from circulation across the Perccent chain.',
+  'wallet_burned_total': 'Cumulative burned: {amount} PERC',
   'wallet_tx_staking': 'Staking reward',
   'wallet_tx_revert': 'Returned transfer',
   'wallet_tx_genesis': 'Genesis renewal (283M PERC Perccent)',
@@ -588,6 +592,7 @@ final _en = {
   'wallet_send_amount_hint': '0.00000001',
   'wallet_send_amount_helper':
       'Divisible to 0.00000001 PERC (1 cent). All wallets can receive any amount down to 1 cent.',
+  'wallet_tx_fee_burned': 'Network fee burned',
   'wallet_send_memo': 'Memo (optional)',
   'wallet_send_confirm': 'Send Perccent',
   'wallet_receive_title': 'Receive Perccent',
@@ -1035,6 +1040,10 @@ final _es = {
   'wallet_staking_note':
       'El PERC confirmado en cartera gana 5 cent por bloque (10% de la base de 50 cent) tras 1 confirmación de bloque. 1 PERC = 100.000.000 cent (0,00000001 PERC cada uno).',
   'wallet_staking_earned': 'Staking total ganado: {amount} PERC',
+  'wallet_burned_title': 'PERC quemado',
+  'wallet_burned_note':
+      'Cada comisión de envío (0,00000001 PERC) se quema permanentemente — se retira de la circulación en la cadena Perccent.',
+  'wallet_burned_total': 'Total quemado: {amount} PERC',
   'wallet_tx_staking': 'Recompensa de staking',
   'wallet_tx_revert': 'Transferencia devuelta',
   'wallet_tx_genesis': 'Renovación génesis (283M PERC Perccent)',
@@ -1175,6 +1184,7 @@ final _es = {
   'wallet_send_amount_hint': '0.00000001',
   'wallet_send_amount_helper':
       'Divisible hasta 0.00000001 PERC (1 cent). Todas las carteras pueden recibir desde 1 cent.',
+  'wallet_tx_fee_burned': 'Comisión de red quemada',
   'wallet_send_memo': 'Nota (opcional)',
   'wallet_send_confirm': 'Enviar Perccent',
   'wallet_receive_title': 'Recibir Perccent',

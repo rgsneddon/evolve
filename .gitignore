@@ -49,5 +49,9 @@ grok_proxy.local.env
 
 # Windows Authenticode signing secrets (copy from code_sign.local.env.example)
 code_sign.local.env
+.secrets/
 *.pfx
 *.p12
+tools/nuget.exe
+tools/Microsoft.ArtifactSigning.Client/
+tools/trusted-signing/metadata.json

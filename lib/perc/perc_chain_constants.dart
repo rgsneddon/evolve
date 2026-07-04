@@ -52,6 +52,12 @@ class PercChainConstants {
   /// Smallest send/receive amount — 1 cent (0.00000001 PERC). All wallets accept this.
   static const PercAmount minimumTransferAmount = PercAmount.smallestUnit;
 
+  /// Network fee on every outbound Perccent transfer — 1 cent (0.00000001 PERC), burned.
+  static const PercAmount sendTransactionFee = PercAmount.smallestUnit;
+
+  /// Alias for fee burn semantics across the chain.
+  static const PercAmount transactionFeeBurn = sendTransactionFee;
+
   /// Treasury emits 1 PERC per second — infinite continuum.
   static final PercAmount treasuryEmissionPerSecond = PercAmount.fromPerc(1);
 

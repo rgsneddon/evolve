@@ -7,6 +7,7 @@ import '../providers/perc_wallet_provider.dart';
 import '../widgets/perc_address_qr_scanner_dialog.dart';
 import '../widgets/perc_amount_input_formatter.dart';
 import '../perc_chain_constants.dart';
+import 'perc_currency.dart';
 import 'perc_beam_privacy.dart';
 import 'perc_camera_permission.dart';
 import 'perc_qr_scanner_support.dart';
@@ -122,7 +123,8 @@ class PercSendReceiveActions {
                 decoration: InputDecoration(
                   labelText: strings.t('wallet_send_amount'),
                   hintText: strings.t('wallet_send_amount_hint'),
-                  helperText: strings.t('wallet_send_amount_helper'),
+                  helperText:
+                      '${strings.t('wallet_send_amount_helper')} ${PercCurrency.sendFeeNote()}',
                 ),
               ),
               const SizedBox(height: 10),

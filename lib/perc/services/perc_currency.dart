@@ -14,6 +14,13 @@ class PercCurrency {
   static String minimumTransferNote() =>
       'Minimum transfer: ${PercChainConstants.minimumTransferAmount.displayFixed8} ${PercChainConstants.currencySymbol}';
 
+  static String sendFeeNote() =>
+      'Network fee: ${PercChainConstants.sendTransactionFee.displayFixed8} '
+      '${PercChainConstants.currencySymbol} per send (burned)';
+
+  static String cumulativeBurnedNote(PercAmount burned) =>
+      'Cumulative burned: ${burned.displayFixed8} ${PercChainConstants.currencySymbol}';
+
   static String formatPerc(PercAmount amount) =>
       '${amount.displayFixed8} ${PercChainConstants.currencySymbol}';
 

@@ -32,6 +32,7 @@ class PercLedger {
     required this.lastScenarioAt,
     required this.treasuryGenesisDone,
     required this.cumulativeTreasuryMinted,
+    PercAmount? cumulativeBurnedPerc,
     this.treasuryCycle = 1,
     this.blockchainLaunched = false,
     this.sessionUsername,
@@ -59,6 +60,7 @@ class PercLedger {
         wardProposals = wardProposals ?? [],
         wardBallots = wardBallots ?? [],
         pendingInboundTransfers = pendingInboundTransfers ?? [],
+        cumulativeBurnedPerc = cumulativeBurnedPerc ?? PercAmount.zero,
         _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
 
   final Map<String, PercAccount> accounts;
@@ -66,6 +68,7 @@ class PercLedger {
   DateTime? lastScenarioAt;
   bool treasuryGenesisDone;
   PercAmount cumulativeTreasuryMinted;
+  PercAmount cumulativeBurnedPerc;
   int treasuryCycle;
   bool blockchainLaunched;
   String? sessionUsername;
@@ -357,6 +360,60 @@ class PercLedger {
     _sanitizeWalletPeers();
     repairEvolutionChain();
     connectAllWalletsConcurrently();
+    _migrateLegacyTransferFeesToBurn();
+    _reconcileCumulativeBurnedPerc();
+  }
+
+  PercTransaction _burnTransactionFee({
+    required PercAmount fee,
+    required String fromUsername,
+    required DateTime timestamp,
+    required PercAccount sender,
+  }) {
+    cumulativeBurnedPerc = cumulativeBurnedPerc + fee;
+    final feeTx = PercTransaction(
+      id: _newTxId(),
+      kind: PercTxKind.feeBurn,
+      amount: fee,
+      timestamp: timestamp,
+      fromUsername: fromUsername,
+      memo: 'Burned network fee',
+      blockIndex: blocks.length,
+      confirmations: _txConfirmations,
+    );
+    sender.transactions.insert(0, feeTx);
+    return feeTx;
+  }
+
+  void _migrateLegacyTransferFeesToBurn() {
+    final treasury = _accountFor(PercChainConstants.treasuryUsername);
+    if (treasury == null) return;
+
+    for (final block in blocks) {
+      for (final tx in block.transactions) {
+        if (tx.toUsername != PercChainConstants.treasuryUsername) continue;
+        if (tx.memo != 'Network fee') continue;
+        if (treasury.balance >= tx.amount) {
+          treasury.balance = treasury.balance - tx.amount;
+        }
+      }
+    }
+  }
+
+  PercAmount _burnedFeesFromChain() {
+    var total = PercAmount.zero;
+    for (final block in blocks) {
+      for (final tx in block.transactions) {
+        if (tx.kind == PercTxKind.feeBurn) {
+          total = total + tx.amount;
+        }
+      }
+    }
+    return total;
+  }
+
+  void _reconcileCumulativeBurnedPerc() {
+    cumulativeBurnedPerc = _burnedFeesFromChain();
   }
 
   /// Rebuilds wallet peer mesh keys and backfills parent links between app versions.
@@ -1058,9 +1115,17 @@ class PercLedger {
       throw StateError('Cannot send to yourself');
     }
     _assertTreasuryCanSend(from);
+    final fee = PercChainConstants.sendTransactionFee;
+    final totalDebit = amount + fee;
+    if (sender.balance < totalDebit) {
+      throw StateError(
+        'Insufficient balance — need ${totalDebit.displayFixed8} ${PercChainConstants.currencySymbol} '
+        '(${amount.displayFixed8} + ${fee.displayFixed8} network fee)',
+      );
+    }
     final now = DateTime.now().toUtc();
     _revertExpiredPendingInbound(now);
-    _debit(sender, amount);
+    _debit(sender, totalDebit);
     final renewalTxs = _renewTreasuryPoolIfNeeded(now);
     final txId = _newTxId();
     final tx = PercTransaction(
@@ -1075,6 +1140,13 @@ class PercLedger {
       confirmations: _txConfirmations,
     );
     sender.transactions.insert(0, tx);
+
+    final feeTx = _burnTransactionFee(
+      fee: fee,
+      fromUsername: from,
+      timestamp: now,
+      sender: sender,
+    );
 
     final recipientOnline = sessionUsername == to;
     if (recipientOnline) {
@@ -1093,7 +1165,7 @@ class PercLedger {
       );
     }
 
-    final blockTxs = [...renewalTxs, tx];
+    final blockTxs = <PercTransaction>[...renewalTxs, tx, feeTx];
     _finalizeBlock(
       timestamp: now,
       blockTxs: blockTxs,
@@ -1236,7 +1308,7 @@ class PercLedger {
   }
 
   Map<String, dynamic> toJson() => {
-        'version': 7,
+        'version': 8,
         'evolutionaryChainId': evolutionaryChainId.isEmpty
             ? PercChainConstants.evolutionaryChainId
             : evolutionaryChainId,
@@ -1258,6 +1330,7 @@ class PercLedger {
         'lastScenarioAt': lastScenarioAt?.toIso8601String(),
         'treasuryGenesisDone': treasuryGenesisDone,
         'cumulativeTreasuryMinted': cumulativeTreasuryMinted.toJson(),
+        'cumulativeBurnedPerc': cumulativeBurnedPerc.toJson(),
         'treasuryCycle': treasuryCycle,
         'blockchainLaunched': blockchainLaunched,
         'sessionUsername': sessionUsername,
@@ -1302,6 +1375,10 @@ class PercLedger {
       cumulativeTreasuryMinted: json['cumulativeTreasuryMinted'] != null
           ? PercAmount.fromJson(
               json['cumulativeTreasuryMinted'] as Map<String, dynamic>)
+          : PercAmount.zero,
+      cumulativeBurnedPerc: json['cumulativeBurnedPerc'] != null
+          ? PercAmount.fromJson(
+              json['cumulativeBurnedPerc'] as Map<String, dynamic>)
           : PercAmount.zero,
       treasuryCycle: json['treasuryCycle'] as int? ?? 1,
       blockchainLaunched: json['blockchainLaunched'] as bool? ??

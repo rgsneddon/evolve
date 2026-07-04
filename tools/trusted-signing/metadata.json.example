@@ -1,0 +1,5 @@
+{
+  "Endpoint": "https://eus.codesigning.azure.net",
+  "CodeSigningAccountName": "evolve-codesign",
+  "CertificateProfileName": "YOUR_CERTIFICATE_PROFILE"
+}

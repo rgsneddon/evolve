@@ -9,11 +9,31 @@ Build:
   scripts\build_windows_installer.ps1
 
 Authenticode signing (required for release):
-  1. Obtain a code-signing certificate from a Microsoft-trusted CA
-     (DigiCert, Sectigo, SSL.com, or Azure Trusted Signing).
-  2. Copy code_sign.local.env.example to code_sign.local.env and configure.
-  3. scripts\build_windows_installer.ps1 signs every PE in Release\ and the setup.exe.
-  4. Verify: scripts\verify_windows_signatures.ps1
+  Microsoft Trusted Root Program CA chain is mandatory for evolve.exe,
+  all Release\ PE files (.exe, .dll), and the setup.exe installer.
+
+  Quick setup:
+    scripts\setup_code_signing.ps1 -OpenAzurePortal
+
+  Option A — Azure Trusted Signing:
+    Individual Public Trust: billing country must be USA or Canada only.
+    Organization Public Trust: USA, Canada, EU, or UK (registered business).
+    UK developers: use Organization → Public (not Individual) on account evrgs.
+    1. az login
+    2. Create Artifact Signing account + identity validation + cert profile
+       (Azure portal; identity review can take 1–20 business days)
+       Account name rules: 3–24 chars, start with a letter, letters/numbers/hyphens
+       only (no underscores). Example: evolve-codesign
+    3. Copy tools\trusted-signing\metadata.json.example to metadata.json
+    4. Set CODE_SIGN_MODE=azure in code_sign.local.env
+    5. scripts\setup_code_signing.ps1 then scripts\build_windows_installer.ps1
+
+  Option B — PFX from DigiCert, Sectigo, or SSL.com:
+    1. Copy code_sign.local.env.example to code_sign.local.env
+    2. Set CODE_SIGN_MODE=pfx, CODE_SIGN_PFX_PATH, and CODE_SIGN_PFX_PASSWORD
+    3. scripts\build_windows_installer.ps1
+
+  Verify: scripts\verify_windows_signatures.ps1
 
 Dev builds without a cert:
   scripts\build_windows_installer.ps1 -SkipCodeSign

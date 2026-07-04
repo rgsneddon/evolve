@@ -65,6 +65,7 @@ class PercWalletProvider extends ChangeNotifier {
   PercAmount get treasuryMinted => _ledger.cumulativeTreasuryMinted;
   PercAmount get treasuryRemaining => _ledger.treasuryRemaining;
   PercAmount get treasuryPool => _ledger.treasuryBalance;
+  PercAmount get cumulativeBurnedPerc => _ledger.cumulativeBurnedPerc;
   bool get treasuryCapped => _ledger.treasuryCapped;
   int get treasuryCycle => _ledger.treasuryCycle;
   DateTime? get lastInflationEpoch => _ledger.lastInflationEpoch;
@@ -252,6 +253,15 @@ class PercWalletProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    final fee = PercChainConstants.sendTransactionFee;
+    final totalDebit = amount + fee;
+    if (balance < totalDebit) {
+      errorMessage =
+          'Insufficient balance — need ${totalDebit.displayFixed8} ${PercChainConstants.currencySymbol} '
+          '(${amount.displayFixed8} + ${fee.displayFixed8} network fee)';
+      notifyListeners();
+      return;
+    }
     final addrErr = PercAuth.validateAddress(toAddress);
     if (addrErr != null) {
       errorMessage = addrErr;
@@ -276,10 +286,13 @@ class PercWalletProvider extends ChangeNotifier {
             'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})';
       } else if (recipientOnline) {
         statusMessage =
-            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $dest';
+            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $dest '
+            '(network fee ${fee.displayFixed8} ${PercChainConstants.currencySymbol})';
       } else {
         statusMessage =
-            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $dest — delivers when they sign in within ${_formatReceiveDelay()}, otherwise returns to your wallet';
+            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $dest '
+            '(network fee ${fee.displayFixed8} ${PercChainConstants.currencySymbol}) — '
+            'delivers when they sign in within ${_formatReceiveDelay()}, otherwise returns to your wallet';
       }
       notifyListeners();
       await _commit();

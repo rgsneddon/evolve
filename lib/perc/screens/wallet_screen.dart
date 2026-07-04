@@ -484,6 +484,8 @@ class _WalletScreenState extends State<WalletScreen> {
                 const SizedBox(height: 12),
                 _stakingCard(wallet, strings),
                 const SizedBox(height: 12),
+                _burnedPercCard(wallet, strings),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -675,6 +677,51 @@ class _WalletScreenState extends State<WalletScreen> {
                 style: const TextStyle(fontSize: 12, color: Colors.redAccent),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _burnedPercCard(PercWalletProvider wallet, AppLocalizations strings) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.local_fire_department_outlined,
+                    color: Color(0xFFFF8A65), size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  strings.t('wallet_burned_title'),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              strings.t('wallet_burned_note'),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8), height: 1.45),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              strings
+                  .t('wallet_burned_total')
+                  .replaceAll('{amount}', wallet.cumulativeBurnedPerc.displayFixed8),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFFF8A65),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              PercCurrency.cumulativeBurnedNote(wallet.cumulativeBurnedPerc),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
+            ),
           ],
         ),
       ),
@@ -1148,8 +1195,9 @@ class _WalletScreenState extends State<WalletScreen> {
     String? viewer,
     AppLocalizations strings,
   ) {
-    final isOut =
-        tx.kind == PercTxKind.transfer && tx.fromUsername == viewer;
+    final isOut = (tx.kind == PercTxKind.transfer ||
+            tx.kind == PercTxKind.feeBurn) &&
+        tx.fromUsername == viewer;
     final isIn = tx.kind == PercTxKind.scenarioReward ||
         tx.kind == PercTxKind.stakingReward ||
         tx.kind == PercTxKind.transferRevert ||
@@ -1176,6 +1224,8 @@ class _WalletScreenState extends State<WalletScreen> {
             ? strings.t('wallet_tx_sent').replaceAll('{user}', tx.toUsername ?? '')
             : strings.t('wallet_tx_received')
                 .replaceAll('{user}', tx.fromUsername ?? '');
+      case PercTxKind.feeBurn:
+        title = strings.t('wallet_tx_fee_burned');
       case PercTxKind.transferRevert:
         title = tx.memo ?? strings.t('wallet_tx_revert');
       case PercTxKind.genesisRenewal:
