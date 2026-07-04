@@ -68,6 +68,24 @@ void main() {
     expect(restored.microblockCount, 2);
     expect(restored.totalMicroblocks, 2);
     expect(restored.lastChronofluxFingerprint, isNotNull);
+    expect(restored.microblockLog.length, 2);
+    expect(restored.microblockLog.first.wardIndex, 0);
+    expect(restored.microblockLog.last.wardMicroblock, 2);
+  });
+
+  test('fair-usage microblocks log ward position and seal flag', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    const input = ScenarioInput(posedQuestion: 'Fair usage keystroke');
+
+    ledger.recordMicroblock(input: input);
+    ledger.recordMicroblock(input: input);
+    final seal = ledger.recordMicroblock(input: input);
+
+    expect(seal.blockSealed, isTrue);
+    expect(ledger.microblockLog.length, 3);
+    expect(ledger.microblockLog.last.blockSealed, isTrue);
+    expect(ledger.microblockLog.first.label, contains('Fair usage'));
   });
 
   test('microblocks skipped before blockchain launch', () {

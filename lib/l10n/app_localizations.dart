@@ -493,7 +493,8 @@ final _en = {
   'wallet_sidechain_id': 'Side chain ID',
   'wallet_sidechain_parent': 'Parent chain',
   'wallet_sidechain_height': 'Side-chain microblock height',
-  'wallet_sidechain_pending': 'Pending seal: {pending} / {total} microblocks',
+  'wallet_sidechain_pending':
+      'Seal cycle: {completed} / {total} wards — {pending} / {bundle} microblocks in active ward',
   'wallet_sidechain_main_height': 'Parent main-chain height',
   'wallet_sidechain_last_seal': 'Last seal block',
   'wallet_explorer_link': 'the blockchain explorer',
@@ -517,7 +518,7 @@ final _en = {
   'wallet_explorer_genesis_renewal': 'Genesis renewal — cycle #{cycle} (283M PERC Perccent)',
   'wallet_explorer_confirmations': '{count} confirmation(s) required — fully confirmed',
   'wallet_explorer_confirmed': 'Fully confirmed (1 block)',
-  'wallet_explorer_frame_flow_title': 'Lawful Frame-Flow Split — Chronoflux Shard Field',
+  'wallet_explorer_frame_flow_title': 'Lawful Frame-Flow Split — 10,000 Block Wards',
   'wallet_explorer_frame_flow_subtitle':
       'Degenerate one-vector ansatz set aside; lawful continuity split retained — microblocks bundled into wards of {bundle}.',
   'wallet_explorer_ward_title': 'Ward bundles — dynamic microblock explorer',
@@ -538,7 +539,21 @@ final _en = {
       'A2 status: lawful frame-flow split; projector built from frame only; drift remains measurable. '
       'Structural consequence of the foundational continuity regime.',
   'wallet_explorer_shard_count':
-      '{visible} / {visible} shards visible in field — {lit} lit in current seal cycle',
+      '{visible} / {visible} wards in field — {lit} bundled in current seal cycle',
+  'wallet_explorer_ward_seal_progress':
+      'Seal cycle: {completed} / {total} block wards — ward filling {pending} / {bundle} microblocks',
+  'wallet_explorer_microblock_height': 'Fair-usage microblocks logged: {count}',
+  'wallet_explorer_microblock_log_title': 'Fair-usage microblock log',
+  'wallet_explorer_microblock_log_note':
+      'Each microblock records one fair app interaction — keystrokes and field edits on the analysis form.',
+  'wallet_explorer_microblock_log_empty':
+      'No microblocks yet — type in the analysis fields after blockchain launch.',
+  'wallet_explorer_microblock_log_entry':
+      '#{index} ward {ward} · μ{pos} · {time} · {label}{extra}',
+  'wallet_explorer_microblock_log_truncated':
+      'Showing last {shown} of {total} logged microblocks',
+  'wallet_explorer_microblock_log_count': 'Log entries: {count}',
+  'wallet_explorer_microblock_fair_usage': 'Fair app usage',
   'wallet_explorer_degenerate_title':
       'Degenerate one-vector ansatz — not an admissible frame-flow representation',
   'wallet_explorer_degenerate_body':
@@ -1132,7 +1147,7 @@ final _es = {
   'wallet_explorer_genesis_renewal': 'Renovación génesis — ciclo #{cycle} (283M PERC Perccent)',
   'wallet_explorer_confirmations': '{count} confirmación(es) requerida(s) — totalmente confirmado',
   'wallet_explorer_confirmed': 'Totalmente confirmado (1 bloque)',
-  'wallet_explorer_frame_flow_title': 'División frame-flow lícita — campo de fragmentos Chronoflux',
+  'wallet_explorer_frame_flow_title': 'División frame-flow lícita — 10.000 block wards',
   'wallet_explorer_frame_flow_subtitle':
       'Ansatz de un vector degenerado descartado; microbloques agrupados en wards de {bundle}.',
   'wallet_explorer_ward_title': 'Wards — explorador dinámico de microbloques',
@@ -1152,7 +1167,21 @@ final _es = {
   'wallet_explorer_frame_flow_status':
       'Estado A2: división frame-flow lícita; proyector solo del marco; deriva medible.',
   'wallet_explorer_shard_count':
-      '{visible} / {visible} fragmentos visibles — {lit} activos en el ciclo de sellado',
+      '{visible} / {visible} wards en campo — {lit} agrupados en el ciclo de sellado',
+  'wallet_explorer_ward_seal_progress':
+      'Ciclo de sellado: {completed} / {total} block wards — ward rellenando {pending} / {bundle} microbloques',
+  'wallet_explorer_microblock_height': 'Microbloques de uso justo registrados: {count}',
+  'wallet_explorer_microblock_log_title': 'Registro de microbloques de uso justo',
+  'wallet_explorer_microblock_log_note':
+      'Cada microbloque registra una interacción justa en la app — pulsaciones y ediciones en el formulario de análisis.',
+  'wallet_explorer_microblock_log_empty':
+      'Sin microbloques aún — escriba en los campos de análisis tras el lanzamiento de la cadena.',
+  'wallet_explorer_microblock_log_entry':
+      '#{index} ward {ward} · μ{pos} · {time} · {label}{extra}',
+  'wallet_explorer_microblock_log_truncated':
+      'Mostrando los últimos {shown} de {total} microbloques registrados',
+  'wallet_explorer_microblock_log_count': 'Entradas del registro: {count}',
+  'wallet_explorer_microblock_fair_usage': 'Uso justo de la app',
   'wallet_explorer_degenerate_title': 'Ansatz de un vector degenerado — no admisible',
   'wallet_explorer_degenerate_body':
       'El mismo vector no puede definir el marco y la deriva espacial a la vez.',

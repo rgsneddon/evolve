@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../models/perc_microblock_log_entry.dart';
 import '../models/perc_side_chain.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_shard_density.dart';
@@ -48,6 +49,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     final newSide = widget.wallet.sideChain;
     if (oldWidget.wallet.microblockCount != widget.wallet.microblockCount ||
         oldWidget.wallet.totalMicroblocks != widget.wallet.totalMicroblocks ||
+        oldWidget.wallet.microblockLog.length != widget.wallet.microblockLog.length ||
         oldSide.pendingMicroblocks != newSide.pendingMicroblocks) {
       _rebuildDensity();
     }
@@ -135,6 +137,8 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
             },
           ),
           const SizedBox(height: 10),
+          _microblockLogPanel(strings, widget.wallet.microblockLog),
+          const SizedBox(height: 10),
           Text(
             strings.t('wallet_explorer_frame_flow_status'),
             style: const TextStyle(fontSize: 10, color: Color(0xFF7A8299), height: 1.35),
@@ -142,6 +146,105 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
         ],
       ),
     );
+  }
+
+  Widget _microblockLogPanel(
+    AppLocalizations strings,
+    List<PercMicroblockLogEntry> log,
+  ) {
+    const displayCap = 50;
+    final visible = log.length <= displayCap
+        ? log
+        : log.sublist(log.length - displayCap);
+    final reversed = visible.reversed.toList(growable: false);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF5CE0A8).withOpacity(0.4)),
+        color: const Color(0xFF0A1018),
+      ),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            strings.t('wallet_explorer_microblock_log_title'),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF5CE0A8),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            strings.t('wallet_explorer_microblock_log_note'),
+            style: const TextStyle(fontSize: 9, color: Color(0xFF7A8299), height: 1.3),
+          ),
+          const SizedBox(height: 8),
+          if (reversed.isEmpty)
+            Text(
+              strings.t('wallet_explorer_microblock_log_empty'),
+              style: const TextStyle(fontSize: 9, color: Color(0xFF6C7A8F)),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 180),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: reversed.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 4),
+                itemBuilder: (context, i) {
+                  final entry = reversed[i];
+                  final time = _formatLogTime(entry.timestamp);
+                  final continuum = entry.continuumPercent != null
+                      ? ' · ${entry.continuumPercent!.toStringAsFixed(1)}%'
+                      : '';
+                  final seal = entry.blockSealed ? ' · SEAL' : '';
+                  final label = entry.label?.isNotEmpty == true
+                      ? entry.label!
+                      : strings.t('wallet_explorer_microblock_fair_usage');
+                  return Text(
+                    strings
+                        .t('wallet_explorer_microblock_log_entry')
+                        .replaceAll('{index}', '${entry.index}')
+                        .replaceAll('{ward}', '${entry.wardIndex}')
+                        .replaceAll('{pos}', '${entry.wardMicroblock}')
+                        .replaceAll('{time}', time)
+                        .replaceAll('{label}', label)
+                        .replaceAll('{extra}', '$continuum$seal'),
+                    style: const TextStyle(
+                      fontSize: 8,
+                      fontFamily: 'monospace',
+                      color: Color(0xFFB8D4FF),
+                      height: 1.25,
+                    ),
+                  );
+                },
+              ),
+            ),
+          if (log.length > displayCap)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                strings
+                    .t('wallet_explorer_microblock_log_truncated')
+                    .replaceAll('{shown}', '$displayCap')
+                    .replaceAll('{total}', '${log.length}'),
+                style: const TextStyle(fontSize: 8, color: Color(0xFF6C7A8F)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatLogTime(DateTime t) {
+    final local = t.toLocal();
+    final h = local.hour.toString().padLeft(2, '0');
+    final m = local.minute.toString().padLeft(2, '0');
+    final s = local.second.toString().padLeft(2, '0');
+    return '$h:$m:$s';
   }
 
   Widget _graphPanel(
@@ -401,14 +504,24 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
           ),
           Text(
             strings
-                .t('wallet_sidechain_pending')
-                .replaceAll('{pending}', _formatShardCount(wards.pendingMicroblocks))
-                .replaceAll('{total}', _formatShardCount(wards.microblocksPerBlock)),
+                .t('wallet_explorer_ward_seal_progress')
+                .replaceAll('{completed}', '${wards.completedWardsInCycle}')
+                .replaceAll('{total}', '${wards.wardsPerSealCycle}')
+                .replaceAll('{pending}', '${wards.microblocksInCurrentWard}')
+                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
             style: const TextStyle(fontSize: 9, color: Color(0xFF9BA3B8)),
           ),
           Text(
-            '${strings.t('wallet_sidechain_height')}: ${side.microblockHeight}',
+            strings
+                .t('wallet_explorer_microblock_height')
+                .replaceAll('{count}', '${side.microblockHeight}'),
             style: const TextStyle(fontSize: 9, color: Color(0xFF9BA3B8)),
+          ),
+          Text(
+            strings
+                .t('wallet_explorer_microblock_log_count')
+                .replaceAll('{count}', '${widget.wallet.microblockLog.length}'),
+            style: const TextStyle(fontSize: 9, color: Color(0xFF5CE0A8)),
           ),
         ],
       ),
@@ -429,15 +542,6 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     );
   }
 
-  static String _formatShardCount(int n) {
-    if (n >= 1000000) {
-      final m = n / 1000000;
-      return m == m.roundToDouble()
-          ? '${m.toInt()}M'
-          : '${m.toStringAsFixed(2)}M';
-    }
-    return '$n';
-  }
 }
 
 class _LawfulFrameFlowPainter extends CustomPainter {
@@ -464,7 +568,7 @@ class _LawfulFrameFlowPainter extends CustomPainter {
     _paintWedges(canvas, center, radius);
     _paintWardAnnulus(canvas, center, radius);
     _paintSpokes(canvas, center, radius);
-    _paintShardField(canvas, center, radius);
+    _paintWardField(canvas, center, radius);
     _paintCore(canvas, center, radius);
     _paintProgressRing(canvas, center, radius);
     _paintWardProgressRing(canvas, center, radius);
@@ -630,18 +734,19 @@ class _LawfulFrameFlowPainter extends CustomPainter {
         center,
         end,
         Paint()
-          ..color = Color.lerp(
+          ..color = (Color.lerp(
                 const Color(0xFF3BC9FF),
                 const Color(0xFFFFB347),
                 (i % 11) / 11.0,
-              )
+              ) ??
+              const Color(0xFF3BC9FF))
               .withOpacity(0.12 + pulse * 0.08)
           ..strokeWidth = 0.6,
       );
     }
   }
 
-  void _paintShardField(Canvas canvas, Offset center, double radius) {
+  void _paintWardField(Canvas canvas, Offset center, double radius) {
     final maxD = density.maxDensity.toDouble();
     final maxL = density.maxLitDensity.toDouble();
     final aBins = density.angularBins;
@@ -662,13 +767,15 @@ class _LawfulFrameFlowPainter extends CustomPainter {
         final litMix = lit > 0 ? (lit / maxL).clamp(0.2, 1.0) : 0.0;
         final color = Color.lerp(
               Color.lerp(
-                const Color(0xFF2A1848),
-                const Color(0xFF3BC9FF),
-                base * 0.75,
-              ),
+                    const Color(0xFF2A1848),
+                    const Color(0xFF3BC9FF),
+                    base * 0.75,
+                  ) ??
+                  const Color(0xFF2A1848),
               const Color(0xFF5CE0A8),
               litMix * 0.85,
-            );
+            ) ??
+            const Color(0xFF2A1848);
 
         final path = Path()
           ..moveTo(
@@ -784,7 +891,8 @@ class _WardHeatmapPainter extends CustomPainter {
                     const Color(0xFF1A2840),
                     const Color(0xFF3BC9FF),
                     fill,
-                  )
+                  ) ??
+                  const Color(0xFF1A2840)
               : const Color(0xFF121820);
 
       canvas.drawRect(

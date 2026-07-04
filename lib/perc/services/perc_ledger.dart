@@ -5,6 +5,7 @@ import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../models/perc_faucet_credit_result.dart';
 import '../models/perc_evolution_step.dart';
+import '../models/perc_microblock_log_entry.dart';
 import '../models/perc_microblock_record_result.dart';
 import '../perc_app_version.dart';
 import '../models/perc_transaction.dart';
@@ -58,6 +59,7 @@ class PercLedger {
     List<WardBallot>? wardBallots,
     this.nextWardProposalId = 1,
     List<PercPendingInboundTransfer>? pendingInboundTransfers,
+    List<PercMicroblockLogEntry>? microblockLog,
     PercChronofluxMicroVerifier? microVerifier,
   })  : walletPeers = walletPeers ?? <String, List<String>>{},
         networkNodes = networkNodes ?? <String, PercPeerNode>{},
@@ -66,8 +68,12 @@ class PercLedger {
         wardProposals = wardProposals ?? [],
         wardBallots = wardBallots ?? [],
         pendingInboundTransfers = pendingInboundTransfers ?? [],
+        microblockLog = microblockLog ?? [],
         cumulativeBurnedPerc = cumulativeBurnedPerc ?? PercAmount.zero,
         _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
+
+  /// Max fair-usage microblock log entries kept in ledger storage.
+  static const int microblockLogCap = 1000;
 
   final Map<String, PercAccount> accounts;
   final List<PercBlock> blocks;
@@ -97,6 +103,7 @@ class PercLedger {
   final List<WardBallot> wardBallots;
   int nextWardProposalId;
   final List<PercPendingInboundTransfer> pendingInboundTransfers;
+  final List<PercMicroblockLogEntry> microblockLog;
   final PercChronofluxMicroVerifier _microVerifier;
 
   List<PercPendingInboundTransfer> pendingInboundFor(String username) {
@@ -335,6 +342,9 @@ class PercLedger {
     microblockCount = remote.microblockCount;
     totalMicroblocks = remote.totalMicroblocks;
     lastChronofluxFingerprint = remote.lastChronofluxFingerprint;
+    microblockLog
+      ..clear()
+      ..addAll(remote.microblockLog);
     walletPeers
       ..clear()
       ..addAll(
@@ -1243,20 +1253,52 @@ class PercLedger {
     return [...regenTxs, tx];
   }
 
-  /// Each keystroke verifies the Chronoflux continuum and advances one microblock.
+  void _appendMicroblockLog(PercMicroblockLogEntry entry) {
+    microblockLog.add(entry);
+    if (microblockLog.length > microblockLogCap) {
+      microblockLog.removeRange(0, microblockLog.length - microblockLogCap);
+    }
+  }
+
+  /// Each fair-usage event verifies the Chronoflux continuum and advances one microblock.
   PercMicroblockRecordResult recordMicroblock({
     required ScenarioInput input,
     LocaleConfig locale = LocaleConfig.defaults,
     DateTime? now,
+    String activity = 'fair_usage',
+    String? activityLabel,
   }) {
     if (!blockchainLaunched) return PercMicroblockRecordResult.skipped;
 
     final verification = _microVerifier.verify(input, locale: locale);
     if (!verification.selfConsistent) return PercMicroblockRecordResult.skipped;
 
+    final stampedAt = (now ?? DateTime.now()).toUtc();
     microblockCount++;
     totalMicroblocks++;
     lastChronofluxFingerprint = verification.fingerprint;
+
+    final perWard = PercChainConstants.microblocksPerWard;
+    final cycleWardIndex =
+        perWard > 0 ? (microblockCount - 1) ~/ perWard : 0;
+    final wardMicroblock = perWard > 0 ? ((microblockCount - 1) % perWard) + 1 : 1;
+    final label = activityLabel ??
+        (input.posedQuestion.trim().isNotEmpty
+            ? input.posedQuestion.trim()
+            : input.topic.trim());
+
+    _appendMicroblockLog(
+      PercMicroblockLogEntry(
+        index: totalMicroblocks,
+        timestamp: stampedAt,
+        wardIndex: cycleWardIndex,
+        wardMicroblock: wardMicroblock,
+        activity: activity,
+        label: label.isEmpty ? null : _truncateLabel(label),
+        continuumPercent: verification.continuumPercent,
+        fingerprint: verification.fingerprint,
+      ),
+    );
 
     if (microblockCount < microblocksPerBlock) {
       return PercMicroblockRecordResult(
@@ -1302,6 +1344,21 @@ class PercLedger {
     );
     lastScenarioAt = sealedAt;
 
+    if (microblockLog.isNotEmpty) {
+      final last = microblockLog.last;
+      microblockLog[microblockLog.length - 1] = PercMicroblockLogEntry(
+        index: last.index,
+        timestamp: last.timestamp,
+        wardIndex: last.wardIndex,
+        wardMicroblock: last.wardMicroblock,
+        activity: last.activity,
+        label: last.label,
+        continuumPercent: last.continuumPercent,
+        fingerprint: last.fingerprint,
+        blockSealed: true,
+      );
+    }
+
     return PercMicroblockRecordResult(
       recorded: true,
       blockSealed: true,
@@ -1309,6 +1366,11 @@ class PercLedger {
       selfConsistent: true,
       blockIndex: blocks.last.index,
     );
+  }
+
+  static String _truncateLabel(String text, {int max = 72}) {
+    if (text.length <= max) return text;
+    return '${text.substring(0, max - 1)}…';
   }
 
   void setupTreasuryPassword(String password) {
@@ -1740,6 +1802,7 @@ class PercLedger {
         'nextWardProposalId': nextWardProposalId,
         'pendingInboundTransfers':
             pendingInboundTransfers.map((p) => p.toJson()).toList(),
+        'microblockLog': microblockLog.map((e) => e.toJson()).toList(),
       };
 
   factory PercLedger.fromJson(Map<String, dynamic> json) {
@@ -1812,6 +1875,11 @@ class PercLedger {
                 ),
               )
               .toList(),
+      microblockLog: (json['microblockLog'] as List<dynamic>? ?? [])
+          .map(
+            (e) => PercMicroblockLogEntry.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
     )..repairForAppUpgrade();
   }
 

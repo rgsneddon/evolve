@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../models/analysis_mode.dart';
+import '../../models/locale_config.dart';
+import '../../models/scenario_input.dart';
 import '../models/perc_evolution_step.dart';
+import '../models/perc_microblock_log_entry.dart';
 import '../models/perc_side_chain.dart';
 import '../perc_app_version.dart';
 import '../services/perc_beam_privacy.dart';
@@ -42,6 +45,7 @@ class PercWalletProvider extends ChangeNotifier {
   bool _pendingLaunchBalloon = false;
   bool _pendingGenesisRenewalNotice = false;
   bool _syncingWallet = false;
+  Timer? _microblockCommitDebounce;
 
   bool get isReady => _ready;
   bool get isSyncingWallet => _syncingWallet;
@@ -94,6 +98,8 @@ class PercWalletProvider extends ChangeNotifier {
   bool get canReceiveFromSession => isLoggedIn;
 
   PercSideChainState get sideChain => PercSideChainState.fromLedger(_ledger);
+  List<PercMicroblockLogEntry> get microblockLog =>
+      List.unmodifiable(_ledger.microblockLog);
 
   List<String> get allRegisteredWallets {
     final list = _ledger.accounts.keys.toList()..sort();
@@ -476,10 +482,33 @@ class PercWalletProvider extends ChangeNotifier {
     return '${delay.inSeconds} seconds';
   }
 
+  /// Records one fair-usage microblock per app interaction (field keystrokes).
+  void recordFairUsageMicroblock(
+    ScenarioInput input, {
+    LocaleConfig locale = LocaleConfig.defaults,
+  }) {
+    if (!_ready || !isBlockchainLaunched) return;
+    final result = _ledger.recordMicroblock(
+      input: input,
+      locale: locale,
+      activity: 'fair_usage',
+      activityLabel: input.posedQuestion.trim().isNotEmpty
+          ? input.posedQuestion.trim()
+          : input.topic.trim(),
+    );
+    if (!result.recorded) return;
+    notifyListeners();
+    _microblockCommitDebounce?.cancel();
+    _microblockCommitDebounce = Timer(const Duration(seconds: 2), () {
+      _commit();
+    });
+  }
+
   Future<void> _commit() => PercLedgerHub.instance.commit();
 
   @override
   void dispose() {
+    _microblockCommitDebounce?.cancel();
     PercLedgerHub.instance.removeListener(_onHubLedgerChanged);
     super.dispose();
   }

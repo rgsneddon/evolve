@@ -9,6 +9,7 @@ import '../models/perc_block.dart';
 import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_block_timing.dart';
+import '../services/perc_ward_bundler.dart';
 import '../widgets/chronoflux_five_point_graph_panel.dart';
 import '../widgets/lawful_frame_flow_shard_graph.dart';
 import '../widgets/wallet_creator_credit.dart';
@@ -96,6 +97,7 @@ class BlockchainExplorerScreen extends StatelessWidget {
 
   Widget _heightCard(PercWalletProvider wallet, AppLocalizations strings) {
     final side = wallet.sideChain;
+    final wards = PercWardBundler.fromSideChain(side);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -123,10 +125,18 @@ class BlockchainExplorerScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               strings
-                  .t('wallet_sidechain_pending')
-                  .replaceAll('{pending}', '${side.pendingMicroblocks}')
-                  .replaceAll('{total}', '${side.microblocksPerBlock}'),
+                  .t('wallet_explorer_ward_seal_progress')
+                  .replaceAll('{completed}', '${wards.completedWardsInCycle}')
+                  .replaceAll('{total}', '${wards.wardsPerSealCycle}')
+                  .replaceAll('{pending}', '${wards.microblocksInCurrentWard}')
+                  .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
               style: const TextStyle(fontSize: 11, color: Color(0xFF6C63FF)),
+            ),
+            Text(
+              strings
+                  .t('wallet_explorer_microblock_height')
+                  .replaceAll('{count}', '${side.microblockHeight}'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF7A8299)),
             ),
             Text(
               '${strings.t('wallet_sidechain_id')}: ${side.sideChainId}',

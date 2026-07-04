@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/analysis_mode.dart';
+import '../perc/providers/perc_wallet_provider.dart';
 import '../providers/evolve_provider.dart';
+import '../providers/locale_provider.dart';
 import '../widgets/cohesion_report_panel.dart';
 import '../widgets/evolve_banner.dart';
 import '../widgets/construct_completion_banner.dart';
@@ -76,6 +78,9 @@ class _HomeScreenState extends State<HomeScreen> {
           final compact = width < 600;
           final narrowButtons = width < 820;
 
+          final wallet = context.read<PercWalletProvider>();
+          final locale = context.read<LocaleProvider>().config;
+
           return SafeArea(
             top: false,
             child: SingleChildScrollView(
@@ -94,6 +99,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     input: provider.input,
                     onChanged: provider.updateInput,
+                    onKeystroke: (input) =>
+                        wallet.recordFairUsageMicroblock(input, locale: locale),
                     onRegisterFlush: provider.registerFlush,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
