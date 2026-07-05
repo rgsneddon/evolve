@@ -62,7 +62,10 @@ function Get-MaxAppVersion {
         try {
             $null = git rev-parse --git-dir 2>$null
             if ($LASTEXITCODE -eq 0) {
-                $refs = @('origin/main', 'main', 'HEAD')
+                $refs = @('origin/main')
+                if (-not $ExcludeLocalPubspec) {
+                    $refs += @('main', 'HEAD')
+                }
                 foreach ($ref in $refs) {
                     $raw = git show "${ref}:pubspec.yaml" 2>$null
                     if ($LASTEXITCODE -eq 0 -and $raw) {
@@ -107,7 +110,56 @@ function Get-MaxAppVersion {
 
 function Get-PublishedMaxAppVersion {
     param([string]$Root)
-    return Get-MaxAppVersion -Root $Root -ExcludeLocalPubspec
+
+    $candidates = New-Object System.Collections.Generic.List[object]
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if (-not $git) {
+        return Get-MaxAppVersion -Root $Root -ExcludeLocalPubspec
+    }
+
+    Push-Location $Root
+    try {
+        $null = git rev-parse --git-dir 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            return Get-MaxAppVersion -Root $Root -ExcludeLocalPubspec
+        }
+
+        $raw = git show 'origin/main:pubspec.yaml' 2>$null
+        if ($LASTEXITCODE -eq 0 -and $raw) {
+            $parsed = Parse-AppVersion $raw
+            if ($parsed) { $candidates.Add($parsed) }
+        }
+
+        $tags = git tag -l 'v*' 2>$null
+        foreach ($tag in $tags) {
+            $tagText = $tag -replace '^v', ''
+            $parsed = Parse-AppVersion "${tagText}+0"
+            if ($parsed) { $candidates.Add($parsed) }
+        }
+
+        $logVersions = git log origin/main -n 50 --pretty=format:%s 2>$null |
+            ForEach-Object {
+                if ($_ -match 'bump version to (\d+\.\d+\.\d+\+\d+)') { $Matches[1] }
+            }
+        foreach ($entry in $logVersions) {
+            $parsed = Parse-AppVersion $entry
+            if ($parsed) { $candidates.Add($parsed) }
+        }
+    } finally {
+        Pop-Location
+    }
+
+    if ($candidates.Count -eq 0) {
+        return Get-MaxAppVersion -Root $Root -ExcludeLocalPubspec
+    }
+
+    $max = $candidates[0]
+    foreach ($candidate in $candidates) {
+        if ((Compare-AppVersion $candidate $max) -gt 0) {
+            $max = $candidate
+        }
+    }
+    return $max
 }
 
 function Get-NextAppVersion {
