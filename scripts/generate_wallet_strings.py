@@ -1,14 +1,32 @@
 #!/usr/bin/env python3
-"""Generate lib/l10n/wallet_strings.dart from English wallet keys."""
+"""Generate lib/l10n/wallet_strings.dart from English wallet keys.
+
+The canonical wallet_strings.dart is checked into lib/l10n/. Only re-run this
+script when adding new wallet l10n keys — it calls Google Translate and can
+take several minutes. If output already exists, the script exits without work.
+"""
 from __future__ import annotations
 
 import re
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "lib/l10n/app_localizations.dart"
 OUT = ROOT / "lib/l10n/wallet_strings.dart"
+
+REQUIRED_MAPS = (
+    "walletStringsEs",
+    "walletStringsFr",
+    "walletStringsDe",
+    "walletStringsPt",
+    "walletStringsAr",
+    "walletStringsZh",
+    "walletStringsHi",
+    "walletStringsJa",
+    "walletStringsProviderEn",
+)
 
 LANGS = {
     "Es": "es",
@@ -108,7 +126,18 @@ def translate_language(keys: list[str], values: list[str], target: str) -> dict[
     return result
 
 
+def output_is_complete() -> bool:
+    if not OUT.is_file():
+        return False
+    text = OUT.read_text(encoding="utf-8")
+    return all(name in text for name in REQUIRED_MAPS)
+
+
 def main() -> None:
+    if output_is_complete():
+        print(f"Skip: {OUT} already contains all wallet string maps.")
+        sys.exit(0)
+
     entries = extract_en_wallet_keys()
     keys = list(entries.keys())
     values = [entries[k] for k in keys]
