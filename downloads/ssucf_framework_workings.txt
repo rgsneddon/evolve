@@ -1,0 +1,491 @@
+SSUCF FRAMEWORK WORKINGS — EVOLVE CHRONOFLUX
+==============================================
+
+Canonical URL (this document):
+  https://rgsneddon.github.io/evolve/downloads/ssucf_framework_workings.txt
+
+Downloads hub:
+  https://rgsneddon.github.io/evolve/downloads/
+
+Original SSUCF science article (X):
+  https://x.com/rgsneddon/status/2061461700889436632
+
+Article reference (in-app equations panel):
+  Social Science Using the Chronoflux Framework & Social Cohesion Calculations
+
+App version at publication: 3.3.11+91
+Last updated: 5 July 2026
+
+
+================================================================================
+PART 1 — SSUCF FRAMEWORK SCIENCE (Social Science Using the Chronoflux Framework)
+================================================================================
+
+SSUCF = Social Science Using the Chronoflux Framework.
+
+The five Chronoflux constructs (hydrodynamic core, array order):
+  1. Continuum (ρt) — baseline cohesion transport
+  2. Flow (Jμ)      — trust transport; obeys covariant continuity ∇μJμ ≈ 0
+  3. Shear (σ)      — polarisation / social-force layer
+  4. Resistance (Iτ) — institutional drag
+  5. Vortex (ω)     — elite framing / authority circulation (the posed question)
+
+Framework rules (never violated in Evolve):
+  • Numeric SCS scores form the Continuum — no polls or betting odds.
+  • PART TWO + PART THREE are zero-sum on THE CONTINUUM (progressive + regressive = 100%).
+  • Blank σ / Iτ / Jμ → Grok observational inference relative to the ω question.
+  • Flow obeys covariant continuity: ∇μJμ ≈ 0 (conserved trust transport).
+
+--- PART ONE — Baseline hydrodynamic core ---
+  • Weighted SCS = Σ(scsᵢ × wᵢ), weights normalised to 1
+  • effᵢ = clip(scsᵢ × wᵢ × 5, 0, 100)
+  • positive = (Jμ + ω + ρt × 0.75) / 2.75
+  • dissipative = (σ × 0.62 + Iτ × 0.78) / 1.4
+  • baseline_scs = clip((positive − dissipative × 0.68) × 1.25, 68, 87)
+  • progressive_raw = (positive × 0.82) × (1 − dissipative / 155)
+  • regressive_raw = clip(dissipative × 0.95 × (1 + (Iτ − 55) / 140), 28, 45)
+  • progressive_% = progressive_raw / (progressive_raw + regressive_raw) × 100
+  • regressive_% = regressive_raw / (progressive_raw + regressive_raw) × 100
+  • net_momentum = (progressive_raw − regressive_raw) / 100
+
+--- PART TWO — Continuum integration ---
+  • constructive_channel = (ω_scs + Jμ_scs) / 2
+  • dissipative_channel = (σ_scs + Iτ_scs) / 2
+  • refined_positive = (constructive_channel + positive) / 2
+  • refined_dissipative = (dissipative_channel × 0.68 + dissipative) / 1.68
+  • elite_factor = 1 + (σ_scs + Iτ_scs) / 300
+  • refined_scs = clip(((refined_positive − refined_dissipative × 0.68) × 1.25 × elite_factor), …)
+  • Recompute progressive_% / regressive_% on refined channels
+
+--- THE CONTINUUM — Percent chance ---
+  • percent_chance = clip(regressive_% × 0.55 + σ_scs × 0.25 + (100 − refined_scs) × 0.2, 8, 92)
+  • CONCLUSION - THE CONTINUUM: direct answer to the ω question
+
+--- PART THREE — Actionable levers ---
+  • without_levers_scs = refined_scs from PART TWO
+  • with_levers_scs ≈ clip(mechanical_baseline × 0.72 + Jμ_lift × 14, 56, 63)
+  • mechanical_baseline = (ω + σ + Iτ + Jμ) / 4
+
+SSUCF cohesion report layout (Social Cohesion analysis mode):
+  # SSUCF Analysis: {title}
+  Social Cohesion Analysis under Chronoflux-derived Covariant Continuity
+  Topic: {posed question}
+
+  ## Part One: Baseline Parameter Mapping
+  ### Vortex (Initial Conditions)     — ω
+  ### Shear (Social Forces)           — σ
+  ### Resistance                      — Iτ
+  ### Flow                            — Jμ
+  Baseline Cohesion Score: ~{scs}/100
+  Weighted Overall SCS: ~{scs}/100
+  Regressive: ~{reg}% | Progressive: ~{prog}%
+
+  ## Part Two: Broader Political Continuum Integration
+  ### Expanded Vortex
+  ### Shear Refinement
+  ### Resistance & Flow
+  Refined Cohesion Score: ~{scs}/100
+  Regressive: ~{reg}% | Progressive: ~{prog}%
+
+  ## Part Three: Actionable Levers for Friction Reduction
+  ### Targeted Interventions
+  ### Projected Outcomes
+  Without levers: Continued ~{scs}/100 with recurrence risk.
+  With levers: {min}–{max}/100 within 3 months.
+
+  ## Conclusion
+  🌀 SSUCF Cycle Complete. Analysis by Evolve Chronoflux from posed scenario and
+  construct parameters.
+
+Canonical ward cohesion question (from FCG white paper):
+  "Calculate the social cohesion rating of any parish within the British Isles using
+  the SSUCF framework and observed social discourse please @grok?"
+
+Moderator role (FCG):
+  Apply observed social cohesions to vortex, shear, resistance, flow, and continuum.
+  The moderator must read the SSUCF framework and keep close observational stance
+  upon the elected-in ward.
+
+Attribution:
+  Evolve — created by rgsneddon, utilising Grok construal.
+  Chronoflux Principia — Roy D Herbert.
+  Perccent blockchain forked from Beam privacy architecture — Valdok and Beam CTO Alex Romanov.
+
+
+================================================================================
+PART 2 — WALLET WORKINGS (same detail shown in the Evolve Wallet tab)
+================================================================================
+
+Subtitle: Perccent chain · scenario-driven treasury
+
+--- Beam-confidential Perccent ---
+Perccent is forked from Beam privacy — confidential addresses and shielded balances
+on-device.
+
+--- Chronoflux TIME confirmations ---
+(Each line: name → interval → confirmations to settle → principia binding)
+
+  Inflation epoch: 1m → 1 confirmation(s)
+    Treasury continuum emission — 0.00000001 PERC / minute
+
+  Side-chain seal: 1s → 1 confirmation(s)
+    100,000,000 microblocks → main-chain block confirmation
+
+  Faucet draw: 7m → 1 confirmation(s)
+    Scenario analysis reward epoch — 7 minutes
+
+  Transfer settlement: instant → 1 confirmation(s)
+    Main-chain block — 1 confirmation fully settles PERC
+
+  Staking settlement: instant → 1 confirmation(s)
+    Held PERC confirms in 1 block — cumulative staking pays 5 cent per block
+
+  Chronoflux inputs: 1s → 1 confirmation(s)
+    Five construct inputs (ρt, ω, σ, Iτ, Jμ) — one second per point
+
+--- Treasury emission ---
+Perccent chain advances on scenario analysis — not on Grok construal or field
+keystrokes. Treasury earns 0.00000001 PERC per elapsed minute — infinite Chronoflux
+continuum supply. Treasury wallet stays offline until any user runs analysis.
+
+  • One-time blockchain launch mints 1 PERC launch allocation to evolve_treasury.
+  • Ongoing emission: 0.00000001 PERC per minute (1 cent/min).
+  • Treasury regenerates when balance falls below 66% of the per-minute target.
+  • Pool renewal at 1 cent reserve mints 283,000,000 PERC (genesis renewal cycle).
+  • Manual sends from evolve_treasury are disabled after blockchain launch.
+  • Emission and faucet payouts continue after launch.
+
+--- Analysis faucet ---
+Tap Calculate percent chance or Calculate social cohesion score to draw xx/100 PERC
+from treasury — xx is the two-digit outcome (percent or SCS) — once every 7 minutes.
+
+  • Base reward: 50 cent (0.00000050 PERC).
+  • Bonus: +1 cent per 1% point of outcome (percent chance or SCS).
+  • Example: 42% outcome → 50 + 42 = 92 cent total payout.
+  • Cooldown: 7 minutes between draws per wallet.
+  • Chain advances one main block per concluded scenario (when not on cooldown).
+
+--- Cumulative staking ---
+Confirmed held PERC earns 5 cent each block (10% of the 50 cent base) after 1 block
+confirmation. 1 PERC = 100,000,000 cent (0.00000001 PERC each).
+
+--- Burned PERC ---
+Every send network fee (0.00000001 PERC) is permanently burned — removed from
+circulation across the Perccent chain.
+
+--- Evolutionary blockchain ---
+Every app version connects to the same chain — evolution verified by the Chronoflux
+Principia.
+
+  Evolutionary chain: evolve-chronoflux-principia-chain-1
+  Chronoflux Principia: chronoflux-principia-roy-d-herbert
+  Main chain ID: perc-main-evolve-1
+  Side chain ID: perc-chronoflux-side-1
+  Infinite continuum supply (∞ PERC)
+
+--- Concurrent wallet mesh ---
+Connected wallets on the shared Perccent chain sync to the internet seed node.
+Peer online window: 7 minutes (heartbeat).
+
+  Seed node: https://evolve-perc-internet.onrender.com
+  Default wallet node port: 9477
+  Default rendezvous port: 9478
+
+--- Perccent dapp suite ---
+Beam-suite structure — side chain, send/receive, bridges, and governance.
+
+  Send / Receive: Every registered wallet can receive PERC. Send only to a PERC address.
+  Chronoflux Side Chain: Microblocks seal into main-chain blocks at 100M.
+  Community Ward Voting: Proposals listed 10 days; one vote per wallet per proposal.
+  Blockchain explorer: Graph-based Perccent chain dapp with ward bundles and emission charts.
+
+--- Chronoflux five-point variables (explorer) ---
+Pentagon radar and five-point time series for ρt, ω, σ, Iτ, Jμ — times match
+Chronoflux input order across scenario draws.
+
+--- Lawful Frame-Flow Split — 10,000 Block Wards ---
+Each ward seals 10,000 Chronoflux microblocks. 10,000 wards complete one main-chain
+seal cycle (100,000,000 microblocks per main block).
+
+--- Wallet session ---
+  • Session expires after 7 minutes idle (and 8 minutes maximum session age).
+  • Inbound transfers to offline wallets revert to sender after 12 months if not collected.
+
+--- Wallet registration ---
+Users create a username (stored locally) and password. Public surfaces show a
+deterministic five-character public alias instead of real usernames.
+
+
+================================================================================
+PART 3 — HOW ABSOLUTELY EVERYTHING IN THE EVOLVE APP WORKS (full transparency)
+================================================================================
+
+This section documents every major subsystem, data flow, and user-visible behaviour
+in Evolve Chronoflux v3.3.11+91.
+
+
+--------------------------------------------------------------------------------
+3.1 APPLICATION SHELL AND NAVIGATION
+--------------------------------------------------------------------------------
+
+Evolve is a Flutter app (Windows, Android, web on GitHub Pages) with five main tabs:
+
+  1. Analysis    — percent chance and social cohesion scenario engine
+  2. Wallet      — Perccent (PERC) registration, balance, send/receive, chain sync
+  3. Voting      — Full Community Governance (FCG) parish council voting
+  4. Credit      — attribution, FCG link, governance goals
+  5. (Ward)      — Community Ward Voting dapp inside Wallet suite
+
+On first launch (unsigned user): splash → wallet registration gate → main app.
+Wallet sign-in is required before analysis faucet credits PERC or ward votes are cast.
+
+Region focus: UK, USA, Europe — affects base rates, registry matching, and localized
+output strings. Language: English, Spanish, French, German, Portuguese, Arabic,
+Chinese, Hindi, Japanese.
+
+
+--------------------------------------------------------------------------------
+3.2 ANALYSIS TAB — PERCENT CHANCE MODE
+--------------------------------------------------------------------------------
+
+User enters:
+  • Posed question (ω / vortex) — required
+  • Optional topic, source URL, construct fields (σ, Iτ, Jμ)
+  • Region selector
+
+Pipeline (EvolveEngine.analyze, mode = percentChance):
+
+  1. InputParser.enrich — normalises fields, infers missing constructs
+  2. OutcomeFeasibilityChecker — foreclosed outcomes cap PART TWO
+  3. Hydrodynamic core — SCS per construct from field text + semantics
+  4. PART ONE — baseline progressive/regressive split, baseline SCS
+  5. PART TWO — refined channels, elite factor, refined SCS
+  6. PART THREE — three actionable lever sentences (agent + hooks)
+  7. Percent chance — continuum equation (regressive × 0.55 + σ × 0.25 + strain × 0.2)
+  8. ForecastCalibrator — blends heuristic % with registry base rates
+  9. ContinuumConclusionBuilder — CONCLUSION - THE CONTINUUM answer
+  10. Grok-style formatter — @grok observational reply block
+  11. Synopsis export available (Markdown, HTML, PDF)
+
+Weights wᵢ are NOT typed by user — ChronofluxWeightConstrual derives them from
+scenario context (posed question semantics, region, continuum lean). Field prose
+alone does not change weights; explicit scs=N annotations or variable semantics do.
+
+Betting odds and polling are NEVER used.
+
+When signed in and blockchain launched: Calculate triggers PercWalletProvider.creditScenario
+→ treasury faucet payout + main-chain block append.
+
+
+--------------------------------------------------------------------------------
+3.3 ANALYSIS TAB — SOCIAL COHESION SCORE (SCS) MODE
+--------------------------------------------------------------------------------
+
+Same engine pipeline; output is MarkdownBin-style SSUCF cohesion report
+(CohesionReportFormatter) instead of percent phrase.
+
+If source URL provided: PartyResponseExtractor fetches narrative, PartyResponseAnalyzer
+refines PART TWO from party-response SCS signals.
+
+Cohesion report sections mirror PART 1 of this document (vortex/shear/resistance/flow,
+baseline, PART TWO refinement, PART THREE interventions, conclusion).
+
+Faucet credit uses SCS as the two-digit outcome (same 50 + outcome cent formula).
+
+
+--------------------------------------------------------------------------------
+3.4 GROK CONSTRUAL (OPTIONAL)
+--------------------------------------------------------------------------------
+
+Modes:
+  • Heuristic (default on web / offline) — local discourse levers fill blank constructs
+  • Live Grok (Windows/Android with OAuth) — X Premium API via local grok_proxy
+
+OAuth flow:
+  1. User opens X login in browser (app name should read "Evolve")
+  2. Callback: http://127.0.0.1:8787/auth/callback (desktop) or evolve://auth/callback (Android)
+  3. Scopes: tweet.read, users.read, offline.access
+  4. Proxy at localhost bridges Grok API; credentials in grok_proxy.local.env (not shipped)
+
+Grok fills ω/σ/Iτ/Jμ observational discourse before analysis when enabled.
+Grok construal does NOT advance the blockchain — only concluded scenario Calculate does.
+
+Ward dual analysis can run % + SCS together and populate proposal/vote fields.
+
+
+--------------------------------------------------------------------------------
+3.5 PERCCENT (PERC) WALLET AND BLOCKCHAIN
+--------------------------------------------------------------------------------
+
+Currency: Perccent (PERC). Smallest unit: 1 cent = 0.00000001 PERC.
+100,000,000 cent = 1 PERC.
+
+Accounts:
+  • evolve_treasury — genesis holder; manual send locked after launch
+  • evolve_seed_node — internet anchor (hosted on Render)
+  • User wallets — register locally; address derived from username + salt
+
+Ledger storage:
+  • Local JSON (per device): perc_evolve-chronoflux-principia-chain-1_ledger
+  • Seed node persistent disk: chain.json + rendezvous state
+
+Block contents per scenario:
+  • Treasury emission tx(s) — per-minute accrual or regeneration
+  • Scenario reward tx — faucet payout to user
+  • Optional genesis renewal tx — 283M PERC when pool at 1 cent reserve
+  • Microblock seal tx — every 100M fair-usage microblocks
+
+Side chain:
+  • Each fair-usage event (analysis keystroke activity) records one microblock
+  • Chronoflux fingerprint verified per microblock
+  • 100,000,000 microblocks → one main-chain seal block
+  • Wards bundle 10,000 microblocks each (10,000 wards per seal cycle)
+
+Transfers:
+  • Fee: 0.00000001 PERC burned per send
+  • Offline receive: pending 12 months, then revert to sender
+  • Treasury cannot send manually after launch
+
+Staking:
+  • 10% of scenario base (5 cent) per block per holder with confirmed balance
+
+Privacy (on-chain public surfaces):
+  • Usernames → 5-character publicAlias (HMAC-SHA256, no reversal)
+  • No passwordHash, salt, or password on public GET /perc/ledger
+  • IPv4 node endpoints masked as "Private node" on explorer
+  • Treasury hidden from public peer listings
+
+
+--------------------------------------------------------------------------------
+3.6 INTERNET SEED NODE (RENDER)
+--------------------------------------------------------------------------------
+
+URL: https://evolve-perc-internet.onrender.com
+Service: perc-internet-node (Node.js perc_chain)
+
+Provides:
+  • GET /health — ok, block height, peers online
+  • GET /perc/status — chain IDs, revision, publicAlias
+  • GET /perc/ledger — sanitised ledger snapshot
+  • Rendezvous: /perc/rendezvous/online, /peers, /address (heartbeat)
+  • Public explorer UI at /
+  • Treasury tab — one-time blockchain launch when admin signs in
+
+Auto-deploy: push to main on GitHub triggers Render redeploy.
+
+Wallet sync on launch/login: PercNetworkCoordinator pulls remote tip, merges blocks,
+updates mesh peer list. 7-minute peer online window from last heartbeat.
+
+
+--------------------------------------------------------------------------------
+3.7 FULL COMMUNITY GOVERNANCE (FCG) — VOTING TAB
+--------------------------------------------------------------------------------
+
+Parish council voting for selected region (UK wards).
+
+Moderator (MOD_* account):
+  • Opens vote with policy question
+  • Runs Chronoflux analysis (SCS and/or % chance)
+  • Enrolls up to 30 voter PERC addresses in slots
+  • Links prior cohesion narratives from Analysis history
+
+Voters:
+  • Must be enrolled by moderator
+  • One ballot per enrolled address (Support / Oppose / Abstain)
+  • Optional cohesion narrative attachment
+
+Results dashboard:
+  • Quorum threshold, deciding votes, pass/fail/tie
+  • Immutable audit log (hash-chained append-only)
+  • Export Markdown / JSON pilot results
+
+FCG white paper: https://rgsneddon.github.io/evolve/fcg_white_paper.html
+
+
+--------------------------------------------------------------------------------
+3.8 COMMUNITY WARD VOTING (WALLET DAPP)
+--------------------------------------------------------------------------------
+
+Any signed-in wallet may:
+  • Submit a proposal (title, summary, ward) — listed 10 days
+  • Cast one vote (For / Against / Abstain) + optional comment per proposal
+  • Run free open scenario checker (% + SCS, no PERC faucet)
+  • Link Evolve analysis conclusions into vote comments
+
+Live public results visible without signing in.
+Proposals and votes stored on local ward ledger; syncs via mesh when online.
+
+
+--------------------------------------------------------------------------------
+3.9 BLOCKCHAIN EXPLORER DAPP
+--------------------------------------------------------------------------------
+
+Graph-based visualisation inside Wallet:
+  • Block history, treasury emission chart, cumulative minted
+  • Ward bundle progress, microblock log (fair-usage activity)
+  • Chronoflux five-point variable graphs from scenario blocks
+  • Transaction list with aliased usernames
+
+Hosted public explorer on seed node shows same chain data with privacy sanitisation.
+
+
+--------------------------------------------------------------------------------
+3.10 BUILDS, DOWNLOADS, AND UPDATES
+--------------------------------------------------------------------------------
+
+Downloads: https://rgsneddon.github.io/evolve/downloads/
+  • Windows: evolve-v{version}-windows-x64-setup.exe
+  • Android: evolve-v{version}-android-setup.apk
+  • SHA-256 and SHA-512 checksum sidecars per package
+
+Web app: https://rgsneddon.github.io/evolve/
+  • Flutter web build; heuristic Grok only
+
+Update check: app reads version.json from GitHub Pages, compares build number,
+offers link to latest downloads folder.
+
+Source: https://github.com/rgsneddon/evolve
+
+
+--------------------------------------------------------------------------------
+3.11 PRIVACY SUMMARY
+--------------------------------------------------------------------------------
+
+Full policy: https://rgsneddon.github.io/evolve/privacy_policy.txt
+
+Key points:
+  • Core Chronoflux math runs locally — no server sees your calculation steps
+  • Posed questions on signed-in scenario runs appear on public explorer (aliased)
+  • No ads, no analytics SDKs, no data sales
+  • Grok OAuth tokens stay on device / local proxy
+  • Camera used only for PERC QR scan (Android)
+  • Account privacy: publicAlias on all public network surfaces
+
+
+--------------------------------------------------------------------------------
+3.12 WHAT ADVANCES THE CHAIN (explicit)
+--------------------------------------------------------------------------------
+
+DOES advance main chain:
+  • Calculate percent chance (signed in, blockchain launched, faucet not on cooldown)
+  • Calculate social cohesion score (same conditions)
+  • Send / receive / revert / staking settlement blocks
+  • Microblock seal every 100M fair-usage microblocks
+
+DOES NOT advance main chain:
+  • Typing in construct fields
+  • Grok construal alone
+  • Open ward scenario checker (free mode)
+  • Viewing explorer or syncing
+
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+
+You do not need to believe in a thing to have it work — you can read the workings.
+The SSUCF process, learned by @grok to give predictions in social scenarios, can be
+used by anyone.
+
+Questions: https://github.com/rgsneddon/evolve/issues
+Licensing: licensing@evolve-chronoflux.dev
