@@ -1,4 +1,5 @@
 import { maskEndpoint } from './endpoint_privacy.js';
+import { genericBlockLabel } from './block_display_label.js';
 import { blockHeight, tipHash } from './ledger_store.js';
 import { seedBlockHeightFromLedger } from './seed_block.js';
 
@@ -76,6 +77,7 @@ export function summarizeBlock(block, ledger) {
     timestamp: block.timestamp,
     txCount: txs.length,
     treasuryEmitted: formatPercAmount(block.treasuryEmitted),
+    displayLabel: genericBlockLabel(block),
     scenarioLabel: block.scenarioLabel ?? null,
     triggerUsername: block.triggerUsername ?? null,
     treasuryCycle: block.treasuryCycle ?? 1,

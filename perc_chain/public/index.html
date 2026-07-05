@@ -544,7 +544,7 @@
             <td class="muted">${fmtTime(b.timestamp)}</td>
             <td>${b.txCount}</td>
             <td>${b.treasuryEmitted} PERC</td>
-            <td>${b.scenarioLabel || b.triggerUsername || '—'}</td>
+            <td>${b.displayLabel || '—'}</td>
             <td><button class="btn secondary" data-block="${b.index}">View</button></td>
           </tr>`).join('')
         : '<tr><td colspan="6" class="muted">No blocks yet — rgsnedds must sign in on the Treasury tab to launch the blockchain.</td></tr>';
