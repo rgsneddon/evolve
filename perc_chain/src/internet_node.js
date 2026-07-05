@@ -13,6 +13,12 @@ import { TreasuryAdmin } from './treasury_admin.js';
 import { buildTreasuryWalletView } from './treasury_api.js';
 import { launchBlockchainFromTreasuryLogin } from './blockchain_launch.js';
 import { regenerateTreasuryIfLow } from './treasury_regeneration.js';
+import {
+  obfuscateUsername,
+  sanitizeLedgerForPublic,
+  sanitizePeerForPublic,
+  sanitizePeersForPublic,
+} from './account_privacy.js';
 import { maskEndpoint, sanitizeForPublicExplorer } from './endpoint_privacy.js';
 import {
   findAddressInLedgerCollection,
@@ -38,6 +44,25 @@ const peers = new Map();
 const ledgers = new Map();
 /** @type {Map<string, string>} wallet address → sessionUsername */
 const addresses = new Map();
+
+function findRelayEntryByAddress(address) {
+  const needle = (address ?? '').trim();
+  if (!needle) return null;
+
+  const mappedUser = addresses.get(needle);
+  if (mappedUser && ledgers.has(mappedUser)) {
+    return ledgers.get(mappedUser);
+  }
+
+  for (const entry of ledgers.values()) {
+    const ledger = entry?.ledger;
+    if (!ledger?.accounts) continue;
+    for (const acc of Object.values(ledger.accounts)) {
+      if (acc?.address?.trim() === needle) return entry;
+    }
+  }
+  return null;
+}
 
 const store = new LedgerStore(DATA_DIR);
 const treasuryAdmin = new TreasuryAdmin(DATA_DIR);
@@ -386,11 +411,7 @@ const server = http.createServer(async (req, res) => {
       username,
       address,
     });
-    return json(res, 200, {
-      online,
-      username: username ?? null,
-      address: address ?? null,
-    });
+    return json(res, 200, { online });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/address') {
@@ -412,10 +433,7 @@ const server = http.createServer(async (req, res) => {
     if (!username) {
       return json(res, 404, { error: 'address not found' });
     }
-    return json(res, 200, {
-      username,
-      address,
-    });
+    return json(res, 200, { address });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/peers') {
@@ -423,7 +441,7 @@ const server = http.createServer(async (req, res) => {
     const list = [...peers.values()]
       .filter((p) => (p.evolutionaryChainId ?? CHAIN_ID) === chainId)
       .filter((p) => !isHiddenPeer(p.sessionUsername));
-    return json(res, 200, list);
+    return json(res, 200, sanitizePeersForPublic(list));
   }
 
   if (req.method === 'PUT' && url.pathname === '/perc/rendezvous/ledger') {
@@ -445,22 +463,35 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/ledger') {
-    const username = url.searchParams.get('username');
-    if (!username || !ledgers.has(username)) {
+    const username = url.searchParams.get('username')?.trim();
+    const address = url.searchParams.get('address')?.trim();
+    let entry = null;
+    if (username && ledgers.has(username)) {
+      entry = ledgers.get(username);
+    } else if (address) {
+      entry = findRelayEntryByAddress(address);
+    }
+    if (!entry?.ledger) {
       return json(res, 404, { error: 'ledger not found' });
     }
-    return json(res, 200, ledgers.get(username));
+    return json(res, 200, {
+      publicAlias: obfuscateUsername(entry.username ?? username ?? ''),
+      walletAddress: address ?? null,
+      ledger: sanitizeLedgerForPublic(entry.ledger),
+      updatedAt: entry.updatedAt ?? null,
+    });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/status') {
-    return json(res, 200, store.status(SEED_USERNAME, publicEndpoint()));
+    const status = store.status(SEED_USERNAME, publicEndpoint());
+    return json(res, 200, sanitizePeerForPublic(status));
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/ledger') {
     if (!store.hasLedger()) {
       store.resetToGenesis(CHAIN_GENESIS_REVISION);
     }
-    return json(res, 200, store.ledger);
+    return json(res, 200, sanitizeLedgerForPublic(store.ledger));
   }
 
   if (req.method === 'POST' && url.pathname === '/perc/ledger') {
@@ -487,7 +518,7 @@ const server = http.createServer(async (req, res) => {
       ok: true,
       service: 'perc-internet-node',
       explorer: maskEndpoint(`${publicEndpoint()}/`),
-      seedUsername: SEED_USERNAME,
+      publicAlias: obfuscateUsername(SEED_USERNAME),
       endpoint: snapshot.endpoint,
       blockHeight: snapshot.blockHeight,
       networkHeight: snapshot.networkHeight,

@@ -74,8 +74,20 @@ class PercChainConstants {
   /// Minimum treasury reserve — 1 cent (0.00000001 PERC); pool renews at this level.
   static const PercAmount minimumTreasuryReserve = PercAmount(1);
 
-  /// Treasury tops up toward [treasuryEmissionPerMinute] when balance falls below this.
-  static final PercAmount treasuryRegenerationThreshold = PercAmount.fromPerc(0.66);
+  /// Regeneration ratio — treasury tops up when balance falls below 66% of [treasuryEmissionPerMinute].
+  static const int treasuryRegenerationRatioPercent = 66;
+
+  /// Display threshold — 66% of the per-minute emission target.
+  static PercAmount get treasuryRegenerationThreshold => PercAmount(
+        (treasuryEmissionPerMinute.microUnits *
+                treasuryRegenerationRatioPercent) ~/
+            100,
+      );
+
+  /// True when [balanceMicro] is below the regeneration ratio of the emission target.
+  static bool treasuryBalanceNeedsRegeneration(int balanceMicro) =>
+      balanceMicro * 100 <
+      treasuryEmissionPerMinute.microUnits * treasuryRegenerationRatioPercent;
 
   /// Smallest send/receive amount — 1 cent (0.00000001 PERC). All wallets accept this.
   static const PercAmount minimumTransferAmount = PercAmount.smallestUnit;
@@ -86,8 +98,15 @@ class PercChainConstants {
   /// Alias for fee burn semantics across the chain.
   static const PercAmount transactionFeeBurn = sendTransactionFee;
 
-  /// Treasury emits 1 PERC per minute — infinite continuum.
-  static final PercAmount treasuryEmissionPerMinute = PercAmount.fromPerc(1);
+  /// One-time genesis mint when the seed treasury launches the blockchain.
+  static final PercAmount treasuryLaunchAllocation = PercAmount.fromPerc(1);
+
+  /// Treasury emits 0.00000001 PERC per minute (1 cent/min) — infinite continuum.
+  static const PercAmount treasuryEmissionPerMinute = PercAmount.smallestUnit;
+
+  /// Fixed eight-decimal label for treasury emission rate (e.g. 0.00000001).
+  static String get treasuryEmissionPerMinuteLabel =>
+      treasuryEmissionPerMinute.displayFixed8;
 
   /// Accrued treasury emission for [elapsedSeconds] at [treasuryEmissionPerMinute].
   static PercAmount emissionForElapsedSeconds(int elapsedSeconds) {

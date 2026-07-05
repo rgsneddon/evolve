@@ -9,6 +9,8 @@ import 'package:evolve/perc/perc_chain_constants.dart';
 void main() {
   const base = 'https://evolve-perc-internet.onrender.com';
   const chainId = PercChainConstants.evolutionaryChainId;
+  const skipLive = bool.fromEnvironment('PERC_SKIP_LIVE_SEED', defaultValue: false);
+  bool? _livePrivacyReady;
 
   Future<Map<String, dynamic>> getJson(String path) async {
     final response = await http
@@ -18,7 +20,31 @@ void main() {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  Future<bool> liveSeedSupportsAccountPrivacy() async {
+    if (_livePrivacyReady != null) return _livePrivacyReady!;
+    try {
+      final ledger = await getJson('/perc/ledger');
+      final accounts = ledger['accounts'];
+      if (accounts is! Map || accounts.isEmpty) {
+        _livePrivacyReady = true;
+        return true;
+      }
+      for (final account in accounts.values) {
+        if (account is Map && account.containsKey('passwordHash')) {
+          _livePrivacyReady = false;
+          return false;
+        }
+      }
+      _livePrivacyReady = true;
+      return true;
+    } catch (_) {
+      _livePrivacyReady = false;
+      return false;
+    }
+  }
+
   test('live seed health and ledger match wallet genesis', () async {
+    if (skipLive || !await liveSeedSupportsAccountPrivacy()) return;
     final health = await getJson('/health');
     expect(health['ok'], isTrue);
     expect(health['service'], 'perc-internet-node');
@@ -34,14 +60,22 @@ void main() {
     expect(ledger['blockchainLaunched'], isTrue);
     expect(ledger['pendingInboundTransfers'], isA<List<dynamic>>());
     expect(ledger['accounts'], isA<Map<String, dynamic>>());
+    for (final account in (ledger['accounts'] as Map).values) {
+      final row = account as Map<String, dynamic>;
+      expect(row.containsKey('passwordHash'), isFalse);
+      expect(row.containsKey('salt'), isFalse);
+      expect(row.containsKey('password'), isFalse);
+    }
   });
 
   test('live seed exposes v3.1.1 rendezvous endpoints', () async {
+    if (skipLive || !await liveSeedSupportsAccountPrivacy()) return;
     final online = await getJson(
       '/perc/rendezvous/online?username=${PercChainConstants.seedUsername}',
     );
     expect(online['online'], isTrue);
-    expect(online.containsKey('username'), isTrue);
+    expect(online.containsKey('username'), isFalse);
+    expect(online.containsKey('address'), isFalse);
 
     final addressOnly = 'percpriv1seedcompatprobe00000000000000000001';
     final post = await http
@@ -71,11 +105,14 @@ void main() {
     final peerList = jsonDecode(peers.body) as List<dynamic>;
     expect(peerList, isNotEmpty);
     final seedPeer = peerList.first as Map<String, dynamic>;
-    expect(seedPeer['sessionUsername'], PercChainConstants.seedUsername);
+    expect(seedPeer.containsKey('sessionUsername'), isFalse);
+    expect(seedPeer['publicAlias'], isA<String>());
+    expect((seedPeer['publicAlias'] as String).length, 5);
     expect(seedPeer['updatedAt'], isNotNull);
   });
 
   test('live seed peer online window aligns with wallet (7 minutes)', () async {
+    if (skipLive) return;
     final health = await getJson('/health');
     expect(health['service'], 'perc-internet-node');
     expect(

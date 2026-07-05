@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../perc_chain_constants.dart';
+import 'perc_account_privacy.dart';
 import 'perc_ledger.dart';
 import 'perc_ledger_hub.dart';
 import 'perc_network_protocol.dart';
@@ -63,20 +64,26 @@ class _PercNodeServerIo implements PercNodeServer {
 
     final path = request.uri.path;
     if (request.method == 'GET' && path == '/perc/status') {
-      await _writeJson(
-        request,
-        PercNetworkStatus.fromLedger(
-          hub.ledger,
-          revision: hub.revision,
-          endpoint: _endpoint,
-        ).toJson(),
-      );
+      final status = PercNetworkStatus.fromLedger(
+        hub.ledger,
+        revision: hub.revision,
+        endpoint: _endpoint,
+      ).toJson();
+      final session = hub.ledger.sessionUsername;
+      if (session != null && session.isNotEmpty) {
+        status.remove('sessionUsername');
+        status['publicAlias'] = PercAccountPrivacy.obfuscateUsername(session);
+      }
+      await _writeJson(request, status);
       return;
     }
 
     if (path == '/perc/ledger') {
       if (request.method == 'GET') {
-        await _writeJson(request, hub.ledger.toJson());
+        await _writeJson(
+          request,
+          PercAccountPrivacy.sanitizeLedgerForPublic(hub.ledger.toJson()),
+        );
         return;
       }
       if (request.method == 'POST') {

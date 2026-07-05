@@ -14,6 +14,7 @@ import '../providers/perc_wallet_provider.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
 import '../services/perc_inflation.dart';
+import '../services/perc_account_privacy.dart';
 import '../services/perc_beam_privacy.dart';
 import '../services/perc_block_timing.dart';
 import '../services/perc_chronoflux_time_confirmations.dart';
@@ -1447,9 +1448,20 @@ class _WalletScreenState extends State<WalletScreen> {
         title = strings.t('wallet_tx_staking');
       case PercTxKind.transfer:
         title = isOut
-            ? strings.t('wallet_tx_sent').replaceAll('{user}', tx.toUsername ?? '')
-            : strings.t('wallet_tx_received')
-                .replaceAll('{user}', tx.fromUsername ?? '');
+            ? strings.t('wallet_tx_sent').replaceAll(
+                '{user}',
+                PercAccountPrivacy.publicDisplayName(
+                  tx.toUsername,
+                  viewerUsername: viewer,
+                ),
+              )
+            : strings.t('wallet_tx_received').replaceAll(
+                '{user}',
+                PercAccountPrivacy.publicDisplayName(
+                  tx.fromUsername,
+                  viewerUsername: viewer,
+                ),
+              );
       case PercTxKind.feeBurn:
         title = strings.t('wallet_tx_fee_burned');
       case PercTxKind.transferRevert:

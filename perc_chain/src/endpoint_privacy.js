@@ -1,4 +1,6 @@
-/** Hide IPv4 addresses from public explorer/API responses. */
+/** Hide IPv4 addresses and account identities from public explorer/API responses. */
+
+import { sanitizePublicPayload } from './account_privacy.js';
 
 const IPV4_RE =
   /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\b/g;
@@ -42,23 +44,5 @@ export function maskEndpoint(endpoint) {
  * Deep-sanitize JSON payloads before sending to the public explorer.
  */
 export function sanitizeForPublicExplorer(data) {
-  if (data == null) return data;
-  if (typeof data === 'string') {
-    return maskIpAddresses(data);
-  }
-  if (Array.isArray(data)) {
-    return data.map((item) => sanitizeForPublicExplorer(item));
-  }
-  if (typeof data === 'object') {
-    const out = {};
-    for (const [key, value] of Object.entries(data)) {
-      if (key === 'endpoint' && typeof value === 'string') {
-        out[key] = maskEndpoint(value);
-      } else {
-        out[key] = sanitizeForPublicExplorer(value);
-      }
-    }
-    return out;
-  }
-  return data;
+  return sanitizePublicPayload(data);
 }

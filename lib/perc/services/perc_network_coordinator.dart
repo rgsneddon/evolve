@@ -236,6 +236,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     String? targetTip;
     String? importEndpoint;
     String? importUsername;
+    String? importAddress;
 
     for (final status in peerStatuses) {
       if (status.evolutionaryChainId !=
@@ -247,6 +248,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
         targetTip = status.tipHash;
         importEndpoint = status.endpoint;
         importUsername = status.sessionUsername;
+        importAddress = status.walletAddress;
       } else if (status.blockHeight == targetHeight && targetTip == null) {
         targetTip = status.tipHash;
       }
@@ -264,8 +266,19 @@ class PercNetworkCoordinator extends ChangeNotifier {
           imported = true;
         }
       }
+      if (!imported && importAddress != null) {
+        final relayed = await _rendezvous.fetchRelayedLedger(
+          address: importAddress,
+        );
+        if (relayed != null) {
+          hub.importPeerLedger(relayed, expectedTipHash: targetTip);
+          imported = true;
+        }
+      }
       if (!imported && importUsername != null) {
-        final relayed = await _rendezvous.fetchRelayedLedger(importUsername);
+        final relayed = await _rendezvous.fetchRelayedLedger(
+          username: importUsername,
+        );
         if (relayed != null) {
           hub.importPeerLedger(relayed, expectedTipHash: targetTip);
           imported = true;
@@ -518,11 +531,13 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (indexed != null) {
       final hit = _localHit();
       if (hit != null) return hit;
-      if (indexed.username.isNotEmpty) {
-        return hub.ledger.ensureRemoteAccount(
-          username: indexed.username,
-          address: indexed.address,
-        );
+      final relayed = await _rendezvous.fetchRelayedLedger(
+        address: indexed.address,
+      );
+      if (relayed != null) {
+        _mergeRemote(relayed);
+        final remoteHit = _localHit() ?? _ensureFromRemote(relayed);
+        if (remoteHit != null) return remoteHit;
       }
     }
 
@@ -538,23 +553,36 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
     final peers = await _rendezvous.fetchPeers();
     for (final status in peers) {
-      if (status.walletAddress == normalized && status.sessionUsername != null) {
-        return hub.ledger.ensureRemoteAccount(
-          username: status.sessionUsername!,
+      if (status.walletAddress == normalized) {
+        final relayed = await _rendezvous.fetchRelayedLedger(
           address: normalized,
         );
+        if (relayed != null) {
+          _mergeRemote(relayed);
+          final hit = _localHit() ?? _ensureFromRemote(relayed);
+          if (hit != null) return hit;
+        }
       }
     }
 
     for (final status in peers) {
       final username = status.sessionUsername;
-      if (username == null) continue;
+      final address = status.walletAddress;
 
-      final relayed = await _rendezvous.fetchRelayedLedger(username);
-      if (relayed != null) {
-        _mergeRemote(relayed);
-        final hit = _localHit() ?? _ensureFromRemote(relayed);
-        if (hit != null) return hit;
+      if (address != null && address.isNotEmpty) {
+        final relayed = await _rendezvous.fetchRelayedLedger(address: address);
+        if (relayed != null) {
+          _mergeRemote(relayed);
+          final hit = _localHit() ?? _ensureFromRemote(relayed);
+          if (hit != null) return hit;
+        }
+      } else if (username != null) {
+        final relayed = await _rendezvous.fetchRelayedLedger(username: username);
+        if (relayed != null) {
+          _mergeRemote(relayed);
+          final hit = _localHit() ?? _ensureFromRemote(relayed);
+          if (hit != null) return hit;
+        }
       }
 
       final endpoint = status.endpoint;
@@ -610,7 +638,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     _seedConnected = true;
 
     var remote = await _client.fetchLedger(base);
-    remote ??= await _rendezvous.fetchRelayedLedger(seedUser);
+    remote ??= await _rendezvous.fetchRelayedLedger(username: seedUser);
     if (remote == null) return;
 
     final localHeight = PercChainTip.height(hub.ledger);
@@ -647,7 +675,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
   Future<void> _mergeRendezvousPeers(PercLedger ledger) async {
     final peers = await _rendezvous.fetchPeers();
     for (final status in peers) {
-      if (status.sessionUsername == null) continue;
+      if (status.sessionUsername == null &&
+          (status.walletAddress == null || status.walletAddress!.isEmpty)) {
+        continue;
+      }
       ledger.updatePeerFromStatus(
         status,
         online: status.isFreshOnSeedPeer,

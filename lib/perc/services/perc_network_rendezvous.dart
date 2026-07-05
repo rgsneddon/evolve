@@ -137,7 +137,7 @@ class PercNetworkRendezvous {
     }
   }
 
-  Future<({String username, String address})?> lookupAddress(
+  Future<({String address})?> lookupAddress(
     String address,
   ) async {
     final base = await baseUrl();
@@ -150,20 +150,30 @@ class PercNetworkRendezvous {
       if (response?.statusCode != 200) return null;
       final json = jsonDecode(response!.body);
       if (json is! Map) return null;
-      final username = json['username'] as String?;
       final resolved = json['address'] as String? ?? address;
       if (resolved.isEmpty) return null;
-      return (username: username ?? '', address: resolved);
+      return (address: resolved);
     } catch (_) {
       return null;
     }
   }
 
-  Future<PercLedger?> fetchRelayedLedger(String username) async {
+  Future<PercLedger?> fetchRelayedLedger({
+    String? username,
+    String? address,
+  }) async {
     final base = await baseUrl();
     if (base == null) return null;
-    final uri = Uri.parse(
-      '$base/perc/rendezvous/ledger?username=${Uri.encodeComponent(username)}',
+    final params = <String, String>{};
+    if (username != null && username.trim().isNotEmpty) {
+      params['username'] = username.trim();
+    }
+    if (address != null && address.trim().isNotEmpty) {
+      params['address'] = address.trim();
+    }
+    if (params.isEmpty) return null;
+    final uri = Uri.parse('$base/perc/rendezvous/ledger').replace(
+      queryParameters: params,
     );
     try {
       final response = await _http

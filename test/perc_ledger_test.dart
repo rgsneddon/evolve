@@ -22,7 +22,7 @@ void _seedLedger(PercLedger ledger) {
 }
 
 void main() {
-  test('first scenario mints 1 PERC to evolve_treasury', () {
+  test('first scenario mints launch allocation to evolve_treasury', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -34,12 +34,18 @@ void main() {
     );
 
     expect(result.status, PercFaucetCreditStatus.credited);
-    expect(ledger.cumulativeTreasuryMinted, PercAmount.fromPerc(1));
+    expect(
+      ledger.cumulativeTreasuryMinted,
+      PercChainConstants.treasuryLaunchAllocation,
+    );
     expect(ledger.blocks.length, 1);
-    expect(ledger.blocks.first.treasuryEmitted, PercAmount.fromPerc(1));
+    expect(
+      ledger.blocks.first.treasuryEmitted,
+      PercChainConstants.treasuryLaunchAllocation,
+    );
     expect(
       ledger.treasuryBalance,
-      PercAmount.fromPerc(1) - result.reward!.total,
+      PercChainConstants.treasuryLaunchAllocation - result.reward!.total,
     );
   });
 
@@ -195,7 +201,10 @@ void main() {
     expect(result.status, PercFaucetCreditStatus.credited);
     expect(ledger.treasuryCycle, 2);
     expect(ledger.treasuryCapped, isFalse);
-    expect(ledger.cumulativeTreasuryMinted, PercAmount.fromPerc(1));
+    expect(
+      ledger.cumulativeTreasuryMinted,
+      PercChainConstants.treasuryLaunchAllocation,
+    );
     expect(ledger.blocks.any((b) => b.isGenesisRenewal), isTrue);
     expect(
       ledger.blocks.last.transactions.any(

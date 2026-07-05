@@ -17,10 +17,11 @@ class PercInflation {
   static bool isPoolAtReserve(PercAmount treasuryPool) =>
       isPoolCritical(treasuryPool);
 
-  /// Balance below 0.66 PERC — treasury should regenerate toward 1 PERC.
+  /// Balance below 66% of the per-minute emission target — regenerate toward full minute allocation.
   static bool needsRegeneration(PercAmount treasuryPool) =>
-      treasuryPool.microUnits <
-      PercChainConstants.treasuryRegenerationThreshold.microUnits;
+      PercChainConstants.treasuryBalanceNeedsRegeneration(
+        treasuryPool.microUnits,
+      );
 
   /// Last block that minted PERC to the treasury (inflationary epoch).
   static DateTime? lastInflationEpoch(List<PercBlock> blocks) {
@@ -30,7 +31,7 @@ class PercInflation {
     return null;
   }
 
-  /// Countdown until another 1 PERC accrues at 1 PERC/minute since last epoch.
+  /// Countdown until another emission minute accrues since last epoch.
   static Duration? timeToNextInflation({
     required DateTime? lastInflationEpoch,
     required bool blockchainLaunched,

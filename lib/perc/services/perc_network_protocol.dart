@@ -11,6 +11,7 @@ class PercNetworkStatus {
     required this.revision,
     this.networkGenesisRevision = 1,
     this.sessionUsername,
+    this.publicAlias,
     this.endpoint,
     this.walletAddress,
     this.updatedAt,
@@ -22,6 +23,7 @@ class PercNetworkStatus {
   final int revision;
   final int networkGenesisRevision;
   final String? sessionUsername;
+  final String? publicAlias;
   final String? endpoint;
   final String? walletAddress;
   final DateTime? updatedAt;
@@ -41,6 +43,7 @@ class PercNetworkStatus {
         'revision': revision,
         'networkGenesisRevision': networkGenesisRevision,
         if (sessionUsername != null) 'sessionUsername': sessionUsername,
+        if (publicAlias != null) 'publicAlias': publicAlias,
         if (endpoint != null) 'endpoint': endpoint,
         if (walletAddress != null) 'walletAddress': walletAddress,
         if (updatedAt != null) 'updatedAt': updatedAt!.millisecondsSinceEpoch,
@@ -54,6 +57,7 @@ class PercNetworkStatus {
         revision: json['revision'] as int? ?? 0,
         networkGenesisRevision: json['networkGenesisRevision'] as int? ?? 1,
         sessionUsername: json['sessionUsername'] as String?,
+        publicAlias: json['publicAlias'] as String?,
         endpoint: json['endpoint'] as String?,
         walletAddress: json['walletAddress'] as String?,
         updatedAt: _parseUpdatedAt(json['updatedAt']),

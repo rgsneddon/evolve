@@ -471,7 +471,7 @@ final _en = {
       'Your wallet session expired after 7 minutes of inactivity — sign in again to run SCS analyses.',
   'wallet_treasury_title': 'Treasury emission',
   'wallet_treasury_note':
-      'Perccent chain advances on scenario analysis — not on Grok construal or field keystrokes. Treasury earns 1 PERC per elapsed minute — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.',
+      'Perccent chain advances on scenario analysis — not on Grok construal or field keystrokes. Treasury earns 0.00000001 PERC per elapsed minute — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.',
   'wallet_treasury_cycle': 'Treasury cycle #{cycle}',
   'wallet_treasury_minted': '{minted} PERC minted ({pct}% continuum)',
   'wallet_treasury_remaining': 'Treasury remaining: {amount} PERC',
@@ -484,7 +484,7 @@ final _en = {
   'wallet_treasury_send_locked':
       'Manual sends from evolve_treasury are disabled. Emission and faucet payouts continue.',
   'wallet_treasury_manual_send_note':
-      'Treasury is active — 1 PERC/min emission and scenario faucet payouts continue. Manual sends from evolve_treasury are disabled.',
+      'Treasury is active — 0.00000001 PERC/min emission and scenario faucet payouts continue. Manual sends from evolve_treasury are disabled.',
   'wallet_treasury_offline_note':
       'Treasury awaits blockchain launch. Run analysis after launch to draw from the faucet.',
   'wallet_block_height': 'Block height: {height}',
@@ -1366,7 +1366,7 @@ final _es = {
       'Su sesión de cartera expiró tras 7 minutos de inactividad — inicie sesión de nuevo para ejecutar análisis SCS.',
   'wallet_treasury_title': 'Emisión de tesorería',
   'wallet_treasury_note':
-      'La cadena Perccent avanza con análisis de escenarios — no con construcción Grok ni pulsaciones de campo. La tesorería gana 1 PERC por minuto transcurrido — suministro continuo infinito Chronoflux. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
+      'La cadena Perccent avanza con análisis de escenarios — no con construcción Grok ni pulsaciones de campo. La tesorería gana 0,00000001 PERC por minuto transcurrido — suministro continuo infinito Chronoflux. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
   'wallet_treasury_cycle': 'Ciclo de tesorería #{cycle}',
   'wallet_treasury_minted': '{minted} PERC acuñados ({pct}% continuo)',
   'wallet_treasury_remaining': 'Tesorería restante: {amount} PERC',
@@ -1379,7 +1379,7 @@ final _es = {
   'wallet_treasury_send_locked':
       'Los envíos manuales desde evolve_treasury están deshabilitados. La emisión y el grifo continúan.',
   'wallet_treasury_manual_send_note':
-      'La tesorería está activa — emisión de 1 PERC/min y pagos del grifo continúan. Los envíos manuales desde evolve_treasury están deshabilitados.',
+      'La tesorería está activa — emisión de 0,00000001 PERC/min y pagos del grifo continúan. Los envíos manuales desde evolve_treasury están deshabilitados.',
   'wallet_treasury_offline_note':
       'La tesorería espera el lanzamiento de la cadena. Ejecute un análisis tras el lanzamiento para usar el grifo.',
   'wallet_block_height': 'Altura de bloque: {height}',

@@ -3,8 +3,8 @@ import { formatPercAmount } from './explorer_api.js';
 import { blockHeight } from './ledger_store.js';
 
 const TREASURY_USERNAME = process.env.PERC_TREASURY_USERNAME ?? 'evolve_treasury';
-/** Genesis mint — 1 PERC; ongoing rate is 1 PERC/minute (PercChainConstants). */
-const EMISSION_MICRO_UNITS = 100_000_000;
+/** Genesis mint — 1 PERC launch allocation; ongoing rate matches PercChainConstants. */
+const LAUNCH_ALLOCATION_MICRO_UNITS = 100_000_000;
 
 function hashPassword(password, salt) {
   return crypto.createHash('sha256').update(`${salt}:${password}`).digest('hex');
@@ -36,7 +36,7 @@ export function launchBlockchainFromTreasuryLogin(store, { adminPassword, launch
   }
 
   const now = new Date().toISOString();
-  const emission = amount(EMISSION_MICRO_UNITS);
+  const emission = amount(LAUNCH_ALLOCATION_MICRO_UNITS);
 
   treasury.passwordHash = hashPassword(adminPassword, treasury.salt);
   treasury.passwordSet = true;
@@ -79,7 +79,7 @@ export function launchBlockchainFromTreasuryLogin(store, { adminPassword, launch
     launched: true,
     blockHeight: blockHeight(ledger),
     treasuryBalance: formatPercAmount(treasury.balance),
-    emissionPerMinute: '1',
+    emissionPerMinute: '0.00000001',
     disclaimer: 'Manual sends from evolve_treasury are disabled; emission and faucet payouts continue.',
   };
 }

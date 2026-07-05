@@ -56,16 +56,19 @@ export function buildPublicTreasuryEmission(ledger, treasuryUsername = 'evolve_t
   if (!ledger?.blockchainLaunched) return null;
   const treasury = ledger.accounts?.[treasuryUsername];
   const balanceMicro = treasury?.balance?.microUnits ?? 0;
-  const regenThresholdMicro = Math.round(0.66 * 100_000_000);
+  const emissionMicroPerMinute = 1;
+  const regenThresholdMicro = Math.floor(
+    (emissionMicroPerMinute * 66) / 100,
+  );
   return {
-    emissionPerMinute: '1',
+    emissionPerMinute: '0.00000001',
     balance: formatPercAmount(treasury?.balance),
     cumulativeMinted: formatPercAmount(ledger.cumulativeTreasuryMinted),
     treasuryCycle: ledger.treasuryCycle ?? 1,
     manualSendsLocked: true,
     disclaimer: 'Manual sends from evolve_treasury are disabled; emission and faucet payouts continue.',
-    regenerationThreshold: '0.66',
-    needsRegeneration: balanceMicro < regenThresholdMicro,
+    regenerationThreshold: formatPercAmount({ microUnits: regenThresholdMicro }),
+    needsRegeneration: balanceMicro * 100 < emissionMicroPerMinute * 66,
   };
 }
 

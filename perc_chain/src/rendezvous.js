@@ -3,6 +3,11 @@ import {
   findAddressInLedgerCollection,
   indexLedgerAddresses,
 } from './address_index.js';
+import {
+  obfuscateUsername,
+  sanitizeLedgerForPublic,
+  sanitizePeersForPublic,
+} from './account_privacy.js';
 import { isRecipientOnlineOnSeed } from './peer_online.js';
 
 const PORT = Number(process.env.PORT ?? process.env.PERC_RENDEZVOUS_PORT ?? 9478);
@@ -14,6 +19,25 @@ const peers = new Map();
 const ledgers = new Map();
 /** @type {Map<string, string>} wallet address → sessionUsername */
 const addresses = new Map();
+
+function findRelayEntryByAddress(address) {
+  const needle = (address ?? '').trim();
+  if (!needle) return null;
+
+  const mappedUser = addresses.get(needle);
+  if (mappedUser && ledgers.has(mappedUser)) {
+    return ledgers.get(mappedUser);
+  }
+
+  for (const entry of ledgers.values()) {
+    const ledger = entry?.ledger;
+    if (!ledger?.accounts) continue;
+    for (const acc of Object.values(ledger.accounts)) {
+      if (acc?.address?.trim() === needle) return entry;
+    }
+  }
+  return null;
+}
 
 function json(res, code, body) {
   res.writeHead(code, {
@@ -80,7 +104,7 @@ const server = http.createServer(async (req, res) => {
     const list = [...peers.values()].filter(
       (p) => (p.evolutionaryChainId ?? CHAIN_ID) === chainId,
     );
-    return json(res, 200, list);
+    return json(res, 200, sanitizePeersForPublic(list));
   }
 
   if (req.method === 'PUT' && url.pathname === '/perc/rendezvous/ledger') {
@@ -119,11 +143,7 @@ const server = http.createServer(async (req, res) => {
       username,
       address,
     });
-    return json(res, 200, {
-      online,
-      username: username ?? null,
-      address: address ?? null,
-    });
+    return json(res, 200, { online });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/address') {
@@ -144,18 +164,27 @@ const server = http.createServer(async (req, res) => {
     if (!username) {
       return json(res, 404, { error: 'address not found' });
     }
-    return json(res, 200, {
-      username,
-      address,
-    });
+    return json(res, 200, { address });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/ledger') {
-    const username = url.searchParams.get('username');
-    if (!username || !ledgers.has(username)) {
+    const username = url.searchParams.get('username')?.trim();
+    const address = url.searchParams.get('address')?.trim();
+    let entry = null;
+    if (username && ledgers.has(username)) {
+      entry = ledgers.get(username);
+    } else if (address) {
+      entry = findRelayEntryByAddress(address);
+    }
+    if (!entry?.ledger) {
       return json(res, 404, { error: 'ledger not found' });
     }
-    return json(res, 200, ledgers.get(username));
+    return json(res, 200, {
+      publicAlias: obfuscateUsername(entry.username ?? username ?? ''),
+      walletAddress: address ?? null,
+      ledger: sanitizeLedgerForPublic(entry.ledger),
+      updatedAt: entry.updatedAt ?? null,
+    });
   }
 
   if (req.method === 'GET' && url.pathname === '/health') {

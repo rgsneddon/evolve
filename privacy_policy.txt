@@ -2,7 +2,7 @@ EVOLVE CHRONOFLUX — PRIVACY POLICY
 ===================================
 
 Effective date: 3 July 2026
-Last updated: 4 July 2026
+Last updated: 5 July 2026
 
 This Privacy Policy describes how Evolve Chronoflux ("Evolve", "we", "us", or "our")
 collects, uses, stores, and shares information when you use the Evolve application
@@ -45,11 +45,20 @@ Privacy enquiries:
 - Optional online features (Grok construal, narrative links, PERC network sync,
   and the hosted explorer) send only what is needed for the feature you enable
   or trigger.
+- Public seed-node and explorer responses do not expose wallet passwords, password
+  hashes, salts, or real usernames. Where an account identity must appear on a
+  public surface, it is shown as a deterministic five-character public alias
+  (for example "K7m2p"), not your login username.
+- IPv4 wallet node endpoints are masked on the public explorer (shown as
+  "Private node" rather than your home IP and port).
 - The treasury wallet on the seed node is hidden from public peer listings. A
   one-time blockchain launch is performed only when the designated treasury
   administrator signs in on the hosted Treasury tab. After launch, treasury
-  emission statistics are shown publicly on the explorer with a "TREASURY IS
-  LOCKED" notice; outbound treasury sends remain disabled.
+  emission statistics are shown publicly on the explorer (currently 0.00000001
+  PERC per minute); outbound treasury sends remain disabled.
+- Inside the Evolve app, you see your own username. Other users' names in your
+  transaction history and wallet block explorer are shown as the same style of
+  five-character alias unless you are viewing your own activity.
 
 
 3. INFORMATION WE COLLECT AND HOW WE USE IT
@@ -63,6 +72,8 @@ When you use Evolve, you may enter:
   - Region and language preferences
   - PERC wallet username, password, and transfer details
   - Narrative URLs for cohesion analysis (when you paste a link)
+  - Ward voting proposals, vote choices, and optional public comments (when you
+    use Community Ward Voting while signed in)
   - Exported synopsis files you choose to save (PDF, HTML, or text)
 
 This content is used to run analysis, maintain your local PERC ledger, and produce
@@ -82,10 +93,9 @@ Evolve may store the following on your device:
   PERC wallet ledger
     - Username, password hash and salt, confidential PERC address (Beam-privacy
       fork), balances, transaction history, blockchain state, wallet peer mesh,
-      network node metadata, and related wallet data.
+      network node metadata, ward proposals and ballots, and related wallet data.
     - Each device keeps its own ledger file. Your wallet credentials stay on your
-      device when the chain synchronises from the network; only chain consensus
-      data is merged from the seed node.
+      device; only chain consensus data is merged from the network.
     - Windows / Android / iOS: application support directory as a JSON file.
     - Web: browser localStorage for the same origin (shared across tabs on that
       origin).
@@ -101,7 +111,7 @@ Evolve may store the following on your device:
 We do not automatically upload your full local ledger to Evolve Chronoflux except
 through PERC network sync (Section 3.7), which transmits ledger data — including
 public scenario labels when you complete analysis while signed in — when you use
-wallet online features.
+wallet online features. Public read APIs return a sanitised view (Section 3.11).
 
 
 3.3 Optional online features (only when you enable or trigger them)
@@ -179,20 +189,21 @@ not control their practices.
 When you launch Evolve or sign in to a PERC wallet, the app may connect to the
 configured seed node (default: https://evolve-perc-internet.onrender.com) to:
 
-  - Fetch seed status and ledger data (block height, chain tip, genesis revision)
+  - Fetch seed status and sanitised ledger data (block height, chain tip, genesis
+    revision)
   - Align your local chain with the network, including resetting to block 0 when a
     new network genesis revision is published
-  - Register your wallet as an online peer (username, public endpoint, block
-    height, tip hash, chain id, revision)
-  - Gossip or relay ledger updates to other peers via the rendezvous service
+  - Register your wallet as an online peer (session username, public endpoint,
+    wallet address, block height, tip hash, chain id, revision)
+  - Relay ledger updates to other peers via the rendezvous service
 
-Data your wallet may send to the seed node when you are signed in:
+Data your wallet may send to the seed node when you are signed in (operational sync):
 
   - Session username and advertised node endpoint (which may include your public IP
     and port, or an internet URL resolved via third-party IP lookup)
   - Network status JSON (block height, tip hash, evolutionary chain id, revision)
   - Full ledger JSON when syncing or relaying to peers (includes block scenario
-    labels — your posed question or topic text — visible on the public explorer)
+    labels — your posed question or topic text — and ward voting data you submit)
 
 Data your wallet does not send for peer registration:
 
@@ -200,12 +211,15 @@ Data your wallet does not send for peer registration:
   - The evolve_treasury wallet is not registered to the public rendezvous peer list
 
 The evolve_treasury account on the seed node is excluded from public peer listings
-on the explorer and rendezvous API. Other registered usernames may appear in the
-public network explorer when online.
+on the explorer and rendezvous API.
 
 Independent wallets: each user/device maintains its own stored ledger and login
 credentials. Network import merges shared chain blocks and balances but preserves
 your local wallet passwords unless you have not yet gossiped a new registration.
+
+Internal server routing may use your real username and wallet address to match
+relay requests. Anonymous visitors who call public read APIs receive only the
+sanitised data described in Section 3.11.
 
 
 3.8 Hosted network explorer (public)
@@ -215,13 +229,22 @@ that displays:
 
   - Seed and network block height, peer online status, and chain identifiers
   - A block list and block detail API, including scenario labels (posed questions or
-    topics) and triggering usernames from all users who complete scenarios on-chain
+    topics you chose to record on-chain)
+  - Five-character public aliases instead of real wallet usernames for triggers,
+    transaction parties, peer listings, and wallet chart entries
+  - Treasury emission statistics (rate, balance, cumulative minted PERC) after
+    blockchain launch
   - Auto-refreshing network statistics (approximately every 30 seconds)
+
+The public explorer does not display:
+
+  - Wallet passwords, password hashes, salts, or password-set flags
+  - Real PERC wallet login usernames
+  - Raw IPv4 home endpoints for wallet nodes (these appear as "Private node")
 
 Before the blockchain is launched, the explorer shows no chain blocks. After the
 one-time treasury launch (Section 3.9), the explorer shows treasury emission
-statistics for all visitors, including emission rate, treasury balance, and
-cumulative minted PERC, together with a notice that manual sends from
+statistics for all visitors, together with a notice that manual sends from
 evolve_treasury are disabled (emission and faucet payouts continue). These
 figures are chain consensus data, not treasury administrator credentials.
 
@@ -265,12 +288,53 @@ summary on the Explorer tab becomes public after launch (Section 3.8).
 
 PERC uses confidential-style addresses derived on-device (percpriv1…). Balances
 may be shielded in the UI. Address derivation uses your username and wallet salt
-locally; confidential addresses appear in ledger data that may be relayed during
-network sync as described in Section 3.7.
+locally. Your PERC address may appear in public ledger data and rendezvous address
+lookups because transfers are addressed by confidential address, not by username.
+Addresses are pseudonymous identifiers; they are not the same as your login username.
 
 
-4. WHAT WE DO NOT COLLECT
--------------------------
+3.11 Public account privacy (sanitised network responses)
+
+Evolve applies an account-privacy layer to all anonymous public read paths on the
+seed node, rendezvous service, and wallet nodes that serve unauthenticated GET
+requests (including /api/network, /api/blocks, /perc/ledger, /perc/status,
+/perc/rendezvous/peers, and relayed ledger fetches).
+
+Sanitisation includes:
+
+  - Removing password, passwordHash, salt, and passwordSet fields from any public
+    JSON response
+  - Replacing real usernames (including sessionUsername, fromUsername, toUsername,
+    triggerUsername, proposerUsername, and voterUsername) with a deterministic
+    five-character public alias derived from the username
+  - Returning only { "online": true/false } from the public online-status endpoint
+    (no echoed username or address)
+  - Returning only the PERC address from public address lookup (no username field)
+  - Masking IPv4 wallet endpoints on the explorer as "Private node"
+
+Public aliases are stable for a given username on the network but are not designed
+to be reversible to your login name by casual visitors. They reduce exposure of
+account identities on the open internet while keeping block heights, scenario
+labels, PERC addresses, and chain statistics visible for transparency.
+
+Inside your signed-in Evolve app, you still see your own username. Other users are
+shown by public alias in transaction history and the wallet block explorer unless
+you are viewing your own entries.
+
+
+3.12 Community Ward Voting (in-app)
+
+When you use Community Ward Voting while signed in, your vote, optional comment,
+and proposal text are stored in the shared PERC ledger and sync to the network.
+Live results and public comments are visible to other signed-in wallets that sync
+the chain. On anonymous public explorer and API responses, voter and proposer
+usernames are replaced with five-character public aliases (Section 3.11). Proposal
+titles, summaries, vote tallies, and comments you choose to submit remain visible
+to participants.
+
+
+4. WHAT WE DO NOT COLLECT OR EXPOSE PUBLICLY
+--------------------------------------------
 
 Evolve does not intentionally collect:
 
@@ -282,6 +346,13 @@ Evolve does not intentionally collect:
   - Analytics or crash reports sent to Evolve Chronoflux
   - Plaintext treasury administrator passwords (only salted hashes are stored on
     the seed node)
+
+On public seed-node, rendezvous, and unauthenticated wallet-node read APIs, Evolve
+does not expose:
+
+  - PERC wallet passwords, password hashes, or salts
+  - Real wallet login usernames (public aliases are used instead)
+  - Raw IPv4 wallet node endpoints on the hosted explorer
 
 
 5. HOW LONG WE KEEP INFORMATION
@@ -297,8 +368,8 @@ Evolve does not intentionally collect:
       mounted data volume until reset, redeployment with a new genesis revision,
       or manual deletion.
     - Treasury administrator session tokens expire after 24 hours of inactivity.
-    - Peer "online" status uses a freshness window (default 15 minutes since last
-      registration).
+    - Peer "online" status uses a freshness window (7 minutes since last
+      registration heartbeat).
 
   Third-party providers
     - Data sent to X, Grok, Google, GitHub, Render, public IP lookup services, or
@@ -321,17 +392,21 @@ Information may be shared only in these situations:
     URL fetching, Google Fonts, Render hosting, public IP lookup), as described in
     Section 3
   - With other PERC network participants through rendezvous registration and ledger
-    gossip you trigger by using an online wallet (username, endpoint, chain state)
-  - Publicly on the network explorer after blockchain launch (scenario labels and
-    triggering usernames from on-chain analysis, plus treasury emission statistics
-    — not treasury login credentials)
+    gossip you trigger by using an online wallet (operational sync uses your
+    username and endpoint; public peer listings show a five-character alias instead
+    of your login name)
+  - Publicly on the network explorer after blockchain launch (scenario labels you
+    record on-chain, five-character public aliases for account-related fields,
+    PERC addresses, and treasury emission statistics — not treasury login
+    credentials or wallet passwords)
   - When required by law, regulation, or valid legal process
   - To protect the rights, safety, or security of users or the public, where permitted
     by law
 
 Evolve does not share your PERC wallet password with other users. PERC transfers
-you initiate may reveal your username, address, and amounts to recipients on the
-shared chain.
+you initiate may reveal your confidential PERC address and amounts to recipients
+on the shared chain. Recipients who know your address can send PERC to you without
+learning your login username from public explorer pages.
 
 
 7. CHILDREN'S PRIVACY
@@ -347,11 +422,12 @@ details in Section 1.
 -----------
 
 We use reasonable measures to protect information stored on your device (local
-files, browser storage) and on the seed node (password hashing for treasury admin,
-HTTPS via Render, persistent disk for ledger data). No method of storage or
-transmission is completely secure. You are responsible for securing your device,
-X account, treasury administrator password, PERC wallet password, and any
-exported files.
+files, browser storage) and on the seed node (password hashing for treasury admin
+and wallet accounts, HTTPS via Render, persistent disk for ledger data, and
+public-response sanitisation that strips credentials and obfuscates usernames).
+No method of storage or transmission is completely secure. You are responsible for
+securing your device, X account, treasury administrator password, PERC wallet
+password, and any exported files.
 
 If a network genesis reset is published, your device may replace local chain data
 with the seed ledger at block 0. Local wallet credentials on your device are
@@ -370,8 +446,10 @@ You can:
     localStorage entries
   - Export or delete synopsis files you saved
   - Avoid signing in to a PERC wallet or completing on-chain scenarios if you do
-    not want your posed question visible on the public explorer, rendezvous
-    registration, or ledger gossip (offline-only use limits network features)
+    not want your posed question visible on the public explorer, rendezvous sync,
+    or ledger gossip (offline-only use limits network features)
+  - Avoid Community Ward Voting if you do not want proposals, votes, or comments
+    stored on the shared chain
   - Sign out of the hosted Treasury tab and clear browser sessionStorage
 
 Depending on your location, you may have rights to access, correct, delete, or
@@ -392,12 +470,13 @@ configuration.
 
 
 11. CHANGES TO THIS POLICY
---------------------------
+---------------------------
 
 We may update this Privacy Policy from time to time. The "Last updated" date at the
 top will change when we do. Continued use of Evolve or the hosted seed node after
 an update means you accept the revised policy. The current version is published in
-the Evolve GitHub repository at privacy_policy.txt.
+the Evolve GitHub repository at privacy_policy.txt and linked from the GitHub
+Pages download page.
 
 
 12. OPEN-SOURCE COMPONENTS

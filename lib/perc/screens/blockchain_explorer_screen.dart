@@ -8,6 +8,7 @@ import '../../providers/locale_provider.dart';
 import '../models/perc_block.dart';
 import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
+import '../services/perc_account_privacy.dart';
 import '../services/perc_block_timing.dart';
 import '../services/perc_ward_bundler.dart';
 import '../services/chronoflux_variable_history.dart';
@@ -291,7 +292,12 @@ class BlockchainExplorerScreen extends StatelessWidget {
               Text(
                 strings
                     .t('wallet_explorer_trigger')
-                    .replaceAll('{user}', block.triggerUsername!),
+                    .replaceAll(
+                      '{user}',
+                      PercAccountPrivacy.publicDisplayName(
+                        block.triggerUsername,
+                      ),
+                    ),
                 style: const TextStyle(fontSize: 12),
               ),
             ],

@@ -1,9 +1,13 @@
 import { formatPercAmount } from './explorer_api.js';
 import { blockHeight } from './ledger_store.js';
 
-const UNITS_PER_PERC = 100_000_000;
-const REGEN_THRESHOLD_MICRO = Math.round(0.66 * UNITS_PER_PERC);
-const TARGET_MICRO = UNITS_PER_PERC;
+const EMISSION_MICRO_PER_MINUTE = 1;
+const REGEN_RATIO_PERCENT = 66;
+const TARGET_MICRO = EMISSION_MICRO_PER_MINUTE;
+
+function treasuryNeedsRegeneration(balanceMicro) {
+  return balanceMicro * 100 < TARGET_MICRO * REGEN_RATIO_PERCENT;
+}
 
 function amount(microUnits) {
   return { microUnits };
@@ -18,7 +22,7 @@ function subAmount(a, b) {
 }
 
 /**
- * When evolve_treasury balance drops below 0.66 PERC, mint toward 1 PERC.
+ * When evolve_treasury balance drops below 66% of the minute target, mint toward 0.00000001 PERC.
  * Returns true when a regeneration block was appended.
  */
 export function regenerateTreasuryIfLow(store, treasuryUsername = 'evolve_treasury') {
@@ -29,7 +33,7 @@ export function regenerateTreasuryIfLow(store, treasuryUsername = 'evolve_treasu
   if (!treasury) return false;
 
   const balanceMicro = treasury.balance?.microUnits ?? 0;
-  if (balanceMicro >= REGEN_THRESHOLD_MICRO) return false;
+  if (!treasuryNeedsRegeneration(balanceMicro)) return false;
 
   const shortfallMicro = TARGET_MICRO - balanceMicro;
   if (shortfallMicro <= 0) return false;
@@ -45,7 +49,7 @@ export function regenerateTreasuryIfLow(store, treasuryUsername = 'evolve_treasu
     amount: shortfall,
     timestamp: now,
     toUsername: treasuryUsername,
-    memo: 'Treasury regeneration — balance below 0.66 PERC',
+    memo: 'Treasury regeneration — balance below emission target',
     blockIndex: blockHeight(ledger),
     confirmations: 1,
   };
@@ -78,9 +82,13 @@ export function treasuryRegenerationStatus(ledger, treasuryUsername = 'evolve_tr
   const treasury = ledger?.accounts?.[treasuryUsername];
   const balanceMicro = treasury?.balance?.microUnits ?? 0;
   return {
-    threshold: '0.66',
-    target: '1',
-    needsRegeneration: Boolean(ledger?.blockchainLaunched && balanceMicro < REGEN_THRESHOLD_MICRO),
+    threshold: formatPercAmount({
+      microUnits: Math.floor((TARGET_MICRO * REGEN_RATIO_PERCENT) / 100),
+    }),
+    target: '0.00000001',
+    needsRegeneration: Boolean(
+      ledger?.blockchainLaunched && treasuryNeedsRegeneration(balanceMicro),
+    ),
     balance: formatPercAmount(treasury?.balance),
   };
 }

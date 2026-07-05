@@ -14,6 +14,7 @@ import '../models/perc_peer_node.dart';
 import '../models/ward_proposal.dart';
 import 'ward_voting.dart';
 import '../perc_chain_constants.dart';
+import 'perc_account_privacy.dart';
 import 'perc_auth.dart';
 import 'perc_chronoflux_micro_verifier.dart';
 import 'perc_block_timing.dart';
@@ -226,13 +227,16 @@ class PercLedger {
     bool? online,
   }) {
     final username = status.sessionUsername;
-    if (username == null) return;
-    final key = PercAuth.normalizeUsername(username);
+    final address = status.walletAddress?.trim();
+    if (username == null && (address == null || address.isEmpty)) return;
+    final key = username != null
+        ? PercAuth.normalizeUsername(username)
+        : PercAccountPrivacy.peerKeyForAddress(address!);
     final existing = networkNodes[key];
     final isOnline = online ?? status.isFreshOnSeedPeer;
     networkNodes[key] = (existing ??
             PercPeerNode.offline(
-              username: key,
+              username: username != null ? key : key,
               blockHeight: status.blockHeight,
               tipHash: status.tipHash,
             ))
@@ -1061,9 +1065,9 @@ class PercLedger {
 
   bool _needsTreasuryPoolRenewal() => isTreasuryAtReserve;
 
-  /// Mints toward 1 PERC when the pool drops below 0.66 PERC.
+  /// Mints toward the per-minute emission target when balance falls below 66%.
   List<PercTransaction> _regenerateTreasuryIfNeeded(DateTime now) {
-    // Genesis scenario emission mints the first 1 PERC — skip regen until then.
+    // Genesis scenario emission mints the first minute allocation — skip regen until then.
     if (!treasuryGenesisDone) return [];
     if (!treasuryNeedsRegeneration || treasuryCapped) return [];
 
@@ -1135,7 +1139,7 @@ class PercLedger {
   PercAmount _treasuryEmissionForScenario(DateTime now) {
     if (treasuryCapped) return PercAmount.zero;
     if (!treasuryGenesisDone) {
-      return PercChainConstants.treasuryEmissionPerMinute;
+      return PercChainConstants.treasuryLaunchAllocation;
     }
     if (lastScenarioAt == null) return PercAmount.zero;
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
@@ -1273,7 +1277,7 @@ class PercLedger {
   List<PercTransaction> _treasuryEmissionTxs(DateTime now) {
     if (treasuryCapped) return [];
     final regenTxs = _regenerateTreasuryIfNeeded(now);
-    final genesisEmission = PercChainConstants.treasuryEmissionPerMinute;
+    final genesisEmission = PercChainConstants.treasuryLaunchAllocation;
     if (!treasuryGenesisDone) {
       treasuryGenesisDone = true;
       cumulativeTreasuryMinted = cumulativeTreasuryMinted + genesisEmission;

@@ -1,7 +1,7 @@
 import '../models/perc_amount.dart';
 import '../perc_chain_constants.dart';
 
-/// Treasury emission — 1 PERC/minute until ~286M cumulative mint (Beam-inspired).
+/// Treasury emission — 0.00000001 PERC/minute (1 cent/min), infinite continuum.
 class PercTreasury {
   PercTreasury({
     PercAmount? cumulativeMinted,

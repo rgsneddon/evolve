@@ -419,10 +419,14 @@
       return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
     }
 
+    function publicAlias(row) {
+      return row?.publicAlias ?? row?.username ?? '-----';
+    }
+
     function renderWalletBlockChart(chart, peerList = []) {
       const svg = $('wallet-pentagon-chart');
       const legend = $('wallet-block-legend');
-      const peerByName = new Map((peerList ?? []).map((p) => [p.username, p]));
+      const peerByName = new Map((peerList ?? []).map((p) => [publicAlias(p), p]));
 
       if (!chart || !chart.users) {
         svg.innerHTML = '';
@@ -431,9 +435,11 @@
       }
 
       const users = chart.users.map((u) => {
-        const p = peerByName.get(u.username);
+        const label = publicAlias(u);
+        const p = peerByName.get(label);
         return {
           ...u,
+          publicAlias: label,
           online: u.online ?? p?.online ?? false,
           endpoint: u.endpoint ?? p?.endpoint ?? null,
           lastSeen: u.lastSeen ?? p?.lastSeen ?? null,
@@ -476,11 +482,11 @@
         const r = radius * Math.max(0.04, Math.min(1, frac));
         const p = pentagonPoint(cx, cy, r, angle);
         const color = WALLET_CHART_COLORS[index % WALLET_CHART_COLORS.length];
-        svgParts += `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="${color}" stroke="#0b0d14" stroke-width="1.5"><title>${user.username}: block ${user.displayBlock}</title></circle>`;
+        svgParts += `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="${color}" stroke="#0b0d14" stroke-width="1.5"><title>${publicAlias(user)}: block ${user.displayBlock}</title></circle>`;
         if (users.length <= 8) {
           const lx = p.x + 8 * Math.cos(angle);
           const ly = p.y + 8 * Math.sin(angle);
-          svgParts += `<text x="${lx}" y="${ly}" fill="${color}" font-size="8" font-family="Segoe UI, system-ui, sans-serif">${user.username}</text>`;
+          svgParts += `<text x="${lx}" y="${ly}" fill="${color}" font-size="8" font-family="Segoe UI, system-ui, sans-serif">${publicAlias(user)}</text>`;
         }
       });
 
@@ -498,7 +504,7 @@
             return `<div class="wallet-legend-item">
               <span class="wallet-swatch" style="background:${color}"></span>
               <div>
-                <strong>${user.username}</strong> ${pill(user.online)}
+                <strong>${publicAlias(user)}</strong> ${pill(user.online)}
                 <div class="wallet-legend-meta">
                   Block ${user.displayBlock ?? 0}
                   · scenario ${user.scenarioBlockHeight ?? 0}
