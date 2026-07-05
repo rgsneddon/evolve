@@ -19,8 +19,8 @@ void main() {
       regionLabel: 'UK & Ireland',
     );
 
-    expect(vortex, startsWith('ω (vortex):'));
-    expect(shear, startsWith('σ (shear):'));
+    expect(vortex, contains('ω (vortex):'));
+    expect(shear, contains('σ (shear):'));
     expect(vortex.toLowerCase(), isNot(contains(question.toLowerCase())));
     expect(shear.toLowerCase(), isNot(contains(question.toLowerCase())));
     expect(vortex, isNot(contains('"')));

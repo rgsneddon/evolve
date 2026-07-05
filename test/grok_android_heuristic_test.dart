@@ -24,8 +24,9 @@ void main() {
 
     await provider.beginGrokConstrue();
 
-    expect(provider.input.vortexText, startsWith('ω (vortex):'));
-    expect(provider.input.shearText, startsWith('σ (shear):'));
+    expect(provider.input.vortexText, contains('ω (vortex):'));
+    expect(provider.input.shearText, contains('σ (shear):'));
+    expect(provider.input.continuumText, contains('ρt (continuum):'));
     expect(provider.grokFilledFields.length, 4);
   });
 

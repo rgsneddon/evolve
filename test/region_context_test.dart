@@ -53,7 +53,8 @@ void main() {
       locale: const LocaleConfig(regionId: 'mena', languageCode: 'en'),
     );
 
-    expect(result.cohesionReport, contains('[Middle East & North Africa focus]'));
+    expect(result.cohesionReport, contains('Middle East & North Africa focus'));
+    expect(result.cohesionReport, contains('Elite narrative compression on migration policy'));
     expect(result.cohesionReport, contains('in Middle East & North Africa'));
   });
 

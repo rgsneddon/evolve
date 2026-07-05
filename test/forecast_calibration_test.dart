@@ -61,7 +61,8 @@ void main() {
     expect(pct.continuumConclusion, contains('Calibrated REGRESSIVE headline'));
     expect(pct.continuumConclusion, contains('regressive percentage, lower chance'));
     expect(coh.continuumConclusion, contains('Outcome registry'));
-    expect(pct.cohesionReport, contains('THE CONTINUUM — Calibrated Forecast'));
+    expect(coh.cohesionReport, contains('Weighted Overall SCS'));
+    expect(coh.cohesionReport, isNot(contains('THE CONTINUUM — Calibrated Forecast')));
     expect(pct.grokStyleReply, contains('REGRESSIVE outcome'));
     expect(pct.percentChance, pct.forecast.calibratedPercent);
   });

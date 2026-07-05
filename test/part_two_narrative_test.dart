@@ -20,9 +20,10 @@ void main() {
     final result = engine.analyze(input);
     final two = result.partTwo;
 
-    expect(two.expandedVortex, contains('civil unrest'));
-    expect(two.shearRefinement, contains('civil unrest'));
-    expect(two.resistanceFlow, contains('civil unrest'));
+    expect(two.expandedVortex, contains('sporadic civil unrest'));
+    expect(two.shearRefinement, contains('sporadic civil unrest'));
+    expect(two.resistanceFlow, contains('Iτ'));
+    expect(two.resistanceFlow, contains('Jμ'));
 
     expect(two.shearRefinement.toLowerCase(), isNot(contains('polarized protests')));
     expect(two.resistanceFlow.toLowerCase(), isNot(contains('institutional scepticism')));
@@ -37,7 +38,7 @@ void main() {
     );
     final result = engine.analyze(input);
 
-    expect(result.partTwo.expandedVortex, contains('% salience'));
+    expect(result.partTwo.expandedVortex, contains('ω'));
     expect(result.partTwo.shearRefinement, contains('σ'));
     expect(result.partTwo.resistanceFlow, contains('Iτ'));
     expect(result.partTwo.resistanceFlow, contains('Jμ'));

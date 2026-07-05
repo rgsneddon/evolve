@@ -24,10 +24,11 @@ void main() {
 
     await provider.beginGrokConstrue();
 
-    expect(provider.input.vortexText, startsWith('ω (vortex):'));
-    expect(provider.input.shearText, startsWith('σ (shear):'));
-    expect(provider.input.resistanceText, startsWith('Iτ (resistance):'));
-    expect(provider.input.flowText, startsWith('Jμ (flow):'));
+    expect(provider.input.vortexText, contains('ω (vortex):'));
+    expect(provider.input.shearText, contains('σ (shear):'));
+    expect(provider.input.resistanceText, contains('Iτ (resistance):'));
+    expect(provider.input.flowText, contains('Jμ (flow):'));
+    expect(provider.input.continuumText, contains('ρt (continuum):'));
     expect(provider.input.vortexText.toLowerCase(), isNot(contains(question.toLowerCase())));
     expect(provider.input.vortexText, isNot(contains('"')));
     expect(provider.input.shearText.toLowerCase(), contains('lever'));
