@@ -1,36 +1,43 @@
-# Bump Evolve release version (+1 patch, +1 build) and sync versioned source files.
+# Bump Evolve release version and sync versioned source files.
+# Always advances from the highest version seen locally, on origin/main, in tags, and recent bump commits.
 param(
     [switch]$PatchOnly,
-    [switch]$BuildOnly
+    [switch]$BuildOnly,
+    [switch]$EnsureConsecutive
 )
 
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
+. (Join-Path $PSScriptRoot 'version_utils.ps1')
 Set-Location $Root
+
+if ($PatchOnly -and $BuildOnly) {
+    throw 'Use only one of -PatchOnly or -BuildOnly'
+}
 
 $pubspecPath = Join-Path $Root 'pubspec.yaml'
 $pubspec = Get-Content $pubspecPath -Raw
-if ($pubspec -notmatch 'version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)') {
+$local = Parse-AppVersion $pubspec
+if (-not $local) {
     throw 'Could not parse version from pubspec.yaml (expected x.y.z+build)'
 }
 
-$major = [int]$Matches[1]
-$minor = [int]$Matches[2]
-$patch = [int]$Matches[3]
-$build = [int]$Matches[4]
-
-if ($BuildOnly) {
-    $build += 1
-} elseif ($PatchOnly) {
-    $patch += 1
-    $build += 1
-} else {
-    $patch += 1
-    $build += 1
+if ($EnsureConsecutive) {
+    if (-not $BuildOnly -and -not $PatchOnly) {
+        $BuildOnly = $true
+    }
 }
 
-$release = "$major.$minor.$patch"
-$full = "$release+$build"
+$publishedMax = Get-PublishedMaxAppVersion -Root $Root
+$next = Get-NextAppVersion -Root $Root -PatchOnly:$PatchOnly -BuildOnly:$BuildOnly -FromPublishedMax:$EnsureConsecutive
+$release = $next.Release
+$full = $next.Full
+$nextParsed = Parse-AppVersion $full
+
+if ($EnsureConsecutive -and (Compare-AppVersion $local $nextParsed) -ge 0) {
+    Write-Host "Version already consecutive at $($local.Major).$($local.Minor).$($local.Patch)+$($local.Build) (published max $($publishedMax.Major).$($publishedMax.Minor).$($publishedMax.Patch)+$($publishedMax.Build), next $full)" -ForegroundColor Yellow
+    exit 0
+}
 
 $pubspec = $pubspec -replace 'version:\s*[0-9.]+\+\d+', "version: $full"
 Set-Content -Path $pubspecPath -Value $pubspec -NoNewline
@@ -42,9 +49,9 @@ Set-Content -Path $appVersionPath -Value $appVersion -NoNewline
 
 $versionJsonPath = Join-Path $Root 'version.json'
 @{
-    app_name = 'evolve'
-    version = $release
-    build_number = "$build"
+    app_name     = 'evolve'
+    version      = $release
+    build_number = "$($nextParsed.Build)"
     package_name = 'evolve'
 } | ConvertTo-Json -Compress | Set-Content -Path $versionJsonPath -Encoding utf8 -NoNewline
 
@@ -52,11 +59,11 @@ $downloadsIndex = Join-Path $Root 'downloads\index.html'
 if (Test-Path $downloadsIndex) {
     $html = Get-Content $downloadsIndex -Raw
     $html = $html -replace 'Latest release: <strong>v[0-9.]+</strong> \(build \d+\)',
-        "Latest release: <strong>v$release</strong> (build $build)"
+        "Latest release: <strong>v$release</strong> (build $($nextParsed.Build))"
     Set-Content -Path $downloadsIndex -Value $html -NoNewline
 }
-
 Write-Host "Version bumped to $full" -ForegroundColor Green
+Write-Host "  (published max: $($publishedMax.Major).$($publishedMax.Minor).$($publishedMax.Patch)+$($publishedMax.Build))"
 Write-Host "  pubspec.yaml"
 Write-Host "  lib/perc/perc_app_version.dart"
 Write-Host "  version.json"
