@@ -58,6 +58,7 @@ class GrokSession {
 /// Optional field suggestions returned by Grok construal.
 class GrokConstrualResult {
   const GrokConstrualResult({
+    this.continuumText = '',
     this.vortexText = '',
     this.shearText = '',
     this.resistanceText = '',
@@ -65,6 +66,7 @@ class GrokConstrualResult {
     this.provenance = 'offline',
   });
 
+  final String continuumText;
   final String vortexText;
   final String shearText;
   final String resistanceText;
@@ -73,6 +75,7 @@ class GrokConstrualResult {
 
   factory GrokConstrualResult.fromJson(Map<String, dynamic> json) =>
       GrokConstrualResult(
+        continuumText: '${json['continuumText'] ?? ''}',
         vortexText: '${json['vortexText'] ?? ''}',
         shearText: '${json['shearText'] ?? ''}',
         resistanceText: '${json['resistanceText'] ?? ''}',
@@ -81,6 +84,7 @@ class GrokConstrualResult {
       );
 
   bool get hasSuggestions =>
+      continuumText.isNotEmpty ||
       vortexText.isNotEmpty ||
       shearText.isNotEmpty ||
       resistanceText.isNotEmpty ||

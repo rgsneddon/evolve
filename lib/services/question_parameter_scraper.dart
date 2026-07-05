@@ -1,3 +1,4 @@
+import 'construal_realtime.dart';
 import 'question_semantics.dart';
 
 /// Mines posed-question text for construct levers when live search is thin.
@@ -31,11 +32,13 @@ class QuestionParameterScraper {
     final focus = salient.isNotEmpty ? salient.take(3).join('; ') : anchor;
     final hints = sem.hintSignals.where(_isQuestionDerivedHint).toList();
 
+    final date = ConstrualRealtime.analysisDateIso();
     return {
-      'vortex': _vortexLine(anchor, focus, hints, question),
-      'shear': _shearLine(anchor, focus, hints, question),
-      'resistance': _resistanceLine(anchor, focus, hints, question),
-      'flow': _flowLine(anchor, focus, hints, question),
+      'continuum': _continuumLine(anchor, focus, hints, question, date),
+      'vortex': _vortexLine(anchor, focus, hints, question, date),
+      'shear': _shearLine(anchor, focus, hints, question, date),
+      'resistance': _resistanceLine(anchor, focus, hints, question, date),
+      'flow': _flowLine(anchor, focus, hints, question, date),
     };
   }
 
@@ -86,25 +89,58 @@ class QuestionParameterScraper {
     return '${line.substring(0, 93).trimRight()}…';
   }
 
+  static String _continuumLine(
+    String anchor,
+    String focus,
+    List<String> hints,
+    String question,
+    String analysisDate,
+  ) {
+    final lower = question.toLowerCase();
+    if (_matches(lower, r'\b(unrest|protest|condemn|backlash|crisis)\b') ||
+        hints.any((h) => h.contains('disorder') || h.contains('narrative'))) {
+      return ConstrualRealtime.withLead(
+        analysisDate,
+        'ρt (continuum): Regressive momentum in ongoing discourse on $anchor — '
+        'elite framing outruns nuance in current coverage ($focus).',
+      );
+    }
+    return ConstrualRealtime.withLead(
+      analysisDate,
+      'ρt (continuum): Continuum lean on $anchor — progressive and regressive '
+      'channels both active in ongoing public discourse ($focus).',
+    );
+  }
+
   static String _vortexLine(
     String anchor,
     String focus,
     List<String> hints,
     String question,
+    String analysisDate,
   ) {
     final lower = question.toLowerCase();
     if (_matches(lower, r'\b(election|vote|referendum|ballot|campaign|mayor)\b') ||
         hints.any((h) => h.contains('electoral'))) {
-      return 'ω (vortex): Incumbent and party-machine levers around $anchor — '
-          'establishment briefings and mandate framing compress the ω field ($focus).';
+      return ConstrualRealtime.withLead(
+        analysisDate,
+        'ω (vortex): Incumbent and party-machine levers around $anchor — '
+        'live establishment briefings and mandate framing compress the ω field ($focus).',
+      );
     }
     if (_matches(lower, r'\b(minister|government|official|institution|policy|cabinet)\b') ||
         hints.any((h) => h.contains('institutional'))) {
-      return 'ω (vortex): Institutional authority levers on $anchor — '
-          'spokesperson lanes and procedural framing steer official narrative ($focus).';
+      return ConstrualRealtime.withLead(
+        analysisDate,
+        'ω (vortex): Institutional authority levers on $anchor — '
+        'ongoing spokesperson lanes and procedural framing steer official narrative ($focus).',
+      );
     }
-    return 'ω (vortex): Authority-circulation levers around $anchor — '
-        'elite briefings and official story arcs set the ω compression field ($focus).';
+    return ConstrualRealtime.withLead(
+      analysisDate,
+      'ω (vortex): Authority-circulation levers around $anchor — '
+      'live elite briefings and official story arcs set the ω compression field ($focus).',
+    );
   }
 
   static String _shearLine(
@@ -112,20 +148,30 @@ class QuestionParameterScraper {
     String focus,
     List<String> hints,
     String question,
+    String analysisDate,
   ) {
     final lower = question.toLowerCase();
     if (_matches(lower, r'\b(unrest|protest|riot|disorder|march|rally|strike)\b') ||
         hints.any((h) => h.contains('disorder') || h.contains('collective'))) {
-      return 'σ (shear): Grievance-layer levers on $anchor — '
-          'street discourse and partisan split sharpen over $focus.';
+      return ConstrualRealtime.withLead(
+        analysisDate,
+        'σ (shear): Grievance-layer levers on $anchor — '
+        'ongoing street discourse and partisan split sharpen over $focus.',
+      );
     }
     if (_matches(lower, r'\b(trust|narrative|believe|condemn|sceptic|skeptic)\b') ||
         hints.any((h) => h.contains('narrative'))) {
-      return 'σ (shear): Polarized discourse levers on $anchor — '
-          'trust-the-lens vs challenge-the-frame camps split over $focus.';
+      return ConstrualRealtime.withLead(
+        analysisDate,
+        'σ (shear): Polarized discourse levers on $anchor — '
+        'live trust-the-lens vs challenge-the-frame camps split over $focus.',
+      );
     }
-    return 'σ (shear): Partisan shear levers on $anchor — '
-        'bottom-up pressure and top-down dismissal coexist across open channels ($focus).';
+    return ConstrualRealtime.withLead(
+      analysisDate,
+      'σ (shear): Partisan shear levers on $anchor — '
+      'ongoing bottom-up pressure and top-down dismissal across open channels ($focus).',
+    );
   }
 
   static String _resistanceLine(
@@ -133,19 +179,29 @@ class QuestionParameterScraper {
     String focus,
     List<String> hints,
     String question,
+    String analysisDate,
   ) {
     final lower = question.toLowerCase();
     if (_matches(lower, r'\b(inflation|economy|recession|gdp|fiscal|budget)\b') ||
         hints.any((h) => h.contains('macro-economic'))) {
-      return 'Iτ (resistance): Fiscal and regulatory guardrail levers on $anchor — '
-          'stability data and compliance checks dampen rapid escalation ($focus).';
+      return ConstrualRealtime.withLead(
+        analysisDate,
+        'Iτ (resistance): Fiscal and regulatory guardrail levers on $anchor — '
+        'live stability data and compliance checks dampen rapid escalation ($focus).',
+      );
     }
     if (_matches(lower, r'\b(court|legal|regulat|law|investigation|inquiry)\b')) {
-      return 'Iτ (resistance): Legal and procedural drag levers on $anchor — '
-          'appeals, reviews, and institutional inertia slow movement ($focus).';
+      return ConstrualRealtime.withLead(
+        analysisDate,
+        'Iτ (resistance): Legal and procedural drag levers on $anchor — '
+        'ongoing appeals, reviews, and institutional inertia slow movement ($focus).',
+      );
     }
-    return 'Iτ (resistance): Drag levers on $anchor — '
-        'official denials, procedural delay, and compliance friction absorb activist pressure ($focus).';
+    return ConstrualRealtime.withLead(
+      analysisDate,
+      'Iτ (resistance): Drag levers on $anchor — '
+      'current official denials, procedural delay, and compliance friction on $focus.',
+    );
   }
 
   static String _flowLine(
@@ -153,20 +209,30 @@ class QuestionParameterScraper {
     String focus,
     List<String> hints,
     String question,
+    String analysisDate,
   ) {
     final lower = question.toLowerCase();
     if (_matches(lower, r'\b(trust|narrative|credibility|believe|media)\b') ||
         hints.any((h) => h.contains('narrative'))) {
-      return 'Jμ (flow): Trust-transport levers on $anchor — '
-          'nuance compresses into shareable clips as $focus crosses platforms.';
+      return ConstrualRealtime.withLead(
+        analysisDate,
+        'Jμ (flow): Trust-transport levers on $anchor — '
+        'ongoing nuance compression into shareable clips as $focus crosses platforms.',
+      );
     }
     if (_matches(lower, r'\b(chance|probability|likelihood|percent|odds)\b') ||
         semFrameIsProbability(lower)) {
-      return 'Jμ (flow): Probability-talk levers on $anchor — '
-          'expert caveats vs headline certainty thin middle-ground trust ($focus).';
+      return ConstrualRealtime.withLead(
+        analysisDate,
+        'Jμ (flow): Probability-talk levers on $anchor — '
+        'live expert caveats vs headline certainty thin middle-ground trust ($focus).',
+      );
     }
-    return 'Jμ (flow): Channel-reach levers on $anchor — '
-        'local testimony travels unevenly while establishment statements dominate broadcast reach ($focus).';
+    return ConstrualRealtime.withLead(
+      analysisDate,
+      'Jμ (flow): Channel-reach levers on $anchor — '
+      'current local testimony travels unevenly while establishment statements dominate reach ($focus).',
+    );
   }
 
   static bool semFrameIsProbability(String lower) =>

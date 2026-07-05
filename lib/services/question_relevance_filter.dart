@@ -216,7 +216,7 @@ class QuestionRelevanceFilter {
   }
 
   static bool _isConstructLeverLine(String text) =>
-      RegExp(r'^(?:ω|σ|Iτ|Jμ)\s*\([^)]+\):', caseSensitive: false)
+      RegExp(r'^(?:ρt|ω|σ|Iτ|Jμ)\s*\([^)]+\):', caseSensitive: false)
           .hasMatch(text.trim());
 
   // Public alias for sanitizer fallback checks.

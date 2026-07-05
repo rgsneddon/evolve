@@ -37,6 +37,7 @@ class GrokProxyHeuristic {
         locale: LocaleConfig(regionId: regionId, languageCode: 'en'),
       );
       return {
+        'continuumText': result.continuumText,
         'vortexText': result.vortexText,
         'shearText': result.shearText,
         'resistanceText': result.resistanceText,
@@ -68,6 +69,7 @@ class GrokProxyHeuristic {
     );
 
     return {
+      'continuumText': result.continuumText,
       'vortexText': result.vortexText,
       'shearText': result.shearText,
       'resistanceText': result.resistanceText,
@@ -77,6 +79,7 @@ class GrokProxyHeuristic {
   }
 
   static Map<String, dynamic> _empty({required bool mock}) => {
+        'continuumText': '',
         'vortexText': '',
         'shearText': '',
         'resistanceText': '',

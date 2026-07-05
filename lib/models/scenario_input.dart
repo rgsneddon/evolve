@@ -17,6 +17,7 @@ class ScenarioInput {
     this.siblingPathwayLabels = const [],
     this.parentPosedQuestion = '',
     this.pathwayConstruals = const {},
+    this.continuumText = '',
     this.vortexText = '',
     this.shearText = '',
     this.resistanceText = '',
@@ -47,6 +48,8 @@ class ScenarioInput {
   final String parentPosedQuestion;
   /// Per-pathway ω/σ/Iτ/Jμ from individual Grok construal runs.
   final Map<String, PathwayConstructTexts> pathwayConstruals;
+  /// Grok-construed ρt continuum observation (internal — not a manual UI field).
+  final String continuumText;
   final String vortexText;
   final String shearText;
   final String resistanceText;
@@ -137,6 +140,7 @@ class ScenarioInput {
     List<String>? siblingPathwayLabels,
     String? parentPosedQuestion,
     Map<String, PathwayConstructTexts>? pathwayConstruals,
+    String? continuumText,
     String? vortexText,
     String? shearText,
     String? resistanceText,
@@ -160,6 +164,7 @@ class ScenarioInput {
         siblingPathwayLabels: siblingPathwayLabels ?? this.siblingPathwayLabels,
         parentPosedQuestion: parentPosedQuestion ?? this.parentPosedQuestion,
         pathwayConstruals: pathwayConstruals ?? this.pathwayConstruals,
+        continuumText: continuumText ?? this.continuumText,
         vortexText: vortexText ?? this.vortexText,
         shearText: shearText ?? this.shearText,
         resistanceText: resistanceText ?? this.resistanceText,

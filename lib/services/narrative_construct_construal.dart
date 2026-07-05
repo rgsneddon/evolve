@@ -2,6 +2,7 @@ import '../l10n/localized_output.dart';
 import '../models/grok_session.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
+import 'construal_realtime.dart';
 import 'grok_field_sanitizer.dart';
 import 'party_response_extractor.dart';
 import 'question_parameter_scraper.dart';
@@ -64,6 +65,8 @@ class NarrativeConstructConstrual {
       'parentPosedQuestion': parentQuestion,
       'siblingPathwayLabels': siblings,
       'multiPartPathway': pathwayLabel.isNotEmpty,
+      'analysisDate': ConstrualRealtime.analysisDateIso(),
+      'continuumText': input.continuumText,
       'vortexText': input.vortexText,
       'shearText': input.shearText,
       'resistanceText': input.resistanceText,
@@ -118,6 +121,25 @@ class NarrativeConstructConstrual {
     }
 
     final result = GrokConstrualResult(
+      continuumText: pick(
+        input.continuumText,
+        'continuum',
+        _bestSentence(
+          sentences,
+          qTokens,
+          narrativeMode: true,
+          const [
+            'momentum',
+            'polaris',
+            'regressive',
+            'progressive',
+            'continuum',
+            'lean',
+            'trajectory',
+            'outlook',
+          ],
+        ),
+      ),
       vortexText: pick(
         input.vortexText,
         'vortex',
@@ -327,6 +349,7 @@ class NarrativeConstructConstrual {
 
   static String _label(String construct, String text) {
     final prefix = switch (construct) {
+      'continuum' => 'ρt (continuum):',
       'vortex' => 'ω (vortex):',
       'shear' => 'σ (shear):',
       'resistance' => 'Iτ (resistance):',

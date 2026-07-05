@@ -727,7 +727,13 @@ class GrokProxyStore {
 
     final heuristic = _heuristicPayload(payload);
     final merged = <String, String>{
-      for (final key in ['vortexText', 'shearText', 'resistanceText', 'flowText'])
+      for (final key in [
+        'continuumText',
+        'vortexText',
+        'shearText',
+        'resistanceText',
+        'flowText',
+      ])
         key: () {
           final live = fields[key] ?? '';
           if (live.trim().isNotEmpty) return live;
@@ -744,6 +750,7 @@ class GrokProxyStore {
       posedQuestion: question,
       topic: topic,
       sourceUrl: '${payload['sourceUrl'] ?? ''}',
+      continuumText: '${payload['continuumText'] ?? ''}',
       vortexText: '${payload['vortexText'] ?? ''}',
       shearText: '${payload['shearText'] ?? ''}',
       resistanceText: '${payload['resistanceText'] ?? ''}',
@@ -751,6 +758,7 @@ class GrokProxyStore {
     );
     final grounded = ConstrualGrounding.ensureResult(
       result: GrokConstrualResult(
+        continuumText: merged['continuumText'] ?? '',
         vortexText: merged['vortexText'] ?? '',
         shearText: merged['shearText'] ?? '',
         resistanceText: merged['resistanceText'] ?? '',
@@ -765,6 +773,7 @@ class GrokProxyStore {
     );
 
     return {
+      'continuumText': grounded.continuumText,
       'vortexText': grounded.vortexText,
       'shearText': grounded.shearText,
       'resistanceText': grounded.resistanceText,

@@ -16,9 +16,11 @@ void main() {
 
     expect(suggestions.shearText, 'User shear bias.');
     const fullQuestion = 'What is the chance of unrest near-term?';
-    expect(suggestions.vortexText, startsWith('ω (vortex):'));
-    expect(suggestions.resistanceText, startsWith('Iτ (resistance):'));
-    expect(suggestions.flowText, startsWith('Jμ (flow):'));
+    expect(suggestions.continuumText, contains('ρt (continuum):'));
+    expect(suggestions.continuumText, contains('Observed live as of'));
+    expect(suggestions.vortexText, contains('ω (vortex):'));
+    expect(suggestions.resistanceText, contains('Iτ (resistance):'));
+    expect(suggestions.flowText, contains('Jμ (flow):'));
     expect(suggestions.vortexText.toLowerCase(), isNot(contains(fullQuestion.toLowerCase())));
     expect(suggestions.vortexText, isNot(contains('"')));
     expect(suggestions.resistanceText.toLowerCase(), contains('lever'));

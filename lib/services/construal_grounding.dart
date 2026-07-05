@@ -34,6 +34,7 @@ class ConstrualGrounding {
     );
 
     String userField(String construct) => switch (construct) {
+          'continuum' => input.continuumText,
           'vortex' => input.vortexText,
           'shear' => input.shearText,
           'resistance' => input.resistanceText,
@@ -60,6 +61,7 @@ class ConstrualGrounding {
     }
 
     return GrokConstrualResult(
+      continuumText: ground(result.continuumText, 'continuum'),
       vortexText: ground(result.vortexText, 'vortex'),
       shearText: ground(result.shearText, 'shear'),
       resistanceText: ground(result.resistanceText, 'resistance'),

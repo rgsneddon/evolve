@@ -62,9 +62,11 @@ void main() {
     expect(msg, contains('no quoted'));
     expect(msg, contains('ω (vortexText)'));
     expect(msg, contains('σ (shearText)'));
-    expect(GrokConstructPrompt.systemMessage, contains('lever-only'));
+    expect(GrokConstructPrompt.systemMessage, contains('REAL-TIME'));
+    expect(GrokConstructPrompt.systemMessage, contains('ρt (continuum):'));
+    expect(GrokConstructPrompt.systemMessage, contains('continuumText'));
     expect(GrokConstructPrompt.systemMessage, contains('WHOLLY RELEVANT'));
-    expect(GrokConstructPrompt.systemMessage, contains('DISCOURSE AUDIT'));
+    expect(GrokConstructPrompt.systemMessage, contains('REAL-TIME ANALYSIS MANDATE'));
   });
 
   test('userMessage includes discourse audit checklist', () {
@@ -72,7 +74,9 @@ void main() {
       'posedQuestion': question,
       'regionLabel': 'UK & Ireland',
     });
-    expect(msg, contains('DISCOURSE AUDIT CHECKLIST'));
+    expect(msg, contains('ANALYSIS DATE'));
+    expect(msg, contains('REAL-TIME DISCOURSE AUDIT'));
+    expect(msg, contains('ρt (continuumText)'));
     expect(msg, contains('Search X and open discourse'));
     expect(msg, contains('Every non-empty field must name'));
   });

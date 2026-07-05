@@ -36,11 +36,13 @@ class GrokHeuristicConstrual {
     String pick(String existing, String construct) {
       if (existing.trim().isNotEmpty) return existing.trim();
       final base = scraped[construct]?.trim() ?? '';
-      if (base.isEmpty || pathway.isEmpty) return base;
+      if (base.isEmpty) return base;
+      if (pathway.isEmpty || construct == 'continuum') return base;
       return _pathwayBiasLine(base, pathway, construct);
     }
 
     final result = GrokConstrualResult(
+      continuumText: pick(input.continuumText, 'continuum'),
       vortexText: pick(input.vortexText, 'vortex'),
       shearText: pick(input.shearText, 'shear'),
       resistanceText: pick(input.resistanceText, 'resistance'),

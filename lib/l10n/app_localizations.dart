@@ -842,13 +842,14 @@ final _en = {
       'Dev mock mode — signed in as @{user}. Set X_CLIENT_ID in grok_proxy.local.env for real X login.',
   'grok_retry_proxy': 'RETRY PROXY',
   'grok_open_x_link': 'Open X sign-in',
-  'grok_construing': 'Grok is reading your question and filling blank ω/σ/Iτ/Jμ fields…',
+  'grok_construing':
+      'Grok is running real-time discourse analysis on your question and filling blank ρt/ω/σ/Iτ/Jμ fields…',
   'grok_fields_populated': 'Grok filled blank variables from your posed question.',
   'grok_fields_ready': 'All ω/σ/Iτ/Jμ variables are ready — tap Calculate when you are.',
   'grok_filled_badge': 'Grok',
   'constructs_section_title': 'CHRONOFLUX VARIABLES (ω · σ · Iτ · Jμ)',
   'constructs_section_grok':
-      'Tap BEGIN GROK CONSTRUE (above) after your full question is written — blank ω/σ/Iτ/Jμ fill from live discourse, establishment framing, and pertinent data (not by repeating your question).',
+      'Tap BEGIN GROK CONSTRUE (above) after your full question is written — blank ρt/ω/σ/Iτ/Jμ fill from real-time observance of live discourse, ongoing events, and pertinent data scoped only to your question (not by repeating your question).',
   'constructs_section_manual':
       'Complete all four variables below, or turn on Grok construal to auto-fill them.',
   'constructs_missing_headline': 'Complete the Chronoflux variables',

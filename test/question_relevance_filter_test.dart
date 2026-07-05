@@ -57,8 +57,10 @@ void main() {
     expect(hints, isNot(contains('foreign-geo-suppressed-uk_ireland')));
   });
 
-  test('grok prompt requires question-only data citations', () {
+  test('grok prompt requires real-time question-only analysis', () {
+    expect(GrokConstructPrompt.systemMessage, contains('REAL-TIME'));
     expect(GrokConstructPrompt.systemMessage, contains('WHOLLY RELEVANT'));
-    expect(GrokConstructPrompt.systemMessage, contains('DISCOURSE AUDIT'));
+    expect(GrokConstructPrompt.systemMessage, contains('ongoing events'));
+    expect(GrokConstructPrompt.systemMessage, contains('continuumText'));
   });
 }

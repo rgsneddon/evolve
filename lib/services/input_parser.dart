@@ -92,9 +92,24 @@ class InputParser {
     );
     final weighted = weightConstrual.apply(withScs, weights);
 
+    final continuumScs = raw.continuumText.trim().isNotEmpty
+        ? _scsFromFieldContext(
+            raw.continuumText,
+            _continuumFromConstructs(weighted),
+            questionOffset: (questionSem.vortexOffset +
+                    questionSem.shearOffset +
+                    questionSem.resistanceOffset +
+                    questionSem.flowOffset) /
+                4,
+            clampMin: 30,
+            clampMax: 80,
+            locale: locale,
+          )
+        : _continuumFromConstructs(weighted);
+
     return weighted.copyWith(
       continuum: weighted.continuum.copyWith(
-        scs: _continuumFromConstructs(weighted),
+        scs: continuumScs,
       ),
     );
   }

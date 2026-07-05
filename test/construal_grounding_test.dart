@@ -54,11 +54,13 @@ void main() {
       locale: locale,
     );
 
+    expect(grounded.continuumText.toLowerCase(), contains('glasgow'));
     expect(grounded.vortexText.toLowerCase(), contains('glasgow'));
     expect(grounded.shearText.toLowerCase(), contains('glasgow'));
     expect(grounded.resistanceText.toLowerCase(), contains('glasgow'));
     expect(grounded.flowText.toLowerCase(), contains('glasgow'));
-    expect(grounded.vortexText, startsWith('ω (vortex):'));
+    expect(grounded.continuumText, contains('Observed live as of'));
+    expect(grounded.vortexText, contains('ω (vortex):'));
     expect(grounded.provenance, 'grok-live');
   });
 }

@@ -32,6 +32,14 @@ class GrokFieldSanitizer {
     );
 
     final sanitized = GrokConstrualResult(
+      continuumText: sanitizeField(
+        raw.continuumText,
+        posedQuestion: question,
+        displaySubject: sem.displaySubject,
+        rawSubject: sem.subject,
+        regionLabel: region,
+        topic: input.topic,
+      ),
       vortexText: sanitizeField(
         raw.vortexText,
         posedQuestion: question,
@@ -104,6 +112,7 @@ class GrokFieldSanitizer {
     }
 
     return {
+      'continuumText': clean('continuumText', 'continuum'),
       'vortexText': clean('vortexText', 'vortex'),
       'shearText': clean('shearText', 'shear'),
       'resistanceText': clean('resistanceText', 'resistance'),
@@ -121,6 +130,11 @@ class GrokFieldSanitizer {
   }) {
     var t = field.trim();
     if (t.isEmpty) return t;
+
+    final lead = _extractObservationLead(t);
+    if (lead != null) {
+      t = t.substring(lead.length).trimLeft();
+    }
 
     t = t.replaceFirst(RegExp(r'^posed question:\s*', caseSensitive: false), '');
     t = _stripQuotedSpans(t);
@@ -140,13 +154,24 @@ class GrokFieldSanitizer {
       t = _stripSubjectEcho(t, rawSubject);
     }
     t = _tidyPunctuation(t);
-    return t.trim();
+    final body = t.trim();
+    if (body.isEmpty) return lead?.trim() ?? '';
+    if (lead != null) return '${lead.trimRight()} $body';
+    return body;
+  }
+
+  static String? _extractObservationLead(String text) {
+    final match = RegExp(
+      r'^Observed live as of \d{4}-\d{2}-\d{2} —\s*',
+      caseSensitive: false,
+    ).firstMatch(text);
+    return match?.group(0);
   }
 
   static bool _isGrokConstrualField(String text) {
     final t = text.trim();
     if (t.isEmpty) return false;
-    return RegExp(r'^(?:ω|σ|Iτ|Jμ)\s*\(', caseSensitive: false).hasMatch(t) ||
+    return RegExp(r'^(?:ρt|ω|σ|Iτ|Jμ)\s*\(', caseSensitive: false).hasMatch(t) ||
         QuestionRelevanceFilter.containsExternalData(t);
   }
 

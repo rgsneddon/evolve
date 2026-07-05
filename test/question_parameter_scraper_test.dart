@@ -14,10 +14,12 @@ void main() {
       sem: sem,
     );
 
+    expect(fields['continuum']!, contains('ρt (continuum):'));
+    expect(fields['continuum']!, contains('Observed live as of'));
     expect(fields['vortex']!.toLowerCase(), contains('mayor'));
     expect(fields['shear']!.toLowerCase(), contains('mayor'));
-    expect(fields['resistance']!.startsWith('Iτ (resistance):'), isTrue);
-    expect(fields['flow']!.startsWith('Jμ (flow):'), isTrue);
+    expect(fields['resistance']!, contains('Iτ (resistance):'));
+    expect(fields['flow']!, contains('Jμ (flow):'));
   });
 
   test('heuristic construal fills all blank fields for open-ended question', () {
@@ -29,6 +31,7 @@ void main() {
       locale: const LocaleConfig(regionId: 'global', languageCode: 'en'),
     );
 
+    expect(suggestions.continuumText, isNotEmpty);
     expect(suggestions.vortexText, isNotEmpty);
     expect(suggestions.shearText, isNotEmpty);
     expect(suggestions.resistanceText, isNotEmpty);

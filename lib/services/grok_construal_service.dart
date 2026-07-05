@@ -113,6 +113,8 @@ class GrokConstrualService {
     }
 
     final merged = GrokConstrualResult(
+      continuumText:
+          pick(partial.continuumText, fallback.continuumText, 'continuum'),
       vortexText: pick(partial.vortexText, fallback.vortexText, 'vortex'),
       shearText: pick(partial.shearText, fallback.shearText, 'shear'),
       resistanceText:
@@ -137,6 +139,10 @@ class GrokConstrualService {
     if (!suggestions.hasSuggestions) return input;
 
     return input.copyWith(
+      continuumText:
+          input.continuumText.trim().isEmpty && suggestions.continuumText.isNotEmpty
+              ? suggestions.continuumText
+              : input.continuumText,
       vortexText: input.vortexText.trim().isEmpty && suggestions.vortexText.isNotEmpty
           ? suggestions.vortexText
           : input.vortexText,

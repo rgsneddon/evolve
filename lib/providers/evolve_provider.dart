@@ -717,6 +717,7 @@ class EvolveProvider extends ChangeNotifier {
         sourceUrl: content.url,
         topic: content.title,
         posedQuestion: ScenarioInput.clamp(content.narrative),
+        continuumText: '',
         vortexText: '',
         shearText: '',
         resistanceText: '',
@@ -984,6 +985,7 @@ class EvolveProvider extends ChangeNotifier {
             siblingPathwayLabels:
                 labels.where((label) => label != item.label).toList(),
             pathwayConstruals: const {},
+            continuumText: '',
             vortexText: '',
             shearText: '',
             resistanceText: '',
