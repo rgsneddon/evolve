@@ -1,0 +1,7 @@
+﻿b073ccb846e351bf66c1feb1674a56d6f323c8fc4b326e1e0480aea98fb4a7c9  evolve-v3.3.3-windows-x64-setup.exe
+algorithm=SHA256
+algorithm_secondary=SHA512
+sha512=c910cb94603f4c98ae503db93200ec2f32141def92be7c94b1580b62472eb30c1271e2e8f867a4db63816fe208e1657cb391087f00555ee3dd2583b39cd9dec9
+version=3.3.3
+platform=windows
+url=https://rgsneddon.github.io/evolve/downloads/v3.3.3/evolve-v3.3.3-windows-x64-setup.exe
