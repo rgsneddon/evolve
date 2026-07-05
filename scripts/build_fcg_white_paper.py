@@ -16,6 +16,7 @@ DOCS_IMG = ROOT / "docs" / "fcg"
 HTML_OUT = ROOT / "fcg_white_paper.html"
 TXT_OUT = ROOT / "fcg_white_paper.txt"
 API_URL = "https://api.fxtwitter.com/rgsneddon/status/2048748971246358967"
+SSUCF_WORKINGS_URL = "https://x.com/rgsneddon/status/2061461700889436632"
 
 
 def fetch_json() -> dict:
@@ -177,10 +178,52 @@ def blocks_to_text(blocks: list[dict], entity_media: dict[int, dict]) -> str:
     return "\n".join(lines)
 
 
+def patch_ssucf_workings_reference(blocks: list[dict]) -> None:
+    """PART TWO science section is external — point readers to the SSUCF workings post."""
+    heading = "SSUCF WORKINGS"
+    body = (
+        f"{heading}\n\n"
+        "The science of social cohesion and full SSUCF framework workings are "
+        "maintained separately from this FCG white paper:\n"
+        f"{SSUCF_WORKINGS_URL}"
+    )
+    url_start = body.index(SSUCF_WORKINGS_URL)
+    for block in blocks:
+        text = block.get("text", "")
+        if "PART TWO - THE SCIENCE OF SOCIAL COHESION" not in text:
+            continue
+        block["text"] = body
+        block["inlineStyleRanges"] = [
+            {"length": len(heading), "offset": 0, "style": "Bold"},
+        ]
+        block["data"] = {
+            "urls": [
+                {
+                    "fromIndex": url_start,
+                    "text": SSUCF_WORKINGS_URL,
+                    "toIndex": url_start + len(SSUCF_WORKINGS_URL),
+                }
+            ]
+        }
+        block["entityRanges"] = []
+        return
+
+    for block in blocks:
+        text = block.get("text", "")
+        if text.startswith("The above process, learned by @grok"):
+            block["text"] = text.replace(
+                "The above process, learned by @grok",
+                "The SSUCF process (workings linked above), learned by @grok",
+                1,
+            )
+            return
+
+
 def main() -> int:
     data = fetch_json()
     article = data["tweet"]["article"]
     blocks = article["content"]["blocks"]
+    patch_ssucf_workings_reference(blocks)
     media_entities = article.get("media_entities", [])
 
     entity_media = build_entity_media(blocks, media_entities)
