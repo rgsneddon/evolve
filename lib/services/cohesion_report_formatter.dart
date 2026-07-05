@@ -1,20 +1,29 @@
 import '../l10n/localized_output.dart';
 import '../models/forecast_result.dart';
+import '../models/locale_config.dart';
 import '../models/party_response_scs.dart';
 import '../models/scenario_input.dart';
 import '../models/evolve_result.dart';
+import 'cohesion_narrative_formatter.dart';
 
-/// Full Evolve cohesion report in the user's selected language.
+/// Full cohesion report — MarkdownBin-style SSUCF layout in the user's language.
 class CohesionReportFormatter {
+  const CohesionReportFormatter({
+    this.narratives = const CohesionNarrativeFormatter(),
+  });
+
+  final CohesionNarrativeFormatter narratives;
+
   String format({
     required ScenarioInput input,
     required HydrodynamicCore core,
     required PartOneSection partOne,
     required PartTwoSection partTwo,
     required PartThreeSection partThree,
-    required Map<String, String> narratives,
+    required Map<String, String> fieldNarratives,
     required ForecastResult forecast,
     required LocalizedOutput output,
+    required LocaleConfig locale,
     NarrativePartyRefinement? partyRefinement,
   }) {
     final s = output.strings;
@@ -32,21 +41,36 @@ class CohesionReportFormatter {
       ..writeln(s.t('cohesion_part_one'))
       ..writeln()
       ..writeln(s.t('cohesion_vortex'))
-      ..writeln('* ${narratives['vortex']}')
+      ..write(_bullets(narratives.partOneVortex(
+        input: input,
+        narrative: fieldNarratives['vortex']!,
+        scs: core.vortexScs.round(),
+        out: output,
+        locale: locale,
+      )))
       ..writeln()
       ..writeln(s.t('cohesion_shear'))
-      ..writeln('* ${narratives['shear']}')
+      ..write(_bullets(narratives.partOneShear(
+        input: input,
+        narrative: fieldNarratives['shear']!,
+        out: output,
+        locale: locale,
+      )))
       ..writeln()
       ..writeln(s.t('cohesion_resistance'))
-      ..writeln('* ${narratives['resistance']}')
+      ..write(_bullets(narratives.partOneResistance(
+        input: input,
+        narrative: fieldNarratives['resistance']!,
+      )))
       ..writeln()
       ..writeln(s.t('cohesion_flow'))
-      ..writeln('* ${narratives['flow']}')
+      ..write(_bullets(narratives.partOneFlow(
+        input: input,
+        narrative: fieldNarratives['flow']!,
+      )))
       ..writeln()
       ..writeln(s.t('cohesion_baseline')
           .replaceAll('{scs}', '${partOne.baselineScs.round()}'))
-      ..writeln(s.t('cohesion_weighted')
-          .replaceAll('{scs}', partOne.overallScs.toStringAsFixed(1)))
       ..writeln(s.t('cohesion_split')
           .replaceAll('{reg}', '${partOne.regressivePct.round()}')
           .replaceAll('{prog}', '${partOne.progressivePct.round()}'))
@@ -54,13 +78,26 @@ class CohesionReportFormatter {
       ..writeln(s.t('cohesion_part_two'))
       ..writeln()
       ..writeln(s.t('cohesion_expanded_vortex'))
-      ..writeln('* ${partTwo.expandedVortex}')
+      ..write(_bullets(narratives.partTwoExpanded(
+        input: input,
+        partTwo: partTwo,
+        out: output,
+        locale: locale,
+      )))
       ..writeln()
       ..writeln(s.t('cohesion_shear_refine'))
-      ..writeln('* ${partTwo.shearRefinement}')
+      ..write(_bullets(narratives.partTwoShear(
+        input: input,
+        partTwo: partTwo,
+        out: output,
+        locale: locale,
+      )))
       ..writeln()
       ..writeln(s.t('cohesion_resistance_flow'))
-      ..writeln('* ${partTwo.resistanceFlow}')
+      ..write(_bullets(narratives.partTwoResistanceFlow(
+        partTwo: partTwo,
+        out: output,
+      )))
       ..writeln()
       ..writeln(s.t('cohesion_refined')
           .replaceAll('{scs}', '${partTwo.refinedScs.round()}'))
@@ -101,10 +138,6 @@ class CohesionReportFormatter {
 
     buf
       ..writeln()
-      ..writeln(s.t('cohesion_continuum_forecast'))
-      ..writeln()
-      ..writeln(forecast.forecastLine)
-      ..writeln()
       ..writeln(s.t('cohesion_part_three'))
       ..writeln()
       ..writeln(s.t('cohesion_interventions'));
@@ -122,10 +155,19 @@ class CohesionReportFormatter {
           .replaceAll('{min}', '${partThree.withLeversMin.round()}')
           .replaceAll('{max}', '${partThree.withLeversMax.round()}'))
       ..writeln()
-      ..writeln(s.t('cohesion_final_text'))
+      ..writeln(narratives.finalSummary(
+        input: input,
+        out: output,
+        locale: locale,
+      ))
       ..writeln()
       ..writeln(output.cohesionCycleComplete);
 
     return buf.toString();
+  }
+
+  String _bullets(List<String> items) {
+    if (items.isEmpty) return '';
+    return items.map((item) => '* $item').join('\n');
   }
 }

@@ -37,7 +37,8 @@ void main() {
 
     final out = LocalizedOutput.of(LocaleConfig.defaults);
     final s = out.strings;
-    expect(result.cohesionReport, contains(s.t('cohesion_title').split(':').first));
+    expect(result.cohesionReport, contains('SSUCF Analysis'));
+    expect(result.cohesionReport, contains('* Core input:'));
     expect(result.cohesionReport, contains(s.t('cohesion_part_one')));
     expect(result.cohesionReport, contains(s.t('cohesion_part_two')));
     expect(result.cohesionReport, contains(s.t('cohesion_part_three')));

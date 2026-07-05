@@ -116,9 +116,10 @@ class EvolveEngine {
       partOne: partOne,
       partTwo: partTwo,
       partThree: partThree,
-      narratives: narratives,
+      fieldNarratives: narratives,
       forecast: forecast,
       output: out,
+      locale: locale,
       partyRefinement: partyRefinement,
     );
 

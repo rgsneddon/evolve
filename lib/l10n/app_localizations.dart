@@ -972,7 +972,8 @@ final _en = {
   'region_focus_banner': '{region} focus — pose your scenario question for this region',
   'grok_conclusion_marker': 'CONCLUSION - THE CONTINUUM:',
   'cohesion_final_summary': 'Final Summary:',
-  'cohesion_cycle_complete': '🌀 Evolve Cycle Complete.',
+  'cohesion_cycle_complete':
+      '🌀 SSUCF Cycle Complete. Analysis by Evolve Chronoflux from posed scenario and construct parameters.',
   'pct_probability': '~{n}% chance of {subject}',
   'pct_predictive': '~{n}% likelihood that {subject}',
   'pct_magnitude': '~{n}% relative estimate for {subject}',
@@ -999,13 +1000,13 @@ final _en = {
   'obs_resistance_fallback': 'Resistance baseline from discourse observation.',
   'obs_flow_fallback': 'Flow baseline from discourse observation.',
   'part_two_vortex_question':
-      'Continuum vortex on "{question}": {frame} authority compression on "{subject}" (ω {weight}% salience, SCS {scs}/100).',
+      'Elite framing on "{subject}" compresses competing readings (ω {scs}/100).',
   'part_two_vortex_topic':
-      'Continuum vortex on "{question}": elite framing of "{topic}" compresses "{subject}" into one narrative lane (ω {weight}% salience, SCS {scs}/100).',
+      'Unified institutional narrative on "{topic}" narrows public debate (ω {scs}/100).',
   'part_two_shear_question':
-      'Shear on "{question}": {frame} polarisation on "{subject}" — {polarity} (σ {weight}% salience, SCS {scs}/100).',
+      'Polarisation on "{subject}" — {polarity} (σ {scs}/100).',
   'part_two_resistance_flow_question':
-      'Resistance & flow for "{question}": Iτ drag ({res_weight}% salience, SCS {res_scs}/100) vs Jμ transport ({flow_weight}% salience, SCS {flow_scs}/100) — {transport}; net lean {lean}.',
+      '{transport}; net lean {lean} (Iτ {res_scs}/100, Jμ {flow_scs}/100).',
   'part_two_hint_suffix': 'Scenario signal: {hint}.',
   'part_two_frame_probability': 'probability-frame',
   'part_two_frame_predictive': 'predictive-path',
@@ -1098,8 +1099,9 @@ final _en = {
   'label_weakest': 'Weakest construct',
   'label_baseline_delta': 'Baseline → refined',
   'label_levers': 'actionable levers in PART THREE',
-  'cohesion_title': 'Evolve Analysis: {title}',
-  'cohesion_subtitle': 'Social cohesion under Chronoflux covariant continuity',
+  'cohesion_title': '# SSUCF Analysis: {title}',
+  'cohesion_subtitle':
+      'Social Cohesion Analysis under Chronoflux-derived Covariant Continuity',
   'cohesion_topic': 'Topic: {topic}',
   'cohesion_part_one': '## Part One: Baseline Parameter Mapping',
   'cohesion_part_two': '## Part Two: Broader Political Continuum Integration',
@@ -1111,6 +1113,25 @@ final _en = {
   'cohesion_baseline': 'Baseline Cohesion Score: ~{scs}/100',
   'cohesion_weighted': 'Weighted Overall SCS: ~{scs}/100',
   'cohesion_split': 'Regressive: ~{reg}% | Progressive: ~{prog}%',
+  'cohesion_bullet_core_input': 'Core input: {text}',
+  'cohesion_bullet_social_force': '{text}',
+  'cohesion_vortex_mismatch_narrative':
+      'Vortex mismatch: High-authority singular lens compresses heterogeneous events (SCS {scs}/100).',
+  'cohesion_vortex_signal': 'ω signal: Authority circulation at SCS {scs}/100.',
+  'cohesion_p2_vortex_elite_topic':
+      'Elite statements on "{topic}" unify condemnation across party lines.',
+  'cohesion_p2_vortex_elite_framing':
+      'Framing on "{subject}" labels dissent while claiming cohesion (ω {scs}/100).',
+  'cohesion_p2_continuum_lean':
+      'Continuum integration: ~{reg}% regressive / ~{prog}% progressive lean.',
+  'cohesion_p2_shear_elite_vs_public':
+      'High elite alignment on "{subject}" vs. bottom-up grievance channels.',
+  'cohesion_p2_shear_asymmetric':
+      'Asymmetric two-tier perception sustains σ friction (SCS {scs}/100).',
+  'cohesion_p2_rf_short_term_calm':
+      'Short-term de-escalation possible; medium-term polarisation risk remains ({lean}).',
+  'cohesion_p2_rf_trust_transport':
+      'Trust transport outruns institutional drag — favourable Jμ path ({lean}).',
   'cohesion_expanded_vortex': '### Expanded Vortex',
   'cohesion_shear_refine': '### Shear Refinement',
   'cohesion_resistance_flow': '### Resistance & Flow',
@@ -1121,6 +1142,8 @@ final _en = {
   'cohesion_with': 'With levers: {min}–{max}/100 within 3 months.',
   'cohesion_final_text':
       'Final Summary: Move from narrative compression to differentiated, data-driven responses to rebuild covariant continuity.',
+  'cohesion_final_dynamic':
+      'Final Summary: Move from narrative compression on "{subject}" to differentiated, data-driven responses to rebuild covariant continuity and reduce social friction.',
   'synopsis_export_title': 'Export complete synopsis',
   'synopsis_export_hint':
       'Download as PDF or Markdown text, or open the full report in your browser — built from your posed scenario.',
@@ -1616,7 +1639,8 @@ final _es = {
   'pct_probability': '~{n}% de probabilidad de {subject}',
   'pct_predictive': '~{n}% de probabilidad de que {subject}',
   'cohesion_final_summary': 'Resumen final:',
-  'cohesion_cycle_complete': '🌀 Ciclo Evolve completo.',
+  'cohesion_cycle_complete':
+      '🌀 Ciclo SSUCF completo. Análisis Evolve Chronoflux a partir del escenario planteado.',
   'grok_reply':
       '{regressive}% regresivo / {progressive}% progresivo en EL CONTINUO. Momento neto {momentum} → inclina {lean}. {marker} {conclusion}',
   'continuum_hints_clause': '; señales discursivas de la pregunta: {hints}',
@@ -1660,13 +1684,14 @@ final _es = {
   'cohesion_part_one': '## Parte Uno: Mapeo de parámetros base',
   'cohesion_part_two': '## Parte Dos: Integración del continuo político',
   'cohesion_part_three': '## Parte Tres: Palancas de reducción de fricción',
-  'cohesion_title': 'Análisis Evolve: {title}',
+  'cohesion_title': '# Análisis SSUCF: {title}',
   'cohesion_baseline': 'Puntuación de cohesión base: ~{scs}/100',
   'cohesion_refined': 'Puntuación de cohesión refinada: ~{scs}/100',
   'cohesion_refined_panel':
       'Puntuación refinada\nPARTE UNO / DOS / TRES (~{scs}/100)',
   'cohesion_continuum_subtitle': '{lean} — {pct}%',
-  'cohesion_subtitle': 'Cohesión social bajo continuidad covariante Chronoflux',
+  'cohesion_subtitle':
+      'Análisis de cohesión social bajo continuidad covariante derivada de Chronoflux',
   'cohesion_topic': 'Tema: {topic}',
   'cohesion_vortex': '### Vórtice (condiciones iniciales)',
   'cohesion_shear': '### Cizalla (fuerzas sociales)',
@@ -1725,13 +1750,13 @@ final _es = {
   'obs_flow':
       'Flujo observado (Jμ): transporte de confianza sobre "{subject}" en {region} (SCS {scs}/100).',
   'part_two_vortex_question':
-      'Vórtice del continuo sobre «{question}»: compresión de autoridad {frame} en «{subject}» (ω {weight}% de saliencia, SCS {scs}/100).',
+      'Encuadre de élite sobre «{subject}» comprime lecturas competidoras (ω {scs}/100).',
   'part_two_vortex_topic':
-      'Vórtice del continuo sobre «{question}»: el encuadre de «{topic}» comprime «{subject}» en un solo carril narrativo (ω {weight}% de saliencia, SCS {scs}/100).',
+      'Narrativa institucional unificada sobre «{topic}» estrecha el debate público (ω {scs}/100).',
   'part_two_shear_question':
-      'Cizalla sobre «{question}»: polarización {frame} en «{subject}» — {polarity} (σ {weight}% de saliencia, SCS {scs}/100).',
+      'Polarización sobre «{subject}» — {polarity} (σ {scs}/100).',
   'part_two_resistance_flow_question':
-      'Resistencia y flujo para «{question}»: arrastre Iτ ({res_weight}% de saliencia, SCS {res_scs}/100) frente a transporte Jμ ({flow_weight}% de saliencia, SCS {flow_scs}/100) — {transport}; inclinación neta {lean}.',
+      '{transport}; inclinación neta {lean} (Iτ {res_scs}/100, Jμ {flow_scs}/100).',
   'part_two_hint_suffix': 'Señal del escenario: {hint}.',
   'part_two_frame_probability': 'marco probabilístico',
   'part_two_frame_predictive': 'trayectoria predictiva',
