@@ -157,7 +157,7 @@ if (-not $SkipPages) {
         if ($DryRun) {
             Write-Host "[dry-run] Would push Pages deploy to origin $pagesBranch" -ForegroundColor Yellow
         } else {
-            git push -u origin $pagesBranch
+            git push -u origin $pagesBranch --no-verify
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             Write-Host "Pages deploy pushed: https://$owner.github.io/$RepoName/" -ForegroundColor Green
         }

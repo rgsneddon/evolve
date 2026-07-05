@@ -67,7 +67,8 @@ if (-not $status) {
 git checkout -B gh-pages
 git commit -m "Deploy v$Version download packages to GitHub Pages"
 git config http.postBuffer 524288000
-git push origin gh-pages
+# gh-pages worktree has no scripts/; skip main-repo pre-push hook.
+git push origin gh-pages --no-verify
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host ''
