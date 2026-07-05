@@ -55,9 +55,16 @@ void main() {
     final split = ConclusionExplainer.splitCohesionReport(result.cohesionReport, locale);
     final out = LocalizedOutput.of(locale);
 
-    expect(split.body, isNot(contains(out.cohesionFinalSummary)));
-    expect(split.conclusion, contains(out.cohesionFinalSummary));
+    expect(split.body, isNot(contains(out.cohesionConclusionHeading)));
+    expect(split.conclusion, contains(out.cohesionConclusionHeading));
+    expect(split.conclusion, contains('Weighted Overall SCS'));
+    expect(split.weightedLine, contains('Weighted Overall SCS'));
+    expect(split.summaryBlock, contains(out.cohesionFinalSummary));
     expect(split.conclusion, contains(out.cohesionCycleComplete));
+    expect(
+      split.conclusion.indexOf('Weighted Overall SCS'),
+      lessThan(split.conclusion.indexOf(out.cohesionFinalSummary)),
+    );
     expect(
       ConclusionExplainer.cohesion(result, locale),
       contains('~'),

@@ -1140,6 +1140,8 @@ final _en = {
   'cohesion_outcomes': '### Projected Outcomes',
   'cohesion_without': 'Without levers: Continued ~{scs}/100 with recurrence risk.',
   'cohesion_with': 'With levers: {min}–{max}/100 within 3 months.',
+  'cohesion_conclusion_heading': '## Conclusion',
+  'cohesion_weighted_panel': 'Weighted Overall SCS',
   'cohesion_final_text':
       'Final Summary: Move from narrative compression to differentiated, data-driven responses to rebuild covariant continuity.',
   'cohesion_final_dynamic':
@@ -1186,7 +1188,7 @@ final _en = {
   'part_breakdown_lean_line': '{lean} — {qualifier} (continuum {reg}% / {prog}%)',
   'synopsis_part_breakdown_header': '## Per-pathway breakdown (partition = 100%)',
   'cohesion_refined_panel':
-      'Refined cohesion score\nPART ONE / TWO / THREE complete (~{scs}/100)',
+      'Refined cohesion score ~{scs}/100 after Parts One–Three',
   'cohesion_continuum_subtitle': '{lean} — {pct}%',
   ...discourseStringsEn,
   ...leanMitigateVariants(discourseStringsEn),
@@ -1707,8 +1709,12 @@ final _es = {
   'cohesion_without':
       'Sin palancas: continúa ~{scs}/100 con riesgo de recurrencia.',
   'cohesion_with': 'Con palancas: {min}–{max}/100 en 3 meses.',
+  'cohesion_conclusion_heading': '## Conclusión',
+  'cohesion_weighted_panel': 'SCS global ponderado',
   'cohesion_final_text':
       'Resumen final: pasar de la compresión narrativa a respuestas diferenciadas basadas en datos para reconstruir la continuidad covariante.',
+  'cohesion_final_dynamic':
+      'Resumen final: pasar de la compresión narrativa sobre «{subject}» a respuestas diferenciadas basadas en datos para reconstruir la continuidad covariante y reducir la fricción social.',
   'synopsis_export_title': 'Exportar sinopsis completa',
   'synopsis_export_hint':
       'Descargue como PDF o texto Markdown, o abra el informe completo en el navegador — basado en su escenario planteado.',

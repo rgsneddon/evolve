@@ -13,7 +13,11 @@ class LocalizedOutput {
 
   String get grokConclusionMarker => strings.t('grok_conclusion_marker');
   String get cohesionFinalSummary => strings.t('cohesion_final_summary');
+  String get cohesionConclusionHeading => strings.t('cohesion_conclusion_heading');
   String get cohesionCycleComplete => strings.t('cohesion_cycle_complete');
+
+  String cohesionWeightedLine(double scs) =>
+      strings.t('cohesion_weighted').replaceAll('{scs}', scs.toStringAsFixed(1));
 
   String regionName(String regionId) => strings.t('region_$regionId');
 

@@ -29,6 +29,13 @@ void main() {
     expect(report, contains('* Core input:'));
     expect(report, contains('* Pushback on narrative control'));
     expect(report, contains('Weighted Overall SCS'));
+    expect(report, contains(out.cohesionConclusionHeading));
+    final conclusionIdx = report.indexOf(out.cohesionConclusionHeading);
+    final weightedInConclusionIdx = report.indexOf(
+      'Weighted Overall SCS',
+      conclusionIdx,
+    );
+    expect(weightedInConclusionIdx, greaterThan(conclusionIdx));
     expect(report, isNot(contains('THE CONTINUUM — Calibrated Forecast')));
     expect(report, isNot(contains('High elite alignment')));
     expect(report, isNot(contains('Elite statements on')));

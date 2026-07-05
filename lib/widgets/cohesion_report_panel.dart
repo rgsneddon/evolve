@@ -21,7 +21,8 @@ class CohesionReportPanel extends StatelessWidget {
     final locale = provider.locale;
     final strings = provider.strings;
     final report = result.cohesionReport;
-    final score = result.core.refinedScs;
+    final weightedScs = result.partOne.overallScs;
+    final refinedScs = result.core.refinedScs;
     final regressive = result.core.lean == 'REGRESSIVE';
     final lean = provider.output.leanLabel(result.core.lean);
     final continuumSubtitle = provider.output.cohesionContinuumSubtitle(
@@ -57,9 +58,19 @@ class CohesionReportPanel extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              '~${score.round()}/100',
+              strings.t('cohesion_weighted_panel'),
               style: const TextStyle(
-                fontSize: 48,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF9BA3B8),
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '~${weightedScs.toStringAsFixed(1)}/100',
+              style: const TextStyle(
+                fontSize: 56,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF6C63FF),
                 height: 1,
@@ -76,7 +87,9 @@ class CohesionReportPanel extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              strings.t('cohesion_refined_panel').replaceAll('{scs}', '${score.round()}'),
+              strings
+                  .t('cohesion_refined_panel')
+                  .replaceAll('{scs}', '${refinedScs.round()}'),
               style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8), height: 1.4),
             ),
             const SizedBox(height: 16),
@@ -92,9 +105,61 @@ class CohesionReportPanel extends StatelessWidget {
             ),
             if (split.conclusion.isNotEmpty) ...[
               const SizedBox(height: 16),
-              ConclusionBlock(
-                text: split.conclusion,
-                accentColor: const Color(0xFF6C63FF),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6C63FF).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.45)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.t('cohesion_conclusion_heading').replaceAll('## ', ''),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF9BA3B8),
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      strings.t('cohesion_weighted_panel'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFB8B5FF),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      split.weightedLine.isNotEmpty
+                          ? split.weightedLine.split(':').last.trim()
+                          : '~${weightedScs.toStringAsFixed(1)}/100',
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF6C63FF),
+                        height: 1.05,
+                      ),
+                    ),
+                    if (split.summaryBlock.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      SelectableText(
+                        split.summaryBlock,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          height: 1.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFB8B5FF),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
             const SizedBox(height: 14),

@@ -52,7 +52,8 @@ void main() {
     );
 
     expect(result.cohesionReport, contains(strings.t('cohesion_part_one')));
-    expect(result.cohesionReport, contains(out.cohesionFinalSummary));
+    expect(result.cohesionReport, contains(out.cohesionConclusionHeading));
+    expect(result.cohesionReport, contains(strings.t('cohesion_weighted_panel')));
     expect(result.cohesionReport, isNot(contains('### Vortex (Initial Conditions)')));
   });
 }

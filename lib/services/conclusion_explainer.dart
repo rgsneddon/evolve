@@ -19,24 +19,44 @@ class ConclusionExplainer {
     );
   }
 
-  static ({String body, String conclusion}) splitCohesionReport(
+  static ({
+    String body,
+    String conclusion,
+    String weightedLine,
+    String summaryBlock,
+  }) splitCohesionReport(
     String report,
     LocaleConfig locale,
   ) {
     final out = LocalizedOutput.of(locale);
-    final idx = report.indexOf(out.cohesionFinalSummary);
-    if (idx < 0) return (body: report, conclusion: '');
+    final idx = report.indexOf(out.cohesionConclusionHeading);
+    if (idx < 0) return (body: report, conclusion: '', weightedLine: '', summaryBlock: '');
     final endIdx = report.indexOf(out.cohesionCycleComplete, idx);
-    if (endIdx < 0) {
-      return (
-        body: report.substring(0, idx).trim(),
-        conclusion: report.substring(idx).trim(),
-      );
+    final end = endIdx < 0
+        ? report.length
+        : endIdx + out.cohesionCycleComplete.length;
+    final conclusion = report.substring(idx, end).trim();
+    final weightedPrefix = out.strings.t('cohesion_weighted').split(':').first;
+    final lines = conclusion.split('\n');
+    var weightedLine = '';
+    final summaryLines = <String>[];
+    var pastWeighted = false;
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      if (trimmed == out.cohesionConclusionHeading.trim()) continue;
+      if (!pastWeighted && trimmed.contains(weightedPrefix)) {
+        weightedLine = trimmed;
+        pastWeighted = true;
+        continue;
+      }
+      if (pastWeighted) summaryLines.add(trimmed);
     }
-    final end = endIdx + out.cohesionCycleComplete.length;
     return (
       body: report.substring(0, idx).trim(),
-      conclusion: report.substring(idx, end).trim(),
+      conclusion: conclusion,
+      weightedLine: weightedLine,
+      summaryBlock: summaryLines.join('\n'),
     );
   }
 

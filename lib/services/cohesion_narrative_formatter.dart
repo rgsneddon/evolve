@@ -101,6 +101,7 @@ class CohesionNarrativeFormatter {
     required ScenarioInput input,
     required LocalizedOutput out,
     required LocaleConfig locale,
+    required double overallScs,
   }) {
     final sem = QuestionSemantics.parse(
       input,
@@ -108,9 +109,11 @@ class CohesionNarrativeFormatter {
       regionLabel: out.regionName(locale.regionId),
     );
     final subject = sem.displaySubject;
-    return out.strings
+    final weighted = out.cohesionWeightedLine(overallScs);
+    final summary = out.strings
         .t('cohesion_final_dynamic')
         .replaceAll('{subject}', subject);
+    return '$weighted\n\n$summary';
   }
 
   String _conciseObs(String narrative) {

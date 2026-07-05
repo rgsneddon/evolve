@@ -157,10 +157,13 @@ class CohesionReportFormatter {
           .replaceAll('{min}', '${partThree.withLeversMin.round()}')
           .replaceAll('{max}', '${partThree.withLeversMax.round()}'))
       ..writeln()
+      ..writeln(s.t('cohesion_conclusion_heading'))
+      ..writeln()
       ..writeln(narratives.finalSummary(
         input: input,
         out: output,
         locale: locale,
+        overallScs: partOne.overallScs,
       ))
       ..writeln()
       ..writeln(output.cohesionCycleComplete);
