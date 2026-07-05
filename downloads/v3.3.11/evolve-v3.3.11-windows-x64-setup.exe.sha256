@@ -1,7 +1,7 @@
-﻿628e2183d60f67e274d4f4b3e04a80438a6ec859c2592b6e32ee6366f7527f4d  evolve-v3.3.11-windows-x64-setup.exe
+﻿29e5942c446cedc7bbad1760c7861807f057c65c8a519862b7010cf6e552511d  evolve-v3.3.11-windows-x64-setup.exe
 algorithm=SHA256
 algorithm_secondary=SHA512
-sha512=04da121b222371bfd5493b5429bd1567ff0aea41b5d09b8590e7e27e06c2b14dbe2d5071d583f2dd0884411229e0de93f05e1c3053bffacf1036b8ba66396509
+sha512=730600b33bbbb0a17f5edf04f45100e4487cec0f9ca3c27f29ee412cc6b0ddbcf3e6e9c3eca882a6a326c8b68542801da5cfef0929d497b244288baf6416aabe
 version=3.3.11
 platform=windows
 url=https://rgsneddon.github.io/evolve/downloads/v3.3.11/evolve-v3.3.11-windows-x64-setup.exe
