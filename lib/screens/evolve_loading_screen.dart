@@ -10,7 +10,7 @@ import '../perc/providers/perc_wallet_provider.dart';
 import '../perc/widgets/wallet_auth_panel.dart';
 import '../providers/locale_provider.dart';
 import '../services/app_update_check.dart';
-import '../widgets/evolve_banner_loop.dart';
+import '../widgets/evolve_splash_video.dart';
 import '../widgets/splash_version_status.dart';
 
 /// Launch screen — looping article banner until the user signs in or enters.
@@ -129,7 +129,7 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const EvolveBannerLoop(),
+          const EvolveSplashVideo(),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(

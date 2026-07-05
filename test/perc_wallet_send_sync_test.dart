@@ -40,7 +40,6 @@ void main() {
 
     final bobAddr = PercLedgerHub.instance.ledger.account('sender')!.address;
     await wallet.send(toAddress: bobAddr, amountText: '0.00000001');
-    expect(wallet.errorMessage, isNotNull);
-    expect(wallet.errorMessage, contains('yourself'));
+    expect(wallet.errorMessage, 'wallet_err_send_to_yourself');
   });
 }

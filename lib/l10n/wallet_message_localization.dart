@@ -31,6 +31,9 @@ class WalletMessageLocalization {
     final raw = error.toString().replaceFirst('StateError: ', '').trim();
     if (raw.contains('Unknown account')) return 'wallet_err_unknown_account';
     if (raw.contains('Invalid password')) return 'wallet_err_invalid_password';
+    if (raw.contains('Cannot send to yourself')) {
+      return 'wallet_err_send_to_yourself';
+    }
     if (raw.contains('syncing')) return 'wallet_sync_partial';
     return 'wallet_err_generic';
   }

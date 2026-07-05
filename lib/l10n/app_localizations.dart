@@ -804,6 +804,7 @@ final _en = {
   'wallet_faucet_label_scs': 'Social cohesion score analysis',
   'wallet_faucet_label_percent': 'Percent chance analysis',
   'wallet_err_unknown_account': 'Unknown account',
+  'wallet_err_send_to_yourself': 'Cannot send to yourself',
   'wallet_err_invalid_password': 'Invalid password',
   'wallet_err_generic': 'Something went wrong — try again',
   'wallet_err_address_empty': 'Enter a recipient PERC address',
