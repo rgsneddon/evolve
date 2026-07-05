@@ -211,6 +211,55 @@
     }
 
     footer a:hover { text-decoration: underline; }
+
+    .fcg-suite {
+      margin-top: 48px;
+      padding: 32px 28px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
+    .fcg-heading {
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #d8dce8;
+      margin-bottom: 16px;
+    }
+
+    .fcg-lead {
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 620px;
+      margin: 0 auto 24px;
+      line-height: 1.6;
+    }
+
+    .fcg-links {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px 20px;
+      padding: 0;
+    }
+
+    .fcg-links a {
+      color: var(--accent-2);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .fcg-links a:hover { text-decoration: underline; }
+
+    .fcg-links .sep {
+      color: var(--panel-border);
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -267,6 +316,22 @@
         </a>
       </article>
     </div>
+
+    <section class="fcg-suite">
+      <h2 class="fcg-heading">Full Community Governance Suite</h2>
+      <p class="fcg-lead">
+        Evolve Chronoflux scenario analysis, SSUCF social cohesion voting, and PERC parish
+        infrastructure &mdash; a quantitative companion to Full Community Governance for
+        ward-level debate and consensus.
+      </p>
+      <ul class="fcg-links">
+        <li><a href="fcg_white_paper.html">FCG white paper</a></li>
+        <li class="sep" aria-hidden="true">&middot;</li>
+        <li><a href="https://x.com/rgsneddon/status/2061461700889436632" target="_blank" rel="noopener noreferrer">SSUCF framework workings</a></li>
+        <li class="sep" aria-hidden="true">&middot;</li>
+        <li><a href="https://evolve-perc-internet.onrender.com/" target="_blank" rel="noopener noreferrer">PERC Network Explorer</a></li>
+      </ul>
+    </section>
 
     <section class="notes">
       <h3>Install notes</h3>
