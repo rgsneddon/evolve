@@ -1,7 +1,7 @@
 name: evolve
 description: Evolve Chronoflux framework — percent chance and social cohesion analysis.
 publish_to: 'none'
-version: 3.3.6+72
+version: 3.3.7+73
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
