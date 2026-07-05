@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/fcg/providers/fcg_voting_provider.dart';
+import 'package:evolve/fcg/services/fcg_store_memory.dart';
 import 'package:evolve/main.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
@@ -22,11 +24,17 @@ void main() {
 
     final provider = EvolveProvider();
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await provider.initialize();
+    await fcg.initialize();
     await wallet.initialize();
 
     await tester.pumpWidget(
-      EvolveApp(evolveProvider: provider, walletProvider: wallet),
+      EvolveApp(
+        evolveProvider: provider,
+        walletProvider: wallet,
+        fcgProvider: fcg,
+      ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -43,14 +51,20 @@ void main() {
 
     final provider = EvolveProvider();
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await provider.initialize();
+    await fcg.initialize();
     await _unlockApp(wallet);
 
     expect(wallet.hasAppAccess, isTrue);
     expect(wallet.address.startsWith('percpriv1'), isTrue);
 
     await tester.pumpWidget(
-      EvolveApp(evolveProvider: provider, walletProvider: wallet),
+      EvolveApp(
+        evolveProvider: provider,
+        walletProvider: wallet,
+        fcgProvider: fcg,
+      ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));

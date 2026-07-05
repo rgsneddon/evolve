@@ -40,6 +40,14 @@ class EvolveProvider extends ChangeNotifier {
   final GrokAuthClient _grokAuth;
   final GrokConstrualService _grokConstrual;
 
+  /// Records completed analysis runs for FCG parish voting narratives.
+  Future<void> Function({
+    required ScenarioInput input,
+    required LocaleConfig locale,
+    required AnalysisMode mode,
+    required EvolveResult result,
+  })? scenarioRunRecorder;
+
   /// Credits Perccent faucet after percent-chance or social-cohesion calculate.
   Future<PercFaucetCreditResult?> Function({
     required AnalysisMode mode,
@@ -825,21 +833,32 @@ class EvolveProvider extends ChangeNotifier {
       await Future<void>.delayed(const Duration(milliseconds: 150));
       _reanalyze(working);
       _persistCurrentMode();
-      if (result != null && analysisRewardHandler != null) {
-        final core = result!.core;
-        final outcomeScore = mode == AnalysisMode.percentChance
-            ? result!.percentChance
-            : core.refinedScs;
-        await analysisRewardHandler!(
-          mode: mode,
-          outcomeScore: outcomeScore,
-          memo: _analysisRewardMemo(working, mode),
-          continuumScs: outcomeScore,
-          vortexScs: core.vortexScs,
-          shearScs: core.shearScs,
-          resistanceScs: core.resistanceScs,
-          flowScs: core.flowScs,
-        );
+      if (result != null) {
+        final recorder = scenarioRunRecorder;
+        if (recorder != null) {
+          await recorder(
+            input: working,
+            locale: locale,
+            mode: mode,
+            result: result!,
+          );
+        }
+        if (analysisRewardHandler != null) {
+          final core = result!.core;
+          final outcomeScore = mode == AnalysisMode.percentChance
+              ? result!.percentChance
+              : core.refinedScs;
+          await analysisRewardHandler!(
+            mode: mode,
+            outcomeScore: outcomeScore,
+            memo: _analysisRewardMemo(working, mode),
+            continuumScs: outcomeScore,
+            vortexScs: core.vortexScs,
+            shearScs: core.shearScs,
+            resistanceScs: core.resistanceScs,
+            flowScs: core.flowScs,
+          );
+        }
       }
       statusMessage = grokConstrualEnabled
           ? strings.t('grok_construal_applied')

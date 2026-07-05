@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../platform/desktop_platform.dart';
+import 'app_version_badge.dart';
 
 /// Rounded, edge-to-edge Windows chrome with in-app drag bar and window controls.
 class DesktopWindowShell extends StatefulWidget {
@@ -116,6 +117,10 @@ class _DesktopTitleBar extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(right: 10),
+            child: AppVersionBadge(),
           ),
           WindowCaption(
             brightness: Brightness.dark,

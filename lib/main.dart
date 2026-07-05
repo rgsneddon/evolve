@@ -8,12 +8,19 @@ import 'models/locale_config.dart';
 import 'models/locale_config_ui.dart';
 import 'providers/locale_provider.dart';
 import 'models/analysis_mode.dart';
+import 'fcg/providers/fcg_voting_provider.dart';
+import 'models/analysis_mode.dart';
+import 'models/evolve_result.dart';
+import 'models/locale_config.dart';
+import 'models/scenario_input.dart';
 import 'providers/evolve_provider.dart';
 import 'perc/providers/perc_wallet_provider.dart';
 import 'perc/services/perc_network_coordinator.dart';
 import 'platform/desktop_window_init.dart';
 import 'screens/app_bootstrap_screen.dart';
 import 'theme/app_theme.dart';
+import 'platform/desktop_platform.dart';
+import 'widgets/app_version_badge.dart';
 import 'widgets/desktop_window_shell.dart';
 
 Future<void> main() async {
@@ -23,7 +30,11 @@ Future<void> main() async {
   await OutcomeRegistry.ensureLoaded();
   final evolveProvider = EvolveProvider();
   final walletProvider = PercWalletProvider();
-  await evolveProvider.initialize();
+  final fcgProvider = FcgVotingProvider();
+  await Future.wait([
+    evolveProvider.initialize(),
+    fcgProvider.initialize(),
+  ]);
   evolveProvider.analysisRewardHandler = ({
     required AnalysisMode mode,
     required double outcomeScore,
@@ -44,9 +55,22 @@ Future<void> main() async {
         resistanceScs: resistanceScs,
         flowScs: flowScs,
       );
+  evolveProvider.scenarioRunRecorder = ({
+    required ScenarioInput input,
+    required LocaleConfig locale,
+    required AnalysisMode mode,
+    required EvolveResult result,
+  }) =>
+      fcgProvider.recordScenarioRun(
+        input: input,
+        locale: locale,
+        mode: mode,
+        result: result,
+      );
   runApp(EvolveApp(
     evolveProvider: evolveProvider,
     walletProvider: walletProvider,
+    fcgProvider: fcgProvider,
   ));
 }
 
@@ -55,10 +79,12 @@ class EvolveApp extends StatelessWidget {
     super.key,
     required this.evolveProvider,
     required this.walletProvider,
+    required this.fcgProvider,
   });
 
   final EvolveProvider evolveProvider;
   final PercWalletProvider walletProvider;
+  final FcgVotingProvider fcgProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +93,7 @@ class EvolveApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider.value(value: evolveProvider),
         ChangeNotifierProvider.value(value: walletProvider),
+        ChangeNotifierProvider.value(value: fcgProvider),
       ],
       child: Consumer<LocaleProvider>(
         builder: (context, localeProv, _) {
@@ -85,13 +112,30 @@ class EvolveApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            builder: (context, child) => Directionality(
-              textDirection: localeProv.config.textDirection,
-              child: DesktopWindowShell(
-                title: strings.t('app_title'),
-                child: child ?? const SizedBox.shrink(),
-              ),
-            ),
+            builder: (context, child) {
+              final content = child ?? const SizedBox.shrink();
+              return Directionality(
+                textDirection: localeProv.config.textDirection,
+                child: DesktopWindowShell(
+                  title: strings.t('app_title'),
+                  child: isDesktopWindows
+                      ? content
+                      : Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            content,
+                            Positioned(
+                              top: MediaQuery.paddingOf(context).top + 6,
+                              right: 10,
+                              child: const IgnorePointer(
+                                child: AppVersionBadge(),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              );
+            },
             home: AppBootstrapScreen(walletProvider: walletProvider),
           );
         },

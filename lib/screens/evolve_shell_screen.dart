@@ -6,6 +6,7 @@ import '../perc/models/perc_faucet_credit_result.dart';
 import '../perc/providers/perc_wallet_provider.dart';
 import '../perc/services/perc_faucet_cooldown.dart';
 import '../providers/locale_provider.dart';
+import '../fcg/screens/fcg_voting_screen.dart';
 import 'home_screen.dart';
 import '../perc/screens/credit_screen.dart';
 import '../perc/screens/wallet_screen.dart';
@@ -91,6 +92,11 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
               label: strings.t('nav_wallet'),
             ),
             NavigationDestination(
+              icon: const Icon(Icons.how_to_vote_outlined),
+              selectedIcon: const Icon(Icons.how_to_vote),
+              label: strings.t('nav_voting'),
+            ),
+            NavigationDestination(
               icon: const Icon(Icons.info_outline),
               selectedIcon: const Icon(Icons.info),
               label: strings.t('nav_credit'),
@@ -127,6 +133,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
                 _walletTabVisited
                     ? const WalletScreen()
                     : const SizedBox.shrink(),
+                const FcgVotingScreen(),
                 const CreditScreen(),
               ],
             )

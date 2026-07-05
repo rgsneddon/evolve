@@ -1,0 +1,17 @@
+﻿{
+    "url":  "https://rgsneddon.github.io/evolve/downloads/v3.1.1/evolve-v3.1.1-android-setup.apk",
+    "build":  "67",
+    "platform":  "android",
+    "version":  "3.1.1",
+    "sizeMb":  75.3,
+    "sha512":  "9e7f7f34623c847b4cda0e44b811f28544e9f3650e23c573f36d421a06d9af5c6595afe787b6ce55f871f1118a16bc5d117dffb114e2d2325807adc1911a583e",
+    "name":  "evolve-v3.1.1-android-setup.apk",
+    "minSdk":  23,
+    "sha256":  "45797cf58c89bc326660af7d4f770f1a0d4cfac62bdacc52ff63e601744aaf62",
+    "abis":  [
+                 "arm64-v8a",
+                 "armeabi-v7a",
+                 "x86_64"
+             ],
+    "sizeBytes":  78969984
+}
