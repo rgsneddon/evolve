@@ -15,7 +15,7 @@ import '../perc/screens/wallet_screen.dart';
 class EvolveShellScreen extends StatefulWidget {
   const EvolveShellScreen({super.key, this.openRegistrationOnLaunch = false});
 
-  /// When true, wallet registration/login is shown immediately on first frame.
+  /// When true, wallet registration/login is shown on first frame (unsigned users).
   final bool openRegistrationOnLaunch;
 
   @override

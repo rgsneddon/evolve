@@ -58,4 +58,32 @@ void main() {
     expect(find.text('RUN ANALYSIS'), findsOneWidget);
     expect(find.byType(FilledButton), findsNWidgets(2));
   });
+
+  testWidgets('unsigned user lands on wallet registration after splash', (tester) async {
+    EvolveLoadingScreen.durationOverride = Duration.zero;
+    AppBootstrapScreen.minSplashDurationOverride = Duration.zero;
+    addTearDown(() {
+      EvolveLoadingScreen.durationOverride = null;
+      AppBootstrapScreen.minSplashDurationOverride = null;
+    });
+
+    final provider = EvolveProvider();
+    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    final fcg = FcgVotingProvider(store: FcgStoreMemory());
+    await provider.initialize();
+    await fcg.initialize();
+
+    await tester.pumpWidget(
+      EvolveApp(
+        evolveProvider: provider,
+        walletProvider: wallet,
+        fcgProvider: fcg,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Create your wallet'), findsOneWidget);
+    expect(find.text('YOUR SCENARIO'), findsNothing);
+  });
 }

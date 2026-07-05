@@ -10,7 +10,7 @@ import '../providers/locale_provider.dart';
 import 'evolve_loading_screen.dart';
 import 'evolve_shell_screen.dart';
 
-/// Splash animation, background wallet boot, then registration-first shell.
+/// Splash animation, background wallet boot, then analysis or registration.
 class AppBootstrapScreen extends StatefulWidget {
   const AppBootstrapScreen({super.key, required this.walletProvider});
 
@@ -64,7 +64,10 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
   @override
   Widget build(BuildContext context) {
     if (_ready) {
-      return const EvolveShellScreen(openRegistrationOnLaunch: true);
+      final wallet = widget.walletProvider;
+      return EvolveShellScreen(
+        openRegistrationOnLaunch: !wallet.hasAppAccess,
+      );
     }
 
     if (_bootError != null) {
