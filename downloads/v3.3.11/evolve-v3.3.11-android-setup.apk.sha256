@@ -1,7 +1,7 @@
-﻿e69d18f1d7676fe1880a08db9f14365b97885ac130908f29c0cf9f2cba234d15  evolve-v3.3.11-android-setup.apk
+﻿981e58711dcb5bd38e3c27d0cab596b85b41b0f5b0a0ac0f00402364244616aa  evolve-v3.3.11-android-setup.apk
 algorithm=SHA256
 algorithm_secondary=SHA512
-sha512=9421904acad4732cfbcc0bf4fb9f8d92f47b7cd6f186d8a675a58b7839b8f902c631ea57383be77489fa9f933bb82207498fd472b2dac0141ae72df5e09b0752
+sha512=32fabf0e4193c46b823e6245265da02f46600d84fdaf44a84d29fd2dc39723facb2d0280bef731b54bc18e876b09e619e3f9b4cccff8ed4366f39f5071bbe75f
 version=3.3.11
 platform=android
 url=https://rgsneddon.github.io/evolve/downloads/v3.3.11/evolve-v3.3.11-android-setup.apk
