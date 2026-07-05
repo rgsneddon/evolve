@@ -165,38 +165,43 @@ function Update-DownloadsIndexPage {
     $apkMb = [math]::Round($apk.bytes / 1MB, 1)
     $vPrefix = "v$Version"
 
+    . (Join-Path $PSScriptRoot 'github.ps1')
+    $owner = Get-GitHubOwner -Root $Root
+    $releaseBase = "https://github.com/$owner/evolve/releases/download/v$Version"
+    $releasePage = "https://github.com/$owner/evolve/releases/tag/v$Version"
+
     $html = Get-Content $DownloadsIndex -Raw
     $html = $html -replace 'Latest release: <strong>v[0-9.]+</strong> \(build \d+\)',
         "Latest release: <strong>v$Version</strong> (build $Build)"
 
     $html = $html -replace 'evolve-v[0-9.]+-windows-x64-setup\.exe &middot; ~[0-9.]+ MB',
         "$($win.file) &middot; ~$winMb MB"
-    $html = $html -replace 'href="v[0-9.]+/evolve-v[0-9.]+-windows-x64-setup\.exe"',
-        "href=`"$vPrefix/$($win.file)`""
+    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-windows-x64-setup\.exe"',
+        "href=`"$releaseBase/$($win.file)`""
     $html = $html -replace '(?s)(<article class="card windows">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
         "`${1}$($win.sha256)`${2}"
-    $html = $html -replace 'href="v[0-9.]+/evolve-v[0-9.]+-windows-x64-setup\.exe\.sha256"',
-        "href=`"$vPrefix/$($win.file).sha256`""
+    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-windows-x64-setup\.exe\.sha256"',
+        "href=`"$releaseBase/$($win.file).sha256`""
 
     $html = $html -replace 'evolve-v[0-9.]+-android-setup\.apk &middot; ~[0-9.]+ MB',
         "$($apk.file) &middot; ~$apkMb MB"
-    $html = $html -replace 'href="v[0-9.]+/evolve-v[0-9.]+-android-setup\.apk"',
-        "href=`"$vPrefix/$($apk.file)`""
+    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-android-setup\.apk"',
+        "href=`"$releaseBase/$($apk.file)`""
     $html = $html -replace '(?s)(<article class="card android">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
         "`${1}$($apk.sha256)`${2}"
-    $html = $html -replace 'href="v[0-9.]+/evolve-v[0-9.]+-android-setup\.apk\.sha256"',
-        "href=`"$vPrefix/$($apk.file).sha256`""
+    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-android-setup\.apk\.sha256"',
+        "href=`"$releaseBase/$($apk.file).sha256`""
 
     $html = $html -replace '<code>evolve-v[0-9.]+-windows-x64-setup\.exe</code>',
         "<code>$($win.file)</code>"
     $html = $html -replace '<code>evolve-v[0-9.]+-android-setup\.apk</code>',
         "<code>$($apk.file)</code>"
-    $html = $html -replace 'href="v[0-9.]+/CHECKSUMS\.sha256"',
-        "href=`"$vPrefix/CHECKSUMS.sha256`""
-    $html = $html -replace 'href="v[0-9.]+/CHECKSUMS\.sha512"',
-        "href=`"$vPrefix/CHECKSUMS.sha512`""
-    $html = $html -replace 'href="v[0-9.]+/checksums\.json"',
-        "href=`"$vPrefix/checksums.json`""
+    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)CHECKSUMS\.sha256"',
+        "href=`"$releaseBase/CHECKSUMS.sha256`""
+    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)CHECKSUMS\.sha512"',
+        "href=`"$releaseBase/CHECKSUMS.sha512`""
+    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)checksums\.json"',
+        "href=`"$releaseBase/checksums.json`""
 
     Set-Content -Path $DownloadsIndex -Value $html -NoNewline
     return [PSCustomObject]@{

@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\github.ps1"
+. "$PSScriptRoot\lib\ghpages_downloads.ps1"
 
 if (-not $Version) {
     $pubspec = Get-Content (Join-Path $Root 'pubspec.yaml') -Raw
@@ -71,14 +72,7 @@ if (Test-Path $versionJsonSrc) {
     Copy-Item $versionJsonSrc (Join-Path $DeployDir 'version.json') -Force
 }
 
-$downloadsSrc = Join-Path $Root 'downloads'
-if (Test-Path $downloadsSrc) {
-    $downloadsDst = Join-Path $DeployDir 'downloads'
-    if (-not (Test-Path $downloadsDst)) {
-        New-Item -ItemType Directory -Path $downloadsDst -Force | Out-Null
-    }
-    Copy-Item (Join-Path $downloadsSrc '*') $downloadsDst -Recurse -Force
-}
+Sync-GhPagesDownloads -Root $Root -DeployDir $DeployDir -Version $Version
 
 git add -A
 $status = git status --porcelain

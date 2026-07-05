@@ -8,6 +8,7 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\package_checksum.ps1"
 . "$PSScriptRoot\lib\github.ps1"
+. "$PSScriptRoot\lib\ghpages_downloads.ps1"
 Set-Location $Root
 
 if (-not $Version) {
@@ -46,7 +47,11 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $dstDir = Join-Path $GhPagesWorktree "downloads\v$Version"
 New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
-Copy-Item (Join-Path $srcDir '*') $dstDir -Force
+Get-ChildItem $srcDir -File | Where-Object {
+    $_.Extension -in '.sha256', '.sha512', '.json' -or $_.Name -like 'CHECKSUMS*'
+} | ForEach-Object {
+    Copy-Item $_.FullName (Join-Path $dstDir $_.Name) -Force
+}
 
 foreach ($page in @('downloads\index.html', 'download.html')) {
     $srcPage = Join-Path $Root $page
