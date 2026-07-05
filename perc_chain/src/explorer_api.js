@@ -116,11 +116,12 @@ export function getBlockDetail(ledger, index) {
     transactions: (block.transactions ?? []).map((tx) => ({
       id: tx.id,
       kind: tx.kind,
-      from: tx.from ?? null,
-      to: tx.to ?? null,
+      from: tx.from ?? tx.fromUsername ?? null,
+      to: tx.to ?? tx.toUsername ?? null,
       amount: formatPercAmount(tx.amount),
       fee: tx.fee ? formatPercAmount(tx.fee) : null,
       memo: tx.memo ?? null,
+      scenarioLabel: tx.scenarioLabel ?? null,
       timestamp: tx.timestamp ?? block.timestamp,
     })),
   };
