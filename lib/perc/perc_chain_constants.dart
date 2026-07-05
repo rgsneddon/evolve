@@ -106,6 +106,16 @@ class PercChainConstants {
   /// Each wallet may draw the scenario faucet once per 7 minutes.
   static const Duration faucetCooldown = Duration(minutes: 7);
 
+  /// Signed-in wallet sessions expire after this — mitigates automated SCS abuse.
+  static const Duration walletSessionTimeout = Duration(minutes: 8);
+
+  /// Override for tests — never set in production code.
+  @visibleForTesting
+  static Duration? walletSessionTimeoutOverride;
+
+  static Duration get walletSessionTimeoutEffective =>
+      walletSessionTimeoutOverride ?? walletSessionTimeout;
+
   /// Offline inbound transfers must be collected by signing in within this
   /// window after they were sent (12 calendar months); otherwise funds revert
   /// to the sender.

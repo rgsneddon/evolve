@@ -45,10 +45,13 @@ class PercWalletProvider extends ChangeNotifier {
   bool _pendingLaunchBalloon = false;
   bool _pendingGenesisRenewalNotice = false;
   bool _syncingWallet = false;
+  bool _sessionTimedOut = false;
   Timer? _microblockCommitDebounce;
+  Timer? _sessionExpiryTimer;
 
   bool get isReady => _ready;
   bool get isSyncingWallet => _syncingWallet;
+  bool get sessionTimedOut => _sessionTimedOut;
   bool get isBlockchainLaunched => _ledger.isBlockchainLaunched;
   bool get isLoggedIn => _ledger.isLoggedIn;
   String? get loggedInUsername => _ledger.sessionUsername;
@@ -183,8 +186,22 @@ class PercWalletProvider extends ChangeNotifier {
   Future<void> initialize() async {
     await PercLedgerHub.instance.initialize(_store);
     _ledger.refreshPendingInboundTransfers();
+    if (_ledger.isLoggedIn) {
+      if (_ledger.isWalletSessionExpired()) {
+        await _expireSession();
+      } else {
+        _armSessionTimeout();
+      }
+    }
     _ready = true;
     notifyListeners();
+  }
+
+  void checkSessionTimeout() {
+    if (!_ready || !isLoggedIn) return;
+    if (_ledger.isWalletSessionExpired()) {
+      unawaited(_expireSession());
+    }
   }
 
   Future<void> setupTreasuryPassword(String password) async {
@@ -192,6 +209,8 @@ class PercWalletProvider extends ChangeNotifier {
     try {
       _ledger.setupTreasuryPassword(password);
       _ledger.login(PercChainConstants.treasuryUsername, password);
+      clearSessionTimedOut();
+      _armSessionTimeout();
       await PercLedgerHub.instance.onWalletSessionStarted(
         PercChainConstants.treasuryUsername,
       );
@@ -210,6 +229,8 @@ class PercWalletProvider extends ChangeNotifier {
     try {
       _ledger.register(username, password);
       _ledger.login(username, password);
+      clearSessionTimedOut();
+      _armSessionTimeout();
       await PercLedgerHub.instance.onWalletSessionStarted(username);
       statusMessage = 'Account created';
       notifyListeners();
@@ -224,6 +245,8 @@ class PercWalletProvider extends ChangeNotifier {
     _clearMessages();
     try {
       _ledger.login(username, password);
+      clearSessionTimedOut();
+      _armSessionTimeout();
       await PercLedgerHub.instance.onWalletSessionStarted(username);
       _captureTreasuryLaunchEvent();
       statusMessage = 'Signed in as ${_ledger.sessionUsername}';
@@ -265,6 +288,7 @@ class PercWalletProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    _cancelSessionTimeout();
     final username = _ledger.sessionUsername;
     _ledger.logout();
     if (username != null) {
@@ -463,6 +487,32 @@ class PercWalletProvider extends ChangeNotifier {
     }
   }
 
+  void _armSessionTimeout() {
+    _cancelSessionTimeout();
+    if (!isLoggedIn) return;
+    final remaining = _ledger.walletSessionRemaining();
+    if (remaining == null || remaining <= Duration.zero) {
+      unawaited(_expireSession());
+      return;
+    }
+    _sessionExpiryTimer = Timer(remaining, () {
+      unawaited(_expireSession());
+    });
+  }
+
+  void _cancelSessionTimeout() {
+    _sessionExpiryTimer?.cancel();
+    _sessionExpiryTimer = null;
+  }
+
+  Future<void> _expireSession() async {
+    if (!isLoggedIn) return;
+    _sessionTimedOut = true;
+    await logout();
+  }
+
+  void clearSessionTimedOut() => _sessionTimedOut = false;
+
   void _clearMessages() {
     statusMessage = null;
     errorMessage = null;
@@ -503,6 +553,7 @@ class PercWalletProvider extends ChangeNotifier {
   @override
   void dispose() {
     _microblockCommitDebounce?.cancel();
+    _cancelSessionTimeout();
     PercLedgerHub.instance.removeListener(_onHubLedgerChanged);
     super.dispose();
   }

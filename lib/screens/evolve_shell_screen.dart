@@ -22,10 +22,24 @@ class EvolveShellScreen extends StatefulWidget {
   State<EvolveShellScreen> createState() => _EvolveShellScreenState();
 }
 
-class _EvolveShellScreenState extends State<EvolveShellScreen> {
+class _EvolveShellScreenState extends State<EvolveShellScreen>
+    with WidgetsBindingObserver {
   int _index = 0;
   late bool _walletTabVisited = widget.openRegistrationOnLaunch;
   PercWalletProvider? _wallet;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _wallet?.checkSessionTimeout();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -40,6 +54,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _wallet?.removeListener(_onWalletUpdate);
     super.dispose();
   }

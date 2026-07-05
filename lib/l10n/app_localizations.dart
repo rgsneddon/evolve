@@ -467,6 +467,8 @@ final _en = {
   'wallet_tx_genesis': 'Genesis renewal (283M PERC Perccent)',
   'wallet_signed_in_as': 'Signed in as {user}',
   'wallet_logout': 'Sign out',
+  'wallet_session_expired':
+      'Your wallet session expired after 8 minutes — sign in again to run SCS analyses.',
   'wallet_treasury_title': 'Treasury emission',
   'wallet_treasury_note':
       'Perccent chain advances on scenario analysis — not on Grok construal or field keystrokes. Treasury earns 1 PERC per elapsed minute — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.',
@@ -1352,6 +1354,8 @@ final _es = {
   'wallet_tx_genesis': 'Renovación génesis (283M PERC Perccent)',
   'wallet_signed_in_as': 'Sesión: {user}',
   'wallet_logout': 'Cerrar sesión',
+  'wallet_session_expired':
+      'Su sesión de cartera expiró tras 8 minutos — inicie sesión de nuevo para ejecutar análisis SCS.',
   'wallet_treasury_title': 'Emisión de tesorería',
   'wallet_treasury_note':
       'La cadena Perccent avanza con análisis de escenarios — no con construcción Grok ni pulsaciones de campo. La tesorería gana 1 PERC por minuto transcurrido — suministro continuo infinito Chronoflux. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',

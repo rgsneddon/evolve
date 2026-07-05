@@ -40,6 +40,7 @@ class PercLedger {
     this.treasuryCycle = 1,
     this.blockchainLaunched = false,
     this.sessionUsername,
+    this.sessionStartedAt,
     this.nextTxId = 1,
     this.microblockCount = 0,
     this.totalMicroblocks = 0,
@@ -84,6 +85,7 @@ class PercLedger {
   int treasuryCycle;
   bool blockchainLaunched;
   String? sessionUsername;
+  DateTime? sessionStartedAt;
   int nextTxId;
   int microblockCount;
   int totalMicroblocks;
@@ -385,6 +387,7 @@ class PercLedger {
 
     if (session != null && !accounts.containsKey(session)) {
       sessionUsername = null;
+      sessionStartedAt = null;
     }
     repairForAppUpgrade();
   }
@@ -604,6 +607,24 @@ class PercLedger {
   }
 
   bool get isLoggedIn => sessionUsername != null;
+
+  bool isWalletSessionExpired({DateTime? now}) {
+    if (sessionUsername == null) return false;
+    if (sessionStartedAt == null) return true;
+    final at = (now ?? DateTime.now()).toUtc();
+    return at.difference(sessionStartedAt!) >=
+        PercChainConstants.walletSessionTimeoutEffective;
+  }
+
+  Duration? walletSessionRemaining({DateTime? now}) {
+    if (sessionUsername == null) return null;
+    if (sessionStartedAt == null) return Duration.zero;
+    final at = (now ?? DateTime.now()).toUtc();
+    final remaining = PercChainConstants.walletSessionTimeoutEffective -
+        at.difference(sessionStartedAt!);
+    if (remaining <= Duration.zero) return Duration.zero;
+    return remaining;
+  }
 
   PercAccount? get sessionAccount => sessionUsername == null
       ? null
@@ -1442,6 +1463,7 @@ class PercLedger {
     }
     sessionUsername = u;
     final t = (now ?? DateTime.now()).toUtc();
+    sessionStartedAt = t;
     refreshPendingInboundTransfers(now: t);
     return acc;
   }
@@ -1535,7 +1557,10 @@ class PercLedger {
     }
   }
 
-  void logout() => sessionUsername = null;
+  void logout() {
+    sessionUsername = null;
+    sessionStartedAt = null;
+  }
 
   /// Settles inbound transfers for the signed-in user when still in receive window.
   void refreshPendingInboundForSession({DateTime? now}) {
@@ -1810,6 +1835,8 @@ class PercLedger {
         'treasuryCycle': treasuryCycle,
         'blockchainLaunched': blockchainLaunched,
         'sessionUsername': sessionUsername,
+        if (sessionStartedAt != null)
+          'sessionStartedAt': sessionStartedAt!.toIso8601String(),
         'nextTxId': nextTxId,
         'microblockCount': microblockCount,
         'totalMicroblocks': totalMicroblocks,
@@ -1865,6 +1892,9 @@ class PercLedger {
       blockchainLaunched: json['blockchainLaunched'] as bool? ??
           (blocks.isNotEmpty || treasuryGenesisDone),
       sessionUsername: json['sessionUsername'] as String?,
+      sessionStartedAt: json['sessionStartedAt'] != null
+          ? DateTime.parse(json['sessionStartedAt'] as String)
+          : null,
       nextTxId: json['nextTxId'] as int? ?? 1,
       microblockCount: json['microblockCount'] as int? ?? 0,
       totalMicroblocks: json['totalMicroblocks'] as int? ?? 0,

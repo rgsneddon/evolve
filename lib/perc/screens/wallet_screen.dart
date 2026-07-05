@@ -200,6 +200,24 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
+  Widget _sessionExpiredBanner(AppLocalizations strings) {
+    return Card(
+      margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      color: const Color(0xFF2A1F14),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Text(
+          strings.t('wallet_session_expired'),
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFFF59E0B),
+            height: 1.45,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _publicTreasuryBanner(
     PercWalletProvider wallet,
     AppLocalizations strings,
@@ -351,6 +369,7 @@ class _WalletScreenState extends State<WalletScreen> {
             child: Column(
               children: [
                 if (!wallet.hasAppAccess) _appGateBanner(strings),
+                if (wallet.sessionTimedOut) _sessionExpiredBanner(strings),
                 _publicTreasuryBanner(wallet, strings),
                 Card(
                   margin: const EdgeInsets.all(20),
