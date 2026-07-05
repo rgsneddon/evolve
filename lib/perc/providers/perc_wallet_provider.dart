@@ -384,7 +384,7 @@ class PercWalletProvider extends ChangeNotifier {
     }
     final normalizedAddress = PercAuth.normalizeAddress(toAddress);
     try {
-      await PercLedgerHub.instance.network.syncToNetworkHeight();
+      await PercLedgerHub.instance.network.forceSyncWalletToSeed();
       final resolved =
           await PercLedgerHub.instance.network.resolveAccountByAddress(
         normalizedAddress,
@@ -424,10 +424,22 @@ class PercWalletProvider extends ChangeNotifier {
             'queued until they sign in on the network within ${_formatReceiveDelay()}, otherwise returns to your wallet';
       }
       notifyListeners();
-      await _commit();
+      await _commitSendAndGossip();
     } catch (e) {
       errorMessage = e.toString().replaceFirst('StateError: ', '');
       notifyListeners();
+    }
+  }
+
+  /// Persists a send and gossips to the seed even when the local tip lags briefly.
+  Future<void> _commitSendAndGossip() async {
+    try {
+      await _commit();
+    } on StateError catch (e) {
+      if (!e.message.contains('syncing')) rethrow;
+      await PercLedgerHub.instance.network.forceSyncWalletToSeed();
+      _ledger.refreshPendingInboundTransfers();
+      await PercLedgerHub.instance.commitAfterForceSync();
     }
   }
 

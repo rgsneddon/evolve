@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isPeerOnline, isRecipientOnlineOnSeed } from './peer_online.js';
+import {
+  isPeerOnline,
+  isRecipientOnlineOnSeed,
+  touchPeerHeartbeatOnSeed,
+} from './peer_online.js';
 
 test('isPeerOnline requires heartbeat within seven minutes', () => {
   const now = Date.now();
@@ -48,6 +52,31 @@ test('isRecipientOnlineOnSeed matches username or wallet address', () => {
       now,
     }),
     false,
+  );
+});
+
+test('touchPeerHeartbeatOnSeed marks wallet online from address publish', () => {
+  const now = Date.now();
+  const peers = new Map();
+  const addresses = new Map();
+
+  touchPeerHeartbeatOnSeed({
+    peers,
+    addresses,
+    username: 'bob',
+    address: 'percpriv1bob',
+    endpoint: 'https://evolve-perc-internet.onrender.com',
+    now,
+  });
+
+  assert.equal(
+    isRecipientOnlineOnSeed({
+      peers,
+      addresses,
+      address: 'percpriv1bob',
+      now,
+    }),
+    true,
   );
 });
 

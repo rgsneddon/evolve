@@ -34,3 +34,35 @@ export function isRecipientOnlineOnSeed({
 
   return false;
 }
+
+/** Refresh seed peer heartbeat when a wallet publishes its address while signed in. */
+export function touchPeerHeartbeatOnSeed({
+  peers,
+  addresses,
+  username,
+  address,
+  endpoint,
+  evolutionaryChainId = 'evolve-chronoflux-principia-chain-1',
+  now = Date.now(),
+}) {
+  const user = username?.trim();
+  if (!user) return false;
+
+  const addr = address?.trim();
+  const existing = peers.get(user) ?? {};
+
+  peers.set(user, {
+    ...existing,
+    sessionUsername: user,
+    evolutionaryChainId: existing.evolutionaryChainId ?? evolutionaryChainId,
+    endpoint: endpoint ?? existing.endpoint,
+    walletAddress: addr ?? existing.walletAddress,
+    updatedAt: now,
+  });
+
+  if (addr) {
+    addresses.set(addr, user);
+  }
+
+  return true;
+}

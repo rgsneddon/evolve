@@ -130,14 +130,14 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
     if (!disableLiveNodesForTests &&
         username != PercChainConstants.treasuryUsername) {
-      await _rendezvous.register(status);
       final addr = hub.ledger.sessionAccount?.address;
-      if (addr != null && addr.isNotEmpty) {
-        await _rendezvous.publishAddress(address: addr);
-      }
       await _rendezvous.relayLedger(username: username, ledger: hub.ledger);
+      if (addr != null && addr.isNotEmpty) {
+        await _rendezvous.publishAddress(address: addr, username: username);
+      }
+      await _registerSessionOnSeed(hub, status);
     }
-    await syncToNetworkHeight();
+    await _syncWithRetries(hub);
     hub.ledger.refreshPendingInboundTransfers();
     await hub.commit();
     _startReceivePolling();
@@ -195,12 +195,12 @@ class PercNetworkCoordinator extends ChangeNotifier {
         revision: hub.revision,
         endpoint: _publicEndpoint,
       );
-      await _rendezvous.register(status);
+      await _rendezvous.relayLedger(username: session, ledger: hub.ledger);
       final addr = hub.ledger.sessionAccount?.address;
       if (addr != null && addr.isNotEmpty) {
-        await _rendezvous.publishAddress(address: addr);
+        await _rendezvous.publishAddress(address: addr, username: session);
       }
-      await _rendezvous.relayLedger(username: session, ledger: hub.ledger);
+      await _registerSessionOnSeed(hub, status);
     }
 
     hub.ledger.refreshPendingInboundTransfers();
@@ -328,17 +328,17 @@ class PercNetworkCoordinator extends ChangeNotifier {
     final session = ledger.sessionUsername;
 
     if (session != null) {
-      await _rendezvous.relayLedger(username: session, ledger: ledger);
       final status = PercNetworkStatus.fromLedger(
         ledger,
         revision: hub.revision,
         endpoint: localEndpoint,
       );
-      await _rendezvous.register(status);
+      await _rendezvous.relayLedger(username: session, ledger: ledger);
       final addr = ledger.sessionAccount?.address;
       if (addr != null && addr.isNotEmpty) {
-        await _rendezvous.publishAddress(address: addr);
+        await _rendezvous.publishAddress(address: addr, username: session);
       }
+      await _registerSessionOnSeed(hub, status);
     }
 
     final gossipTargets = ledger.networkNodes.values
@@ -476,16 +476,33 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
 
     _publicEndpoint ??= await _resolveAdvertisedEndpoint();
-    await _rendezvous.register(
-      PercNetworkStatus.fromLedger(
-        hub.ledger,
-        revision: hub.revision,
-        endpoint: _publicEndpoint,
-      ),
+    final status = PercNetworkStatus.fromLedger(
+      hub.ledger,
+      revision: hub.revision,
+      endpoint: _publicEndpoint,
     );
     final addr = hub.ledger.sessionAccount?.address;
     if (addr != null && addr.isNotEmpty) {
-      await _rendezvous.publishAddress(address: addr);
+      await _rendezvous.publishAddress(address: addr, username: session);
+    }
+    await _registerSessionOnSeed(hub, status);
+  }
+
+  Future<void> _registerSessionOnSeed(
+    PercLedgerHub _hub,
+    PercNetworkStatus status,
+  ) async {
+    if (status.endpoint == null || status.sessionUsername == null) return;
+    await _rendezvous.register(status);
+  }
+
+  Future<void> _syncWithRetries(PercLedgerHub hub, {int attempts = 3}) async {
+    for (var i = 0; i < attempts; i++) {
+      await syncToNetworkHeight();
+      if (isSyncedToNetwork || isConnectedToSeed == false) return;
+      if (i < attempts - 1) {
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
     }
   }
 
@@ -661,16 +678,32 @@ class PercNetworkCoordinator extends ChangeNotifier {
   }
 
   Future<String?> _resolveAdvertisedEndpoint() async {
+    final port = PercChainConstants.defaultNodePort;
+    if (disableLiveNodesForTests) {
+      return _serverOrCreate.endpoint ?? 'http://127.0.0.1:$port';
+    }
+
     final serverEndpoint = _serverOrCreate.endpoint;
-    if (disableLiveNodesForTests) return serverEndpoint;
     if (PercPublicEndpoint.isInternetEndpoint(serverEndpoint)) {
       return serverEndpoint;
     }
-    final port = PercChainConstants.defaultNodePort;
+
     final internet =
         await const PercPublicEndpoint().resolveInternetEndpoint(port: port);
-    return internet ?? serverEndpoint;
+    if (PercPublicEndpoint.isInternetEndpoint(internet)) {
+      return internet;
+    }
+
+    // Web / NAT wallets have no public node port — heartbeat via the seed rendezvous.
+    final seed = await _rendezvous.baseUrl();
+    if (seed != null) return seed;
+
+    return serverEndpoint ?? 'http://127.0.0.1:$port';
   }
+
+  @visibleForTesting
+  Future<String?> resolveAdvertisedEndpointForTest() =>
+      _resolveAdvertisedEndpoint();
 
   Future<void> _mergeRendezvousPeers(PercLedger ledger) async {
     final peers = await _rendezvous.fetchPeers();

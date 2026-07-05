@@ -24,7 +24,10 @@ import {
   findAddressInLedgerCollection,
   indexLedgerAddresses,
 } from './address_index.js';
-import { isRecipientOnlineOnSeed } from './peer_online.js';
+import {
+  isRecipientOnlineOnSeed,
+  touchPeerHeartbeatOnSeed,
+} from './peer_online.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -398,6 +401,13 @@ const server = http.createServer(async (req, res) => {
     const username = data.username?.trim();
     if (username) {
       addresses.set(address, username);
+      touchPeerHeartbeatOnSeed({
+        peers,
+        addresses,
+        username,
+        address,
+        endpoint: publicEndpoint(),
+      });
     }
     return json(res, 200, { ok: true });
   }

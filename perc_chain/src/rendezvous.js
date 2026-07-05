@@ -8,7 +8,10 @@ import {
   sanitizeLedgerForPublic,
   sanitizePeersForPublic,
 } from './account_privacy.js';
-import { isRecipientOnlineOnSeed } from './peer_online.js';
+import {
+  isRecipientOnlineOnSeed,
+  touchPeerHeartbeatOnSeed,
+} from './peer_online.js';
 
 const PORT = Number(process.env.PORT ?? process.env.PERC_RENDEZVOUS_PORT ?? 9478);
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
@@ -130,6 +133,13 @@ const server = http.createServer(async (req, res) => {
     const username = data.username?.trim();
     if (username) {
       addresses.set(address, username);
+      touchPeerHeartbeatOnSeed({
+        peers,
+        addresses,
+        username,
+        address,
+        endpoint: `http://127.0.0.1:${PORT}`,
+      });
     }
     return json(res, 200, { ok: true });
   }
