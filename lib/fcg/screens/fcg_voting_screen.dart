@@ -11,15 +11,13 @@ import '../../perc/providers/perc_wallet_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../models/fcg_models.dart';
 import '../providers/fcg_voting_provider.dart';
+import '../services/fcg_governance_paper.dart';
 import '../services/fcg_moderator.dart';
 import '../services/fcg_quorum_engine.dart';
 
 /// Full Community Governance parish council voting — SSUCF cohesion narratives.
 class FcgVotingScreen extends StatefulWidget {
   const FcgVotingScreen({super.key});
-
-  static const governancePaperUrl =
-      'https://x.com/rgsneddon/status/2048748971246358967';
 
   @override
   State<FcgVotingScreen> createState() => _FcgVotingScreenState();
@@ -233,7 +231,7 @@ class _FcgVotingScreenState extends State<FcgVotingScreen> {
             ),
             TextButton(
               onPressed: () => launchUrl(
-                Uri.parse(FcgVotingScreen.governancePaperUrl),
+                Uri.parse(FcgGovernancePaper.url),
                 mode: LaunchMode.externalApplication,
               ),
               child: Text(strings.t('fcg_read_paper')),
@@ -276,9 +274,7 @@ class _FcgVotingScreenState extends State<FcgVotingScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              strings
-                  .t('fcg_moderator_account_hint')
-                  .replaceAll('{username}', modUsername),
+              strings.t('fcg_moderator_account_hint'),
               style: const TextStyle(fontSize: 13, height: 1.45),
             ),
             if (walletUsername != null) ...[

@@ -110,7 +110,8 @@ if (-not $SkipPages) {
     # Keep download packages and static pages alongside the Flutter web bundle.
     $preserveNames = @(
         '.git', '.gitignore', 'README.md',
-        'downloads', 'download.html', 'privacy_policy.txt'
+        'downloads', 'download.html', 'privacy_policy.txt',
+        'fcg_white_paper.html', 'fcg_white_paper.txt', 'docs'
     )
     Get-ChildItem -Force | Where-Object {
         $_.Name -notin $preserveNames
@@ -123,11 +124,19 @@ if (-not $SkipPages) {
         Copy-Item $readmeSrc (Join-Path $DeployDir 'README.md') -Force
     }
 
-    foreach ($extra in @('download.html', 'privacy_policy.txt')) {
+    foreach ($extra in @('download.html', 'privacy_policy.txt', 'fcg_white_paper.html', 'fcg_white_paper.txt')) {
         $src = Join-Path $Root $extra
         if (Test-Path $src) {
             Copy-Item $src (Join-Path $DeployDir $extra) -Force
         }
+    }
+    $fcgDocsSrc = Join-Path $Root 'docs\fcg'
+    if (Test-Path $fcgDocsSrc) {
+        $fcgDocsDst = Join-Path $DeployDir 'docs\fcg'
+        if (-not (Test-Path $fcgDocsDst)) {
+            New-Item -ItemType Directory -Path $fcgDocsDst -Force | Out-Null
+        }
+        Copy-Item (Join-Path $fcgDocsSrc '*') $fcgDocsDst -Recurse -Force
     }
     $downloadsSrc = Join-Path $Root 'downloads'
     if (Test-Path $downloadsSrc) {

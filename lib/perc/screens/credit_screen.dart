@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../fcg/services/fcg_governance_paper.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../widgets/wallet_creator_credit.dart';
@@ -10,9 +11,6 @@ import '../widgets/wallet_creator_credit.dart';
 /// Credit and governance context for parish-ward consensus use.
 class CreditScreen extends StatelessWidget {
   const CreditScreen({super.key});
-
-  static const governanceUrl =
-      'https://x.com/rgsneddon/status/2048748971246358967';
 
   @override
   Widget build(BuildContext context) {
@@ -64,14 +62,14 @@ class CreditScreen extends StatelessWidget {
                                     '${strings.t('credit_governance_intro')} ${strings.t('credit_governance_link_label')} at ',
                               ),
                               TextSpan(
-                                text: governanceUrl,
+                                text: FcgGovernancePaper.url,
                                 style: const TextStyle(
                                   color: Color(0xFF6C63FF),
                                   decoration: TextDecoration.underline,
                                 ),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () => launchUrl(
-                                        Uri.parse(governanceUrl),
+                                        Uri.parse(FcgGovernancePaper.url),
                                         mode: LaunchMode.externalApplication,
                                       ),
                               ),
