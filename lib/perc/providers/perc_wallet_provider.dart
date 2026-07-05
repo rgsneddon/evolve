@@ -192,13 +192,36 @@ class PercWalletProvider extends ChangeNotifier {
     _ledger.refreshPendingInboundTransfers();
     if (_ledger.isLoggedIn) {
       if (_ledger.isWalletSessionExpired()) {
-        await _expireSession();
+        // Local-only logout so splash boot never blocks on seed/network sync.
+        await _clearExpiredSessionOnBoot();
       } else {
         _armSessionTimeout();
       }
     }
     _ready = true;
     notifyListeners();
+  }
+
+  /// Clears an expired persisted session without waiting on network I/O.
+  Future<void> _clearExpiredSessionOnBoot() async {
+    _cancelSessionTimeout();
+    _sessionTimedOut = true;
+    final username = _ledger.sessionUsername;
+    _ledger.logout();
+    lastReward = null;
+    _clearMessages();
+    await PercLedgerHub.instance.persistLocal();
+    if (username != null) {
+      unawaited(_finalizeSessionEndOnNetwork(username));
+    }
+  }
+
+  Future<void> _finalizeSessionEndOnNetwork(String username) async {
+    try {
+      await PercLedgerHub.instance.onWalletSessionEnded(username);
+    } catch (_) {
+      // Boot must not fail if the seed is unreachable.
+    }
   }
 
   void checkSessionTimeout() {

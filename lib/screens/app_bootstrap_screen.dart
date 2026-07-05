@@ -50,7 +50,12 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
 
   Future<void> _bootWallet(PercWalletProvider wallet) async {
     try {
-      await wallet.initialize();
+      await wallet.initialize().timeout(
+        const Duration(seconds: 20),
+        onTimeout: () => throw TimeoutException(
+          'Wallet boot timed out after 20s',
+        ),
+      );
       if (!mounted) return;
       setState(() => _walletReady = true);
     } catch (e) {

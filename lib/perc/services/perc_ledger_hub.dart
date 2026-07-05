@@ -115,6 +115,15 @@ class PercLedgerHub extends ChangeNotifier {
 
   void requireSyncedForMutation() => network.requireSyncedForMutation();
 
+  /// Persist ledger to local storage without network sync (safe during app boot).
+  Future<void> persistLocal() async {
+    _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _revision++;
+    notifyListeners();
+    await _store?.save(_ledger);
+    hub_sync.broadcastRevision();
+  }
+
   Future<void> commit() async {
     await commitWithoutSessionPromotion(promoteSessionNode: true);
   }
