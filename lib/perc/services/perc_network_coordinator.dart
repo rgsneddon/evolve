@@ -71,6 +71,12 @@ class PercNetworkCoordinator extends ChangeNotifier {
     _syncState = state;
   }
 
+  @visibleForTesting
+  void setSeedConnectedForTest(bool connected) {
+    _seedConnected = connected;
+    notifyListeners();
+  }
+
   static final PercNetworkCoordinator instance = PercNetworkCoordinator();
 
   /// Disabled in tests by default; enabled from [main] for production wallets.

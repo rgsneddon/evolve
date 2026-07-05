@@ -37,6 +37,7 @@ class PercWalletProvider extends ChangeNotifier {
   PercWalletProvider({PercWalletStore? store})
       : _store = store ?? createPercWalletStore() {
     PercLedgerHub.instance.addListener(_onHubLedgerChanged);
+    PercLedgerHub.instance.network.addListener(_onNetworkActivity);
   }
 
   final PercWalletStore _store;
@@ -50,6 +51,7 @@ class PercWalletProvider extends ChangeNotifier {
   bool _pendingGenesisRenewalNotice = false;
   bool _syncingWallet = false;
   bool _sessionTimedOut = false;
+  bool _extendingSessionForConnection = false;
   Timer? _microblockCommitDebounce;
   Timer? _sessionExpiryTimer;
 
@@ -196,10 +198,58 @@ class PercWalletProvider extends ChangeNotifier {
         await _clearExpiredSessionOnBoot();
       } else {
         _armSessionTimeout();
+        final username = _ledger.sessionUsername;
+        if (username != null) {
+          // Restore seed heartbeat/receive polling for a persisted sign-in.
+          unawaited(_resumeNetworkSession(username));
+        }
       }
     }
     _ready = true;
     notifyListeners();
+  }
+
+  /// Re-attaches seed rendezvous for a wallet that stayed signed in locally.
+  Future<void> _resumeNetworkSession(String username) async {
+    try {
+      await PercLedgerHub.instance.onWalletSessionStarted(username);
+      if (isLoggedIn && isConnectedToSeed) {
+        _extendSessionForConnection();
+      }
+    } catch (_) {
+      // Boot must not fail if the seed is unreachable.
+    }
+  }
+
+  /// Seed heartbeats and sync keep the session alive while this connection holds.
+  void _onNetworkActivity() {
+    if (!_ready || !isLoggedIn || !sessionTimeoutEnabled) return;
+    if (isConnectedToSeed) {
+      _extendSessionForConnection();
+    }
+  }
+
+  bool get _sessionHeldByConnection =>
+      sessionTimeoutEnabled && isLoggedIn && isConnectedToSeed;
+
+  /// Refreshes dormancy timestamps without re-entering network listeners.
+  void _extendSessionForConnection() {
+    if (!isLoggedIn || _extendingSessionForConnection) return;
+    _extendingSessionForConnection = true;
+    try {
+      _ledger.touchWalletSessionActivity();
+      _cancelSessionTimeout();
+      if (!sessionTimeoutEnabled) return;
+      final remaining = _ledger.walletSessionRemaining();
+      final delay = remaining == null || remaining <= Duration.zero
+          ? PercChainConstants.walletSessionIdleTimeoutEffective
+          : remaining;
+      _sessionExpiryTimer = Timer(delay, () {
+        unawaited(_expireSession());
+      });
+    } finally {
+      _extendingSessionForConnection = false;
+    }
   }
 
   /// Clears an expired persisted session without waiting on network I/O.
@@ -226,6 +276,10 @@ class PercWalletProvider extends ChangeNotifier {
 
   void checkSessionTimeout() {
     if (!_ready || !isLoggedIn) return;
+    if (_sessionHeldByConnection) {
+      _extendSessionForConnection();
+      return;
+    }
     if (_ledger.isWalletSessionExpired()) {
       unawaited(_expireSession());
     }
@@ -539,6 +593,10 @@ class PercWalletProvider extends ChangeNotifier {
   void _armSessionTimeout() {
     _cancelSessionTimeout();
     if (!sessionTimeoutEnabled || !isLoggedIn) return;
+    if (_sessionHeldByConnection) {
+      _extendSessionForConnection();
+      return;
+    }
     final remaining = _ledger.walletSessionRemaining();
     if (remaining == null || remaining <= Duration.zero) {
       unawaited(_expireSession());
@@ -556,6 +614,10 @@ class PercWalletProvider extends ChangeNotifier {
 
   Future<void> _expireSession() async {
     if (!isLoggedIn) return;
+    if (_sessionHeldByConnection) {
+      _extendSessionForConnection();
+      return;
+    }
     _sessionTimedOut = true;
     await logout();
   }
@@ -605,6 +667,7 @@ class PercWalletProvider extends ChangeNotifier {
     _microblockCommitDebounce?.cancel();
     _cancelSessionTimeout();
     PercLedgerHub.instance.removeListener(_onHubLedgerChanged);
+    PercLedgerHub.instance.network.removeListener(_onNetworkActivity);
     super.dispose();
   }
 }
