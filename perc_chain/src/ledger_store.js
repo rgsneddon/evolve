@@ -5,6 +5,11 @@ import { blockTipPayload } from './chain_tip_payload.js';
 import { compactLedgerForSeed } from './ledger_compact.js';
 import { createGenesisLedger } from './genesis.js';
 import { seedBlockHeightFromLedger } from './seed_block.js';
+import {
+  archiveSeedLedger,
+  bootstrapSeedEpoch,
+  isAnnualBootstrapDue,
+} from './seed_bootstrap.js';
 
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
 
@@ -51,6 +56,7 @@ export class LedgerStore {
     this.filePath = path.join(dataDir, 'seed_ledger.json');
     this.revision = 0;
     this.genesisRevision = 1;
+    this.lastBootstrapAt = null;
     this.ledger = null;
     fs.mkdirSync(dataDir, { recursive: true });
     this.load();
@@ -64,6 +70,7 @@ export class LedgerStore {
       this.ledger = parsed.ledger ?? null;
       this.revision = parsed.revision ?? 0;
       this.genesisRevision = parsed.genesisRevision ?? ledgerGenesisRevision(this.ledger);
+      this.lastBootstrapAt = parsed.lastBootstrapAt ?? parsed.savedAt ?? null;
       if (this.ledger) {
         const before = JSON.stringify(this.ledger).length;
         this.ledger = compactLedgerForSeed(this.ledger);
@@ -75,6 +82,7 @@ export class LedgerStore {
       this.ledger = null;
       this.revision = 0;
       this.genesisRevision = 1;
+      this.lastBootstrapAt = null;
     }
   }
 
@@ -82,6 +90,7 @@ export class LedgerStore {
     const payload = {
       revision: this.revision,
       genesisRevision: this.genesisRevision,
+      lastBootstrapAt: this.lastBootstrapAt,
       ledger: this.ledger ? compactLedgerForSeed(this.ledger) : null,
       savedAt: new Date().toISOString(),
     };
@@ -104,6 +113,7 @@ export class LedgerStore {
       tipHash: tipHash(ledger),
       revision: this.revision,
       networkGenesisRevision: this.genesisRevision,
+      lastBootstrapAt: this.lastBootstrapAt,
       sessionUsername,
       endpoint,
     };
@@ -138,6 +148,50 @@ export class LedgerStore {
     this.revision += 1;
     this.save();
     return true;
+  }
+
+  /**
+   * Archive the live ledger and roll forward to a compact epoch checkpoint.
+   * @param {{ now?: Date, seedUsername?: string }} [options]
+   */
+  bootstrapEpoch(options = {}) {
+    if (!this.ledger) {
+      return { ok: false, error: 'no ledger' };
+    }
+    if (!this.ledger.blockchainLaunched) {
+      return { ok: false, error: 'blockchain not launched' };
+    }
+
+    const archivePath = archiveSeedLedger(this.dataDir, {
+      archivedAt: new Date().toISOString(),
+      revision: this.revision,
+      genesisRevision: this.genesisRevision,
+      lastBootstrapAt: this.lastBootstrapAt,
+      ledger: this.ledger,
+    });
+
+    const result = bootstrapSeedEpoch(this.ledger, options);
+    this.ledger = result.ledger;
+    this.genesisRevision = result.newRevision;
+    this.revision += 1;
+    this.lastBootstrapAt = result.bootstrappedAt;
+    this.save();
+
+    return {
+      ok: true,
+      archivePath,
+      previousRevision: result.previousRevision,
+      newRevision: result.newRevision,
+      bootstrappedAt: result.bootstrappedAt,
+      blockHeight: blockHeight(this.ledger),
+      tipHash: tipHash(this.ledger),
+    };
+  }
+
+  maybeAnnualBootstrap(options = {}) {
+    if (!this.ledger?.blockchainLaunched) return null;
+    if (!isAnnualBootstrapDue(this.lastBootstrapAt, options)) return null;
+    return this.bootstrapEpoch(options);
   }
 
   treasuryAccount(treasuryUsername = 'evolve_treasury') {

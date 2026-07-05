@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { blockTipPayload } from './chain_tip_payload.js';
 import {
   compactLedgerForSeed,
+  seedBlocksMax,
   truncateScenarioText,
 } from './ledger_compact.js';
 
@@ -49,6 +50,42 @@ describe('compactLedgerForSeed', () => {
     assert.ok(compact.blocks[0].scenarioLabel.length <= 120);
     assert.ok(compact.blocks[0].transactions[0].scenarioLabel.length <= 120);
     assert.deepEqual(compact.accounts.alice.transactions, []);
+  });
+
+  it('drops microblockLog on seed compaction', () => {
+    const ledger = {
+      blocks: [],
+      accounts: {},
+      microblockLog: [
+        { index: 1, label: 'Fair usage keystroke' },
+        { index: 2, label: 'Another microblock entry' },
+      ],
+    };
+    const compact = compactLedgerForSeed(ledger);
+    assert.deepEqual(compact.microblockLog, []);
+  });
+
+  it('caps blocks[] when PERC_SEED_BLOCKS_MAX is set', () => {
+    const prev = process.env.PERC_SEED_BLOCKS_MAX;
+    process.env.PERC_SEED_BLOCKS_MAX = '3';
+    try {
+      const ledger = {
+        blocks: Array.from({ length: 8 }, (_, i) => ({
+          index: i,
+          scenarioLabel: `block-${i}`,
+          transactions: [],
+        })),
+        accounts: {},
+      };
+      const compact = compactLedgerForSeed(ledger);
+      assert.equal(compact.blocks.length, 3);
+      assert.equal(compact.blocks[0].index, 5);
+      assert.equal(compact.blocks[2].index, 7);
+      assert.equal(seedBlocksMax(), 3);
+    } finally {
+      if (prev == null) delete process.env.PERC_SEED_BLOCKS_MAX;
+      else process.env.PERC_SEED_BLOCKS_MAX = prev;
+    }
   });
 });
 

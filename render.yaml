@@ -25,6 +25,10 @@ services:
         value: "420000"
       - key: PERC_SEED_SCENARIO_MAX
         value: "120"
+      - key: PERC_SEED_BLOCKS_MAX
+        value: "1000"
+      - key: PERC_ANNUAL_BOOTSTRAP_DAYS
+        value: "365"
     disk:
       name: perc-seed-data
       mountPath: /var/data

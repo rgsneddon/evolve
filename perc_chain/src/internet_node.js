@@ -273,6 +273,18 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, buildTreasuryWalletView(store));
   }
 
+  if (req.method === 'POST' && url.pathname === '/api/treasury/bootstrap-epoch') {
+    const session = requireTreasuryAuth(req);
+    if (!session) return json(res, 401, { ok: false, error: 'Treasury login required' });
+    const result = store.bootstrapEpoch({ seedUsername: SEED_USERNAME });
+    if (!result.ok) return json(res, 400, result);
+    peers.clear();
+    ledgers.clear();
+    addresses.clear();
+    await registerSeed();
+    return json(res, 200, result);
+  }
+
   if (req.method === 'GET' && url.pathname === '/api/network') {
     return json(
       res,
@@ -483,6 +495,8 @@ const server = http.createServer(async (req, res) => {
       peers: snapshot.peers.total,
       peersOnline: snapshot.peers.online,
       ledgerReady: snapshot.ledgerReady,
+      lastBootstrapAt: store.lastBootstrapAt,
+      networkGenesisRevision: store.getGenesisRevision(),
     });
   }
 
@@ -505,6 +519,15 @@ server.listen(PORT, bindHost, async () => {
       treasuryAdmin.save();
     }
     console.log('Chain reset to block 0 with new treasury wallet');
+  }
+  const annualBootstrap = store.maybeAnnualBootstrap({ seedUsername: SEED_USERNAME });
+  if (annualBootstrap?.ok) {
+    peers.clear();
+    ledgers.clear();
+    addresses.clear();
+    console.log(
+      `Annual seed epoch bootstrap: revision ${annualBootstrap.previousRevision} → ${annualBootstrap.newRevision} (archive ${annualBootstrap.archivePath})`,
+    );
   }
   await registerSeed();
   await syncFromNetwork();

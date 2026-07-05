@@ -1,6 +1,7 @@
 /**
- * Compact ledgers persisted on the seed node — truncate scenario narrative
- * and drop redundant per-account transaction histories (blocks[] stay canonical).
+ * Compact ledgers persisted on the seed node — truncate scenario narrative,
+ * drop redundant per-account transaction histories, strip wallet-only logs,
+ * and optionally retain only the newest main-chain blocks.
  */
 
 const DEFAULT_SCENARIO_MAX = 120;
@@ -9,6 +10,13 @@ export function scenarioLabelMaxLength() {
   const raw = Number(process.env.PERC_SEED_SCENARIO_MAX ?? DEFAULT_SCENARIO_MAX);
   if (!Number.isFinite(raw) || raw < 32) return DEFAULT_SCENARIO_MAX;
   return Math.min(Math.floor(raw), 512);
+}
+
+/** @returns {number} 0 = unlimited */
+export function seedBlocksMax() {
+  const raw = Number(process.env.PERC_SEED_BLOCKS_MAX ?? 0);
+  if (!Number.isFinite(raw) || raw <= 0) return 0;
+  return Math.min(Math.floor(raw), 100_000);
 }
 
 export function truncateScenarioText(value, maxLen = scenarioLabelMaxLength()) {
@@ -43,6 +51,7 @@ export function compactLedgerForSeed(ledger) {
 
   const out = cloneLedger(ledger);
   const maxLen = scenarioLabelMaxLength();
+  const blockCap = seedBlocksMax();
 
   for (const block of out.blocks ?? []) {
     if (block.scenarioLabel != null) {
@@ -53,16 +62,16 @@ export function compactLedgerForSeed(ledger) {
     }
   }
 
+  if (blockCap > 0 && Array.isArray(out.blocks) && out.blocks.length > blockCap) {
+    out.blocks = out.blocks.slice(-blockCap);
+  }
+
   for (const account of Object.values(out.accounts ?? {})) {
     if (!account || typeof account !== 'object') continue;
     account.transactions = [];
   }
 
-  for (const entry of out.microblockLog ?? []) {
-    if (entry?.label != null) {
-      entry.label = truncateScenarioText(entry.label, maxLen);
-    }
-  }
+  out.microblockLog = [];
 
   for (const proposal of out.wardProposals ?? []) {
     if (!proposal || typeof proposal !== 'object') continue;
