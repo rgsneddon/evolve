@@ -31,72 +31,74 @@ class BlockchainExplorerScreen extends StatelessWidget {
         title: Text(strings.t('wallet_explorer_title')),
       ),
       body: SafeArea(
-        child: blocks.isEmpty && !wallet.isBlockchainLaunched
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    strings.t('wallet_explorer_empty'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Color(0xFF9BA3B8)),
-                  ),
-                ),
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 900),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        LawfulFrameFlowShardGraph(
-                          wallet: wallet,
-                          strings: strings,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (blocks.isEmpty) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          strings.t('wallet_explorer_empty'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Color(0xFF9BA3B8)),
                         ),
-                        const SizedBox(height: 16),
-                        _heightCard(wallet, strings),
-                        if (blocks.isNotEmpty && _chartsHaveData(blocks)) ...[
-                          const SizedBox(height: 16),
-                          _graphCard(blocks, strings),
-                          const SizedBox(height: 16),
-                          _cumulativeCard(blocks, strings),
-                        ],
-                        if (_hasChronofluxHistory(blocks)) ...[
-                          const SizedBox(height: 16),
-                          ChronofluxFivePointGraphPanel(
-                            wallet: wallet,
-                            strings: strings,
-                            compact: true,
-                            showSeriesCharts: false,
-                          ),
-                        ],
-                        if (blocks.isNotEmpty) ...[
-                          const SizedBox(height: 20),
-                          Text(
-                            strings.t('wallet_explorer_history'),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.6,
-                              color: Color(0xFF9BA3B8),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ...blocks.reversed.map(
-                            (b) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: _blockTile(b, strings),
-                            ),
-                          ),
-                        ],
-                        WalletCreatorCredit(strings: strings),
-                      ],
+                      ),
                     ),
+                    const SizedBox(height: 16),
+                  ],
+                  LawfulFrameFlowShardGraph(
+                    wallet: wallet,
+                    strings: strings,
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  _heightCard(wallet, strings),
+                  if (blocks.isNotEmpty && _chartsHaveData(blocks)) ...[
+                    const SizedBox(height: 16),
+                    _graphCard(blocks, strings),
+                    const SizedBox(height: 16),
+                    _cumulativeCard(blocks, strings),
+                  ],
+                  if (_hasChronofluxHistory(blocks)) ...[
+                    const SizedBox(height: 16),
+                    ChronofluxFivePointGraphPanel(
+                      wallet: wallet,
+                      strings: strings,
+                      compact: true,
+                      showSeriesCharts: false,
+                    ),
+                  ],
+                  if (blocks.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      strings.t('wallet_explorer_history'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                        color: Color(0xFF9BA3B8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...blocks.reversed.map(
+                      (b) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _blockTile(b, strings),
+                      ),
+                    ),
+                  ],
+                  WalletCreatorCredit(strings: strings),
+                ],
               ),
+            ),
+          ),
+        ),
       ),
     );
   }

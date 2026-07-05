@@ -1234,21 +1234,13 @@ class _WalletScreenState extends State<WalletScreen> {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: wallet.isBlockchainLaunched
-            ? () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const BlockchainExplorerScreen(),
-                  ),
-                );
-              }
-            : () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(strings.t('wallet_blockchain_awaiting_launch')),
-                  ),
-                );
-              },
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const BlockchainExplorerScreen(),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -1280,7 +1272,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     Text(
                       strings
                           .t('wallet_explorer_block_current')
-                          .replaceAll('{height}', '${wallet.scenarioBlockHeight}'),
+                          .replaceAll('{height}', '${wallet.blockHeight}'),
                       style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
                     ),
                   ],
