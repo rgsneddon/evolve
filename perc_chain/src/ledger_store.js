@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { blockTipPayload } from './chain_tip_payload.js';
+import { compactLedgerForSeed } from './ledger_compact.js';
 import { createGenesisLedger } from './genesis.js';
 import { seedBlockHeightFromLedger } from './seed_block.js';
 
@@ -15,7 +17,7 @@ export function tipHash(ledger) {
   if (blocks.length === 0) {
     return crypto.createHash('sha256').update(`genesis:${chainId}`).digest('hex');
   }
-  const payload = JSON.stringify(blocks[blocks.length - 1]);
+  const payload = JSON.stringify(blockTipPayload(blocks[blocks.length - 1]));
   return crypto.createHash('sha256').update(payload).digest('hex');
 }
 
@@ -62,6 +64,13 @@ export class LedgerStore {
       this.ledger = parsed.ledger ?? null;
       this.revision = parsed.revision ?? 0;
       this.genesisRevision = parsed.genesisRevision ?? ledgerGenesisRevision(this.ledger);
+      if (this.ledger) {
+        const before = JSON.stringify(this.ledger).length;
+        this.ledger = compactLedgerForSeed(this.ledger);
+        if (JSON.stringify(this.ledger).length < before) {
+          this.save();
+        }
+      }
     } catch {
       this.ledger = null;
       this.revision = 0;
@@ -73,7 +82,7 @@ export class LedgerStore {
     const payload = {
       revision: this.revision,
       genesisRevision: this.genesisRevision,
-      ledger: this.ledger,
+      ledger: this.ledger ? compactLedgerForSeed(this.ledger) : null,
       savedAt: new Date().toISOString(),
     };
     fs.writeFileSync(this.filePath, JSON.stringify(payload, null, 2));
@@ -115,7 +124,7 @@ export class LedgerStore {
 
   importLedger(remote) {
     if (!shouldImportLedger(this.ledger, remote)) return false;
-    this.ledger = remote;
+    this.ledger = compactLedgerForSeed(remote);
     this.genesisRevision = ledgerGenesisRevision(remote);
     this.revision += 1;
     this.save();
@@ -124,7 +133,7 @@ export class LedgerStore {
 
   forceReplaceLedger(remote) {
     if (!remote || typeof remote !== 'object') return false;
-    this.ledger = remote;
+    this.ledger = compactLedgerForSeed(remote);
     this.genesisRevision = ledgerGenesisRevision(remote);
     this.revision += 1;
     this.save();

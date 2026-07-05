@@ -23,6 +23,8 @@ services:
         value: /var/data
       - key: PERC_PEER_ONLINE_MS
         value: "420000"
+      - key: PERC_SEED_SCENARIO_MAX
+        value: "120"
     disk:
       name: perc-seed-data
       mountPath: /var/data

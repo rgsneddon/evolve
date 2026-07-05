@@ -3,6 +3,35 @@ import { buildPublicTreasuryEmission, formatPercAmount } from './explorer_api.js
 
 const TREASURY_USERNAME = process.env.PERC_TREASURY_USERNAME ?? 'evolve_treasury';
 
+function treasuryTxMatches(tx, treasuryUsername) {
+  const from = tx.fromUsername ?? tx.from ?? null;
+  const to = tx.toUsername ?? tx.to ?? null;
+  return from === treasuryUsername || to === treasuryUsername;
+}
+
+export function recentTreasuryTransactions(ledger, treasuryUsername = TREASURY_USERNAME, limit = 20) {
+  const found = [];
+  const blocks = ledger?.blocks ?? [];
+  for (let i = blocks.length - 1; i >= 0 && found.length < limit; i -= 1) {
+    for (const tx of blocks[i].transactions ?? []) {
+      if (!treasuryTxMatches(tx, treasuryUsername)) continue;
+      found.push(tx);
+      if (found.length >= limit) break;
+    }
+  }
+  return found;
+}
+
+export function countTreasuryTransactions(ledger, treasuryUsername = TREASURY_USERNAME) {
+  let count = 0;
+  for (const block of ledger?.blocks ?? []) {
+    for (const tx of block.transactions ?? []) {
+      if (treasuryTxMatches(tx, treasuryUsername)) count += 1;
+    }
+  }
+  return count;
+}
+
 export function buildTreasuryWalletView(store) {
   const ledger = store.ledger;
   const treasury = store.treasuryAccount(TREASURY_USERNAME);
@@ -26,9 +55,9 @@ export function buildTreasuryWalletView(store) {
     cumulativeBurnedPerc: formatPercAmount(ledger.cumulativeBurnedPerc),
     networkGenesisRevision: store.getGenesisRevision(),
     revision: store.revision,
-    transactionCount: treasury.transactions?.length ?? 0,
+    transactionCount: countTreasuryTransactions(ledger, TREASURY_USERNAME),
     treasuryEmission: buildPublicTreasuryEmission(ledger, TREASURY_USERNAME),
-    recentTransactions: (treasury.transactions ?? []).slice(0, 20).map((tx) => ({
+    recentTransactions: recentTreasuryTransactions(ledger, TREASURY_USERNAME, 20).map((tx) => ({
       id: tx.id,
       kind: tx.kind,
       amount: formatPercAmount(tx.amount),
