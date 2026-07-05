@@ -7,6 +7,8 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
+import 'package:evolve/screens/app_bootstrap_screen.dart';
+import 'package:evolve/screens/evolve_loading_screen.dart';
 import 'package:evolve/widgets/evolve_banner.dart';
 
 Future<void> _unlockApp(PercWalletProvider wallet) async {
@@ -20,6 +22,13 @@ void main() {
   tearDown(() => PercLedgerHub.resetForTest());
 
   testWidgets('app loads with both analysis modes', (tester) async {
+    EvolveLoadingScreen.durationOverride = Duration.zero;
+    AppBootstrapScreen.minSplashDurationOverride = Duration.zero;
+    addTearDown(() {
+      EvolveLoadingScreen.durationOverride = null;
+      AppBootstrapScreen.minSplashDurationOverride = null;
+    });
+
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 

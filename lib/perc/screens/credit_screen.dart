@@ -40,15 +40,6 @@ class CreditScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          strings.t('credit_governance_intro'),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.55,
-                            color: Color(0xFFD8DCE8),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
                         RichText(
                           text: TextSpan(
                             style: const TextStyle(
@@ -57,12 +48,9 @@ class CreditScreen extends StatelessWidget {
                               color: Color(0xFFD8DCE8),
                             ),
                             children: [
+                              TextSpan(text: strings.t('credit_governance_intro')),
                               TextSpan(
-                                text:
-                                    '${strings.t('credit_governance_intro')} ${strings.t('credit_governance_link_label')} at ',
-                              ),
-                              TextSpan(
-                                text: FcgGovernancePaper.url,
+                                text: strings.t('fcg_read_paper'),
                                 style: const TextStyle(
                                   color: Color(0xFF6C63FF),
                                   decoration: TextDecoration.underline,
@@ -84,25 +72,6 @@ class CreditScreen extends StatelessWidget {
                             fontSize: 14,
                             height: 1.55,
                             color: Color(0xFF9BA3B8),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          strings.t('credit_cohesion_goal'),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.55,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF00D9C0),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          strings.t('credit_peace_goal'),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.55,
-                            color: Color(0xFFFFB347),
                           ),
                         ),
                       ],

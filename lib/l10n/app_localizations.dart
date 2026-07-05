@@ -317,7 +317,7 @@ final _en = {
       'Full Community Governance (FCG) ward voting for {region} — social cohesion narratives from your prior scenario runs.',
   'fcg_governance_blurb':
       'SSUCF parish council voting uses Chronoflux cohesion narratives to structure ward policy debate.',
-  'fcg_read_paper': 'FCG paper',
+  'fcg_read_paper': 'FCG white paper',
   'fcg_moderator_title': 'Ward moderator',
   'fcg_moderator_account_hint':
       'Register a PERC wallet as Moderator (see your Ward Moderator Pack for Instructions) to initiate votes and manage parish voter accounts.',
@@ -423,8 +423,7 @@ final _en = {
   'policy_question_required': 'Enter a policy question before opening the vote.',
   'analysis_mode_required': 'Select at least one analysis mode (SCS or % chance).',
   'credit_title': 'Credit & governance',
-  'credit_governance_intro':
-      'This app is best used alongside governance method',
+  'credit_governance_intro': 'This app is best used alongside the ',
   'credit_governance_link_label': 'Full Community Governance',
   'credit_governance_link_suffix':
       ' as a tool to debate and come to consensus conclusions within parish wards.',
@@ -1185,7 +1184,7 @@ final _es = {
       'Votación FCG para {region} — narrativas de cohesión social de sus análisis previos.',
   'fcg_governance_blurb':
       'La votación parroquial SSUCF usa narrativas Chronoflux para estructurar el debate.',
-  'fcg_read_paper': 'Documento FCG',
+  'fcg_read_paper': 'documento FCG',
   'fcg_moderator_title': 'Moderador de distrito',
   'fcg_moderator_account_hint':
       'Registre una cartera PERC como Moderador (consulte su Paquete de Moderador de Distrito para instrucciones) para iniciar votaciones y gestionar cuentas de votantes parroquiales.',
@@ -1290,8 +1289,7 @@ final _es = {
   'policy_question_required': 'Introduzca una pregunta de política.',
   'analysis_mode_required': 'Seleccione al menos un modo de análisis.',
   'credit_title': 'Crédito y gobernanza',
-  'credit_governance_intro':
-      'Esta aplicación funciona mejor junto al método de gobernanza',
+  'credit_governance_intro': 'Esta aplicación funciona mejor junto al ',
   'credit_governance_link_label': 'Full Community Governance',
   'credit_governance_link_suffix':
       ' como herramienta para debatir y alcanzar conclusiones de consenso en las parroquias.',

@@ -1,69 +1,75 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
 import '../perc/providers/perc_wallet_provider.dart';
-import '../perc/widgets/wallet_opening_screen.dart';
 import '../providers/locale_provider.dart';
+import 'evolve_loading_screen.dart';
 import 'evolve_shell_screen.dart';
 
-/// Boots the wallet in the background and shows a loading screen if it takes >1s.
+/// Splash animation, background wallet boot, then registration-first shell.
 class AppBootstrapScreen extends StatefulWidget {
   const AppBootstrapScreen({super.key, required this.walletProvider});
 
   final PercWalletProvider walletProvider;
+
+  @visibleForTesting
+  static Duration? minSplashDurationOverride;
+
+  static Duration get _minSplashDuration =>
+      minSplashDurationOverride ?? EvolveLoadingScreen.splashDuration;
 
   @override
   State<AppBootstrapScreen> createState() => _AppBootstrapScreenState();
 }
 
 class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
-  static const _slowOpenDelay = Duration(seconds: 1);
-
-  bool _ready = false;
-  bool _showOpening = false;
-  Timer? _slowTimer;
+  bool _splashDone = false;
+  bool _walletReady = false;
   Object? _bootError;
 
   @override
   void initState() {
     super.initState();
     if (widget.walletProvider.isReady) {
-      _ready = true;
-      return;
+      _walletReady = true;
+    } else {
+      unawaited(_bootWallet(widget.walletProvider));
     }
-    _slowTimer = Timer(_slowOpenDelay, () {
-      if (!_ready && mounted) setState(() => _showOpening = true);
-    });
-    unawaited(_bootWallet(widget.walletProvider));
+    unawaited(_runSplash());
+  }
+
+  Future<void> _runSplash() async {
+    await Future.delayed(AppBootstrapScreen._minSplashDuration);
+    if (!mounted) return;
+    setState(() => _splashDone = true);
   }
 
   Future<void> _bootWallet(PercWalletProvider wallet) async {
     try {
       await wallet.initialize();
       if (!mounted) return;
-      setState(() => _ready = true);
+      setState(() => _walletReady = true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _bootError = e);
     }
   }
 
-  @override
-  void dispose() {
-    _slowTimer?.cancel();
-    super.dispose();
-  }
+  bool get _ready => _splashDone && _walletReady && _bootError == null;
 
   @override
   Widget build(BuildContext context) {
-    if (_ready) return const EvolveShellScreen();
-
-    final strings = AppLocalizations.of(context.watch<LocaleProvider>().config);
+    if (_ready) {
+      return const EvolveShellScreen(openRegistrationOnLaunch: true);
+    }
 
     if (_bootError != null) {
+      final strings =
+          AppLocalizations.of(context.watch<LocaleProvider>().config);
       return Scaffold(
         body: Center(
           child: Padding(
@@ -81,13 +87,11 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
                   onPressed: () {
                     setState(() {
                       _bootError = null;
-                      _showOpening = false;
+                      _walletReady = widget.walletProvider.isReady;
                     });
-                    _slowTimer?.cancel();
-                    _slowTimer = Timer(_slowOpenDelay, () {
-                      if (!_ready && mounted) setState(() => _showOpening = true);
-                    });
-                    unawaited(_bootWallet(widget.walletProvider));
+                    if (!_walletReady) {
+                      unawaited(_bootWallet(widget.walletProvider));
+                    }
                   },
                   child: Text(strings.t('wallet_opening_retry')),
                 ),
@@ -98,12 +102,6 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
       );
     }
 
-    if (_showOpening) {
-      return WalletOpeningScreen(strings: strings);
-    }
-
-    return const Scaffold(
-      body: SizedBox.shrink(),
-    );
+    return EvolveLoadingScreen(duration: AppBootstrapScreen._minSplashDuration);
   }
 }

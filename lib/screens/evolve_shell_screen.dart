@@ -13,7 +13,10 @@ import '../perc/screens/wallet_screen.dart';
 
 /// Root shell — Analysis + wallet after PERC address registration.
 class EvolveShellScreen extends StatefulWidget {
-  const EvolveShellScreen({super.key});
+  const EvolveShellScreen({super.key, this.openRegistrationOnLaunch = false});
+
+  /// When true, wallet registration/login is shown immediately on first frame.
+  final bool openRegistrationOnLaunch;
 
   @override
   State<EvolveShellScreen> createState() => _EvolveShellScreenState();
@@ -21,7 +24,7 @@ class EvolveShellScreen extends StatefulWidget {
 
 class _EvolveShellScreenState extends State<EvolveShellScreen> {
   int _index = 0;
-  bool _walletTabVisited = false;
+  late bool _walletTabVisited = widget.openRegistrationOnLaunch;
   PercWalletProvider? _wallet;
 
   @override
@@ -120,8 +123,12 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
         ? _index
         : _index.clamp(0, destinations.length - 1);
 
-    if (navIndex == walletTabIndex) {
-      _walletTabVisited = true;
+    final showWallet =
+        _walletTabVisited || navIndex == walletTabIndex;
+    if (navIndex == walletTabIndex && !_walletTabVisited) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _walletTabVisited = true);
+      });
     }
 
     return Scaffold(
@@ -130,9 +137,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
               index: navIndex,
               children: [
                 const HomeScreen(),
-                _walletTabVisited
-                    ? const WalletScreen()
-                    : const SizedBox.shrink(),
+                showWallet ? const WalletScreen() : const SizedBox.shrink(),
                 const FcgVotingScreen(),
                 const CreditScreen(),
               ],
@@ -140,9 +145,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen> {
           : IndexedStack(
               index: navIndex,
               children: [
-                _walletTabVisited
-                    ? const WalletScreen()
-                    : const SizedBox.shrink(),
+                showWallet ? const WalletScreen() : const SizedBox.shrink(),
                 const CreditScreen(),
               ],
             ),
