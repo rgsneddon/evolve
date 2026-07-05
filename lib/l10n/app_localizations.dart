@@ -722,6 +722,9 @@ final _en = {
   'wallet_app_gate_title': 'Create your wallet first',
   'wallet_app_gate_note':
       'Evolve unlocks after you register and receive a Perccent address on this device.',
+  'splash_enter_app': 'Enter Evolve',
+  'splash_preparing_wallet': 'Preparing wallet…',
+  'splash_signed_in_as': 'Signed in as {user}',
   'wallet_username': 'Username',
   'wallet_sign_in': 'Sign in',
   'wallet_register': 'Create account',
@@ -1490,6 +1493,9 @@ final _es = {
   'wallet_app_gate_title': 'Cree su monedero primero',
   'wallet_app_gate_note':
       'Evolve se desbloquea tras registrarse y recibir una dirección Perccent en este dispositivo.',
+  'splash_enter_app': 'Entrar en Evolve',
+  'splash_preparing_wallet': 'Preparando monedero…',
+  'splash_signed_in_as': 'Sesión iniciada como {user}',
   'wallet_username': 'Usuario',
   'wallet_sign_in': 'Iniciar sesión',
   'wallet_register': 'Crear cuenta',

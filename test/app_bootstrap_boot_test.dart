@@ -5,15 +5,18 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
+import 'package:evolve/screens/evolve_loading_screen.dart';
 
 void main() {
   setUp(() {
     PercLedgerHub.resetForTest();
     PercWalletProvider.sessionTimeoutEnabled = false;
+    EvolveLoadingScreen.introDurationOverride = Duration.zero;
   });
 
   tearDown(() {
     PercWalletProvider.sessionTimeoutEnabled = true;
+    EvolveLoadingScreen.introDurationOverride = null;
     PercLedgerHub.resetForTest();
   });
 

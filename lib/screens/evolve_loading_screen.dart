@@ -1,21 +1,32 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../l10n/app_localizations.dart';
 import '../perc/perc_app_version.dart';
+import '../perc/providers/perc_wallet_provider.dart';
+import '../perc/widgets/wallet_auth_panel.dart';
+import '../providers/locale_provider.dart';
+import '../widgets/evolve_banner_loop.dart';
 
-/// Animated launch screen — EVOLVE title, FCG suite subtitle, and release version.
+/// Launch screen — looping article banner until the user signs in or enters.
 class EvolveLoadingScreen extends StatefulWidget {
   const EvolveLoadingScreen({
     super.key,
-    this.duration = const Duration(seconds: 4),
+    required this.walletReady,
+    this.onAuthenticated,
+    this.onEnterApp,
   });
 
-  final Duration duration;
+  final bool walletReady;
+  final VoidCallback? onAuthenticated;
+  final VoidCallback? onEnterApp;
 
   @visibleForTesting
-  static Duration? durationOverride;
+  static Duration? introDurationOverride;
 
-  static Duration get splashDuration => durationOverride ?? const Duration(seconds: 4);
+  static Duration get introDuration =>
+      introDurationOverride ?? const Duration(seconds: 3);
 
   static String get versionLabel =>
       'v${PercAppVersion.releaseOf(PercAppVersion.current)}';
@@ -26,195 +37,224 @@ class EvolveLoadingScreen extends StatefulWidget {
 
 class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+  late final AnimationController _intro;
+  bool _showAuth = false;
+  bool _hadAccessAtBoot = false;
+  bool _capturedBootAccess = false;
+  PercWalletProvider? _wallet;
 
   @override
   void initState() {
     super.initState();
-    final duration = widget.duration == const Duration(seconds: 4)
-        ? EvolveLoadingScreen.splashDuration
-        : widget.duration;
-    _controller = AnimationController(vsync: this, duration: duration)..forward();
+    _intro = AnimationController(
+      vsync: this,
+      duration: EvolveLoadingScreen.introDuration,
+    );
+    if (EvolveLoadingScreen.introDuration == Duration.zero) {
+      _showAuth = true;
+    } else {
+      _intro.forward().whenComplete(() {
+        if (mounted) setState(() => _showAuth = true);
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final wallet = context.read<PercWalletProvider>();
+    if (!_capturedBootAccess) {
+      _hadAccessAtBoot = wallet.hasAppAccess;
+      _capturedBootAccess = true;
+    }
+    if (!identical(_wallet, wallet)) {
+      _wallet?.removeListener(_onWalletChanged);
+      _wallet = wallet;
+      _wallet!.addListener(_onWalletChanged);
+    }
+  }
+
+  @override
+  void didUpdateWidget(EvolveLoadingScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.walletReady &&
+        (_intro.status == AnimationStatus.completed ||
+            EvolveLoadingScreen.introDuration == Duration.zero)) {
+      _showAuth = true;
+    }
+  }
+
+  void _onWalletChanged() {
+    if (!mounted || !_showAuth || !widget.walletReady) return;
+    final wallet = _wallet;
+    if (wallet == null) return;
+    if (wallet.hasAppAccess && !_hadAccessAtBoot) {
+      widget.onAuthenticated?.call();
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _wallet?.removeListener(_onWalletChanged);
+    _intro.dispose();
     super.dispose();
-  }
-
-  double _interval(double start, double end) {
-    final t = _controller.value;
-    if (t <= start) return 0;
-    if (t >= end) return 1;
-    return (t - start) / (end - start);
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final titleOpacity = Curves.easeOut.transform(_interval(0.05, 0.35));
-        final titleScale =
-            0.88 + 0.12 * Curves.easeOutBack.transform(_interval(0.05, 0.4)).clamp(0.0, 1.0);
-        final subtitleOpacity = Curves.easeOut.transform(_interval(0.28, 0.55));
-        final subtitleSlide = 18 * (1 - Curves.easeOutCubic.transform(_interval(0.28, 0.55)));
-        final lineWidth = Curves.easeInOut.transform(_interval(0.42, 0.62));
-        final versionOpacity = Curves.easeOut.transform(_interval(0.58, 0.82));
-        final glowPulse = 0.55 + 0.45 * Curves.easeInOut.transform(_interval(0.7, 1.0));
+    final strings =
+        AppLocalizations.of(context.watch<LocaleProvider>().config);
+    final wallet = context.watch<PercWalletProvider>();
+    final authVisible = _showAuth && widget.walletReady;
+    final authSlide = authVisible ? 0.0 : 28.0;
+    final authOpacity = authVisible ? 1.0 : 0.0;
 
-        return Scaffold(
-          body: Stack(
-            children: [
-              const Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF0A0E18),
-                        Color(0xFF12182A),
-                        Color(0xFF0D0F14),
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const EvolveBannerLoop(),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0x66080B12),
+                  Color(0xAA0A0E18),
+                  Color(0xEE0A0E18),
+                ],
+                stops: [0.0, 0.45, 1.0],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [
+                            Color(0xFF8B83FF),
+                            Color(0xFF6C63FF),
+                            Color(0xFF00D9C0),
+                          ],
+                        ).createShader(bounds),
+                        child: const Text(
+                          'EVOLVE',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 5,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Full Community Governance Suite',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
+                          color: Colors.white.withValues(alpha: 0.82),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        EvolveLoadingScreen.versionLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          letterSpacing: 2,
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                AnimatedOpacity(
+                  opacity: authOpacity,
+                  duration: const Duration(milliseconds: 450),
+                  child: AnimatedSlide(
+                    offset: Offset(0, authSlide / 120),
+                    duration: const Duration(milliseconds: 450),
+                    curve: Curves.easeOutCubic,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      child: _authSection(wallet, strings),
+                    ),
+                  ),
+                ),
+                if (!widget.walletReady)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          strings.t('splash_preparing_wallet'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF9BA3B8),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
-              ),
-              Positioned(
-                top: -140,
-                right: -100,
-                child: Opacity(
-                  opacity: 0.12 * glowPulse,
-                  child: Container(
-                    width: 320,
-                    height: 320,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFF6C63FF),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -120,
-                left: -80,
-                child: Opacity(
-                  opacity: 0.1 * glowPulse,
-                  child: Container(
-                    width: 280,
-                    height: 280,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFF00D9C0),
-                    ),
-                  ),
-                ),
-              ),
-              SafeArea(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Opacity(
-                      opacity: titleOpacity,
-                      child: Transform.scale(
-                        scale: titleScale,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ShaderMask(
-                              shaderCallback: (bounds) => const LinearGradient(
-                                colors: [
-                                  Color(0xFF8B83FF),
-                                  Color(0xFF6C63FF),
-                                  Color(0xFF00D9C0),
-                                ],
-                              ).createShader(bounds),
-                              child: const Text(
-                                'EVOLVE',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 52,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 6,
-                                  color: Colors.white,
-                                  height: 1,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Opacity(
-                              opacity: lineWidth,
-                              child: Container(
-                                width: 72 * lineWidth,
-                                height: 2,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(2),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF6C63FF),
-                                      Color(0xFF00D9C0),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Transform.translate(
-                              offset: Offset(0, subtitleSlide),
-                              child: Opacity(
-                                opacity: subtitleOpacity,
-                                child: const Text(
-                                  'Full Community Governance Suite',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 1.4,
-                                    color: Color(0xFFD8DCE8),
-                                    height: 1.35,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 36),
-                            Opacity(
-                              opacity: versionOpacity,
-                              child: Text(
-                                EvolveLoadingScreen.versionLabel,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 2.5,
-                                  color: Color(0xFF9BA3B8),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 28),
-                            Opacity(
-                              opacity: versionOpacity * 0.85,
-                              child: SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  value: _controller.isAnimating ? null : 1,
-                                  color: const Color(0xFF6C63FF),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+
+  Widget _authSection(PercWalletProvider wallet, AppLocalizations strings) {
+    if (wallet.hasAppAccess) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            strings.t('splash_signed_in_as')
+                .replaceAll('{user}', wallet.loggedInUsername ?? ''),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: widget.onEnterApp ?? widget.onAuthenticated,
+            child: Text(strings.t('splash_enter_app')),
+          ),
+        ],
+      );
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF141824).withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: const WalletAuthPanel(
+          compact: true,
+          showCreatorCredit: false,
+        ),
+      ),
     );
   }
 }

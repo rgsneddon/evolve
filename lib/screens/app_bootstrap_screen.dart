@@ -10,25 +10,19 @@ import '../providers/locale_provider.dart';
 import 'evolve_loading_screen.dart';
 import 'evolve_shell_screen.dart';
 
-/// Splash animation, background wallet boot, then analysis or registration.
+/// Looping banner splash, wallet boot, then user sign-in before the shell.
 class AppBootstrapScreen extends StatefulWidget {
   const AppBootstrapScreen({super.key, required this.walletProvider});
 
   final PercWalletProvider walletProvider;
-
-  @visibleForTesting
-  static Duration? minSplashDurationOverride;
-
-  static Duration get _minSplashDuration =>
-      minSplashDurationOverride ?? EvolveLoadingScreen.splashDuration;
 
   @override
   State<AppBootstrapScreen> createState() => _AppBootstrapScreenState();
 }
 
 class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
-  bool _splashDone = false;
   bool _walletReady = false;
+  bool _enteredApp = false;
   Object? _bootError;
 
   @override
@@ -39,13 +33,6 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
     } else {
       unawaited(_bootWallet(widget.walletProvider));
     }
-    unawaited(_runSplash());
-  }
-
-  Future<void> _runSplash() async {
-    await Future.delayed(AppBootstrapScreen._minSplashDuration);
-    if (!mounted) return;
-    setState(() => _splashDone = true);
   }
 
   Future<void> _bootWallet(PercWalletProvider wallet) async {
@@ -64,15 +51,16 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
     }
   }
 
-  bool get _ready => _splashDone && _walletReady && _bootError == null;
+  void _enterApp() {
+    setState(() => _enteredApp = true);
+  }
+
+  bool get _ready => _walletReady && _enteredApp && _bootError == null;
 
   @override
   Widget build(BuildContext context) {
     if (_ready) {
-      final wallet = widget.walletProvider;
-      return EvolveShellScreen(
-        openRegistrationOnLaunch: !wallet.hasAppAccess,
-      );
+      return const EvolveShellScreen(openRegistrationOnLaunch: false);
     }
 
     if (_bootError != null) {
@@ -110,6 +98,10 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
       );
     }
 
-    return EvolveLoadingScreen(duration: AppBootstrapScreen._minSplashDuration);
+    return EvolveLoadingScreen(
+      walletReady: _walletReady,
+      onAuthenticated: _enterApp,
+      onEnterApp: _enterApp,
+    );
   }
 }

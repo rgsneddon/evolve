@@ -7,9 +7,9 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
-import 'package:evolve/screens/app_bootstrap_screen.dart';
 import 'package:evolve/screens/evolve_loading_screen.dart';
 import 'package:evolve/widgets/evolve_banner.dart';
+import 'package:evolve/widgets/evolve_banner_loop.dart';
 
 Future<void> _unlockApp(PercWalletProvider wallet) async {
   await wallet.initialize();
@@ -21,14 +21,14 @@ void main() {
   setUp(() {
     PercLedgerHub.resetForTest();
     PercWalletProvider.sessionTimeoutEnabled = false;
-    EvolveLoadingScreen.durationOverride = Duration.zero;
-    AppBootstrapScreen.minSplashDurationOverride = Duration.zero;
+    EvolveLoadingScreen.introDurationOverride = Duration.zero;
+    EvolveBannerLoop.loopDurationOverride = const Duration(seconds: 60);
   });
 
   tearDown(() {
     PercWalletProvider.sessionTimeoutEnabled = true;
-    EvolveLoadingScreen.durationOverride = null;
-    AppBootstrapScreen.minSplashDurationOverride = null;
+    EvolveLoadingScreen.introDurationOverride = null;
+    EvolveBannerLoop.loopDurationOverride = null;
   });
 
   testWidgets('app shows wallet gate until PERC address is registered', (tester) async {
@@ -40,7 +40,6 @@ void main() {
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await provider.initialize();
     await fcg.initialize();
-    await wallet.initialize();
 
     await tester.pumpWidget(
       EvolveApp(
@@ -50,10 +49,10 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(wallet.hasAppAccess, isFalse);
-    expect(find.text('Create your wallet'), findsOneWidget);
+    expect(find.text('Create your wallet first'), findsOneWidget);
     expect(find.byType(EvolveBanner), findsNothing);
     expect(find.text('RUN ANALYSIS'), findsNothing);
   });
@@ -80,7 +79,12 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Enter Evolve'), findsOneWidget);
+    await tester.tap(find.text('Enter Evolve'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(EvolveBanner), findsOneWidget);
     expect(find.text('RUN ANALYSIS'), findsOneWidget);

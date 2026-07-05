@@ -7,9 +7,9 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
-import 'package:evolve/screens/app_bootstrap_screen.dart';
 import 'package:evolve/screens/evolve_loading_screen.dart';
 import 'package:evolve/widgets/evolve_banner.dart';
+import 'package:evolve/widgets/evolve_banner_loop.dart';
 
 Future<void> _unlockApp(PercWalletProvider wallet) async {
   await wallet.initialize();
@@ -17,24 +17,28 @@ Future<void> _unlockApp(PercWalletProvider wallet) async {
   await wallet.register('widgetuser', 'password12345');
 }
 
+Future<void> _enterFromSplash(WidgetTester tester) async {
+  if (find.text('Enter Evolve').evaluate().isNotEmpty) {
+    await tester.tap(find.text('Enter Evolve'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+}
+
 void main() {
   setUp(() {
     PercLedgerHub.resetForTest();
     PercWalletProvider.sessionTimeoutEnabled = false;
+    EvolveLoadingScreen.introDurationOverride = Duration.zero;
+    EvolveBannerLoop.loopDurationOverride = const Duration(seconds: 60);
   });
   tearDown(() {
     PercWalletProvider.sessionTimeoutEnabled = true;
-    PercLedgerHub.resetForTest();
+    EvolveLoadingScreen.introDurationOverride = null;
+    EvolveBannerLoop.loopDurationOverride = null;
   });
 
   testWidgets('app loads with both analysis modes', (tester) async {
-    EvolveLoadingScreen.durationOverride = Duration.zero;
-    AppBootstrapScreen.minSplashDurationOverride = Duration.zero;
-    addTearDown(() {
-      EvolveLoadingScreen.durationOverride = null;
-      AppBootstrapScreen.minSplashDurationOverride = null;
-    });
-
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -53,7 +57,8 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 300));
+    await _enterFromSplash(tester);
 
     expect(find.text('Evolve'), findsOneWidget);
     expect(find.byType(EvolveBanner), findsOneWidget);
@@ -66,19 +71,11 @@ void main() {
   });
 
   testWidgets('unsigned user lands on wallet registration after splash', (tester) async {
-    EvolveLoadingScreen.durationOverride = Duration.zero;
-    AppBootstrapScreen.minSplashDurationOverride = Duration.zero;
-    addTearDown(() {
-      EvolveLoadingScreen.durationOverride = null;
-      AppBootstrapScreen.minSplashDurationOverride = null;
-    });
-
     final provider = EvolveProvider();
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await provider.initialize();
     await fcg.initialize();
-    await wallet.initialize();
 
     await tester.pumpWidget(
       EvolveApp(
@@ -90,7 +87,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Create your wallet'), findsOneWidget);
+    expect(find.text('Create your wallet first'), findsOneWidget);
     expect(find.text('YOUR SCENARIO'), findsNothing);
   });
 }
