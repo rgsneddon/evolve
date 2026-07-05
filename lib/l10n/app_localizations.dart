@@ -725,6 +725,11 @@ final _en = {
   'splash_enter_app': 'Enter Evolve',
   'splash_preparing_wallet': 'Preparing wallet…',
   'splash_signed_in_as': 'Signed in as {user}',
+  'splash_version_checking': 'Checking for updates…',
+  'splash_version_latest': 'You have the latest version ({version})',
+  'splash_version_update':
+      'Update available: {latest} — you have {current}',
+  'splash_version_update_action': 'Get the update',
   'wallet_username': 'Username',
   'wallet_sign_in': 'Sign in',
   'wallet_register': 'Create account',
@@ -1496,6 +1501,11 @@ final _es = {
   'splash_enter_app': 'Entrar en Evolve',
   'splash_preparing_wallet': 'Preparando monedero…',
   'splash_signed_in_as': 'Sesión iniciada como {user}',
+  'splash_version_checking': 'Comprobando actualizaciones…',
+  'splash_version_latest': 'Tiene la última versión ({version})',
+  'splash_version_update':
+      'Actualización disponible: {latest} — tiene {current}',
+  'splash_version_update_action': 'Obtener la actualización',
   'wallet_username': 'Usuario',
   'wallet_sign_in': 'Iniciar sesión',
   'wallet_register': 'Crear cuenta',

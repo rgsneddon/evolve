@@ -71,6 +71,11 @@ if (Test-Path $readmeSrc) {
     Copy-Item $readmeSrc (Join-Path $webDir 'README.md') -Force
 }
 
+$versionJsonSrc = Join-Path $Root 'version.json'
+if (Test-Path $versionJsonSrc) {
+    Copy-Item $versionJsonSrc (Join-Path $webDir 'version.json') -Force
+}
+
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Compress-Archive -Path (Join-Path $webDir '*') -DestinationPath $zipPath -Force
 

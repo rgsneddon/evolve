@@ -66,6 +66,11 @@ if (Test-Path $fcgDocsSrc) {
     }
     Copy-Item (Join-Path $fcgDocsSrc '*') $fcgDocsDst -Recurse -Force
 }
+$versionJsonSrc = Join-Path $Root 'version.json'
+if (Test-Path $versionJsonSrc) {
+    Copy-Item $versionJsonSrc (Join-Path $DeployDir 'version.json') -Force
+}
+
 $downloadsSrc = Join-Path $Root 'downloads'
 if (Test-Path $downloadsSrc) {
     $downloadsDst = Join-Path $DeployDir 'downloads'
