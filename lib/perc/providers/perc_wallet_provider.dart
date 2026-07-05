@@ -204,6 +204,13 @@ class PercWalletProvider extends ChangeNotifier {
     }
   }
 
+  /// Resets the dormancy timer after explicit user wallet actions.
+  void noteUserActivity() {
+    if (!isLoggedIn) return;
+    _ledger.touchWalletSessionActivity();
+    _armSessionTimeout();
+  }
+
   Future<void> setupTreasuryPassword(String password) async {
     _clearMessages();
     try {
@@ -260,6 +267,7 @@ class PercWalletProvider extends ChangeNotifier {
 
   Future<void> syncWalletToSeed() async {
     if (!_ready) return;
+    noteUserActivity();
     _clearMessages();
     _syncingWallet = true;
     notifyListeners();
@@ -306,6 +314,7 @@ class PercWalletProvider extends ChangeNotifier {
     String? memo,
   }) async {
     _clearMessages();
+    noteUserActivity();
     if (!isLoggedIn) {
       errorMessage =
           'Sign in to send ${PercChainConstants.currencyName}';
@@ -429,6 +438,7 @@ class PercWalletProvider extends ChangeNotifier {
   }) async {
     final score = outcomeScore;
     if (!_ready || !isLoggedIn) return null;
+    noteUserActivity();
     _clearMessages();
     try {
       final label = memo ??
@@ -532,6 +542,7 @@ class PercWalletProvider extends ChangeNotifier {
     LocaleConfig locale = LocaleConfig.defaults,
   }) {
     if (!_ready || !isBlockchainLaunched) return;
+    if (isLoggedIn) noteUserActivity();
     final result = _ledger.recordMicroblock(
       input: input,
       locale: locale,

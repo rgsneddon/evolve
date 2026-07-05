@@ -41,6 +41,7 @@ class PercLedger {
     this.blockchainLaunched = false,
     this.sessionUsername,
     this.sessionStartedAt,
+    this.sessionLastActivityAt,
     this.nextTxId = 1,
     this.microblockCount = 0,
     this.totalMicroblocks = 0,
@@ -86,6 +87,7 @@ class PercLedger {
   bool blockchainLaunched;
   String? sessionUsername;
   DateTime? sessionStartedAt;
+  DateTime? sessionLastActivityAt;
   int nextTxId;
   int microblockCount;
   int totalMicroblocks;
@@ -388,6 +390,7 @@ class PercLedger {
     if (session != null && !accounts.containsKey(session)) {
       sessionUsername = null;
       sessionStartedAt = null;
+      sessionLastActivityAt = null;
     }
     repairForAppUpgrade();
   }
@@ -608,22 +611,41 @@ class PercLedger {
 
   bool get isLoggedIn => sessionUsername != null;
 
+  DateTime? walletSessionExpiresAt({DateTime? now}) {
+    if (sessionUsername == null) return null;
+    if (sessionStartedAt == null || sessionLastActivityAt == null) {
+      return (now ?? DateTime.now()).toUtc();
+    }
+    final maxEnd = sessionStartedAt!.add(
+      PercChainConstants.walletSessionMaxDurationEffective,
+    );
+    final idleEnd = sessionLastActivityAt!.add(
+      PercChainConstants.walletSessionIdleTimeoutEffective,
+    );
+    return maxEnd.isAfter(idleEnd) ? maxEnd : idleEnd;
+  }
+
   bool isWalletSessionExpired({DateTime? now}) {
     if (sessionUsername == null) return false;
-    if (sessionStartedAt == null) return true;
+    final expiresAt = walletSessionExpiresAt(now: now);
+    if (expiresAt == null) return false;
     final at = (now ?? DateTime.now()).toUtc();
-    return at.difference(sessionStartedAt!) >=
-        PercChainConstants.walletSessionTimeoutEffective;
+    return !at.isBefore(expiresAt);
   }
 
   Duration? walletSessionRemaining({DateTime? now}) {
     if (sessionUsername == null) return null;
-    if (sessionStartedAt == null) return Duration.zero;
+    final expiresAt = walletSessionExpiresAt(now: now);
+    if (expiresAt == null) return Duration.zero;
     final at = (now ?? DateTime.now()).toUtc();
-    final remaining = PercChainConstants.walletSessionTimeoutEffective -
-        at.difference(sessionStartedAt!);
+    final remaining = expiresAt.difference(at);
     if (remaining <= Duration.zero) return Duration.zero;
     return remaining;
+  }
+
+  void touchWalletSessionActivity({DateTime? now}) {
+    if (sessionUsername == null) return;
+    sessionLastActivityAt = (now ?? DateTime.now()).toUtc();
   }
 
   PercAccount? get sessionAccount => sessionUsername == null
@@ -1464,6 +1486,7 @@ class PercLedger {
     sessionUsername = u;
     final t = (now ?? DateTime.now()).toUtc();
     sessionStartedAt = t;
+    sessionLastActivityAt = t;
     refreshPendingInboundTransfers(now: t);
     return acc;
   }
@@ -1560,6 +1583,7 @@ class PercLedger {
   void logout() {
     sessionUsername = null;
     sessionStartedAt = null;
+    sessionLastActivityAt = null;
   }
 
   /// Settles inbound transfers for the signed-in user when still in receive window.
@@ -1837,6 +1861,8 @@ class PercLedger {
         'sessionUsername': sessionUsername,
         if (sessionStartedAt != null)
           'sessionStartedAt': sessionStartedAt!.toIso8601String(),
+        if (sessionLastActivityAt != null)
+          'sessionLastActivityAt': sessionLastActivityAt!.toIso8601String(),
         'nextTxId': nextTxId,
         'microblockCount': microblockCount,
         'totalMicroblocks': totalMicroblocks,
@@ -1894,6 +1920,9 @@ class PercLedger {
       sessionUsername: json['sessionUsername'] as String?,
       sessionStartedAt: json['sessionStartedAt'] != null
           ? DateTime.parse(json['sessionStartedAt'] as String)
+          : null,
+      sessionLastActivityAt: json['sessionLastActivityAt'] != null
+          ? DateTime.parse(json['sessionLastActivityAt'] as String)
           : null,
       nextTxId: json['nextTxId'] as int? ?? 1,
       microblockCount: json['microblockCount'] as int? ?? 0,

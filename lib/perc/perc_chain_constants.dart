@@ -106,15 +106,25 @@ class PercChainConstants {
   /// Each wallet may draw the scenario faucet once per 7 minutes.
   static const Duration faucetCooldown = Duration(minutes: 7);
 
-  /// Signed-in wallet sessions expire after this — mitigates automated SCS abuse.
-  static const Duration walletSessionTimeout = Duration(minutes: 8);
+  /// Auto-logout only after this session age AND [walletSessionIdleTimeout] idle.
+  static const Duration walletSessionMaxDuration = Duration(minutes: 8);
+
+  /// No user wallet actions for this long triggers dormancy logout (with max duration).
+  static const Duration walletSessionIdleTimeout = Duration(minutes: 7);
 
   /// Override for tests — never set in production code.
   @visibleForTesting
-  static Duration? walletSessionTimeoutOverride;
+  static Duration? walletSessionMaxDurationOverride;
 
-  static Duration get walletSessionTimeoutEffective =>
-      walletSessionTimeoutOverride ?? walletSessionTimeout;
+  /// Override for tests — never set in production code.
+  @visibleForTesting
+  static Duration? walletSessionIdleTimeoutOverride;
+
+  static Duration get walletSessionMaxDurationEffective =>
+      walletSessionMaxDurationOverride ?? walletSessionMaxDuration;
+
+  static Duration get walletSessionIdleTimeoutEffective =>
+      walletSessionIdleTimeoutOverride ?? walletSessionIdleTimeout;
 
   /// Offline inbound transfers must be collected by signing in within this
   /// window after they were sent (12 calendar months); otherwise funds revert

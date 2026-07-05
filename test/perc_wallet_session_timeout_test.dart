@@ -4,11 +4,13 @@ import 'package:evolve/perc/services/perc_ledger.dart';
 
 void main() {
   tearDown(() {
-    PercChainConstants.walletSessionTimeoutOverride = null;
+    PercChainConstants.walletSessionMaxDurationOverride = null;
+    PercChainConstants.walletSessionIdleTimeoutOverride = null;
   });
 
-  test('wallet session expires after configured timeout', () {
-    PercChainConstants.walletSessionTimeoutOverride = const Duration(minutes: 8);
+  test('dormant wallet logs out after max duration and idle timeout', () {
+    PercChainConstants.walletSessionMaxDurationOverride = const Duration(minutes: 8);
+    PercChainConstants.walletSessionIdleTimeoutOverride = const Duration(minutes: 7);
 
     final ledger = PercLedger.empty();
     ledger.ensureTreasuryAccount();
@@ -28,13 +30,37 @@ void main() {
       ledger.isWalletSessionExpired(now: loginAt.add(const Duration(minutes: 8))),
       isTrue,
     );
+  });
+
+  test('recent user activity extends dormant logout beyond eight minutes', () {
+    PercChainConstants.walletSessionMaxDurationOverride = const Duration(minutes: 8);
+    PercChainConstants.walletSessionIdleTimeoutOverride = const Duration(minutes: 7);
+
+    final ledger = PercLedger.empty();
+    ledger.ensureTreasuryAccount();
+    ledger.setupTreasuryPassword('password12345');
+    ledger.register('alice', 'password12345');
+    final loginAt = DateTime.utc(2026, 7, 5, 12, 0);
+    ledger.login('alice', 'password12345', now: loginAt);
+
+    final activeAt = loginAt.add(const Duration(minutes: 6));
+    ledger.touchWalletSessionActivity(now: activeAt);
+
     expect(
-      ledger.walletSessionRemaining(now: loginAt.add(const Duration(minutes: 2))),
-      const Duration(minutes: 6),
+      ledger.isWalletSessionExpired(now: loginAt.add(const Duration(minutes: 8))),
+      isFalse,
+    );
+    expect(
+      ledger.isWalletSessionExpired(now: activeAt.add(const Duration(minutes: 7))),
+      isTrue,
+    );
+    expect(
+      ledger.walletSessionRemaining(now: activeAt),
+      const Duration(minutes: 7),
     );
   });
 
-  test('logout clears session start timestamp', () {
+  test('logout clears session timestamps', () {
     final ledger = PercLedger.empty();
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password12345');
@@ -42,12 +68,14 @@ void main() {
     ledger.login('alice', 'password12345');
 
     expect(ledger.sessionStartedAt, isNotNull);
+    expect(ledger.sessionLastActivityAt, isNotNull);
     ledger.logout();
     expect(ledger.sessionUsername, isNull);
     expect(ledger.sessionStartedAt, isNull);
+    expect(ledger.sessionLastActivityAt, isNull);
   });
 
-  test('persisted session without start time is treated as expired', () {
+  test('persisted session without timestamps is treated as expired', () {
     final ledger = PercLedger.empty();
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password12345');
@@ -58,7 +86,7 @@ void main() {
     expect(ledger.walletSessionRemaining(), Duration.zero);
   });
 
-  test('sessionStartedAt round-trips through ledger json', () {
+  test('session timestamps round-trip through ledger json', () {
     final ledger = PercLedger.empty();
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password12345');
@@ -69,5 +97,6 @@ void main() {
     final restored = PercLedger.fromJson(ledger.toJson());
     expect(restored.sessionUsername, 'alice');
     expect(restored.sessionStartedAt, loginAt);
+    expect(restored.sessionLastActivityAt, loginAt);
   });
 }
