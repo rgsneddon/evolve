@@ -187,6 +187,7 @@ if ($missing) {
 $defaultNotes = @"
 Evolve Chronoflux $tag
 
+- Downloads (installer packages): https://$owner.github.io/$RepoName/downloads/
 - Web (GitHub Pages): https://$owner.github.io/$RepoName/
 - Windows: ``evolve-$tag-windows-x64-setup.exe`` (or zip fallback)
 - Android: ``evolve-$tag-android-setup.apk`` (when included)
