@@ -206,7 +206,6 @@ def patch_ssucf_workings_reference(blocks: list[dict]) -> None:
             ]
         }
         block["entityRanges"] = []
-        return
 
     for block in blocks:
         text = block.get("text", "")
@@ -216,7 +215,7 @@ def patch_ssucf_workings_reference(blocks: list[dict]) -> None:
                 "The SSUCF process (workings linked above), learned by @grok",
                 1,
             )
-            return
+            break
 
 
 def main() -> int:
