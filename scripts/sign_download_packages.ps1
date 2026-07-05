@@ -53,8 +53,11 @@ foreach ($pkg in $packages) {
 $entries = Write-VersionChecksumManifest -VersionDir $SourceDir -BaseUrl $baseUrl
 Test-VersionPackageChecksums -VersionDir $SourceDir -RequireSidecars | Out-Null
 
+$indexInfo = Update-DownloadsIndexPage -VersionDir $SourceDir -Version $Version
+
 Write-Host ''
 Write-Host "Signed $($entries.Count) package(s) in $SourceDir" -ForegroundColor Green
+Write-Host "  downloads/index.html -> v$($indexInfo.Version) ($($indexInfo.Windows), $($indexInfo.Android))" -ForegroundColor Cyan
 Write-Host "  CHECKSUMS.sha256"
 Write-Host "  CHECKSUMS.sha512"
 Write-Host "  checksums.json"
