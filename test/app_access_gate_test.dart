@@ -7,6 +7,8 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
+import 'package:evolve/screens/app_bootstrap_screen.dart';
+import 'package:evolve/screens/evolve_loading_screen.dart';
 import 'package:evolve/widgets/evolve_banner.dart';
 
 Future<void> _unlockApp(PercWalletProvider wallet) async {
@@ -16,7 +18,16 @@ Future<void> _unlockApp(PercWalletProvider wallet) async {
 }
 
 void main() {
-  setUp(() => PercLedgerHub.resetForTest());
+  setUp(() {
+    PercLedgerHub.resetForTest();
+    EvolveLoadingScreen.durationOverride = Duration.zero;
+    AppBootstrapScreen.minSplashDurationOverride = Duration.zero;
+  });
+
+  tearDown(() {
+    EvolveLoadingScreen.durationOverride = null;
+    AppBootstrapScreen.minSplashDurationOverride = null;
+  });
 
   testWidgets('app shows wallet gate until PERC address is registered', (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
@@ -40,7 +51,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(wallet.hasAppAccess, isFalse);
-    expect(find.text('Create your wallet first'), findsOneWidget);
+    expect(find.text('Create your wallet'), findsOneWidget);
     expect(find.byType(EvolveBanner), findsNothing);
     expect(find.text('RUN ANALYSIS'), findsNothing);
   });
