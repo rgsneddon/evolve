@@ -18,8 +18,14 @@ Future<void> _unlockApp(PercWalletProvider wallet) async {
 }
 
 void main() {
-  setUp(() => PercLedgerHub.resetForTest());
-  tearDown(() => PercLedgerHub.resetForTest());
+  setUp(() {
+    PercLedgerHub.resetForTest();
+    PercWalletProvider.sessionTimeoutEnabled = false;
+  });
+  tearDown(() {
+    PercWalletProvider.sessionTimeoutEnabled = true;
+    PercLedgerHub.resetForTest();
+  });
 
   testWidgets('app loads with both analysis modes', (tester) async {
     EvolveLoadingScreen.durationOverride = Duration.zero;
@@ -72,6 +78,7 @@ void main() {
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await provider.initialize();
     await fcg.initialize();
+    await wallet.initialize();
 
     await tester.pumpWidget(
       EvolveApp(

@@ -30,6 +30,10 @@ import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
 
 class PercWalletProvider extends ChangeNotifier {
+  /// Disable auto-logout timers in widget/unit tests (see test setUp).
+  @visibleForTesting
+  static bool sessionTimeoutEnabled = true;
+
   PercWalletProvider({PercWalletStore? store})
       : _store = store ?? createPercWalletStore() {
     PercLedgerHub.instance.addListener(_onHubLedgerChanged);
@@ -499,7 +503,7 @@ class PercWalletProvider extends ChangeNotifier {
 
   void _armSessionTimeout() {
     _cancelSessionTimeout();
-    if (!isLoggedIn) return;
+    if (!sessionTimeoutEnabled || !isLoggedIn) return;
     final remaining = _ledger.walletSessionRemaining();
     if (remaining == null || remaining <= Duration.zero) {
       unawaited(_expireSession());

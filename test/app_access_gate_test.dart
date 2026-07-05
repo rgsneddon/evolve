@@ -20,11 +20,13 @@ Future<void> _unlockApp(PercWalletProvider wallet) async {
 void main() {
   setUp(() {
     PercLedgerHub.resetForTest();
+    PercWalletProvider.sessionTimeoutEnabled = false;
     EvolveLoadingScreen.durationOverride = Duration.zero;
     AppBootstrapScreen.minSplashDurationOverride = Duration.zero;
   });
 
   tearDown(() {
+    PercWalletProvider.sessionTimeoutEnabled = true;
     EvolveLoadingScreen.durationOverride = null;
     AppBootstrapScreen.minSplashDurationOverride = null;
   });
