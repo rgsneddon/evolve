@@ -38,6 +38,12 @@ if (-not (Test-Path (Join-Path $GhPagesWorktree '.git'))) {
     git worktree add $GhPagesWorktree origin/gh-pages
 }
 
+Set-Location $GhPagesWorktree
+Ensure-GitIdentity -Root $GhPagesWorktree
+git fetch origin gh-pages
+git checkout -B gh-pages origin/gh-pages
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 $dstDir = Join-Path $GhPagesWorktree "downloads\v$Version"
 New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
 Copy-Item (Join-Path $srcDir '*') $dstDir -Force
@@ -55,8 +61,6 @@ $pagesDeploy = Join-Path $GhPagesWorktree '.pages-deploy'
 $stamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ'
 Set-Content -Path $pagesDeploy -Value "downloads-index-v$Version`nrebuilt=$stamp" -NoNewline
 
-Set-Location $GhPagesWorktree
-Ensure-GitIdentity -Root $GhPagesWorktree
 git add "downloads/v$Version" downloads/index.html download.html .pages-deploy
 $status = git status --porcelain
 if (-not $status) {
@@ -64,7 +68,6 @@ if (-not $status) {
     exit 0
 }
 
-git checkout -B gh-pages
 git commit -m "Deploy v$Version download packages to GitHub Pages"
 git config http.postBuffer 524288000
 # gh-pages worktree has no scripts/; skip main-repo pre-push hook.
