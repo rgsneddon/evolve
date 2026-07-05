@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../l10n/wallet_message_localization.dart';
 import '../../platform/desktop_platform.dart';
 import '../../providers/locale_provider.dart';
 import '../models/perc_transaction.dart';
@@ -21,6 +22,7 @@ import '../services/perc_chronoflux_time_confirmations.dart';
 import '../services/perc_send_receive_actions.dart';
 import '../widgets/blockchain_launch_balloon.dart';
 import '../widgets/wallet_creator_credit.dart';
+import '../widgets/wallet_language_selector.dart';
 import '../widgets/wallet_opening_screen.dart';
 import 'blockchain_explorer_screen.dart';
 
@@ -326,10 +328,10 @@ class _WalletScreenState extends State<WalletScreen> {
                             labelText: strings.t('wallet_password_confirm'),
                           ),
                         ),
-                        if (wallet.errorMessage != null) ...[
+                        if (wallet.localizedErrorMessage(strings) != null) ...[
                           const SizedBox(height: 10),
                           Text(
-                            wallet.errorMessage!,
+                            wallet.localizedErrorMessage(strings)!,
                             style: const TextStyle(color: Colors.redAccent),
                           ),
                         ],
@@ -338,8 +340,8 @@ class _WalletScreenState extends State<WalletScreen> {
                           onPressed: () {
                             if (_passwordCtrl.text != _confirmCtrl.text) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Passwords do not match'),
+                                SnackBar(
+                                  content: Text(strings.t('wallet_password_mismatch')),
                                 ),
                               );
                               return;
@@ -401,6 +403,8 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        const WalletLanguageSelector(compact: false),
+                        const SizedBox(height: 12),
                         TextField(
                           controller: _usernameCtrl,
                           decoration: InputDecoration(
@@ -426,10 +430,10 @@ class _WalletScreenState extends State<WalletScreen> {
                             labelText: strings.t('wallet_password'),
                           ),
                         ),
-                        if (wallet.errorMessage != null) ...[
+                        if (wallet.localizedErrorMessage(strings) != null) ...[
                           const SizedBox(height: 10),
                           Text(
-                            wallet.errorMessage!,
+                            wallet.localizedErrorMessage(strings)!,
                             style: const TextStyle(color: Colors.redAccent),
                           ),
                         ],
@@ -838,17 +842,17 @@ class _WalletScreenState extends State<WalletScreen> {
                 style: const TextStyle(fontSize: 11, color: Color(0xFF6C63FF)),
               ),
             ],
-            if (wallet.statusMessage != null) ...[
+            if (wallet.localizedStatusMessage(strings) != null) ...[
               const SizedBox(height: 10),
               Text(
-                wallet.statusMessage!,
+                wallet.localizedStatusMessage(strings)!,
                 style: const TextStyle(fontSize: 12, color: Color(0xFF7AE582)),
               ),
             ],
-            if (wallet.errorMessage != null) ...[
+            if (wallet.localizedErrorMessage(strings) != null) ...[
               const SizedBox(height: 10),
               Text(
-                wallet.errorMessage!,
+                wallet.localizedErrorMessage(strings)!,
                 style: const TextStyle(fontSize: 12, color: Colors.redAccent),
               ),
             ],
@@ -1184,7 +1188,9 @@ class _WalletScreenState extends State<WalletScreen> {
                 wallet.walletNodeEndpoint!.isNotEmpty) ...[
               const SizedBox(height: 2),
               Text(
-                'Endpoint: ${wallet.walletNodeEndpoint}',
+                strings
+                    .t('wallet_endpoint_label')
+                    .replaceAll('{endpoint}', wallet.walletNodeEndpoint ?? ''),
                 style: const TextStyle(fontSize: 10, color: Color(0xFF5E6678)),
               ),
             ],
@@ -1438,12 +1444,13 @@ class _WalletScreenState extends State<WalletScreen> {
             ? const Color(0xFF00D9C0)
             : const Color(0xFF6C63FF);
 
+    final walletL10n = WalletMessageLocalization(strings);
     String title;
     switch (tx.kind) {
       case PercTxKind.treasuryEmission:
         title = strings.t('wallet_tx_treasury');
       case PercTxKind.scenarioReward:
-        title = tx.scenarioLabel ?? strings.t('wallet_tx_reward');
+        title = walletL10n.scenarioLabel(tx.scenarioLabel);
       case PercTxKind.stakingReward:
         title = strings.t('wallet_tx_staking');
       case PercTxKind.transfer:
@@ -1469,7 +1476,7 @@ class _WalletScreenState extends State<WalletScreen> {
       case PercTxKind.genesisRenewal:
         title = tx.memo ?? strings.t('wallet_tx_genesis');
       case PercTxKind.chronofluxMicroblock:
-        title = tx.memo ?? 'Chronoflux microblock seal';
+        title = tx.memo ?? strings.t('wallet_tx_microblock_seal');
     }
 
     final prefix = isOut ? '-' : '+';

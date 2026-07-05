@@ -3,6 +3,7 @@ import '../services/scenario_input_profile.dart';
 import '../services/scenario_lean_context.dart';
 import 'discourse_strings.dart';
 import 'part_three_slim_strings.dart';
+import 'wallet_strings.dart';
 import 'weight_construal_strings.dart';
 
 /// Lightweight i18n — language UI strings + regional agent role labels.
@@ -775,6 +776,43 @@ final _en = {
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
   'wallet_tx_received': 'Received from {user}',
+  'wallet_login_language_label': 'Language',
+  'wallet_password_mismatch': 'Passwords do not match',
+  'wallet_endpoint_label': 'Endpoint: {endpoint}',
+  'wallet_tx_microblock_seal': 'Chronoflux microblock seal',
+  'wallet_status_treasury_secured':
+      'Treasury secured — awaiting seed treasury sign-in to launch chain',
+  'wallet_status_account_created': 'Account created',
+  'wallet_status_signed_in': 'Signed in as {user}',
+  'wallet_err_sign_in_to_send': 'Sign in to send {name}',
+  'wallet_err_invalid_amount':
+      'Enter a valid {symbol} amount (up to 8 decimal places)',
+  'wallet_err_minimum_send': 'Minimum send is {min} {symbol} (1 cent)',
+  'wallet_err_insufficient_balance':
+      'Insufficient balance — need {total} {symbol} ({amount} + {fee} network fee)',
+  'wallet_err_recipient_not_found':
+      'Recipient PERC address not found on the network — the owner must register and sign in once so the address is discoverable',
+  'wallet_status_genesis_renewal':
+      'Genesis block — treasury cycle {cycle} renewed (283M {symbol} {name})',
+  'wallet_status_sent_instant':
+      'Sent {amount} {symbol} to {dest} (network fee {fee} {symbol})',
+  'wallet_status_sent_queued':
+      'Sent {amount} {symbol} to {dest} (network fee {fee} {symbol}) — queued until they sign in on the network within {delay}, otherwise returns to your wallet',
+  'wallet_status_treasury_empty': 'Treasury empty — run another scenario later',
+  'wallet_status_treasury_cap': 'Treasury cap reached',
+  'wallet_status_faucet_credited': '+{amount} {symbol}',
+  'wallet_faucet_label_scs': 'Social cohesion score analysis',
+  'wallet_faucet_label_percent': 'Percent chance analysis',
+  'wallet_err_unknown_account': 'Unknown account',
+  'wallet_err_invalid_password': 'Invalid password',
+  'wallet_err_generic': 'Something went wrong — try again',
+  'wallet_err_address_empty': 'Enter a recipient PERC address',
+  'wallet_err_address_confidential': 'Enter a valid confidential PERC address',
+  'wallet_err_address_invalid': 'Enter a valid PERC address',
+  'wallet_receive_delay_12_months': '12 months',
+  'wallet_receive_delay_months': 'several months',
+  'wallet_receive_delay_hours': 'several hours',
+  'wallet_receive_delay_seconds': 'a short time',
   'license_panel_title': 'License & Chronoflux attribution',
   'license_dialog_title': 'Evolve License',
   'license_chronoflux_attribution':
@@ -1206,6 +1244,7 @@ final _en = {
   ...sharedInfoStringsEn,
   ...partThreeSlimEn,
   ...weightConstrualEn,
+  ...walletStringsProviderEn,
 };
 
 final _es = {
@@ -1813,6 +1852,8 @@ final _es = {
   ...sharedInfoStringsEs,
   ...partThreeSlimEs,
   ...weightConstrualEs,
+  ...walletStringsEs,
+  ...walletStringsProviderEs,
 };
 
 final _fr = {
@@ -1840,6 +1881,8 @@ final _fr = {
   'part3_action_3':
       '{agent} : Annoncer des mesures datées sur {subject}{topic_suffix} avec suivi public. {flow_hook}',
   ...sharedInfoStringsFr,
+  ...walletStringsFr,
+  ...walletStringsProviderFr,
 };
 
 final _de = {
@@ -1859,6 +1902,8 @@ final _de = {
   'pct_probability': '~{n}% Wahrscheinlichkeit für {subject}',
   'explainer_how_read': 'So lesen Sie diese Schlussfolgerung',
   ...sharedInfoStringsDe,
+  ...walletStringsDe,
+  ...walletStringsProviderDe,
 };
 
 final _pt = {
@@ -1875,6 +1920,8 @@ final _pt = {
   'part3_context': 'O/A {agent} — ações ligadas a este cenário: {binding}',
   'part3_input_binding': 'Ligado às suas entradas: {binding}',
   ...sharedInfoStringsPt,
+  ...walletStringsPt,
+  ...walletStringsProviderPt,
 };
 
 final _ar = {
@@ -1894,6 +1941,8 @@ final _ar = {
   'pct_probability': '~{n}% احتمال {subject}',
   'explainer_how_read': 'كيفية قراءة هذه الخلاصة',
   ...sharedInfoStringsAr,
+  ...walletStringsAr,
+  ...walletStringsProviderAr,
 };
 
 final _zh = {
@@ -1916,6 +1965,8 @@ final _zh = {
   'explainer_how_read': '如何理解此结论',
   'region_focus_banner': 'ω 焦点：{region} — 请针对该地区提出问题',
   ...sharedInfoStringsZh,
+  ...walletStringsZh,
+  ...walletStringsProviderZh,
 };
 
 final _hi = {
@@ -1932,6 +1983,8 @@ final _hi = {
   'part3_context': '{agent} — इस परिदृश्य से जुड़े कार्य: {binding}',
   'part3_input_binding': 'आपके इनपुट से बंधा: {binding}',
   ...sharedInfoStringsHi,
+  ...walletStringsHi,
+  ...walletStringsProviderHi,
 };
 
 final _ja = {
@@ -1951,4 +2004,6 @@ final _ja = {
   'pct_probability': '~{n}% の確率：{subject}',
   'explainer_how_read': 'この結論の読み方',
   ...sharedInfoStringsJa,
+  ...walletStringsJa,
+  ...walletStringsProviderJa,
 };

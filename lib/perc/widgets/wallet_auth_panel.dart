@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../providers/perc_wallet_provider.dart';
 import 'wallet_creator_credit.dart';
+import 'wallet_language_selector.dart';
 
 /// Compact wallet sign-in / registration form (splash and wallet tab).
 class WalletAuthPanel extends StatefulWidget {
@@ -113,6 +114,8 @@ class _WalletAuthPanelState extends State<WalletAuthPanel> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 14),
+        const WalletLanguageSelector(),
+        const SizedBox(height: 10),
         TextField(
           controller: _usernameCtrl,
           decoration: InputDecoration(
@@ -141,10 +144,10 @@ class _WalletAuthPanelState extends State<WalletAuthPanel> {
           ),
           onSubmitted: (_) => _submit(wallet),
         ),
-        if (wallet.errorMessage != null) ...[
+        if (wallet.localizedErrorMessage(strings) != null) ...[
           const SizedBox(height: 8),
           Text(
-            wallet.errorMessage!,
+            wallet.localizedErrorMessage(strings)!,
             style: const TextStyle(color: Colors.redAccent, fontSize: 12),
             textAlign: TextAlign.center,
           ),

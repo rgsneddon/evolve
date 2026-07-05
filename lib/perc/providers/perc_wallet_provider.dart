@@ -16,6 +16,8 @@ import '../models/perc_faucet_credit_result.dart';
 import '../models/perc_pending_inbound_transfer.dart';
 import '../models/perc_transaction.dart';
 
+import '../../l10n/app_localizations.dart';
+import '../../l10n/wallet_message_localization.dart';
 import '../perc_chain_constants.dart';
 import '../services/perc_auth.dart';
 import '../services/perc_faucet.dart';
@@ -46,6 +48,14 @@ class PercWalletProvider extends ChangeNotifier {
   PercFaucetReward? lastReward;
   String? statusMessage;
   String? errorMessage;
+  Map<String, String> statusMessageArgs = const {};
+  Map<String, String> errorMessageArgs = const {};
+
+  String? localizedStatusMessage(AppLocalizations strings) =>
+      WalletMessageLocalization(strings).format(statusMessage, statusMessageArgs);
+
+  String? localizedErrorMessage(AppLocalizations strings) =>
+      WalletMessageLocalization(strings).format(errorMessage, errorMessageArgs);
   PercFaucetCreditResult? _pendingCooldownPopup;
   bool _pendingLaunchBalloon = false;
   bool _pendingGenesisRenewalNotice = false;
@@ -303,11 +313,11 @@ class PercWalletProvider extends ChangeNotifier {
         PercChainConstants.treasuryUsername,
       );
       _captureTreasuryLaunchEvent();
-      statusMessage = 'Treasury secured — awaiting seed treasury sign-in to launch chain';
+      _setStatus('wallet_status_treasury_secured');
       notifyListeners();
       await _commit();
     } catch (e) {
-      errorMessage = e.toString().replaceFirst('StateError: ', '');
+      _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
     }
   }
@@ -320,11 +330,11 @@ class PercWalletProvider extends ChangeNotifier {
       clearSessionTimedOut();
       _armSessionTimeout();
       await PercLedgerHub.instance.onWalletSessionStarted(username);
-      statusMessage = 'Account created';
+      _setStatus('wallet_status_account_created');
       notifyListeners();
       await _commit();
     } catch (e) {
-      errorMessage = e.toString().replaceFirst('StateError: ', '');
+      _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
     }
   }
@@ -337,11 +347,14 @@ class PercWalletProvider extends ChangeNotifier {
       _armSessionTimeout();
       await PercLedgerHub.instance.onWalletSessionStarted(username);
       _captureTreasuryLaunchEvent();
-      statusMessage = 'Signed in as ${_ledger.sessionUsername}';
+      _setStatus(
+        'wallet_status_signed_in',
+        {'user': _ledger.sessionUsername ?? ''},
+      );
       notifyListeners();
       await _commit();
     } catch (e) {
-      errorMessage = e.toString().replaceFirst('StateError: ', '');
+      _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
     }
   }
@@ -359,17 +372,23 @@ class PercWalletProvider extends ChangeNotifier {
 
       final network = PercLedgerHub.instance.network;
       if (!network.isConnectedToSeed) {
-        errorMessage =
-            'Cannot reach the seed node — check your internet connection and try again';
+        _setError('wallet_sync_seed_offline');
       } else if (network.isSyncedToNetwork) {
-        statusMessage =
-            'Wallet synced to seed — block height $networkBlockHeight';
+        _setStatus(
+          'wallet_sync_success',
+          {'height': '$networkBlockHeight'},
+        );
       } else {
-        statusMessage =
-            'Partial sync — local height $blockHeight, network height $networkBlockHeight';
+        _setStatus(
+          'wallet_sync_partial',
+          {
+            'local': '$blockHeight',
+            'network': '$networkBlockHeight',
+          },
+        );
       }
     } catch (e) {
-      errorMessage = e.toString().replaceFirst('StateError: ', '');
+      _setError(WalletMessageLocalization.errorKeyFromException(e));
     } finally {
       _syncingWallet = false;
       notifyListeners();
@@ -397,42 +416,56 @@ class PercWalletProvider extends ChangeNotifier {
     _clearMessages();
     noteUserActivity();
     if (!isLoggedIn) {
-      errorMessage =
-          'Sign in to send ${PercChainConstants.currencyName}';
+      _setError(
+        'wallet_err_sign_in_to_send',
+        {'name': PercChainConstants.currencyName},
+      );
       notifyListeners();
       return;
     }
     if (!canSendFromSession) {
-      errorMessage =
-          'Manual sends from ${PercChainConstants.treasuryUsername} are disabled — treasury emission and faucet payouts continue';
+      _setError('wallet_treasury_send_locked');
       notifyListeners();
       return;
     }
     final amount = PercAmount.tryParseDisplay(amountText);
     if (amount == null) {
-      errorMessage =
-          'Enter a valid ${PercChainConstants.currencySymbol} amount (up to 8 decimal places)';
+      _setError(
+        'wallet_err_invalid_amount',
+        {'symbol': PercChainConstants.currencySymbol},
+      );
       notifyListeners();
       return;
     }
     if (!amount.isAtLeastSmallestUnit) {
-      errorMessage =
-          'Minimum send is ${PercChainConstants.centValueInPerc} ${PercChainConstants.currencySymbol} (1 cent)';
+      _setError(
+        'wallet_err_minimum_send',
+        {
+          'min': PercChainConstants.centValueInPerc,
+          'symbol': PercChainConstants.currencySymbol,
+        },
+      );
       notifyListeners();
       return;
     }
     final fee = PercChainConstants.sendTransactionFee;
     final totalDebit = amount + fee;
     if (balance < totalDebit) {
-      errorMessage =
-          'Insufficient balance — need ${totalDebit.displayFixed8} ${PercChainConstants.currencySymbol} '
-          '(${amount.displayFixed8} + ${fee.displayFixed8} network fee)';
+      _setError(
+        'wallet_err_insufficient_balance',
+        {
+          'total': totalDebit.displayFixed8,
+          'symbol': PercChainConstants.currencySymbol,
+          'amount': amount.displayFixed8,
+          'fee': fee.displayFixed8,
+        },
+      );
       notifyListeners();
       return;
     }
     final addrErr = PercAuth.validateAddress(toAddress);
     if (addrErr != null) {
-      errorMessage = addrErr;
+      _setError(WalletMessageLocalization.addressErrorKey(addrErr) ?? 'wallet_err_address_invalid');
       notifyListeners();
       return;
     }
@@ -444,8 +477,7 @@ class PercWalletProvider extends ChangeNotifier {
         normalizedAddress,
       );
       if (resolved == null) {
-        errorMessage =
-            'Recipient PERC address not found on the network — the owner must register and sign in once so the address is discoverable';
+        _setError('wallet_err_recipient_not_found');
         notifyListeners();
         return;
       }
@@ -465,22 +497,33 @@ class PercWalletProvider extends ChangeNotifier {
       _captureGenesisRenewalEvent();
       final dest = PercBeamPrivacy.shieldAddress(normalizedAddress);
       if (_pendingGenesisRenewalNotice) {
-        statusMessage =
-            'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})';
+        _setGenesisRenewalStatus();
       } else if (recipientOnline) {
-        statusMessage =
-            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $dest '
-            '(network fee ${fee.displayFixed8} ${PercChainConstants.currencySymbol})';
+        _setStatus(
+          'wallet_status_sent_instant',
+          {
+            'amount': amount.displayFixed8,
+            'symbol': PercChainConstants.currencySymbol,
+            'dest': dest,
+            'fee': fee.displayFixed8,
+          },
+        );
       } else {
-        statusMessage =
-            'Sent ${amount.displayFixed8} ${PercChainConstants.currencySymbol} to $dest '
-            '(network fee ${fee.displayFixed8} ${PercChainConstants.currencySymbol}) — '
-            'queued until they sign in on the network within ${_formatReceiveDelay()}, otherwise returns to your wallet';
+        _setStatus(
+          'wallet_status_sent_queued',
+          {
+            'amount': amount.displayFixed8,
+            'symbol': PercChainConstants.currencySymbol,
+            'dest': dest,
+            'fee': fee.displayFixed8,
+            'delayKey': _receiveDelayKey(),
+          },
+        );
       }
       notifyListeners();
       await _commitSendAndGossip();
     } catch (e) {
-      errorMessage = e.toString().replaceFirst('StateError: ', '');
+      _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
     }
   }
@@ -536,8 +579,8 @@ class PercWalletProvider extends ChangeNotifier {
     try {
       final label = memo ??
           (analysisMode == AnalysisMode.cohesionScore
-              ? 'Social cohesion score analysis'
-              : 'Percent chance analysis');
+              ? 'wallet_faucet_label_scs'
+              : 'wallet_faucet_label_percent');
       final result = _ledger.creditScenario(
         username: _ledger.sessionUsername!,
         percentChance: score,
@@ -553,9 +596,11 @@ class PercWalletProvider extends ChangeNotifier {
 
       if (result.showCooldownPopup) {
         _pendingCooldownPopup = result;
-        statusMessage = _pendingGenesisRenewalNotice
-            ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
-            : null;
+        if (_pendingGenesisRenewalNotice) {
+          _setGenesisRenewalStatus();
+        } else {
+          _setStatus(null);
+        }
         notifyListeners();
         await _commit();
         return result;
@@ -564,27 +609,36 @@ class PercWalletProvider extends ChangeNotifier {
       if (result.status == PercFaucetCreditStatus.credited &&
           result.reward != null) {
         lastReward = result.reward;
-        statusMessage = _pendingGenesisRenewalNotice
-            ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
-            : '+${result.reward!.total.displayFixed8} ${PercChainConstants.currencySymbol}';
+        if (_pendingGenesisRenewalNotice) {
+          _setGenesisRenewalStatus();
+        } else {
+          _setStatus(
+            'wallet_status_faucet_credited',
+            {
+              'amount': result.reward!.total.displayFixed8,
+              'symbol': PercChainConstants.currencySymbol,
+            },
+          );
+        }
         notifyListeners();
         await _commit();
         return result;
       }
 
       if (result.status == PercFaucetCreditStatus.blockchainNotLaunched) {
-        statusMessage =
-            'Blockchain awaiting rgsnedds sign-in on the seed treasury tab';
+        _setStatus('wallet_blockchain_awaiting_launch');
       } else if (result.status == PercFaucetCreditStatus.treasuryEmpty) {
-        statusMessage = _pendingGenesisRenewalNotice
-            ? 'Genesis block — treasury cycle $treasuryCycle renewed (283M ${PercChainConstants.currencySymbol} ${PercChainConstants.currencyName})'
-            : 'Treasury empty — run another scenario later';
+        if (_pendingGenesisRenewalNotice) {
+          _setGenesisRenewalStatus();
+        } else {
+          _setStatus('wallet_status_treasury_empty');
+        }
       }
       notifyListeners();
       await _commit();
       return result;
     } catch (e) {
-      statusMessage = 'Treasury cap reached';
+      _setStatus('wallet_status_treasury_cap');
       notifyListeners();
       return null;
     }
@@ -624,17 +678,44 @@ class PercWalletProvider extends ChangeNotifier {
 
   void clearSessionTimedOut() => _sessionTimedOut = false;
 
+  void _setStatus(String? key, [Map<String, String> args = const {}]) {
+    statusMessage = key;
+    statusMessageArgs = args;
+    if (key != null) errorMessage = null;
+  }
+
+  void _setError(String key, [Map<String, String> args = const {}]) {
+    errorMessage = key;
+    errorMessageArgs = args;
+    statusMessage = null;
+  }
+
+  void _setGenesisRenewalStatus() {
+    _setStatus(
+      'wallet_status_genesis_renewal',
+      {
+        'cycle': '$treasuryCycle',
+        'symbol': PercChainConstants.currencySymbol,
+        'name': PercChainConstants.currencyName,
+      },
+    );
+  }
+
+  String _receiveDelayKey() {
+    const delay = PercChainConstants.walletOnlineReceiveDelay;
+    if (delay.inDays >= 365) return 'wallet_receive_delay_12_months';
+    if (delay.inDays >= 30) {
+      return 'wallet_receive_delay_months';
+    }
+    if (delay.inHours >= 1) return 'wallet_receive_delay_hours';
+    return 'wallet_receive_delay_seconds';
+  }
+
   void _clearMessages() {
     statusMessage = null;
     errorMessage = null;
-  }
-
-  String _formatReceiveDelay() {
-    const delay = PercChainConstants.walletOnlineReceiveDelay;
-    if (delay.inDays >= 365) return '12 months';
-    if (delay.inDays >= 30) return '${delay.inDays ~/ 30} months';
-    if (delay.inHours >= 1) return '${delay.inHours} hours';
-    return '${delay.inSeconds} seconds';
+    statusMessageArgs = const {};
+    errorMessageArgs = const {};
   }
 
   /// Records one fair-usage microblock per app interaction (field keystrokes).
