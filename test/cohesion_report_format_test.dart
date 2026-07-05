@@ -28,8 +28,11 @@ void main() {
     expect(report, contains(out.strings.t('cohesion_part_one')));
     expect(report, contains('* Core input:'));
     expect(report, contains('* Pushback on narrative control'));
-    expect(report, isNot(contains('Weighted Overall SCS')));
+    expect(report, contains('Weighted Overall SCS'));
     expect(report, isNot(contains('THE CONTINUUM — Calibrated Forecast')));
+    expect(report, isNot(contains('High elite alignment')));
+    expect(report, isNot(contains('Elite statements on')));
+    expect(report, contains(result.partTwo.shearRefinement));
     expect(report, contains('Final Summary:'));
     expect(report, contains(out.cohesionCycleComplete));
     expect(report, contains('SSUCF Cycle Complete'));

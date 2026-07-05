@@ -71,6 +71,8 @@ class CohesionReportFormatter {
       ..writeln()
       ..writeln(s.t('cohesion_baseline')
           .replaceAll('{scs}', '${partOne.baselineScs.round()}'))
+      ..writeln(s.t('cohesion_weighted')
+          .replaceAll('{scs}', partOne.overallScs.toStringAsFixed(1)))
       ..writeln(s.t('cohesion_split')
           .replaceAll('{reg}', '${partOne.regressivePct.round()}')
           .replaceAll('{prog}', '${partOne.progressivePct.round()}'))

@@ -43,6 +43,7 @@ void main() {
     expect(result.cohesionReport, contains(s.t('cohesion_part_two')));
     expect(result.cohesionReport, contains(s.t('cohesion_part_three')));
     expect(result.cohesionReport, contains(s.t('cohesion_baseline').split(':').first));
+    expect(result.cohesionReport, contains(s.t('cohesion_weighted').split(':').first));
     expect(result.cohesionReport, contains(s.t('cohesion_refined').split(':').first));
     expect(result.cohesionReport, contains(out.cohesionCycleComplete));
   });
