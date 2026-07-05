@@ -1025,7 +1025,7 @@ class PercLedger {
     if (!treasuryNeedsRegeneration || treasuryCapped) return [];
 
     final treasury = _ensureTreasury();
-    final target = PercChainConstants.treasuryEmissionPerSecond;
+    final target = PercChainConstants.treasuryEmissionPerMinute;
     final shortfall = target - treasury.balance;
     if (!shortfall.isPositive) return [];
 
@@ -1091,12 +1091,13 @@ class PercLedger {
 
   PercAmount _treasuryEmissionForScenario(DateTime now) {
     if (treasuryCapped) return PercAmount.zero;
-    final perSecond = PercChainConstants.treasuryEmissionPerSecond;
-    if (!treasuryGenesisDone) return perSecond;
+    if (!treasuryGenesisDone) {
+      return PercChainConstants.treasuryEmissionPerMinute;
+    }
     if (lastScenarioAt == null) return PercAmount.zero;
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
     if (elapsed <= 0) return PercAmount.zero;
-    var emission = perSecond * elapsed;
+    var emission = PercChainConstants.emissionForElapsedSeconds(elapsed);
     if (!PercChainConstants.infiniteContinuumSupply &&
         emission > treasuryRemaining) {
       emission = treasuryRemaining;
@@ -1229,18 +1230,18 @@ class PercLedger {
   List<PercTransaction> _treasuryEmissionTxs(DateTime now) {
     if (treasuryCapped) return [];
     final regenTxs = _regenerateTreasuryIfNeeded(now);
-    final perSecond = PercChainConstants.treasuryEmissionPerSecond;
+    final genesisEmission = PercChainConstants.treasuryEmissionPerMinute;
     if (!treasuryGenesisDone) {
       treasuryGenesisDone = true;
-      cumulativeTreasuryMinted = cumulativeTreasuryMinted + perSecond;
+      cumulativeTreasuryMinted = cumulativeTreasuryMinted + genesisEmission;
       final treasury = _ensureTreasury();
-      _credit(treasury, perSecond);
+      _credit(treasury, genesisEmission);
       return [
         ...regenTxs,
         PercTransaction(
           id: _newTxId(),
           kind: PercTxKind.treasuryEmission,
-          amount: perSecond,
+          amount: genesisEmission,
           timestamp: now,
           toUsername: PercChainConstants.treasuryUsername,
           blockIndex: blocks.length,
@@ -1251,7 +1252,7 @@ class PercLedger {
     if (lastScenarioAt == null) return regenTxs;
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
     if (elapsed <= 0) return [];
-    var emission = perSecond * elapsed;
+    var emission = PercChainConstants.emissionForElapsedSeconds(elapsed);
     if (!PercChainConstants.infiniteContinuumSupply &&
         emission > treasuryRemaining) {
       emission = treasuryRemaining;

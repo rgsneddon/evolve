@@ -1,7 +1,7 @@
 import '../models/perc_amount.dart';
 import '../perc_chain_constants.dart';
 
-/// Treasury emission — 1 PERC/second until ~286M cumulative mint (Beam-inspired).
+/// Treasury emission — 1 PERC/minute until ~286M cumulative mint (Beam-inspired).
 class PercTreasury {
   PercTreasury({
     PercAmount? cumulativeMinted,
@@ -42,8 +42,8 @@ class PercTreasury {
     final elapsedSeconds = current.difference(lastTick).inSeconds;
     if (elapsedSeconds <= 0) return PercAmount.zero;
 
-    final perSecond = PercChainConstants.treasuryEmissionPerSecond.microUnits;
-    var emission = elapsedSeconds * perSecond;
+    var emission = PercChainConstants.emissionForElapsedSeconds(elapsedSeconds)
+        .microUnits;
     final capLeft = remainingSupply.microUnits;
     if (emission > capLeft) emission = capLeft;
 

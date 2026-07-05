@@ -74,7 +74,7 @@ class PercChainConstants {
   /// Minimum treasury reserve — 1 cent (0.00000001 PERC); pool renews at this level.
   static const PercAmount minimumTreasuryReserve = PercAmount(1);
 
-  /// Treasury tops up toward [treasuryEmissionPerSecond] when balance falls below this.
+  /// Treasury tops up toward [treasuryEmissionPerMinute] when balance falls below this.
   static final PercAmount treasuryRegenerationThreshold = PercAmount.fromPerc(0.66);
 
   /// Smallest send/receive amount — 1 cent (0.00000001 PERC). All wallets accept this.
@@ -86,8 +86,16 @@ class PercChainConstants {
   /// Alias for fee burn semantics across the chain.
   static const PercAmount transactionFeeBurn = sendTransactionFee;
 
-  /// Treasury emits 1 PERC per second — infinite continuum.
-  static final PercAmount treasuryEmissionPerSecond = PercAmount.fromPerc(1);
+  /// Treasury emits 1 PERC per minute — infinite continuum.
+  static final PercAmount treasuryEmissionPerMinute = PercAmount.fromPerc(1);
+
+  /// Accrued treasury emission for [elapsedSeconds] at [treasuryEmissionPerMinute].
+  static PercAmount emissionForElapsedSeconds(int elapsedSeconds) {
+    if (elapsedSeconds <= 0) return PercAmount.zero;
+    final micro =
+        (treasuryEmissionPerMinute.microUnits * elapsedSeconds) ~/ 60;
+    return PercAmount(micro);
+  }
 
   /// Fixed base faucet payout per scenario analysis.
   static const PercAmount scenarioBaseReward = PercAmount.scenarioBaseReward;

@@ -25,6 +25,20 @@
       line-height: 1.5;
     }
     .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
+    .page-top {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .fcg-link {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      opacity: 0.82;
+    }
+    .fcg-link:hover { color: var(--accent); opacity: 1; }
     header { margin-bottom: 28px; }
     h1 { font-size: 1.75rem; margin-bottom: 6px; }
     .sub { color: var(--muted); font-size: 0.95rem; }
@@ -173,6 +187,9 @@
 </head>
 <body>
   <div class="wrap">
+    <div class="page-top">
+      <a class="fcg-link" href="https://rgsneddon.github.io/evolve/fcg_white_paper.html" target="_blank" rel="noopener noreferrer">FCG white paper</a>
+    </div>
     <header>
       <h1>Perccent Network Explorer</h1>
       <p class="sub">Evolve Chronoflux seed node &middot; rendezvous &middot; peer status</p>
@@ -191,7 +208,7 @@
     <section id="treasury-emission-public" style="display:none">
       <h2>Treasury emission</h2>
       <div class="grid" id="treasury-emission-stats"></div>
-      <p class="hint">Treasury emits 1 PERC per second on the Chronoflux continuum. Manual sends from evolve_treasury are disabled after launch; emission, regeneration, and faucet payouts continue.</p>
+      <p class="hint">Treasury emits 1 PERC per minute on the Chronoflux continuum. Manual sends from evolve_treasury are disabled after launch; emission, regeneration, and faucet payouts continue.</p>
     </section>
 
     <section>
@@ -366,6 +383,13 @@
       el.style.display = 'block';
     }
 
+    function emissionRateLabel(emission) {
+      if (!emission) return '—';
+      const rate = emission.emissionPerMinute ?? emission.emissionPerSecond ?? '1';
+      const unit = emission.emissionPerMinute != null ? 'PERC/min' : 'PERC/s';
+      return `${rate} ${unit}`;
+    }
+
     function renderTreasuryEmissionPublic(net) {
       const section = $('treasury-emission-public');
       const emission = net.treasuryEmission;
@@ -375,7 +399,7 @@
       }
       section.style.display = 'block';
       $('treasury-emission-stats').innerHTML = `
-        <div class="card"><div class="label">Emission rate</div><div class="value">${emission.emissionPerSecond} PERC/s</div></div>
+        <div class="card"><div class="label">Emission rate</div><div class="value">${emissionRateLabel(emission)}</div></div>
         <div class="card"><div class="label">Treasury balance</div><div class="value">${emission.balance} PERC</div></div>
         <div class="card"><div class="label">Cumulative minted</div><div class="value">${emission.cumulativeMinted} PERC</div></div>
         <div class="card"><div class="label">Treasury cycle</div><div class="value">${emission.treasuryCycle}</div></div>
@@ -640,7 +664,7 @@
       const emission = data.treasuryEmission;
       $('treasury-send-hint').style.display = data.blockchainLaunched ? 'block' : 'none';
       const emissionCards = emission ? `
-        <div class="card"><div class="label">Emission rate</div><div class="value">${emission.emissionPerSecond} PERC/s</div></div>
+        <div class="card"><div class="label">Emission rate</div><div class="value">${emissionRateLabel(emission)}</div></div>
         <div class="card"><div class="label">Cumulative minted</div><div class="value">${emission.cumulativeMinted} PERC</div></div>
       ` : '';
       $('treasury-stats').innerHTML = `

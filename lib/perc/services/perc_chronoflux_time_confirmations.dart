@@ -18,8 +18,8 @@ class PercTimeConfirmationPermutation {
 class PercChronofluxTimeConfirmations {
   const PercChronofluxTimeConfirmations._();
 
-  /// Treasury inflation epoch — 1 PERC per second (Chronoflux continuum time).
-  static const Duration inflationEpoch = Duration(seconds: 1);
+  /// Treasury inflation epoch — 1 PERC per minute (Chronoflux continuum time).
+  static const Duration inflationEpoch = Duration(minutes: 1);
 
   /// Side-chain seal cadence — 100M microblocks per main block.
   static const int microblocksPerMainBlock =
@@ -37,7 +37,7 @@ class PercChronofluxTimeConfirmations {
           name: 'Inflation epoch',
           interval: inflationEpoch,
           confirmationsToSettle: 1,
-          principiaBinding: 'Treasury continuum emission — 1 PERC / second',
+          principiaBinding: 'Treasury continuum emission — 1 PERC / minute',
         ),
         PercTimeConfirmationPermutation(
           name: 'Side-chain seal',

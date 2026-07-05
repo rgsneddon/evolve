@@ -320,7 +320,7 @@ final _en = {
   'fcg_read_paper': 'FCG paper',
   'fcg_moderator_title': 'Ward moderator',
   'fcg_moderator_account_hint':
-      'Register a PERC wallet as {username} to initiate votes and manage parish voter accounts.',
+      'Register a PERC wallet as Moderator (see your Ward Moderator Pack for Instructions) to initiate votes and manage parish voter accounts.',
   'fcg_signed_in_as': 'Signed in as {user}',
   'fcg_moderator_sign_in_hint':
       'Sign in with a MOD_* ward account on the Wallet tab to administer voting.',
@@ -470,7 +470,7 @@ final _en = {
   'wallet_logout': 'Sign out',
   'wallet_treasury_title': 'Treasury emission',
   'wallet_treasury_note':
-      'Perccent chain advances on scenario analysis — not on Grok construal or field keystrokes. Treasury earns 1 PERC per elapsed second — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.',
+      'Perccent chain advances on scenario analysis — not on Grok construal or field keystrokes. Treasury earns 1 PERC per elapsed minute — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.',
   'wallet_treasury_cycle': 'Treasury cycle #{cycle}',
   'wallet_treasury_minted': '{minted} PERC minted ({pct}% continuum)',
   'wallet_treasury_remaining': 'Treasury remaining: {amount} PERC',
@@ -483,7 +483,7 @@ final _en = {
   'wallet_treasury_send_locked':
       'Manual sends from evolve_treasury are disabled. Emission and faucet payouts continue.',
   'wallet_treasury_manual_send_note':
-      'Treasury is active — 1 PERC/s emission and scenario faucet payouts continue. Manual sends from evolve_treasury are disabled.',
+      'Treasury is active — 1 PERC/min emission and scenario faucet payouts continue. Manual sends from evolve_treasury are disabled.',
   'wallet_treasury_offline_note':
       'Treasury awaits blockchain launch. Run analysis after launch to draw from the faucet.',
   'wallet_block_height': 'Block height: {height}',
@@ -1188,7 +1188,7 @@ final _es = {
   'fcg_read_paper': 'Documento FCG',
   'fcg_moderator_title': 'Moderador de distrito',
   'fcg_moderator_account_hint':
-      'Registre una cartera PERC como {username} para iniciar votaciones.',
+      'Registre una cartera PERC como Moderador (consulte su Paquete de Moderador de Distrito para instrucciones) para iniciar votaciones y gestionar cuentas de votantes parroquiales.',
   'fcg_signed_in_as': 'Conectado como {user}',
   'fcg_moderator_sign_in_hint':
       'Inicie sesión con una cuenta MOD_* en la pestaña Monedero.',
@@ -1330,7 +1330,7 @@ final _es = {
   'wallet_logout': 'Cerrar sesión',
   'wallet_treasury_title': 'Emisión de tesorería',
   'wallet_treasury_note':
-      'La cadena Perccent avanza con análisis de escenarios — no con construcción Grok ni pulsaciones de campo. La tesorería gana 1 PERC por segundo transcurrido — suministro continuo infinito Chronoflux. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
+      'La cadena Perccent avanza con análisis de escenarios — no con construcción Grok ni pulsaciones de campo. La tesorería gana 1 PERC por minuto transcurrido — suministro continuo infinito Chronoflux. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
   'wallet_treasury_cycle': 'Ciclo de tesorería #{cycle}',
   'wallet_treasury_minted': '{minted} PERC acuñados ({pct}% continuo)',
   'wallet_treasury_remaining': 'Tesorería restante: {amount} PERC',
@@ -1343,7 +1343,7 @@ final _es = {
   'wallet_treasury_send_locked':
       'Los envíos manuales desde evolve_treasury están deshabilitados. La emisión y el grifo continúan.',
   'wallet_treasury_manual_send_note':
-      'La tesorería está activa — emisión de 1 PERC/s y pagos del grifo continúan. Los envíos manuales desde evolve_treasury están deshabilitados.',
+      'La tesorería está activa — emisión de 1 PERC/min y pagos del grifo continúan. Los envíos manuales desde evolve_treasury están deshabilitados.',
   'wallet_treasury_offline_note':
       'La tesorería espera el lanzamiento de la cadena. Ejecute un análisis tras el lanzamiento para usar el grifo.',
   'wallet_block_height': 'Altura de bloque: {height}',

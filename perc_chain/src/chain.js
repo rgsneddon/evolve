@@ -4,7 +4,8 @@ import path from 'path';
 
 const UNITS_PER_PERC = 100_000_000;
 const MAX_SUPPLY = 283_000_000 * UNITS_PER_PERC;
-const EMISSION_PER_SECOND = UNITS_PER_PERC;
+/** 1 PERC per minute — matches PercChainConstants.treasuryEmissionPerMinute */
+const EMISSION_MICRO_PER_MINUTE = UNITS_PER_PERC;
 const SCENARIO_BASE = 50; // 50 cent (0.00000050 PERC)
 
 const DATA_FILE = path.join(process.cwd(), 'data', 'chain.json');
@@ -47,7 +48,7 @@ export class PercChain {
     if (this.treasuryMinted >= MAX_SUPPLY) return 0;
     const elapsed = Math.floor((now - this.lastTick) / 1000);
     if (elapsed <= 0) return 0;
-    let emission = elapsed * EMISSION_PER_SECOND;
+    let emission = Math.floor((elapsed * EMISSION_MICRO_PER_MINUTE) / 60);
     const remaining = MAX_SUPPLY - this.treasuryMinted;
     if (emission > remaining) emission = remaining;
     this.treasuryMinted += emission;
@@ -109,7 +110,8 @@ export class PercChain {
       treasuryMintedDisplay: microToDisplay(this.treasuryMinted),
       maxSupply: MAX_SUPPLY,
       maxSupplyDisplay: microToDisplay(MAX_SUPPLY),
-      emissionPerSecond: EMISSION_PER_SECOND,
+      emissionPerMinute: '1',
+      emissionMicroPerMinute: EMISSION_MICRO_PER_MINUTE,
     };
   }
 

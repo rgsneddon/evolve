@@ -30,7 +30,7 @@ class PercInflation {
     return null;
   }
 
-  /// Countdown until another 1 PERC accrues at 1 PERC/second since last epoch.
+  /// Countdown until another 1 PERC accrues at 1 PERC/minute since last epoch.
   static Duration? timeToNextInflation({
     required DateTime? lastInflationEpoch,
     required bool blockchainLaunched,
@@ -46,9 +46,10 @@ class PercInflation {
     }
     if (lastInflationEpoch == null) return Duration.zero;
 
+    const periodMs = 60 * 1000;
     final elapsedMs = now.difference(lastInflationEpoch).inMilliseconds;
-    final remMs = 1000 - (elapsedMs % 1000);
-    if (remMs >= 1000) return Duration.zero;
+    final remMs = periodMs - (elapsedMs % periodMs);
+    if (remMs >= periodMs) return Duration.zero;
     return Duration(milliseconds: remMs);
   }
 

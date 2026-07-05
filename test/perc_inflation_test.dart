@@ -45,7 +45,7 @@ void main() {
       now: now,
     );
 
-    expect(wait, const Duration(milliseconds: 600));
+    expect(wait, const Duration(milliseconds: 59600));
   });
 
   test('treasury below 0.66 PERC triggers regeneration toward 1 PERC', () {
