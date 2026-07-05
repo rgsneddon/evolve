@@ -24,13 +24,13 @@ void main() {
     expect(slots.every((s) => !s.isEnrolled), isTrue);
   });
 
-  test('MOD_* usernames are moderator accounts', () {
-    expect(FcgModerator.isModeratorUsername('MOD_UK_Ireland'), isTrue);
+  test('only whitelisted UK ward MOD usernames are moderators', () {
+    expect(FcgModerator.isModeratorUsername('mod_ainsdale'), isTrue);
+    expect(FcgModerator.isModeratorUsername('MOD_Ainsdale'), isTrue);
+    expect(FcgModerator.isModeratorUsername('e05000932'), isTrue);
+    expect(FcgModerator.isModeratorUsername('mod_not_a_real_ward'), isFalse);
+    expect(FcgModerator.isModeratorUsername('e05000000'), isFalse);
     expect(FcgModerator.isModeratorUsername('alice'), isFalse);
-    expect(
-      FcgModerator.usernameForRegion('uk_ireland'),
-      'MOD_UK_Ireland',
-    );
   });
 
   test('moderator enrolls PERC addresses and wallets cast one vote each', () async {
@@ -45,7 +45,7 @@ void main() {
     await fcg.initialize();
 
     final session = await fcg.initiateSession(
-      moderatorUsername: 'MOD_UK_Ireland',
+      moderatorUsername: 'mod_ainsdale',
       regionId: 'uk_ireland',
       policyQuestion: 'Should the parish adopt the flood levy?',
       runCohesion: true,
@@ -59,12 +59,12 @@ void main() {
     final committed1 = await fcg.commitSlotAddress(
       slotNumber: 1,
       percAddress: addr1,
-      moderatorUsername: 'MOD_UK_Ireland',
+      moderatorUsername: 'mod_ainsdale',
     );
     final committed2 = await fcg.commitSlotAddress(
       slotNumber: 2,
       percAddress: addr2,
-      moderatorUsername: 'MOD_UK_Ireland',
+      moderatorUsername: 'mod_ainsdale',
     );
     expect(committed1, isTrue);
     expect(committed2, isTrue);
@@ -102,7 +102,7 @@ void main() {
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await fcg.initialize();
     await fcg.initiateSession(
-      moderatorUsername: 'MOD_UK_Ireland',
+      moderatorUsername: 'mod_ainsdale',
       regionId: 'uk_ireland',
       policyQuestion: 'Levy vote',
       runCohesion: true,
@@ -113,12 +113,12 @@ void main() {
     await fcg.commitSlotAddress(
       slotNumber: 3,
       percAddress: addr,
-      moderatorUsername: 'MOD_UK_Ireland',
+      moderatorUsername: 'mod_ainsdale',
     );
     final duplicate = await fcg.commitSlotAddress(
       slotNumber: 4,
       percAddress: addr,
-      moderatorUsername: 'MOD_UK_Ireland',
+      moderatorUsername: 'mod_ainsdale',
     );
 
     expect(duplicate, isFalse);

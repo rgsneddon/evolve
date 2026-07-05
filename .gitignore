@@ -44,6 +44,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# FCG UK ward moderator whitelist (private Moderator Pack — run generate_uk_ward_moderators.ps1)
+lib/fcg/data/fcg_uk_ward_moderator_list_generated.dart
+build/uk_wards_may2025.csv
+
 # Local Grok proxy secrets (copy from grok_proxy.local.env.example)
 grok_proxy.local.env
 

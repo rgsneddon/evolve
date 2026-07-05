@@ -13,7 +13,7 @@ void main() {
       id: 's1',
       regionId: 'uk_ireland',
       policyQuestion: 'Levy?',
-      moderatorUsername: 'MOD_UK',
+      moderatorUsername: 'mod_ainsdale',
       createdAt: DateTime.utc(2026, 7, 4),
       slots: [
         FcgVoterSlot(slot: 1, percAddress: 'percpriv1${'a' * 40}', vote: FcgVoteChoice.support),
@@ -39,7 +39,7 @@ void main() {
         id: 'a1',
         timestamp: DateTime.utc(2026, 7, 4),
         action: FcgAuditAction.sessionOpened,
-        actor: 'MOD_UK',
+        actor: 'mod_ainsdale',
         prevHash: log.tipHash,
       ),
     );
@@ -48,7 +48,7 @@ void main() {
         id: 'a2',
         timestamp: DateTime.utc(2026, 7, 4, 1),
         action: FcgAuditAction.addressCommitted,
-        actor: 'MOD_UK',
+        actor: 'mod_ainsdale',
         slotNumber: 1,
         prevHash: log.tipHash,
       ),
@@ -67,7 +67,7 @@ void main() {
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await fcg.initialize();
     await fcg.initiateSession(
-      moderatorUsername: 'MOD_UK',
+      moderatorUsername: 'mod_ainsdale',
       regionId: 'uk_ireland',
       policyQuestion: 'Pilot levy',
       runCohesion: true,
@@ -78,16 +78,16 @@ void main() {
     await fcg.commitSlotAddress(
       slotNumber: 1,
       percAddress: addr1,
-      moderatorUsername: 'MOD_UK',
+      moderatorUsername: 'mod_ainsdale',
     );
     await fcg.releaseSlot(
       slotNumber: 1,
-      moderatorUsername: 'MOD_UK',
+      moderatorUsername: 'mod_ainsdale',
     );
     await fcg.reEnrollSlotAddress(
       slotNumber: 1,
       percAddress: addr2,
-      moderatorUsername: 'MOD_UK',
+      moderatorUsername: 'mod_ainsdale',
     );
 
     final session = fcg.activeSession!;
