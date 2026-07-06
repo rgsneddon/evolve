@@ -25,6 +25,7 @@ import {
   isRecipientOnlineOnSeed,
   touchPeerHeartbeatOnSeed,
 } from './peer_online.js';
+import { applyRelayLedgerPut } from './rendezvous_ledger_put.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -372,20 +373,18 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'PUT' && url.pathname === '/perc/rendezvous/ledger') {
     const data = await readBody(req);
-    if (!data.username || !data.ledger) {
-      return json(res, 400, { error: 'username and ledger required' });
-    }
-    ledgers.set(data.username, {
+    const result = applyRelayLedgerPut({
+      store,
+      ledgers,
+      addresses,
       username: data.username,
       ledger: data.ledger,
-      updatedAt: Date.now(),
+      seedUsername: SEED_USERNAME,
     });
-    indexLedgerAddresses(data.ledger, addresses);
-    if (data.username !== SEED_USERNAME) {
-      store.importLedger(data.ledger);
-      indexLedgerAddresses(store.ledger, addresses);
+    if (!result.ok) {
+      return json(res, 400, { error: result.error });
     }
-    return json(res, 200, { ok: true });
+    return json(res, 200, { ok: true, imported: result.imported });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/ledger') {

@@ -105,7 +105,7 @@ describe('rendezvous ledger gossip imports transfer blocks into seed store', () 
     assert.equal(store.ledger.microblocksPerBlock ?? MICROBLOCKS_PER_BLOCK, MICROBLOCKS_PER_BLOCK);
   });
 
-  it('shorter peer ledger is not imported over taller seed ledger', () => {
+  it('shorter peer without new transfers does not change taller seed ledger', () => {
     const store = new LedgerStore(tmpDir);
     const tall = ledgerWithTransfer(
       launchLedger(createGenesisLedger({ genesisRevision: 2, chainId: CHAIN_ID })),
@@ -116,5 +116,36 @@ describe('rendezvous ledger gossip imports transfer blocks into seed store', () 
     const imported = store.importLedger(short);
     assert.equal(imported, false);
     assert.equal(store.ledger.blocks.length, tall.blocks.length);
+  });
+
+  it('shorter peer with new transfer merges onto taller seed without replacing tip', () => {
+    const store = new LedgerStore(tmpDir);
+    let tall = launchLedger(createGenesisLedger({ genesisRevision: 2, chainId: CHAIN_ID }));
+    for (let i = 0; i < 2; i += 1) {
+      tall = {
+        ...tall,
+        blocks: [
+          ...tall.blocks,
+          {
+            index: tall.blocks.length,
+            timestamp: `2026-07-06T11:0${i}:00.000Z`,
+            scenarioLabel: `Seed scenario ${i + 1}`,
+            transactions: [{ id: `tx-seed-${i}`, kind: 'scenarioReward' }],
+          },
+        ],
+      };
+    }
+    store.forceReplaceLedger(tall);
+
+    const shortBase = launchLedger(createGenesisLedger({ genesisRevision: 2, chainId: CHAIN_ID }));
+    const short = ledgerWithTransfer(shortBase);
+    assert.ok(short.blocks.length < tall.blocks.length, 'peer relay must be shorter than seed');
+
+    const imported = store.importLedger(short);
+    assert.equal(imported, true);
+    assert.equal(store.ledger.blocks.length, tall.blocks.length + 1);
+
+    const detail = getBlockDetail(store.ledger, store.ledger.blocks.length - 1);
+    assert.ok(detail.transactions.some((tx) => tx.kind === 'transfer'));
   });
 });

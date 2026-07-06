@@ -10,6 +10,7 @@ import {
   bootstrapSeedEpoch,
   isAnnualBootstrapDue,
 } from './seed_bootstrap.js';
+import { mergeTransferBlocksFromPeer } from './transfer_block_merge.js';
 
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
 
@@ -133,9 +134,18 @@ export class LedgerStore {
   }
 
   importLedger(remote) {
-    if (!shouldImportLedger(this.ledger, remote)) return false;
-    this.ledger = compactLedgerForSeed(remote);
-    this.genesisRevision = ledgerGenesisRevision(remote);
+    if (!remote || typeof remote !== 'object') return false;
+    if (shouldImportLedger(this.ledger, remote)) {
+      this.ledger = compactLedgerForSeed(remote);
+      this.genesisRevision = ledgerGenesisRevision(remote);
+      this.revision += 1;
+      this.save();
+      return true;
+    }
+    if (!this.ledger) return false;
+    const merged = mergeTransferBlocksFromPeer(this.ledger, remote);
+    if (!merged.merged) return false;
+    this.ledger = compactLedgerForSeed(this.ledger);
     this.revision += 1;
     this.save();
     return true;

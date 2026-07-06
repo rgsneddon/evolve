@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
+import 'package:evolve/perc/services/perc_block_display_label.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 
 void _seed(PercLedger ledger) {
@@ -58,5 +59,6 @@ void main() {
           ),
       isTrue,
     );
+    expect(receiver.blocks.any(PercBlockDisplayLabel.hasTransfer), isTrue);
   });
 }

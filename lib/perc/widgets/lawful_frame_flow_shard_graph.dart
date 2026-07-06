@@ -26,6 +26,17 @@ class LawfulFrameFlowShardGraph extends StatefulWidget {
   final PercWalletProvider wallet;
   final AppLocalizations strings;
 
+  /// Fractional ring positions (0–1) for gold transfer markers on the ward graph.
+  @visibleForTesting
+  static List<double> transferMarkerAnglesForBlocks(
+    List<PercBlock> blocks,
+    int microblocksPerBlock,
+  ) =>
+      _LawfulFrameFlowShardGraphState._transferMarkerAngles(
+        _LawfulFrameFlowShardGraphState._transferBlocks(blocks),
+        microblocksPerBlock,
+      );
+
   @override
   State<LawfulFrameFlowShardGraph> createState() =>
       _LawfulFrameFlowShardGraphState();

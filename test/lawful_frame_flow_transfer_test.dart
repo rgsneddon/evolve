@@ -76,6 +76,13 @@ void main() {
     );
     expect(find.textContaining('Block #'), findsWidgets);
     expect(find.textContaining('0.00000005'), findsWidgets);
+    expect(
+      LawfulFrameFlowShardGraph.transferMarkerAnglesForBlocks(
+        wallet.blocks,
+        wallet.microblocksPerBlock,
+      ),
+      isNotEmpty,
+    );
   });
 
   testWidgets('block explorer history shows Manual tx label on transfer block',
