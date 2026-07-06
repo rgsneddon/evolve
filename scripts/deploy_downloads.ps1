@@ -48,7 +48,9 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $dstDir = Join-Path $GhPagesWorktree "downloads\v$Version"
 New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
 Get-ChildItem $srcDir -File | Where-Object {
-    $_.Extension -in '.sha256', '.sha512', '.json' -or $_.Name -like 'CHECKSUMS*'
+    $_.Extension -in '.sha256', '.sha512', '.json' -or
+    $_.Name -like 'CHECKSUMS*' -or
+    $_.Name -like '*-windows-x64-setup.exe'
 } | ForEach-Object {
     Copy-Item $_.FullName (Join-Path $dstDir $_.Name) -Force
 }
