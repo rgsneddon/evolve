@@ -412,6 +412,6 @@ Evolve and this Chronoflux implementation are **proprietary software** offered u
 | Use | License |
 |-----|---------|
 | Personal, private, non-commercial use | [LICENSE](LICENSE) (proprietary grant) |
-| Commercial use, redistribution, SaaS, or derivative products for sale | Separate **Commercial License** — contact [licensing@evolve-chronoflux.dev](mailto:licensing@evolve-chronoflux.dev) |
+| Commercial use, redistribution, SaaS, or derivative products for sale | Separate **Commercial License** — contact [russell.gray.sneddon@gmail.com](mailto:russell.gray.sneddon@gmail.com) |
 
 Third-party dependencies (Flutter packages, fonts, etc.) remain under their own licenses; see `NOTICES` in build outputs.

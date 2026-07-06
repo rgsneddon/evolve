@@ -22,6 +22,7 @@ import '../services/perc_block_timing.dart';
 import '../services/perc_chronoflux_time_confirmations.dart';
 import '../services/perc_send_receive_actions.dart';
 import '../widgets/blockchain_launch_balloon.dart';
+import '../../widgets/evolve_creator_attribution.dart';
 import '../widgets/wallet_creator_credit.dart';
 import '../widgets/wallet_credential_error_banner.dart';
 import '../widgets/wallet_language_selector.dart';
@@ -728,12 +729,14 @@ class _WalletScreenState extends State<WalletScreen> {
                 style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
               ),
               const SizedBox(height: 2),
-              Text(
-                strings.t('wallet_creator_credit'),
+              EvolveCreatorAttribution(
+                strings: strings,
+                textAlign: TextAlign.start,
                 style: const TextStyle(
                   fontSize: 10,
                   fontStyle: FontStyle.italic,
                   color: Color(0xFF7A8299),
+                  height: 1.35,
                 ),
               ),
             ],

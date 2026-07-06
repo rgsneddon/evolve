@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/app_localizations.dart';
+import 'evolve_creator_attribution.dart';
+
 class LicenseAttributionPanel extends StatefulWidget {
   const LicenseAttributionPanel({super.key, required this.strings});
 
-  final dynamic strings;
+  final AppLocalizations strings;
 
   @override
   State<LicenseAttributionPanel> createState() => _LicenseAttributionPanelState();
@@ -68,8 +71,9 @@ class _LicenseAttributionPanelState extends State<LicenseAttributionPanel> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    s.t('license_chronoflux_attribution'),
+                  EvolveCreatorAttribution(
+                    strings: s,
+                    textAlign: TextAlign.start,
                     style: const TextStyle(fontSize: 12, height: 1.45),
                   ),
                   const SizedBox(height: 10),

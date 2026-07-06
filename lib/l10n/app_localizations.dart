@@ -440,7 +440,13 @@ final _en = {
       'Full committal across Earth will bring Peace on Earth at a scattered 93% Social Cohesion.',
   'credit_attribution_title': 'Attribution',
   'credit_attribution_body':
-      'Evolve — created by rgsneddon, utilising Grok construal. Chronoflux Principia — Roy D Herbert. Perccent blockchain forked from Beam privacy architecture — Valdok and Beam CTO Alex Romanov.',
+      'CREATED BY RUSSELL G SNEDDON BASED ON THE CHRONOFLUX PRINCIPIA BY ROY D HERBERT, REWARD TOKEN FORKED / CLONED FROM BEAMPRIVACY',
+  'creator_attribution_prefix': 'CREATED BY ',
+  'creator_attribution_russell': 'RUSSELL G SNEDDON',
+  'creator_attribution_middle': ' BASED ON THE CHRONOFLUX PRINCIPIA BY ',
+  'creator_attribution_roy': 'ROY D HERBERT',
+  'creator_attribution_suffix': ', REWARD TOKEN FORKED / CLONED FROM ',
+  'creator_attribution_beam': 'BEAMPRIVACY',
   'wallet_title': 'Evolve Wallet',
   'wallet_opening_title': 'Opening wallet',
   'wallet_opening_message':
@@ -451,7 +457,7 @@ final _en = {
   'wallet_details_section': 'Chain & network details',
   'wallet_subtitle': 'Perccent chain · scenario-driven treasury',
   'wallet_creator_credit':
-      'Created by rgsneddon · utilising Grok · Roy D Herbert (Chronoflux Principia) · Valdok · Beam CTO Alex Romanov — Beam-privacy Perccent fork',
+      'CREATED BY RUSSELL G SNEDDON BASED ON THE CHRONOFLUX PRINCIPIA BY ROY D HERBERT, REWARD TOKEN FORKED / CLONED FROM BEAMPRIVACY',
   'wallet_privacy_title': 'Beam-confidential Perccent',
   'wallet_privacy_note':
       'Perccent is forked from Beam privacy — confidential addresses and shielded balances on-device.',
@@ -647,6 +653,11 @@ final _en = {
       'Block #{index} · {amount} {symbol} · {from} → {to}',
   'wallet_explorer_transfer_lane_empty':
       'No Perccent transfers yet — sends appear here on the lawful split.',
+  'wallet_explorer_pending_tx_flow_title': 'Pending',
+  'wallet_explorer_pending_tx_flow_empty':
+      'No pending transfers — inbound PERC settles on sign-in',
+  'wallet_explorer_pending_tx_flow_entry':
+      '{amount} {symbol} · {from} → {to} · awaiting settlement',
   'wallet_explorer_genesis_renewal': 'Genesis renewal — cycle #{cycle} (283M PERC Perccent)',
   'wallet_explorer_confirmations': '{count} confirmation(s) required — fully confirmed',
   'wallet_explorer_confirmed': 'Fully confirmed (1 block)',
@@ -835,10 +846,10 @@ final _en = {
   'license_panel_title': 'License & Chronoflux attribution',
   'license_dialog_title': 'Evolve License',
   'license_chronoflux_attribution':
-      'The Chronoflux Principia, realised by Roy D Herbert, is a core mechanical part of the Evolve framework. The hydrodynamic constructs, continuum mechanics, and analysis pipeline derive from and operate through that Principia. Perccent is forked from Beam privacy architecture — credit Valdok and Beam CTO Alex Romanov.',
+      'CREATED BY RUSSELL G SNEDDON BASED ON THE CHRONOFLUX PRINCIPIA BY ROY D HERBERT, REWARD TOKEN FORKED / CLONED FROM BEAMPRIVACY',
   'license_copyright': 'Copyright (c) 2026 Evolve Chronoflux. All rights reserved.',
   'license_dual_summary':
-      'Proprietary / dual license: personal non-commercial use permitted under LICENSE; commercial use requires a separate Commercial License (licensing@evolve-chronoflux.dev).',
+      'Proprietary / dual license: personal non-commercial use permitted under LICENSE; commercial use requires a separate Commercial License (russell.gray.sneddon@gmail.com).',
   'license_view_full': 'View full license',
   'grok_construe_label': 'GROK CONSTRUE',
   'grok_bar_hint':

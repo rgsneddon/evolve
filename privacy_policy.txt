@@ -27,7 +27,7 @@ That seed node is operated on Render Standard hosting with persistent disk stora
 
 Privacy enquiries:
   - GitHub issues: https://github.com/rgsneddon/evolve/issues
-  - Licensing / general contact: licensing@evolve-chronoflux.dev
+  - Licensing / general contact: russell.gray.sneddon@gmail.com
 
 
 2. SUMMARY

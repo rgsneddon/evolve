@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/app_performance.dart';
 import '../models/perc_block.dart';
 import '../models/perc_microblock_log_entry.dart';
+import '../models/perc_pending_inbound_transfer.dart';
 import '../models/perc_side_chain.dart';
 import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
@@ -44,8 +45,9 @@ class LawfulFrameFlowShardGraph extends StatefulWidget {
 }
 
 class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _spin;
+  late final AnimationController _pendingFlow;
   PercShardDensity? _density;
   var _building = false;
 
@@ -57,6 +59,10 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
       vsync: this,
       duration: const Duration(seconds: 48),
     );
+    _pendingFlow = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 28),
+    )..repeat();
     _syncSpin();
     _rebuildDensity();
   }
@@ -112,6 +118,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _spin.dispose();
+    _pendingFlow.dispose();
     super.dispose();
   }
 
@@ -357,11 +364,15 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
                             child: const SizedBox.expand(),
                           ),
                         ),
-                        _graphOverlay(strings, wards),
+                        _graphOverlay(strings),
                       ],
                     ),
             ),
           ),
+          const SizedBox(height: 6),
+          _pendingTxFlowStrip(strings),
+          const SizedBox(height: 6),
+          _wardHeatmapStrip(strings, wards),
           const SizedBox(height: 8),
           Text(
             strings
@@ -400,7 +411,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     );
   }
 
-  Widget _graphOverlay(AppLocalizations strings, PercWardView wards) {
+  Widget _graphOverlay(AppLocalizations strings) {
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -430,35 +441,100 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
         ),
         Positioned(
           left: 8,
-          bottom: 72,
+          bottom: 8,
           child: _labelChip(
             strings.t('wallet_explorer_label_split'),
             const Color(0xFFB388FF),
           ),
         ),
         Positioned(
-          left: 8,
+          right: 8,
           bottom: 8,
           child: _labelChip(
             strings.t('wallet_explorer_label_projector'),
             const Color(0xFFFFB347),
           ),
         ),
-        Positioned(
-          left: 10,
-          right: 10,
-          bottom: 28,
-          height: 52,
-          child: DecoratedBox(
+      ],
+    );
+  }
+
+  Widget _pendingTxFlowStrip(AppLocalizations strings) {
+    final pending = widget.wallet.pendingInboundTransfers;
+    return Container(
+      height: 34,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFFFFB347).withOpacity(0.5)),
+        color: const Color(0xFF0A1018),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          Text(
+            strings.t('wallet_explorer_pending_tx_flow_title'),
+            style: const TextStyle(
+              fontSize: 7,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFFFB347),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: pending.isEmpty
+                ? Text(
+                    strings.t('wallet_explorer_pending_tx_flow_empty'),
+                    style: const TextStyle(
+                      fontSize: 8,
+                      color: Color(0xFF6C7A8F),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                : _PendingTxMarquee(
+                    animation: _pendingFlow,
+                    entries: pending
+                        .map((p) => _pendingTxFlowEntry(strings, p))
+                        .toList(growable: false),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _pendingTxFlowEntry(
+    AppLocalizations strings,
+    PercPendingInboundTransfer pending,
+  ) =>
+      strings
+          .t('wallet_explorer_pending_tx_flow_entry')
+          .replaceAll('{amount}', pending.amount.displayFixed8)
+          .replaceAll('{symbol}', PercChainConstants.currencySymbol)
+          .replaceAll(
+            '{from}',
+            PercAccountPrivacy.publicDisplayName(pending.fromUsername),
+          )
+          .replaceAll(
+            '{to}',
+            PercAccountPrivacy.publicDisplayName(pending.toUsername),
+          );
+
+  Widget _wardHeatmapStrip(AppLocalizations strings, PercWardView wards) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 22,
             decoration: BoxDecoration(
-              color: const Color(0xFF060A10).withOpacity(0.82),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(4),
               border: Border.all(
-                color: const Color(0xFF5CE0A8).withOpacity(0.45),
+                color: const Color(0xFF5CE0A8).withOpacity(0.35),
               ),
+              color: const Color(0xFF060A10),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(5),
+              borderRadius: BorderRadius.circular(3),
               child: CustomPaint(
                 painter: _WardHeatmapPainter(wards: wards),
                 child: const SizedBox.expand(),
@@ -466,13 +542,10 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
             ),
           ),
         ),
-        Positioned(
-          left: 12,
-          right: 12,
-          bottom: 8,
+        const SizedBox(width: 8),
+        Flexible(
           child: Text(
             strings.t('wallet_explorer_ward_legend'),
-            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 7,
               color: Color(0xFF6C7A8F),
@@ -675,6 +748,87 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     );
   }
 
+}
+
+/// Horizontally scrolling pending-transfer ticker (below the wheel, not on it).
+class _PendingTxMarquee extends StatelessWidget {
+  const _PendingTxMarquee({
+    required this.animation,
+    required this.entries,
+  });
+
+  final Animation<double> animation;
+  final List<String> entries;
+
+  static const _separator = '   ·   ';
+
+  @override
+  Widget build(BuildContext context) {
+    final text = entries.join(_separator);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(
+              fontSize: 8,
+              fontFamily: 'monospace',
+              color: Color(0xFFFFD8A8),
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+        )..layout();
+        final textWidth = painter.width;
+        final loop = textWidth + constraints.maxWidth;
+        if (loop <= 0) {
+          return const SizedBox.shrink();
+        }
+        return ClipRect(
+          child: AnimatedBuilder(
+            animation: animation,
+            builder: (context, _) {
+              final offset = animation.value * loop;
+              return SizedBox(
+                height: 14,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      left: constraints.maxWidth - offset,
+                      top: 0,
+                      child: Text(
+                        text,
+                        style: const TextStyle(
+                          fontSize: 8,
+                          fontFamily: 'monospace',
+                          color: Color(0xFFFFD8A8),
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+                    Positioned(
+                      left: constraints.maxWidth - offset + textWidth + 48,
+                      top: 0,
+                      child: Text(
+                        text,
+                        style: const TextStyle(
+                          fontSize: 8,
+                          fontFamily: 'monospace',
+                          color: Color(0xFFFFD8A8),
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
 }
 
 class LawfulFrameFlowPainter extends CustomPainter {

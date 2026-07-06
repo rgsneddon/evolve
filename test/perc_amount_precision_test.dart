@@ -58,9 +58,10 @@ void main() {
       fromUsername: 'alice',
       toAddress: _addr(ledger, 'bob'),
       amount: oneCent,
+      deliverInstantly: false,
     );
     ledger.login('bob', 'password123');
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
+    expect(ledger.account('bob')!.balance, oneCent);
     ledger.advanceScenarioBlock('bob');
     expect(ledger.account('bob')!.balance, oneCent);
   });
@@ -74,7 +75,6 @@ void main() {
 
     const oneCent = PercAmount.smallestUnit;
 
-    ledger.login(PercChainConstants.treasuryUsername, 'password123');
     final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
     final before = treasury.balance;
 
@@ -82,13 +82,14 @@ void main() {
       fromUsername: 'alice',
       toAddress: _addr(ledger, PercChainConstants.treasuryUsername),
       amount: oneCent,
+      deliverInstantly: false,
     );
 
     expect(tx.kind, PercTxKind.transfer);
     expect(tx.amount, oneCent);
     expect(tx.toUsername, PercChainConstants.treasuryUsername);
     expect(ledger.pendingInboundFor(PercChainConstants.treasuryUsername), hasLength(1));
-    ledger.advanceScenarioBlock(PercChainConstants.treasuryUsername);
+    ledger.settlePendingInboundOnActivity(PercChainConstants.treasuryUsername);
     expect(ledger.pendingInboundFor(PercChainConstants.treasuryUsername), isEmpty);
     expect(
       treasury.transactions.any(
@@ -100,8 +101,10 @@ void main() {
       ),
       isTrue,
     );
-    final stakingPaid = PercStaking.rewardPerBlock * 2;
-    expect(treasury.balance, before + oneCent - stakingPaid);
+    expect(
+      treasury.balance,
+      before + oneCent - PercStaking.rewardPerBlock,
+    );
   });
 
   test('ledger rejects amounts below 1 cent', () {

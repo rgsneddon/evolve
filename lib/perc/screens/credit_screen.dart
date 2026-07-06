@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../fcg/services/fcg_governance_paper.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
+import '../../widgets/evolve_creator_attribution.dart';
 import '../widgets/wallet_creator_credit.dart';
 
 /// Credit and governance context for parish-ward consensus use.
@@ -93,8 +94,9 @@ class CreditScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          strings.t('credit_attribution_body'),
+                        EvolveCreatorAttribution(
+                          strings: strings,
+                          textAlign: TextAlign.start,
                           style: const TextStyle(
                             fontSize: 12,
                             height: 1.5,

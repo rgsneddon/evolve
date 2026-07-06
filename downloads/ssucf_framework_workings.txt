@@ -488,4 +488,4 @@ The SSUCF process, learned by @grok to give predictions in social scenarios, can
 used by anyone.
 
 Questions: https://github.com/rgsneddon/evolve/issues
-Licensing: licensing@evolve-chronoflux.dev
+Licensing: russell.gray.sneddon@gmail.com
