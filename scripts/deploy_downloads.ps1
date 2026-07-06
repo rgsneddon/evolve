@@ -41,9 +41,7 @@ if (-not (Test-Path (Join-Path $GhPagesWorktree '.git'))) {
 
 Set-Location $GhPagesWorktree
 Ensure-GitIdentity -Root $GhPagesWorktree
-git fetch origin gh-pages
-git checkout -B gh-pages origin/gh-pages
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Sync-GhPagesBranch -Branch 'gh-pages' -Remote 'origin'
 
 $dstDir = Join-Path $GhPagesWorktree "downloads\v$Version"
 New-Item -ItemType Directory -Path $dstDir -Force | Out-Null

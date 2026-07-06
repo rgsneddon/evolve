@@ -96,17 +96,7 @@ if (-not $SkipPages) {
 
     Set-Location $DeployDir
     Ensure-GitIdentity -Root $DeployDir -Owner $owner
-    $pagesBranch = 'gh-pages'
-    git fetch origin
-    if (git show-ref --verify --quiet "refs/remotes/origin/$pagesBranch") {
-        git checkout -B $pagesBranch "origin/$pagesBranch"
-    } elseif (git show-ref --verify --quiet "refs/heads/$pagesBranch") {
-        git checkout $pagesBranch
-    } else {
-        git checkout --orphan $pagesBranch
-        git rm -rf . 2>$null | Out-Null
-    }
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    Sync-GhPagesBranch -Branch 'gh-pages' -Remote 'origin'
 
     # Keep download packages and static pages alongside the Flutter web bundle.
     $preserveNames = @(

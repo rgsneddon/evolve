@@ -1,5 +1,31 @@
 # Keep gh-pages download landing pages in sync without wiping versioned packages.
 
+function Sync-GhPagesBranch {
+    param(
+        [string]$Branch = 'gh-pages',
+        [string]$Remote = 'origin'
+    )
+
+    git fetch $Remote $Branch 2>$null
+    if ($LASTEXITCODE -ne 0) { throw "git fetch $Remote $Branch failed" }
+
+    $tracking = "$Remote/$Branch"
+    $current = git branch --show-current 2>$null
+    if ($current -eq $Branch) {
+        git reset --hard $tracking
+    } elseif (git show-ref --verify --quiet "refs/heads/$Branch") {
+        git checkout -f $Branch
+        if ($LASTEXITCODE -ne 0) { throw "git checkout -f $Branch failed" }
+        git reset --hard $tracking
+    } elseif (git show-ref --verify --quiet "refs/remotes/$tracking") {
+        git checkout -B $Branch $tracking
+    } else {
+        git checkout --orphan $Branch
+        git rm -rf . 2>$null | Out-Null
+    }
+    if ($LASTEXITCODE -ne 0) { throw "gh-pages branch sync failed" }
+}
+
 function Sync-GhPagesDownloads {
     param(
         [Parameter(Mandatory = $true)][string]$Root,

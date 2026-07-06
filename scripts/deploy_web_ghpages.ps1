@@ -41,9 +41,7 @@ if (-not (Test-Path (Join-Path $DeployDir '.git'))) {
 
 Set-Location $DeployDir
 Ensure-GitIdentity -Root $DeployDir
-git fetch origin
-git checkout -B gh-pages origin/gh-pages
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Sync-GhPagesBranch -Branch 'gh-pages' -Remote 'origin'
 
 $preserveNames = @(
     '.git', '.gitignore', 'README.md',
