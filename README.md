@@ -381,6 +381,8 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 powershell -ExecutionPolicy Bypass -File scripts/build_all.ps1
 powershell -ExecutionPolicy Bypass -File scripts/build_installers.ps1 -SkipCodeSign
 powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.6
+# Optional: capture release/Pages evidence for CI or audit
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.6 -SkipBuild -EvidenceDir .\build\release-evidence
 ```
 
 If the Windows INSTALL step fails with `C:\Program Files\evolve`, delete `build\windows` and rebuild (stale CMake cache).

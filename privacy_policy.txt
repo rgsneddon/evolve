@@ -2,7 +2,7 @@ EVOLVE CHRONOFLUX — PRIVACY POLICY
 ===================================
 
 Effective date: 3 July 2026
-Last updated: 6 July 2026
+Last updated: 6 July 2026 (v3.4.6 build 113)
 
 This Privacy Policy describes how Evolve Chronoflux ("Evolve", "we", "us", or "our")
 collects, uses, stores, and shares information when you use the Evolve application
