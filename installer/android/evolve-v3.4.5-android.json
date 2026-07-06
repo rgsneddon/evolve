@@ -1,0 +1,17 @@
+﻿{
+    "url":  "https://rgsneddon.github.io/evolve/downloads/v3.4.5/evolve-v3.4.5-android-setup.apk",
+    "build":  "109",
+    "platform":  "android",
+    "version":  "3.4.5",
+    "sizeMb":  77.4,
+    "sha512":  "a1a76297ee57c526d6bd5665d5a222c1bc57afaf8244dd824a9d7e31b28dad8043a285b87c46ea93bfe0e03a676d70ab6d0cf1bc388ca369db7744a87aacc2c8",
+    "name":  "evolve-v3.4.5-android-setup.apk",
+    "minSdk":  23,
+    "sha256":  "646d1e16f16637a8b8f2b416b3d9f857384d544eaf7e189acfe6f5dc989e9eac",
+    "abis":  [
+                 "arm64-v8a",
+                 "armeabi-v7a",
+                 "x86_64"
+             ],
+    "sizeBytes":  81159437
+}
