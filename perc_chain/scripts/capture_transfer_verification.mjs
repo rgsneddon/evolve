@@ -17,17 +17,23 @@ const SCRATCH =
   path.join(os.tmpdir(), 'grok-goal-a6627874349a', 'implementer');
 const GOAL_DIR = process.env.PERC_GOAL_DIR ?? null;
 
-function run(cmd, args, env = {}) {
-  const result = spawnSync(cmd, args, {
-    cwd: REPO_ROOT,
-    env: { ...process.env, PERC_SCRATCH_DIR: SCRATCH, ...env },
-    encoding: 'utf8',
-    shell: process.platform === 'win32',
-  });
+function runShell(command, env = {}) {
+  const win = process.platform === 'win32';
+  const result = spawnSync(
+    win ? 'powershell.exe' : 'sh',
+    win ? ['-NoProfile', '-Command', command] : ['-lc', command],
+    {
+      cwd: REPO_ROOT,
+      env: { ...process.env, PERC_SCRATCH_DIR: SCRATCH, ...env },
+      encoding: 'utf8',
+      maxBuffer: 20 * 1024 * 1024,
+    },
+  );
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
+  if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(`${cmd} ${args.join(' ')} failed with status ${result.status}`);
+    throw new Error(`${command} failed with status ${result.status}`);
   }
 }
 
@@ -66,25 +72,22 @@ fs.mkdirSync(SCRATCH, { recursive: true });
 
 console.log(`CAPTURE: scratch=${SCRATCH}`);
 
-run('flutter', ['test', 'test/write_send_relay_fixture_test.dart']);
+runShell('flutter test test/write_send_relay_fixture_test.dart');
 
-run('node', [
-  '--test',
-  'perc_chain/src/transfer_relay_view.test.js',
-  'perc_chain/src/explorer_api_transfer.test.js',
-  'perc_chain/src/transfer_relay_ack.test.js',
-  'perc_chain/src/rendezvous_ledger_put.test.js',
-  'perc_chain/src/rendezvous_ledger_transfer.test.js',
-  'perc_chain/src/relay_api_probe.test.js',
-]);
+runShell(
+  'node --test perc_chain/src/transfer_relay_view.test.js perc_chain/src/explorer_api_transfer.test.js perc_chain/src/transfer_relay_ack.test.js perc_chain/src/rendezvous_ledger_put.test.js perc_chain/src/rendezvous_ledger_transfer.test.js perc_chain/src/relay_api_probe.test.js',
+);
 
 copyProbeArtifacts();
 
 const frameLog = path.join(SCRATCH, 'frame_flow_transfer.log');
+const win = process.platform === 'win32';
 const frame = spawnSync(
-  'flutter',
-  ['test', 'test/lawful_frame_flow_transfer_test.dart'],
-  { cwd: REPO_ROOT, encoding: 'utf8', shell: process.platform === 'win32' },
+  win ? 'powershell.exe' : 'sh',
+  win
+    ? ['-NoProfile', '-Command', 'flutter test test/lawful_frame_flow_transfer_test.dart']
+    : ['-lc', 'flutter test test/lawful_frame_flow_transfer_test.dart'],
+  { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 },
 );
 const frameOut = `${frame.stdout ?? ''}${frame.stderr ?? ''}`;
 fs.writeFileSync(frameLog, frameOut, 'utf8');
