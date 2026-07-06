@@ -125,6 +125,11 @@ describe('relay API probe capture', () => {
     assert.equal(transferSummary.canonicalIndex, canonicalIndex);
     assert.equal(transferSummary.matchedBy, 'canonical');
 
+    const promoted = store.ledger.blocks.find((b) =>
+      (b.transactions ?? []).some((tx) => tx.id === expectedTxId),
+    );
+    assert.ok(promoted);
+
     // Unoccupied sender index — alias lookup returns the same transfer tx.id.
     const relayAliasDetail = getBlockDetail(
       {
@@ -135,9 +140,9 @@ describe('relay API probe capture', () => {
           {
             index: canonicalIndex,
             relaySourceBlockIndex: 99,
-            timestamp: detail.timestamp,
-            triggerUsername: 'android_user',
-            transactions: detail.transactions,
+            timestamp: promoted.timestamp,
+            triggerUsername: promoted.triggerUsername,
+            transactions: promoted.transactions,
           },
         ],
       },
@@ -148,10 +153,9 @@ describe('relay API probe capture', () => {
     assert.equal(relayAliasDetail.canonicalIndex, canonicalIndex);
     assert.equal(relayAliasDetail.displayIndex, 99);
     assert.equal(relayAliasDetail.relaySourceBlockIndex, 99);
-    assert.equal(
-      relayAliasDetail.transactions.find((tx) => tx.kind === 'transfer').id,
-      expectedTxId,
-    );
+    const aliasTransfer = relayAliasDetail.transactions.find((tx) => tx.kind === 'transfer');
+    assert.equal(aliasTransfer.id, expectedTxId);
+    assert.equal(aliasTransfer.amount, '0.00000005');
 
     fs.mkdirSync(SCRATCH, { recursive: true });
     fs.writeFileSync(
