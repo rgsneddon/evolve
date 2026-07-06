@@ -139,6 +139,156 @@ Scroll to the bottom of the app and expand **License & Chronoflux attribution** 
 
 ---
 
+## Perccent blockchain — architecture, emission, and scalability
+
+Evolve embeds an optional **Perccent** wallet (`PERC` / **Perccent**) on the **Chronoflux Principia** chain. The ledger lives on your device; an internet **seed node** (`evolve_seed_node`) anchors consensus and serves a public explorer. Currency uses **8 decimal places**: **1 cent = 0.00000001 PERC**.
+
+### Chain layout
+
+| Layer | ID / role |
+|-------|-----------|
+| **Evolutionary chain** | `evolve-chronoflux-principia-chain-1` — all app versions connect here |
+| **Main chain** | `perc-main-evolve-1` — blocks, transfers, treasury, scenario rewards, microblock seals |
+| **Side chain** | `perc-chronoflux-side-1` — fair-usage microblock height and pending seal progress |
+| **Treasury** | `evolve_treasury` — emits PERC; manual sends disabled after blockchain launch |
+| **Seed** | `evolve_seed_node` — rendezvous, ledger relay, public explorer |
+
+Each wallet keeps a **local JSON ledger**. When online, wallets gossip blocks and transfers through the rendezvous host (default port **9478**); wallet nodes may serve on port **9477**.
+
+### How blocks are produced
+
+Main-chain blocks advance on **scenario analysis**, **PERC transfers**, **treasury emission/regeneration**, and **microblock seal** events — not on Grok construal or raw field keystrokes alone.
+
+```
+Analysis Calculate  →  faucet payout + treasury emission block
+PERC send/receive   →  transfer block (+ 1 cent fee burned)
+Fair-usage typing   →  side-chain microblock (local log)
+100M microblocks    →  main-chain Chronoflux seal block
+```
+
+**Confirmation model:** one main-chain confirmation fully settles PERC (Chronoflux Principia TIME). Staking rewards apply to balances confirmed after that same threshold.
+
+**Typical block contents:**
+
+- Treasury emission (accrual or regeneration toward the dynamic per-minute target)
+- Scenario reward (faucet payout to the analysing wallet)
+- Transfer and fee-burn transactions
+- Optional microblock seal marker at 100M fair-usage microblocks
+
+### Side chain, wards, and fair-usage microblocks
+
+Fair-usage events — analysis form keystrokes and field edits — record **one microblock** each after blockchain launch. Each microblock carries a Chronoflux fingerprint and ward position.
+
+| Unit | Size |
+|------|------|
+| **Microblocks per ward** | 10,000 log entries |
+| **Wards per seal cycle** | 10,000 |
+| **Microblocks per main seal** | 100,000,000 |
+
+**Ward log pruning:** the fair-usage log holds at most **10,000 entries per ward**. When a ward fills, the log clears and the next ward starts empty — similar to clearing a cache and freeing wallet storage. At the end of a full 100M-microblock seal cycle, the log resets to ward 1 after the main-chain seal.
+
+The in-app **block explorer** visualises ward bundles, seal-cycle progress, and the current ward log.
+
+### Emission structure
+
+Supply follows an **infinite Chronoflux continuum** (`infiniteContinuumSupply = true`). The legacy **283M PERC pool renewal** at 1-cent reserve applies only in finite-pool mode and is **disabled** in the current production setting.
+
+#### Analysis faucet
+
+After sign-in, each **Calculate** (percent chance or social cohesion) may draw from treasury:
+
+- Payout: **xx/100 PERC**, where `xx` is the two-digit outcome (0–100)
+- Cooldown: **once per 7 minutes per wallet**
+- Maximum draw: **1.00 PERC** at 100/100
+
+#### Treasury emission (dynamic)
+
+Emission accrues between scenario events and funds faucet payouts. The rate is **dynamic** — it scales with **wallet load** and **average block time** on top of a faucet-aligned baseline.
+
+**Baseline (1.0× combined factor):**
+
+- Up to **1 PERC** accrues per **7-minute** cooldown window
+- Static equivalent: **~0.14285714 PERC/min**
+
+**Load factor** — scales with active wallets (√n curve):
+
+```
+loadFactor = √(wallet count)     (1 wallet → 1.0×, 4 → 2.0×, 25 → 5.0×)
+```
+
+Uses the greater of registered non-treasury wallets or currently online peers.
+
+**Block-pace factor** — scales with how fast main-chain blocks arrive:
+
+```
+blockFactor = faucetCooldown ÷ averageBlockTime
+```
+
+Faster blocks than the 7-minute reference raise emission; slower blocks lower it (clamped 0.5×–5.0×).
+
+**Combined emission:**
+
+```
+combinedFactor = loadFactor × blockFactor     (clamped 0.5× – 10×)
+emissionPerCooldown = 1 PERC × combinedFactor
+emissionPerMinute   = emissionPerCooldown × (60 ÷ 420)
+```
+
+**Example rates at 1.0× block pace:**
+
+| Wallets | Load × | Max PERC / 7 min | Approx PERC / min |
+|---------|--------|-------------------|-------------------|
+| 1 | 1.0× | 1.00 | ~0.143 |
+| 4 | 2.0× | 2.00 | ~0.286 |
+| 16 | 4.0× | 4.00 | ~0.571 |
+| 100+ (capped) | 10.0× | 10.00 | ~1.429 |
+
+**Regeneration:** if treasury balance falls below **66%** of the current dynamic per-minute target, the next block tops it back up to that target.
+
+**Launch mint:** the first scenario emission credits **1 PERC** to `evolve_treasury`.
+
+**Treasury floor:** outbound debits (faucet, staking) never push treasury below **1 cent** (`0.00000001 PERC`). Staking pauses at the floor; emission accrual continues on the next scenario.
+
+#### Staking and fees
+
+- **Staking:** confirmed held PERC earns **0.00000005 PERC** per main-chain block (10% of the 50-cent scenario base reference)
+- **Send fee:** **1 cent** burned on every outbound transfer (permanently removed from circulation)
+
+### Scalability
+
+The chain is designed to grow with user activity without unbounded local storage growth or a fixed treasury cap.
+
+| Mechanism | Purpose |
+|-----------|---------|
+| **√wallet load scaling** | Emission rises with adoption but dampens runaway inflation (doubling users does not double emission) |
+| **Block-pace scaling** | Busy chains accrue treasury faster; quiet chains accrue slower |
+| **10× emission cap** | Hard ceiling on the combined dynamic multiplier |
+| **Per-ward log pruning** | Fair-usage log never exceeds 10,000 entries per ward on device |
+| **Seed ledger compaction** | Hosted seed drops `microblockLog` when compacting — anchor blocks and balances persist |
+| **Peer mesh gossip** | Wallets sync taller chains and pending transfers without a central custodian |
+| **Offline receive window** | Inbound transfers queue for **12 months** before reverting to sender |
+| **Scenario block height** | Per-wallet progressive scenario counter (cap 100M) for explorer progress |
+| **Seed anchor blocks** | Seed block height advances on cumulative treasury emission thresholds (100M PERC steps) |
+
+**Privacy on public surfaces:** login usernames map to **five-character public aliases** on the explorer; wallet IPv4 endpoints show as **Private node**. Treasury credentials are never published — only emission statistics, block labels, and pseudonymous activity.
+
+**Public explorer:** [evolve-perc-internet.onrender.com](https://evolve-perc-internet.onrender.com/) — block list, dynamic emission rate, load/block multipliers, peer status, and chain identifiers.
+
+### Quick reference
+
+| Topic | Value |
+|-------|-------|
+| Smallest unit | 1 cent = 0.00000001 PERC |
+| Faucet cooldown | 7 minutes per wallet |
+| Faucet payout | xx/100 PERC (max 1 PERC) |
+| Baseline emission | 1 PERC / 7 min at 1.0× |
+| Dynamic range | 0.5× – 10× combined |
+| Treasury floor | 1 cent |
+| Microblock seal | Every 100M fair-usage microblocks |
+| Manual treasury sends | Disabled after launch |
+
+---
+
 ## Features
 
 | Feature | What you get |
