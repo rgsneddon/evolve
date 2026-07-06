@@ -1,5 +1,6 @@
 import { maskEndpoint } from './endpoint_privacy.js';
 import { genericBlockLabel } from './block_display_label.js';
+import { resolveRelayBlockView } from './transfer_relay_view.js';
 import { buildDynamicEmissionStats } from './dynamic_emission.js';
 import { blockHeight, tipHash } from './ledger_store.js';
 import { seedBlockHeightFromLedger } from './seed_block.js';
@@ -86,25 +87,9 @@ export function summarizeBlock(block, ledger) {
   };
 }
 
-/**
- * Resolve a block by canonical chain index, then relay-source alias, then array position.
- * Relay-promoted transfers keep sender timing via relaySourceBlockIndex while living on the tip.
- */
+/** @deprecated Prefer resolveRelayBlockView — thin block accessor. */
 export function blockAtIndex(ledger, index) {
-  const blocks = ledger?.blocks ?? [];
-  if (!Number.isInteger(index) || index < 0 || !blocks.length) return null;
-
-  const canonical = blocks.find((b) => b?.index === index);
-  if (canonical) return canonical;
-
-  const relayAlias = blocks.find((b) => b?.relaySourceBlockIndex === index);
-  if (relayAlias) return relayAlias;
-
-  const positional = blocks[index];
-  if (positional != null && (positional.index == null || positional.index === index)) {
-    return positional;
-  }
-  return null;
+  return resolveRelayBlockView(ledger, index)?.block ?? null;
 }
 
 export function blockHashAt(ledger, index) {
@@ -129,10 +114,15 @@ export function listBlocks(ledger, { offset = 0, limit = 50 } = {}) {
 }
 
 export function getBlockDetail(ledger, index) {
-  const block = blockAtIndex(ledger, index);
-  if (!block) return null;
+  const view = resolveRelayBlockView(ledger, index);
+  if (!view) return null;
+  const { block, queriedIndex, canonicalIndex, relaySourceBlockIndex, matchedBy } = view;
   return {
     ...summarizeBlock(block, ledger),
+    queriedIndex,
+    canonicalIndex,
+    relaySourceBlockIndex,
+    matchedBy,
     transactions: (block.transactions ?? []).map((tx) => ({
       id: tx.id,
       kind: tx.kind,

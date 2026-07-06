@@ -9,6 +9,7 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
+import 'package:evolve/perc/services/perc_transfer_relay_view.dart';
 import 'package:evolve/perc/widgets/lawful_frame_flow_shard_graph.dart';
 import 'package:evolve/perc/screens/blockchain_explorer_screen.dart';
 
@@ -93,6 +94,18 @@ void main() {
       LawfulFrameFlowPainter.lastPaintedTransferMarkerCount,
       painters.first.transferMarkers.length,
     );
+
+    final transferBlock = wallet.blocks
+        .firstWhere((b) => PercTransferRelayView.firstTransferTx(b) != null);
+    final relaySource = transferBlock.relaySourceBlockIndex;
+    final graphicLine =
+        'GRAPHIC: markers=${painters.first.transferMarkers} relaySource=$relaySource '
+        'lastPainted=${LawfulFrameFlowPainter.lastPaintedTransferMarkerCount} '
+        'microblocksPerBlock=${wallet.microblocksPerBlock}';
+    print(graphicLine);
+    expect(graphicLine, contains('GRAPHIC:'));
+    expect(graphicLine, contains('lastPainted='));
+    expect(graphicLine, contains('microblocksPerBlock=100000000'));
   });
 
   testWidgets('block explorer history shows Manual tx label on transfer block',

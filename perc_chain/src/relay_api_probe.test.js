@@ -105,12 +105,19 @@ describe('relay API probe capture', () => {
     const canonicalIndex = store.ledger.blocks.length - 1;
     const list = listBlocks(store.ledger, { offset: 0, limit: 50 });
     const detail = getBlockDetail(store.ledger, canonicalIndex);
-
     assert.equal(detail.displayLabel, 'Manual tx');
     assert.equal(detail.relaySourceBlockIndex, fixture.transferBlockIndex);
+    assert.equal(detail.queriedIndex, canonicalIndex);
+    assert.equal(detail.canonicalIndex, canonicalIndex);
+    assert.equal(detail.matchedBy, 'canonical');
     const transfer = detail.transactions.find((tx) => tx.kind === 'transfer');
     assert.equal(transfer.id, expectedTxId);
     assert.equal(transfer.kind, 'transfer');
+
+    // Sender index 1 collides with native seed scenario block — alias is not used.
+    const nativeAtSenderIndex = getBlockDetail(store.ledger, fixture.transferBlockIndex);
+    assert.equal(nativeAtSenderIndex.matchedBy, 'canonical');
+    assert.notEqual(nativeAtSenderIndex.displayLabel, 'Manual tx');
 
     const transferSummary = list.blocks.find((b) => b.displayLabel === 'Manual tx');
     assert.ok(transferSummary);
@@ -119,7 +126,7 @@ describe('relay API probe capture', () => {
     fs.mkdirSync(SCRATCH, { recursive: true });
     fs.writeFileSync(
       path.join(SCRATCH, 'local_relay_api_probe.json'),
-      `${JSON.stringify({ list, detail }, null, 2)}\n`,
+      `${JSON.stringify({ list, detail, nativeAtSenderIndex }, null, 2)}\n`,
       'utf8',
     );
   });

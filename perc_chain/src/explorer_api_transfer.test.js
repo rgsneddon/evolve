@@ -1,7 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { genericBlockLabel } from './block_display_label.js';
-import { blockAtIndex, getBlockDetail, summarizeBlock } from './explorer_api.js';
+import { getBlockDetail, summarizeBlock } from './explorer_api.js';
+import { resolveRelayBlockView } from './transfer_relay_view.js';
 
 const transferLedger = {
   blocks: [
@@ -51,7 +52,7 @@ describe('explorer transfer API', () => {
     assert.equal(transfer.memo, 'Pilot payment');
   });
 
-  it('blockAtIndex resolves relay-promoted transfer by sender relaySourceBlockIndex', () => {
+  it('resolveRelayBlockView resolves relay-promoted transfer by sender relaySourceBlockIndex', () => {
     const ledger = {
       blocks: [
         { index: 0, transactions: [] },
@@ -73,10 +74,16 @@ describe('explorer transfer API', () => {
         },
       ],
     };
-    assert.equal(blockAtIndex(ledger, 5)?.index, 5);
-    assert.equal(blockAtIndex(ledger, 2)?.index, 5);
-    assert.equal(blockAtIndex(ledger, 2)?.relaySourceBlockIndex, 2);
+    const byCanonical = resolveRelayBlockView(ledger, 5);
+    const byRelaySource = resolveRelayBlockView(ledger, 2);
+    assert.equal(byCanonical.canonicalIndex, 5);
+    assert.equal(byRelaySource.canonicalIndex, 5);
+    assert.equal(byRelaySource.matchedBy, 'relaySource');
+    assert.equal(byRelaySource.relaySourceBlockIndex, 2);
     const detail = getBlockDetail(ledger, 2);
+    assert.equal(detail.queriedIndex, 2);
+    assert.equal(detail.canonicalIndex, 5);
+    assert.equal(detail.matchedBy, 'relaySource');
     assert.equal(detail.transactions.find((tx) => tx.kind === 'transfer').id, 'tx-relay');
     assert.equal(detail.relaySourceBlockIndex, 2);
   });

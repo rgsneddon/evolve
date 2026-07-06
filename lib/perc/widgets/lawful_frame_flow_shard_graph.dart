@@ -12,6 +12,7 @@ import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_account_privacy.dart';
 import '../services/perc_block_display_label.dart';
+import '../services/perc_transfer_relay_view.dart';
 import '../services/perc_shard_density.dart';
 import '../services/perc_ward_bundler.dart';
 
@@ -32,8 +33,8 @@ class LawfulFrameFlowShardGraph extends StatefulWidget {
     List<PercBlock> blocks,
     int microblocksPerBlock,
   ) =>
-      _LawfulFrameFlowShardGraphState._transferMarkerAngles(
-        _LawfulFrameFlowShardGraphState._transferBlocks(blocks),
+      PercTransferRelayView.transferMarkerAnglesForBlocks(
+        blocks,
         microblocksPerBlock,
       );
 
@@ -347,7 +348,8 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
                               pulse:
                                   (math.sin(_spin.value * math.pi * 4) + 1) / 2,
                               progress: progress,
-                              transferMarkers: _transferMarkerAngles(
+                              transferMarkers:
+                                  PercTransferRelayView.transferMarkerAnglesForBlocks(
                                 _transferBlocks(widget.wallet.blocks),
                                 widget.wallet.microblocksPerBlock,
                               ),
@@ -606,20 +608,6 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
       blocks
           .where(PercBlockDisplayLabel.hasTransfer)
           .toList(growable: false);
-
-  static List<double> _transferMarkerAngles(
-    List<PercBlock> transferBlocks,
-    int microblocksPerBlock,
-  ) {
-    if (transferBlocks.isEmpty || microblocksPerBlock <= 0) return const [];
-    return transferBlocks
-        .map(
-          (b) =>
-              ((b.relaySourceBlockIndex ?? b.index) % microblocksPerBlock) /
-              microblocksPerBlock,
-        )
-        .toList(growable: false);
-  }
 
   Widget _transferLanePanel(AppLocalizations strings, List<PercBlock> blocks) {
     const cap = 8;
