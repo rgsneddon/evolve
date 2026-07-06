@@ -1,7 +1,8 @@
-﻿982e2e89a36c9ad24b916f2ff801eba799335b418a8164d9aa5e815a68d89f16  evolve-v3.4.0-windows-x64-setup.exe
+﻿e0b9a7bec8a075f9aa8ba8b8cbc08452af02833ff9cf9204d1c6cac9595e4470  evolve-v3.4.0-windows-x64-setup.exe
 algorithm=SHA256
 algorithm_secondary=SHA512
-sha512=6b3b7a25463e1324bd31d6ac33a4dc615da8dec7f11a2f9a4e7904546855e4d42eaadb50c3147a575517ba721e158d2da6313cd86eeabc877028a3e44dae975c
+sha512=e8f28b192fe91e3a479943534e0f2fc4d66abf6e6cc66b9f499e6bcd253b2484afc218915bd8bfdde3482cb2b859356262861a7ee673caf8685f23b9b540a655
 version=3.4.0
+build=107
 platform=windows
 url=https://rgsneddon.github.io/evolve/downloads/v3.4.0/evolve-v3.4.0-windows-x64-setup.exe
