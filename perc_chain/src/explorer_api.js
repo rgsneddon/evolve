@@ -74,6 +74,7 @@ export function summarizeBlock(block, ledger) {
   const txs = block.transactions ?? [];
   return {
     index: block.index,
+    canonicalIndex: block.index,
     relaySourceBlockIndex: block.relaySourceBlockIndex ?? null,
     timestamp: block.timestamp,
     txCount: txs.length,
@@ -84,6 +85,20 @@ export function summarizeBlock(block, ledger) {
     treasuryCycle: block.treasuryCycle ?? 1,
     microblockSeal: block.microblockSeal ?? false,
     hash: blockHashAt(ledger, block.index),
+  };
+}
+
+/** List row — same resolver contract as getBlockDetail for canonical chain indices. */
+export function summarizeListedBlock(block, ledger) {
+  const summary = summarizeBlock(block, ledger);
+  if (!summary) return null;
+  const view = resolveRelayBlockView(ledger, block.index);
+  if (!view) return summary;
+  return {
+    ...summary,
+    queriedIndex: view.queriedIndex,
+    canonicalIndex: view.canonicalIndex,
+    matchedBy: view.matchedBy,
   };
 }
 
@@ -109,20 +124,28 @@ export function listBlocks(ledger, { offset = 0, limit = 50 } = {}) {
     total,
     offset: start,
     limit,
-    blocks: slice.map((b) => summarizeBlock(b, ledger)),
+    blocks: slice.map((b) => summarizeListedBlock(b, ledger)),
   };
 }
 
 export function getBlockDetail(ledger, index) {
   const view = resolveRelayBlockView(ledger, index);
   if (!view) return null;
-  const { block, queriedIndex, canonicalIndex, relaySourceBlockIndex, matchedBy } = view;
+  const {
+    block,
+    queriedIndex,
+    canonicalIndex,
+    relaySourceBlockIndex,
+    matchedBy,
+    displayIndex,
+  } = view;
   return {
     ...summarizeBlock(block, ledger),
     queriedIndex,
     canonicalIndex,
     relaySourceBlockIndex,
     matchedBy,
+    displayIndex,
     transactions: (block.transactions ?? []).map((tx) => ({
       id: tx.id,
       kind: tx.kind,

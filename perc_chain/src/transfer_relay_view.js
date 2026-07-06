@@ -43,10 +43,14 @@ export function resolveRelayBlockView(ledger, queriedIndex) {
   return {
     block,
     queriedIndex,
+    /** Chain tip index where the promoted block lives. */
     canonicalIndex: block.index,
+    /** Sender-original index when relay-promoted; same as queriedIndex on alias hits. */
     relaySourceBlockIndex: block.relaySourceBlockIndex ?? null,
     matchedBy,
     transferTx: firstTransferTx(block),
+    /** Index callers should display for this query (alias vs canonical). */
+    displayIndex: matchedBy === 'relaySource' ? queriedIndex : block.index,
   };
 }
 

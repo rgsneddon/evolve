@@ -122,11 +122,41 @@ describe('relay API probe capture', () => {
     const transferSummary = list.blocks.find((b) => b.displayLabel === 'Manual tx');
     assert.ok(transferSummary);
     assert.equal(transferSummary.relaySourceBlockIndex, fixture.transferBlockIndex);
+    assert.equal(transferSummary.canonicalIndex, canonicalIndex);
+    assert.equal(transferSummary.matchedBy, 'canonical');
+
+    // Unoccupied sender index — alias lookup returns the same transfer tx.id.
+    const relayAliasDetail = getBlockDetail(
+      {
+        networkGenesisRevision: 2,
+        blocks: [
+          { index: 0, transactions: [] },
+          { index: 1, transactions: [{ id: 's', kind: 'scenarioReward' }] },
+          {
+            index: canonicalIndex,
+            relaySourceBlockIndex: 99,
+            timestamp: detail.timestamp,
+            triggerUsername: 'android_user',
+            transactions: detail.transactions,
+          },
+        ],
+      },
+      99,
+    );
+    assert.equal(relayAliasDetail.matchedBy, 'relaySource');
+    assert.equal(relayAliasDetail.queriedIndex, 99);
+    assert.equal(relayAliasDetail.canonicalIndex, canonicalIndex);
+    assert.equal(relayAliasDetail.displayIndex, 99);
+    assert.equal(relayAliasDetail.relaySourceBlockIndex, 99);
+    assert.equal(
+      relayAliasDetail.transactions.find((tx) => tx.kind === 'transfer').id,
+      expectedTxId,
+    );
 
     fs.mkdirSync(SCRATCH, { recursive: true });
     fs.writeFileSync(
       path.join(SCRATCH, 'local_relay_api_probe.json'),
-      `${JSON.stringify({ list, detail, nativeAtSenderIndex }, null, 2)}\n`,
+      `${JSON.stringify({ list, detail, nativeAtSenderIndex, relayAliasDetail }, null, 2)}\n`,
       'utf8',
     );
   });

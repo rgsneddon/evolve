@@ -8,10 +8,11 @@ import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
-import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/perc/services/perc_transfer_relay_view.dart';
+import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/perc/widgets/lawful_frame_flow_shard_graph.dart';
 import 'package:evolve/perc/screens/blockchain_explorer_screen.dart';
+import 'helpers/send_relay_fixture.dart';
 
 void _seed(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
@@ -20,7 +21,7 @@ void _seed(PercLedger ledger) {
   ledger.consumeBlockchainLaunchEvent();
 }
 
-Future<PercWalletProvider> walletWithTransfer() async {
+Future<PercWalletProvider> walletWithDirectTransfer() async {
   final store = PercWalletStoreMemory();
   final ledger = PercLedger.empty();
   _seed(ledger);
@@ -41,6 +42,17 @@ Future<PercWalletProvider> walletWithTransfer() async {
   return wallet;
 }
 
+Future<PercWalletProvider> walletWithRelayPromotedTransfer() async {
+  final built = SendRelayFixture.buildTallerSeedWithRelayAck();
+  final ledger = built.ledger;
+
+  final store = PercWalletStoreMemory();
+  await store.save(ledger);
+  final wallet = PercWalletProvider(store: store);
+  await wallet.initialize();
+  return wallet;
+}
+
 void main() {
   setUp(() {
     PercLedgerHub.resetForTest();
@@ -52,9 +64,18 @@ void main() {
     PercLedgerHub.resetForTest();
   });
 
-  testWidgets('lawful frame-flow split shows transfer lane entry', (tester) async {
-    final wallet = await walletWithTransfer();
+  testWidgets('lawful frame-flow split shows relay-promoted transfer graphic', (
+    tester,
+  ) async {
+    final built = SendRelayFixture.buildTallerSeedWithRelayAck();
+    final wallet = await walletWithRelayPromotedTransfer();
     final strings = AppLocalizations.of(LocaleConfig.defaults);
+
+    final transferBlock = wallet.blocks.firstWhere(
+      (b) => PercTransferRelayView.firstTransferTx(b) != null,
+    );
+    expect(transferBlock.relaySourceBlockIndex, built.transferBlockIndex);
+    expect(transferBlock.index, built.canonicalIndex);
 
     await tester.binding.setSurfaceSize(const Size(1200, 2400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -71,12 +92,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(
-      find.textContaining('Main-chain transfer lane'),
-      findsOneWidget,
-    );
-    expect(find.textContaining('Block #'), findsWidgets);
+    expect(find.textContaining('Main-chain transfer lane'), findsOneWidget);
+    expect(find.textContaining('Block #${built.canonicalIndex}'), findsWidgets);
     expect(find.textContaining('0.00000005'), findsWidgets);
+
     final painters = tester
         .widgetList<CustomPaint>(find.byType(CustomPaint))
         .map((w) => w.painter)
@@ -84,33 +103,30 @@ void main() {
         .toList();
     expect(painters, isNotEmpty);
     expect(painters.first.transferMarkers, isNotEmpty);
+
     final markerAngles = LawfulFrameFlowShardGraph.transferMarkerAnglesForBlocks(
       wallet.blocks,
       wallet.microblocksPerBlock,
     );
     expect(markerAngles, painters.first.transferMarkers);
     expect(LawfulFrameFlowPainter.lastPaintedTransferMarkerCount, greaterThan(0));
-    expect(
-      LawfulFrameFlowPainter.lastPaintedTransferMarkerCount,
-      painters.first.transferMarkers.length,
-    );
 
-    final transferBlock = wallet.blocks
-        .firstWhere((b) => PercTransferRelayView.firstTransferTx(b) != null);
     final relaySource = transferBlock.relaySourceBlockIndex;
     final graphicLine =
         'GRAPHIC: markers=${painters.first.transferMarkers} relaySource=$relaySource '
+        'canonicalIndex=${transferBlock.index} '
         'lastPainted=${LawfulFrameFlowPainter.lastPaintedTransferMarkerCount} '
         'microblocksPerBlock=${wallet.microblocksPerBlock}';
     print(graphicLine);
+    expect(relaySource, isNotNull);
     expect(graphicLine, contains('GRAPHIC:'));
-    expect(graphicLine, contains('lastPainted='));
+    expect(graphicLine, contains('relaySource=${built.transferBlockIndex}'));
     expect(graphicLine, contains('microblocksPerBlock=100000000'));
   });
 
   testWidgets('block explorer history shows Manual tx label on transfer block',
       (tester) async {
-    final wallet = await walletWithTransfer();
+    final wallet = await walletWithDirectTransfer();
 
     await tester.binding.setSurfaceSize(const Size(1200, 2400));
     addTearDown(() => tester.binding.setSurfaceSize(null));

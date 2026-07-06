@@ -50,6 +50,8 @@ class PercTransferRelayView {
       canonicalIndex: block.index,
       relaySourceBlockIndex: block.relaySourceBlockIndex,
       matchedBy: matchedBy,
+      displayIndex:
+          matchedBy == RelayMatchKind.relaySource ? queriedIndex : block.index,
       transferTx: firstTransferTx(block),
     );
   }
@@ -82,6 +84,7 @@ class RelayBlockView {
     required this.canonicalIndex,
     required this.relaySourceBlockIndex,
     required this.matchedBy,
+    required this.displayIndex,
     required this.transferTx,
   });
 
@@ -90,5 +93,6 @@ class RelayBlockView {
   final int canonicalIndex;
   final int? relaySourceBlockIndex;
   final RelayMatchKind matchedBy;
+  final int displayIndex;
   final PercTransaction? transferTx;
 }

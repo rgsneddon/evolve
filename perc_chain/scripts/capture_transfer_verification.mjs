@@ -49,7 +49,10 @@ function copyProbeArtifacts() {
     `${JSON.stringify(payload.list, null, 2)}\n`,
     'utf8',
   );
-  const detail = payload.detail;
+  const detail = payload.relayAliasDetail ?? payload.detail;
+  if (!detail?.matchedBy || detail.matchedBy !== 'relaySource') {
+    throw new Error('relayAliasDetail with matchedBy=relaySource required for detail probe');
+  }
   fs.writeFileSync(
     path.join(SCRATCH, 'live_seed_transfer_detail_probe.json'),
     `${JSON.stringify(detail, null, 2)}\n`,

@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { genericBlockLabel } from './block_display_label.js';
-import { getBlockDetail, summarizeBlock } from './explorer_api.js';
+import { getBlockDetail, listBlocks, summarizeBlock, summarizeListedBlock } from './explorer_api.js';
 import { resolveRelayBlockView } from './transfer_relay_view.js';
 
 const transferLedger = {
@@ -86,6 +86,36 @@ describe('explorer transfer API', () => {
     assert.equal(detail.matchedBy, 'relaySource');
     assert.equal(detail.transactions.find((tx) => tx.kind === 'transfer').id, 'tx-relay');
     assert.equal(detail.relaySourceBlockIndex, 2);
+  });
+
+  it('listBlocks uses summarizeListedBlock resolver contract on transfer rows', () => {
+    const ledger = {
+      blocks: [
+        { index: 0, transactions: [] },
+        { index: 1, transactions: [{ id: 's', kind: 'scenarioReward' }] },
+        {
+          index: 3,
+          relaySourceBlockIndex: 1,
+          timestamp: '2026-07-06T12:00:00.000Z',
+          transactions: [
+            {
+              id: 'tx-relay',
+              kind: 'transfer',
+              fromUsername: 'alice',
+              toUsername: 'bob',
+              amount: { microUnits: 5 },
+            },
+          ],
+        },
+      ],
+    };
+    const list = listBlocks(ledger);
+    const row = list.blocks.find((b) => b.displayLabel === 'Manual tx');
+    assert.ok(row);
+    assert.equal(row.canonicalIndex, 3);
+    assert.equal(row.relaySourceBlockIndex, 1);
+    assert.equal(row.matchedBy, 'canonical');
+    assert.equal(summarizeListedBlock(ledger.blocks[2], ledger).matchedBy, 'canonical');
   });
 
   it('getBlockDetail uses canonical index for relay-promoted canonical tip block', () => {

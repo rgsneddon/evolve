@@ -84,6 +84,7 @@ describe('resolveRelayBlockView contract', () => {
     assert.equal(detail.matchedBy, 'relaySource');
     assert.equal(detail.queriedIndex, 2);
     assert.equal(detail.canonicalIndex, 5);
+    assert.equal(detail.displayIndex, 2);
     assert.equal(detail.relaySourceBlockIndex, 2);
   });
 
