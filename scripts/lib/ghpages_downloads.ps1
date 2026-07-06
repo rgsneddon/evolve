@@ -1,33 +1,52 @@
 # Keep gh-pages download landing pages in sync without wiping versioned packages.
 
+function Invoke-GitCommand {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$Command,
+        [Parameter(Mandatory = $true)][string]$FailureMessage
+    )
+
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & $Command 2>&1 | Out-Null
+    $exitCode = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+    if ($exitCode -ne 0) {
+        throw "$FailureMessage (exit $exitCode)"
+    }
+}
+
 function Sync-GhPagesBranch {
     param(
         [string]$Branch = 'gh-pages',
         [string]$Remote = 'origin'
     )
 
-    $prevEap = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    git fetch $Remote $Branch 2>&1 | Out-Null
-    $fetchExit = $LASTEXITCODE
-    $ErrorActionPreference = $prevEap
-    if ($fetchExit -ne 0) { throw "git fetch $Remote $Branch failed (exit $fetchExit)" }
+    Invoke-GitCommand { git fetch $Remote $Branch } "git fetch $Remote $Branch failed"
 
     $tracking = "$Remote/$Branch"
     $current = git branch --show-current 2>$null
     if ($current -eq $Branch) {
-        git reset --hard $tracking
+        Invoke-GitCommand { git reset --hard $tracking } "git reset --hard $tracking failed"
     } elseif (git show-ref --verify --quiet "refs/heads/$Branch") {
-        git checkout -f $Branch
-        if ($LASTEXITCODE -ne 0) { throw "git checkout -f $Branch failed" }
-        git reset --hard $tracking
+        Invoke-GitCommand { git checkout -f $Branch } "git checkout -f $Branch failed"
+        Invoke-GitCommand { git reset --hard $tracking } "git reset --hard $tracking failed"
     } elseif (git show-ref --verify --quiet "refs/remotes/$tracking") {
-        git checkout -B $Branch $tracking
+        Invoke-GitCommand { git checkout -B $Branch $tracking } "git checkout -B $Branch failed"
     } else {
-        git checkout --orphan $Branch
+        Invoke-GitCommand { git checkout --orphan $Branch } "git checkout --orphan $Branch failed"
         git rm -rf . 2>$null | Out-Null
     }
-    if ($LASTEXITCODE -ne 0) { throw "gh-pages branch sync failed" }
+}
+
+function Get-GhPagesChecksumArtifacts {
+    param(
+        [Parameter(Mandatory = $true)][string]$StagedDir
+    )
+
+    Get-ChildItem $StagedDir -File -ErrorAction SilentlyContinue | Where-Object {
+        $_.Extension -in '.sha256', '.sha512', '.json' -or $_.Name -like 'CHECKSUMS*'
+    }
 }
 
 function Sync-GhPagesDownloads {
@@ -70,13 +89,14 @@ function Sync-GhPagesDownloads {
     $versionDst = Join-Path $downloadsDst "v$Version"
     New-Item -ItemType Directory -Path $versionDst -Force | Out-Null
 
-    # Host installers + checksum sidecars on Pages for legacy in-app update links.
-    Get-ChildItem $stagedDir -File | Where-Object {
-        $_.Extension -in '.sha256', '.sha512', '.json' -or
-        $_.Name -like 'CHECKSUMS*' -or
-        $_.Name -like '*-windows-x64-setup.exe' -or
-        $_.Name -like '*-android-setup.apk'
-    } | ForEach-Object {
+    # Checksum manifests only on Pages — full installers live on GitHub Releases.
+    foreach ($bin in @('*-android-setup.apk', '*-windows-x64-setup.exe')) {
+        Get-ChildItem $versionDst -Filter $bin -ErrorAction SilentlyContinue | ForEach-Object {
+            Remove-Item $_.FullName -Force
+        }
+    }
+
+    Get-GhPagesChecksumArtifacts -StagedDir $stagedDir | ForEach-Object {
         Copy-Item $_.FullName (Join-Path $versionDst $_.Name) -Force
     }
 }

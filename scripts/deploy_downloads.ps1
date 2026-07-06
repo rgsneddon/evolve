@@ -45,12 +45,15 @@ Sync-GhPagesBranch -Branch 'gh-pages' -Remote 'origin'
 
 $dstDir = Join-Path $GhPagesWorktree "downloads\v$Version"
 New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
-Get-ChildItem $srcDir -File | Where-Object {
-    $_.Extension -in '.sha256', '.sha512', '.json' -or
-    $_.Name -like 'CHECKSUMS*' -or
-    $_.Name -like '*-windows-x64-setup.exe' -or
-    $_.Name -like '*-android-setup.apk'
-} | ForEach-Object {
+# Remove legacy full binaries from Pages; installers are on GitHub Releases.
+foreach ($bin in @('*-android-setup.apk', '*-windows-x64-setup.exe')) {
+    Get-ChildItem $dstDir -Filter $bin -ErrorAction SilentlyContinue | ForEach-Object {
+        Remove-Item $_.FullName -Force
+        git rm -f --ignore-unmatch "downloads/v$Version/$($_.Name)" 2>$null | Out-Null
+    }
+}
+
+Get-GhPagesChecksumArtifacts -StagedDir $srcDir | ForEach-Object {
     Copy-Item $_.FullName (Join-Path $dstDir $_.Name) -Force
 }
 
