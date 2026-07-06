@@ -145,11 +145,10 @@ describe('rendezvous ledger gossip imports transfer blocks into seed store', () 
     assert.equal(imported, true);
     assert.equal(store.ledger.blocks.length, tall.blocks.length + 1);
 
-    const transferBlock = short.blocks.find((b) =>
-      (b.transactions ?? []).some((tx) => tx.kind === 'transfer'),
-    );
-    const detail = getBlockDetail(store.ledger, transferBlock.index);
+    const canonicalIndex = store.ledger.blocks.length - 1;
+    const detail = getBlockDetail(store.ledger, canonicalIndex);
     assert.ok(detail.transactions.some((tx) => tx.kind === 'transfer'));
     assert.equal(detail.transactions.find((tx) => tx.kind === 'transfer').id, 'tx-transfer-cross');
+    assert.equal(store.ledger.blocks[canonicalIndex].relaySourceBlockIndex, short.blocks.length - 1);
   });
 });

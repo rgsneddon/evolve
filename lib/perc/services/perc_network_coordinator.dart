@@ -653,7 +653,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
 
     // Sender may be offline from the live peer list but still have a relay slot.
-    for (final entry in hub.ledger.networkNodes.entries) {
+    for (final entry in hub.ledger.networkNodes.entries.toList()) {
       final nodeUser = entry.key.trim();
       if (nodeUser.isEmpty ||
           nodeUser == PercChainConstants.seedUsername ||

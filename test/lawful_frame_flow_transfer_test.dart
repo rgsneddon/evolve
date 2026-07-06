@@ -83,12 +83,15 @@ void main() {
         .toList();
     expect(painters, isNotEmpty);
     expect(painters.first.transferMarkers, isNotEmpty);
-    expect(
-      LawfulFrameFlowShardGraph.transferMarkerAnglesForBlocks(
-        wallet.blocks,
-        wallet.microblocksPerBlock,
-      ),
-      painters.first.transferMarkers,
+    final markerAngles = LawfulFrameFlowShardGraph.transferMarkerAnglesForBlocks(
+      wallet.blocks,
+      wallet.microblocksPerBlock,
+    );
+    expect(markerAngles, painters.first.transferMarkers);
+    // Graphic proof for frame_flow_transfer.log capture
+    print(
+      'GRAPHIC: LawfulFrameFlowPainter transferMarkers=${painters.first.transferMarkers} '
+      'angles=$markerAngles microblocksPerBlock=${wallet.microblocksPerBlock}',
     );
   });
 

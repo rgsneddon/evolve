@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 /// Runtime Perccent network settings (internet rendezvous + public endpoint).
@@ -48,4 +49,9 @@ class PercNetworkConfig {
   }
 
   static void resetForTest() => _cached = null;
+
+  @visibleForTesting
+  static void setCachedForTest(PercNetworkConfig config) {
+    _cached = config;
+  }
 }

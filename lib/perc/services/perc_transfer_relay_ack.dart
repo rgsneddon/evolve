@@ -19,18 +19,23 @@ class PercTransferRelayAck {
   static bool _blockHasTransfer(PercBlock block) =>
       block.transactions.any((tx) => tx.kind == PercTxKind.transfer);
 
-  /// Promotes relay transfer blocks by stable [tx.id], preserving sender
-  /// block index, blockIndex, timestamps, and fingerprints.
+  /// Promotes relay transfer blocks by stable [tx.id], re-indexing to the
+  /// canonical chain tip for monotonic explorers and frame-flow markers.
   static RelayAckResult acknowledgeRelayTransfers(
     PercLedger canonical,
     PercLedger relay,
   ) {
     if (canonical.networkGenesisRevision != relay.networkGenesisRevision) {
-      return const RelayAckResult(acknowledged: 0, transferIds: []);
+      return const RelayAckResult(
+        acknowledged: 0,
+        transferIds: [],
+        canonicalIndices: [],
+      );
     }
 
     final known = _collectTransferTxIds(canonical);
     final promoted = <String>[];
+    final canonicalIndices = <int>[];
     var acknowledged = 0;
 
     for (final block in relay.blocks) {
@@ -42,26 +47,63 @@ class PercTransferRelayAck {
       if (transferIds.isEmpty) continue;
       if (transferIds.every(known.contains)) continue;
 
-      canonical.blocks.add(_clonePreservedBlock(block));
+      final canonicalIndex = canonical.blocks.length;
+      canonical.blocks.add(_cloneForCanonicalTip(block, canonicalIndex));
       for (final id in transferIds) {
         known.add(id);
         promoted.add(id);
       }
+      canonicalIndices.add(canonicalIndex);
       acknowledged += 1;
     }
 
     return RelayAckResult(
       acknowledged: acknowledged,
       transferIds: promoted,
+      canonicalIndices: canonicalIndices,
     );
   }
 
-  static PercBlock _clonePreservedBlock(PercBlock block) {
-    final json = block.toJson();
-    final txs = (json['transactions'] as List<dynamic>)
-        .map((e) => PercTransaction.fromJson(e as Map<String, dynamic>))
+  static PercBlock _cloneForCanonicalTip(PercBlock block, int canonicalIndex) {
+    final txs = block.transactions
+        .map(
+          (tx) => PercTransaction(
+            id: tx.id,
+            kind: tx.kind,
+            amount: tx.amount,
+            timestamp: tx.timestamp,
+            fromUsername: tx.fromUsername,
+            toUsername: tx.toUsername,
+            memo: tx.memo,
+            scenarioLabel: tx.scenarioLabel,
+            percentChance: tx.percentChance,
+            blockIndex: canonicalIndex,
+            confirmations: tx.confirmations,
+            chronofluxFingerprint: tx.chronofluxFingerprint,
+            microblockIndex: tx.microblockIndex,
+            continuumScs: tx.continuumScs,
+            vortexScs: tx.vortexScs,
+            shearScs: tx.shearScs,
+            resistanceScs: tx.resistanceScs,
+            flowScs: tx.flowScs,
+          ),
+        )
         .toList(growable: false);
-    return PercBlock.fromJson({...json, 'transactions': txs.map((t) => t.toJson()).toList()});
+
+    return PercBlock(
+      index: canonicalIndex,
+      timestamp: block.timestamp,
+      transactions: txs,
+      treasuryEmitted: block.treasuryEmitted,
+      scenarioLabel: block.scenarioLabel,
+      triggerUsername: block.triggerUsername,
+      treasuryCycle: block.treasuryCycle,
+      isGenesisRenewal: block.isGenesisRenewal,
+      confirmations: block.confirmations,
+      microblockSeal: block.microblockSeal,
+      chronofluxFingerprint: block.chronofluxFingerprint,
+      microblocksSealed: block.microblocksSealed,
+    );
   }
 }
 
@@ -69,10 +111,12 @@ class RelayAckResult {
   const RelayAckResult({
     required this.acknowledged,
     required this.transferIds,
+    required this.canonicalIndices,
   });
 
   final int acknowledged;
   final List<String> transferIds;
+  final List<int> canonicalIndices;
 
   bool get ok => acknowledged > 0;
 }

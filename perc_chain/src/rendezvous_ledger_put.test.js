@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 import { LedgerStore } from './ledger_store.js';
 import { createGenesisLedger } from './genesis.js';
 import { applyRelayLedgerPut } from './rendezvous_ledger_put.js';
-import { blockAtIndex, getBlockDetail } from './explorer_api.js';
+import { getBlockDetail } from './explorer_api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
@@ -105,15 +105,14 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
     const fixture = loadSendRelayFixture();
     const senderRelay = fixture.ledger;
     const expectedTxId = fixture.transferTxId;
-    const expectedBlockIndex = fixture.transferBlockIndex;
-
     const store = new LedgerStore(tmpDir);
     let tall = launchLedger(createGenesisLedger({ genesisRevision: 2, chainId: CHAIN_ID }));
     tall = scenarioBlock(tall, tall.blocks.length, 'Seed scenario A');
     tall = scenarioBlock(tall, tall.blocks.length, 'Seed scenario B');
     store.forceReplaceLedger(tall);
+    const seedHeightBefore = tall.blocks.length;
 
-    assert.ok(senderRelay.blocks.length < tall.blocks.length);
+    assert.ok(senderRelay.blocks.length < seedHeightBefore);
 
     const ledgers = new Map();
     const addresses = new Map();
@@ -133,16 +132,19 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
       (b.transactions ?? []).some((tx) => tx.id === expectedTxId),
     );
     assert.ok(promoted);
-    assert.equal(promoted.index, expectedBlockIndex);
-    assert.equal(promoted.transactions.find((tx) => tx.kind === 'transfer').blockIndex, expectedBlockIndex);
+    const canonicalIndex = store.ledger.blocks.length - 1;
+    assert.equal(canonicalIndex, seedHeightBefore);
+    assert.equal(promoted.index, canonicalIndex);
+    assert.equal(promoted.relaySourceBlockIndex, fixture.transferBlockIndex);
+    assert.equal(promoted.transactions.find((tx) => tx.kind === 'transfer').blockIndex, canonicalIndex);
 
-    const detail = getBlockDetail(store.ledger, expectedBlockIndex);
+    const detail = getBlockDetail(store.ledger, canonicalIndex);
     assert.ok(detail);
     assert.equal(detail.displayLabel, 'Manual tx');
     const transfer = detail.transactions.find((tx) => tx.kind === 'transfer');
     assert.ok(transfer);
     assert.equal(transfer.id, expectedTxId);
-    assert.equal(blockAtIndex(store.ledger, expectedBlockIndex).index, expectedBlockIndex);
+    assert.equal(transfer.kind, 'transfer');
   });
 
   it('HTTP PUT /perc/rendezvous/ledger imports send fixture with same tx.id', async () => {
@@ -172,10 +174,12 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
       assert.equal(payload.ok, true);
       assert.equal(payload.imported, true);
 
-      const detail = getBlockDetail(store.ledger, fixture.transferBlockIndex);
+      const canonicalIndex = store.ledger.blocks.length - 1;
+      const detail = getBlockDetail(store.ledger, canonicalIndex);
       assert.equal(detail.displayLabel, 'Manual tx');
       const transfer = detail.transactions.find((tx) => tx.kind === 'transfer');
       assert.equal(transfer.id, expectedTxId);
+      assert.equal(transfer.kind, 'transfer');
     } finally {
       await new Promise((resolve) => server.close(resolve));
     }

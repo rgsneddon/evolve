@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import {
   acknowledgeRelayTransfers,
   blockHasTransfer,
+  cloneTransferBlockForCanonicalTip,
   collectTransferTxIds,
 } from './transfer_relay_ack.js';
 
 describe('acknowledgeRelayTransfers', () => {
-  it('appends transfer block preserving original index and blockIndex', () => {
+  it('re-indexes relay transfer to canonical tip preserving tx.id', () => {
     const canonical = {
       networkGenesisRevision: 2,
       blocks: [
@@ -20,10 +21,10 @@ describe('acknowledgeRelayTransfers', () => {
       networkGenesisRevision: 2,
       blocks: [
         {
-          index: 2,
+          index: 1,
           timestamp: '2026-07-06T12:00:00.000Z',
           triggerUsername: 'alice',
-          chronofluxFingerprint: 'fp-transfer-2',
+          chronofluxFingerprint: 'fp-transfer-1',
           transactions: [
             {
               id: 'tx-1',
@@ -31,7 +32,7 @@ describe('acknowledgeRelayTransfers', () => {
               fromUsername: 'alice',
               toUsername: 'bob',
               amount: { microUnits: 5 },
-              blockIndex: 2,
+              blockIndex: 1,
               timestamp: '2026-07-06T12:00:00.000Z',
             },
           ],
@@ -43,14 +44,29 @@ describe('acknowledgeRelayTransfers', () => {
     assert.equal(result.ok, true);
     assert.equal(result.acknowledged, 1);
     assert.deepEqual(result.transferIds, ['tx-1']);
+    assert.deepEqual(result.canonicalIndices, [3]);
     assert.equal(canonical.blocks.length, 4);
 
     const promoted = canonical.blocks[3];
-    assert.equal(promoted.index, 2);
-    assert.equal(promoted.chronofluxFingerprint, 'fp-transfer-2');
-    assert.equal(promoted.transactions[0].blockIndex, 2);
+    assert.equal(promoted.index, 3);
+    assert.equal(promoted.relaySourceBlockIndex, 1);
+    assert.equal(promoted.chronofluxFingerprint, 'fp-transfer-1');
+    assert.equal(promoted.transactions[0].id, 'tx-1');
+    assert.equal(promoted.transactions[0].blockIndex, 3);
     assert.equal(blockHasTransfer(promoted), true);
     assert.deepEqual([...collectTransferTxIds(canonical)], ['tx-1']);
+  });
+
+  it('cloneTransferBlockForCanonicalTip assigns monotonic index', () => {
+    const relayBlock = {
+      index: 2,
+      transactions: [{ id: 'tx-9', kind: 'transfer', blockIndex: 2 }],
+    };
+    const cloned = cloneTransferBlockForCanonicalTip(relayBlock, 7);
+    assert.equal(cloned.index, 7);
+    assert.equal(cloned.relaySourceBlockIndex, 2);
+    assert.equal(cloned.transactions[0].blockIndex, 7);
+    assert.equal(cloned.transactions[0].id, 'tx-9');
   });
 
   it('skips duplicate transfer ids already on canonical chain', () => {

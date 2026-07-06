@@ -18,7 +18,7 @@ void main() {
     final built = SendRelayFixture.build();
     final sender = built.ledger;
     final transferTxId = built.transferTxId;
-    final transferBlockIndex = built.transferBlockIndex;
+
 
     expect(
       sender.blocks.any((b) => b.transactions.any((t) => t.id == transferTxId)),
@@ -47,14 +47,15 @@ void main() {
     receiver.mergeNetworkStateFromPeer(relay);
 
     final promoted = receiver.blocks.lastWhere(PercBlockDisplayLabel.hasTransfer);
-    expect(promoted.index, transferBlockIndex);
+    final canonicalIndex = receiver.blocks.length - 1;
+    expect(promoted.index, canonicalIndex);
     expect(
       PercBlockDisplayLabel.transferTransactions(promoted).first.id,
       transferTxId,
     );
     expect(
       PercBlockDisplayLabel.transferTransactions(promoted).first.blockIndex,
-      transferBlockIndex,
+      canonicalIndex,
     );
     expect(receiver.microblocksPerBlock, PercChainConstants.microblocksPerBlock);
 
