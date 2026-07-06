@@ -625,17 +625,17 @@ class PercLedger {
       if (seen.contains(pending.id)) continue;
       final recipient = _localWalletForRemoteParty(pending.toUsername, remote);
       if (recipient == null) continue;
-      pendingInboundTransfers.add(
-        PercPendingInboundTransfer(
-          id: pending.id,
-          fromUsername: pending.fromUsername,
-          toUsername: recipient.username,
-          amount: pending.amount,
-          sentAt: pending.sentAt,
-          memo: pending.memo,
-          recipientBroughtOnlineAt: pending.recipientBroughtOnlineAt,
-        ),
+      final localPending = PercPendingInboundTransfer(
+        id: pending.id,
+        fromUsername: pending.fromUsername,
+        toUsername: recipient.username,
+        amount: pending.amount,
+        sentAt: pending.sentAt,
+        memo: pending.memo,
+        recipientBroughtOnlineAt: pending.recipientBroughtOnlineAt,
       );
+      pendingInboundTransfers.add(localPending);
+      _ensurePendingInboundTxListed(recipient, localPending);
       seen.add(pending.id);
     }
   }
@@ -657,16 +657,16 @@ class PercLedger {
         if (toUser == null || toUser.isEmpty) continue;
         final recipient = _localWalletForRemoteParty(toUser, remote);
         if (recipient == null) continue;
-        pendingInboundTransfers.add(
-          PercPendingInboundTransfer(
-            id: tx.id,
-            fromUsername: tx.fromUsername ?? '',
-            toUsername: recipient.username,
-            amount: tx.amount,
-            sentAt: tx.timestamp,
-            memo: tx.memo,
-          ),
+        final localPending = PercPendingInboundTransfer(
+          id: tx.id,
+          fromUsername: tx.fromUsername ?? '',
+          toUsername: recipient.username,
+          amount: tx.amount,
+          sentAt: tx.timestamp,
+          memo: tx.memo,
         );
+        pendingInboundTransfers.add(localPending);
+        _ensurePendingInboundTxListed(recipient, localPending);
         knownIds.add(tx.id);
       }
     }
@@ -908,7 +908,16 @@ class PercLedger {
       return acc.scenarioBlockHeight;
     }
     acc.scenarioBlockHeight++;
+    settlePendingInboundOnActivity(username);
     return acc.scenarioBlockHeight;
+  }
+
+  /// Block index used when a mutation is confirmed at seed/network height while
+  /// the local chain tip may still be shorter.
+  int _seedConfirmationBlockIndex({int? seedConfirmationBlockHeight}) {
+    final network = seedConfirmationBlockHeight ?? networkCanonicalHeight;
+    final localNext = blocks.length;
+    return network > localNext ? network : localNext;
   }
 
   void _backfillScenarioBlockHeights() {
@@ -1665,12 +1674,12 @@ class PercLedger {
     return acc;
   }
 
-  /// Reverts expired escrows and settles inbound transfers for the session user.
+  /// Reverts expired escrows and mirrors pending inbound transfers for the session user.
   void refreshPendingInboundTransfers({DateTime? now}) {
     final t = (now ?? DateTime.now()).toUtc();
     _revertExpiredPendingInbound(t);
     final u = sessionUsername;
-    if (u != null) _settlePendingInbound(u, t);
+    if (u != null) _mirrorPendingInboundToTxList(u, t);
   }
 
   void _revertExpiredPendingInbound(DateTime now) {
@@ -1683,7 +1692,11 @@ class PercLedger {
     final blockTxs = <PercTransaction>[];
     for (final pending in expired) {
       final sender = _accountFor(pending.fromUsername);
+      final receiver = _resolvePendingRecipient(pending);
       pendingInboundTransfers.remove(pending);
+      receiver?.transactions.removeWhere(
+        (tx) => tx.id == pending.id && !tx.isConfirmed,
+      );
       if (sender == null) continue;
 
       _credit(sender, pending.amount);
@@ -1738,12 +1751,45 @@ class PercLedger {
     return null;
   }
 
-  void _settlePendingInbound(String username, DateTime now) {
+  void _mirrorPendingInboundToTxList(String username, DateTime now) {
+    for (final pending in pendingInboundTransfers) {
+      if (!_pendingTargetsUser(pending, username)) continue;
+      final receiver = _resolvePendingRecipient(pending);
+      if (receiver == null) continue;
+      _ensurePendingInboundTxListed(receiver, pending);
+    }
+  }
+
+  void _ensurePendingInboundTxListed(
+    PercAccount receiver,
+    PercPendingInboundTransfer pending,
+  ) {
+    if (receiver.transactions.any((tx) => tx.id == pending.id)) return;
+    receiver.transactions.insert(
+      0,
+      PercTransaction(
+        id: pending.id,
+        kind: PercTxKind.transfer,
+        amount: pending.amount,
+        timestamp: pending.sentAt,
+        fromUsername: pending.fromUsername,
+        toUsername: pending.toUsername,
+        memo: pending.memo,
+        blockIndex: _seedConfirmationBlockIndex(),
+        confirmations: 0,
+      ),
+    );
+  }
+
+  /// Credits inbound PERC after the receiver advances their scenario block height.
+  void settlePendingInboundOnActivity(String username, {DateTime? now}) {
+    final t = (now ?? DateTime.now()).toUtc();
+    _revertExpiredPendingInbound(t);
     final window = PercChainConstants.walletOnlineReceiveDelayEffective;
     final toSettle = pendingInboundTransfers
         .where((p) => _pendingTargetsUser(p, username))
-        .where((p) => !now.isBefore(p.sentAt))
-        .where((p) => now.isBefore(p.sentAt.add(window)))
+        .where((p) => !t.isBefore(p.sentAt))
+        .where((p) => t.isBefore(p.sentAt.add(window)))
         .toList();
     if (toSettle.isEmpty) return;
 
@@ -1751,22 +1797,28 @@ class PercLedger {
       final receiver = _resolvePendingRecipient(pending);
       if (receiver == null) continue;
       _credit(receiver, pending.amount);
-      final tx = PercTransaction(
-        id: _newTxId(),
+      final confirmedTx = PercTransaction(
+        id: pending.id,
         kind: PercTxKind.transfer,
         amount: pending.amount,
-        timestamp: now,
+        timestamp: t,
         fromUsername: pending.fromUsername,
         toUsername: pending.toUsername,
         memo: pending.memo,
         blockIndex: blocks.length,
         confirmations: _txConfirmations,
       );
-      receiver.transactions.insert(0, tx);
+      final existingIdx =
+          receiver.transactions.indexWhere((tx) => tx.id == pending.id);
+      if (existingIdx >= 0) {
+        receiver.transactions[existingIdx] = confirmedTx;
+      } else {
+        receiver.transactions.insert(0, confirmedTx);
+      }
       pendingInboundTransfers.remove(pending);
       _finalizeBlock(
-        timestamp: now,
-        blockTxs: [tx],
+        timestamp: t,
+        blockTxs: [confirmedTx],
         treasuryEmitted: PercAmount.zero,
         triggerUsername: pending.toUsername,
       );
@@ -1790,6 +1842,7 @@ class PercLedger {
     required PercAmount amount,
     String? memo,
     bool? deliverInstantly,
+    int? seedConfirmationBlockHeight,
   }) {
     if (!blockchainLaunched) {
       throw StateError(
@@ -1833,6 +1886,9 @@ class PercLedger {
     _debit(sender, totalDebit);
     final renewalTxs = _renewTreasuryPoolIfNeeded(now);
     final txId = _newTxId();
+    final confirmBlockIndex = _seedConfirmationBlockIndex(
+      seedConfirmationBlockHeight: seedConfirmationBlockHeight,
+    );
     final tx = PercTransaction(
       id: txId,
       kind: PercTxKind.transfer,
@@ -1841,7 +1897,7 @@ class PercLedger {
       fromUsername: from,
       toUsername: to,
       memo: memo,
-      blockIndex: blocks.length,
+      blockIndex: confirmBlockIndex,
       confirmations: _txConfirmations,
     );
     sender.transactions.insert(0, tx);
@@ -1855,22 +1911,17 @@ class PercLedger {
 
     final recipientOnline =
         deliverInstantly ?? isWalletOnlineOnNetwork(to);
-    pendingInboundTransfers.add(
-      PercPendingInboundTransfer(
-        id: txId,
-        fromUsername: from,
-        toUsername: to,
-        amount: amount,
-        sentAt: now,
-        memo: memo,
-        recipientBroughtOnlineAt: recipientOnline ? now : null,
-      ),
+    final pending = PercPendingInboundTransfer(
+      id: txId,
+      fromUsername: from,
+      toUsername: to,
+      amount: amount,
+      sentAt: now,
+      memo: memo,
+      recipientBroughtOnlineAt: recipientOnline ? now : null,
     );
-    // Credit on this device only when the recipient is the active session here.
-    // Cross-device delivery settles when the receiver wallet syncs inbound state.
-    if (recipientOnline && sessionUsername == to) {
-      refreshPendingInboundTransfers(now: now);
-    }
+    pendingInboundTransfers.add(pending);
+    _ensurePendingInboundTxListed(receiver, pending);
 
     final blockTxs = <PercTransaction>[...renewalTxs, tx, feeTx];
     _finalizeBlock(

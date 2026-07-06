@@ -66,6 +66,9 @@ class PercChainConstants {
   /// Peer status / ledger gossip timeout.
   static const Duration networkRequestTimeout = Duration(seconds: 8);
 
+  /// Active wallets poll the seed rendezvous this often for inbound transfers.
+  static const Duration walletSeedPollInterval = Duration(seconds: 3);
+
   /// Seed treats a wallet as online while its heartbeat is newer than this (7 min).
   static const Duration peerOnlineWindow = Duration(minutes: 7);
 

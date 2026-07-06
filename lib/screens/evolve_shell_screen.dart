@@ -8,6 +8,7 @@ import '../perc/models/perc_faucet_credit_result.dart';
 import '../perc/providers/perc_wallet_provider.dart';
 import '../perc/services/perc_network_coordinator.dart';
 import '../perc/services/perc_faucet_cooldown.dart';
+import '../providers/evolve_provider.dart';
 import '../providers/locale_provider.dart';
 import '../fcg/screens/fcg_voting_screen.dart';
 import 'home_screen.dart';
@@ -30,6 +31,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
   int _index = 0;
   late bool _walletTabVisited = widget.openRegistrationOnLaunch;
   PercWalletProvider? _wallet;
+  EvolveProvider? _evolve;
 
   @override
   void initState() {
@@ -46,6 +48,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
     if (state == AppLifecycleState.resumed) {
       _wallet?.checkSessionTimeout();
       unawaited(_wallet?.refreshInboundNow());
+      unawaited(_evolve?.resumeGrokOAuthCheck());
     }
   }
 
@@ -58,6 +61,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
       _wallet = wallet;
       _wallet!.addListener(_onWalletUpdate);
     }
+    _evolve = context.read<EvolveProvider>();
   }
 
   @override

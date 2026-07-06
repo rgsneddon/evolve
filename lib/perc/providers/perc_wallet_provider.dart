@@ -386,7 +386,7 @@ class PercWalletProvider extends ChangeNotifier {
       await PercLedgerHub.instance.onWalletSessionStarted(username);
       if (captureLaunch) _captureTreasuryLaunchEvent();
       _setStatus(statusKey, statusArgs);
-      await _commit();
+      await PercLedgerHub.instance.persistLocal();
     } finally {
       _postLoginSyncing = false;
       notifyListeners();
@@ -505,7 +505,7 @@ class PercWalletProvider extends ChangeNotifier {
     }
     final normalizedAddress = PercAuth.normalizeAddress(toAddress);
     try {
-      await PercLedgerHub.instance.network.forceSyncWalletToSeed();
+      await PercLedgerHub.instance.network.quickSyncToNetworkHeight();
       final resolved =
           await PercLedgerHub.instance.network.resolveAccountByAddress(
         normalizedAddress,
@@ -527,12 +527,14 @@ class PercWalletProvider extends ChangeNotifier {
         amount: amount,
         memo: memo,
         deliverInstantly: recipientOnline,
+        seedConfirmationBlockHeight:
+            PercLedgerHub.instance.network.networkBlockHeight,
       );
       _captureGenesisRenewalEvent();
       final dest = PercBeamPrivacy.shieldAddress(normalizedAddress);
       if (_pendingGenesisRenewalNotice) {
         _setGenesisRenewalStatus();
-      } else if (recipientOnline) {
+      } else {
         _setStatus(
           'wallet_status_sent_instant',
           {
@@ -540,17 +542,6 @@ class PercWalletProvider extends ChangeNotifier {
             'symbol': PercChainConstants.currencySymbol,
             'dest': dest,
             'fee': fee.displayFixed8,
-          },
-        );
-      } else {
-        _setStatus(
-          'wallet_status_sent_queued',
-          {
-            'amount': amount.displayFixed8,
-            'symbol': PercChainConstants.currencySymbol,
-            'dest': dest,
-            'fee': fee.displayFixed8,
-            'delayKey': _receiveDelayKey(),
           },
         );
       }

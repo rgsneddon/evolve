@@ -336,6 +336,9 @@ const walletStringsFr = <String, String>{
   'wallet_tx_genesis': 'Renouvellement genèse (283M PERC Perccent)',
   'wallet_tx_microblock_seal': 'Scellement microbloc Chronoflux',
   'wallet_tx_received': 'Reçu de {user}',
+  'wallet_tx_pending': 'En attente',
+  'wallet_tx_pending_hint':
+      'Exécutez un scénario dans la section Analyse pour confirmer ce transfert et créditer votre solde.',
   'wallet_tx_revert': 'Transfert retourné',
   'wallet_tx_reward': 'Récompense d\'analyse',
   'wallet_tx_sent': 'Envoyé à {user}',
@@ -703,6 +706,9 @@ const walletStringsDe = <String, String>{
   'wallet_tx_genesis': 'Genesis-Erneuerung (283M PERC Perccent)',
   'wallet_tx_microblock_seal': 'Chronoflux-Mikroblock-Siegel',
   'wallet_tx_received': 'Erhalten von {user}',
+  'wallet_tx_pending': 'Ausstehend',
+  'wallet_tx_pending_hint':
+      'Führen Sie ein Szenario im Analyse-Bereich aus, um diese Überweisung zu bestätigen und Ihr Guthaben gutzuschreiben.',
   'wallet_tx_revert': 'Rücktransfer',
   'wallet_tx_reward': 'Analysebelohnung',
   'wallet_tx_sent': 'Gesendet an {user}',
@@ -1066,6 +1072,9 @@ const walletStringsPt = <String, String>{
   'wallet_tx_genesis': 'Renovação de Gênesis (283M PERC Perccent)',
   'wallet_tx_microblock_seal': 'Selo de microbloco Chronoflux',
   'wallet_tx_received': 'Received from {user}',
+  'wallet_tx_pending': 'Pending',
+  'wallet_tx_pending_hint':
+      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
   'wallet_tx_revert': 'Transferência devolvida',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -1421,6 +1430,9 @@ const walletStringsAr = <String, String>{
   'wallet_tx_genesis': 'Genesis renewal (283M PERC Perccent)',
   'wallet_tx_microblock_seal': 'ختم microblock Chronoflux',
   'wallet_tx_received': 'Received from {user}',
+  'wallet_tx_pending': 'Pending',
+  'wallet_tx_pending_hint':
+      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
   'wallet_tx_revert': 'Returned transfer',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -1749,6 +1761,9 @@ const walletStringsZh = <String, String>{
   'wallet_tx_genesis': 'Genesis renewal (283M PERC Perccent)',
   'wallet_tx_microblock_seal': 'Chronoflux 微块封印',
   'wallet_tx_received': 'Received from {user}',
+  'wallet_tx_pending': 'Pending',
+  'wallet_tx_pending_hint':
+      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
   'wallet_tx_revert': 'Returned transfer',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -2105,6 +2120,9 @@ const walletStringsHi = <String, String>{
   'wallet_tx_genesis': 'Genesis renewal (283M PERC Perccent)',
   'wallet_tx_microblock_seal': 'Chronoflux माइक्रोब्लॉक सील',
   'wallet_tx_received': 'Received from {user}',
+  'wallet_tx_pending': 'Pending',
+  'wallet_tx_pending_hint':
+      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
   'wallet_tx_revert': 'Returned transfer',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -2440,6 +2458,9 @@ const walletStringsJa = <String, String>{
   'wallet_tx_genesis': 'Genesis renewal (283M PERC Perccent)',
   'wallet_tx_microblock_seal': 'Chronoflux マイクロブロック封印',
   'wallet_tx_received': 'Received from {user}',
+  'wallet_tx_pending': 'Pending',
+  'wallet_tx_pending_hint':
+      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
   'wallet_tx_revert': 'Returned transfer',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',

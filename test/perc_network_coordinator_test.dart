@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/services/app_performance.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_chain_tip.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
@@ -134,5 +135,13 @@ void main() {
     final coordinator = PercNetworkCoordinator.instance;
     expect(coordinator.syncState, PercNetworkSyncState.synced);
     expect(coordinator.isSyncedToNetwork, isTrue);
+  });
+
+  test('active wallet polls seed for inbound transfers every 3 seconds', () {
+    expect(
+      AppPerformance.foregroundNetworkPoll,
+      PercChainConstants.walletSeedPollInterval,
+    );
+    expect(PercChainConstants.walletSeedPollInterval.inSeconds, 3);
   });
 }

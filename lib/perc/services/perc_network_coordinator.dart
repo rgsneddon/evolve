@@ -16,6 +16,7 @@ import 'perc_network_rendezvous.dart';
 import 'perc_node_server.dart';
 import 'perc_node_server_factory.dart';
 import 'perc_auth.dart';
+import 'perc_fly_client.dart';
 import 'perc_public_endpoint.dart';
 
 /// Aligns every wallet to the same block height over the internet.
@@ -30,8 +31,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
   final PercNetworkClient _client;
   final PercNetworkRendezvous _rendezvous;
+  final PercFlyClient _flyClient = const PercFlyClient();
   PercNodeServer? _serverOverride;
   PercNodeServer? _server;
+  bool _deepSyncRunning = false;
 
   PercNodeServer get _serverOrCreate =>
       _serverOverride ?? (_server ??= createPercNodeServer());
@@ -87,7 +90,8 @@ class PercNetworkCoordinator extends ChangeNotifier {
   Future<void> bind(PercLedgerHub hub) async {
     _hub = hub;
     hub.addListener(_onHubChanged);
-    await syncToNetworkHeight();
+    await quickSyncToNetworkHeight();
+    scheduleDeepSync();
   }
 
   void _detach() {
@@ -115,7 +119,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     _activeUsername = username;
 
     if (!disableLiveNodesForTests) {
-      await _connectToSeedNode(hub);
+      await _connectToSeedNode(hub, deep: false);
     }
 
     if (!disableLiveNodesForTests && _serverOrCreate.supportsLiveServing) {
@@ -145,11 +149,40 @@ class PercNetworkCoordinator extends ChangeNotifier {
       }
       await _registerSessionOnSeed(hub, status);
     }
-    await _syncWithRetries(hub);
     hub.ledger.refreshPendingInboundTransfers();
-    await hub.commit();
+    await hub.persistLocal();
     _startReceivePolling();
     notifyListeners();
+    scheduleDeepSync();
+  }
+
+  /// Tip-only sync — fast enough for splash/login (FlyClient).
+  Future<void> quickSyncToNetworkHeight() async {
+    await syncToNetworkHeight(quick: true);
+  }
+
+  /// Full ledger merge — runs after quick sync or on manual "Sync wallet".
+  Future<void> deepSyncToNetworkHeight() async {
+    await syncToNetworkHeight(quick: false);
+  }
+
+  /// Background catch-up after the shell is visible.
+  void scheduleDeepSync() {
+    final hub = _hub;
+    if (hub == null || disableLiveNodesForTests || _deepSyncRunning) return;
+    _deepSyncRunning = true;
+    unawaited(() async {
+      try {
+        await _syncWithRetries(hub, attempts: 2);
+        hub.ledger.refreshPendingInboundTransfers();
+        await hub.persistLocal();
+      } catch (_) {
+        // Background sync must not surface to splash/login.
+      } finally {
+        _deepSyncRunning = false;
+        notifyListeners();
+      }
+    }());
   }
 
   Future<void> onSessionEnded([String? username]) async {
@@ -187,10 +220,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
     notifyListeners();
 
     if (!disableLiveNodesForTests) {
-      await _connectToSeedNode(hub);
+      await _connectToSeedNode(hub, deep: true);
     }
     hub.ledger.refreshPendingInboundTransfers();
-    await syncToNetworkHeight();
+    await deepSyncToNetworkHeight();
 
     final session = hub.ledger.sessionUsername;
     if (!disableLiveNodesForTests &&
@@ -216,7 +249,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> syncToNetworkHeight() async {
+  Future<void> syncToNetworkHeight({bool quick = false}) async {
     final hub = _hub;
     if (hub == null) return;
 
@@ -230,7 +263,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     _syncState = PercNetworkSyncState.syncing;
     notifyListeners();
 
-    await _connectToSeedNode(hub);
+    await _connectToSeedNode(hub, deep: !quick);
 
     hub.ledger.ensureNetworkNodes(
       blockHeight: PercChainTip.height(hub.ledger),
@@ -239,7 +272,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
     await _mergeRendezvousPeers(hub.ledger);
 
-    final peerStatuses = await _collectPeerStatuses(hub.ledger);
+    final peerStatuses = quick
+        ? await _collectSeedPeerStatuses(hub.ledger)
+        : await _collectPeerStatuses(hub.ledger);
     var targetHeight = PercChainTip.height(hub.ledger);
     String? targetTip;
     String? importEndpoint;
@@ -264,7 +299,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
     _networkBlockHeight = _maxKnownHeight(peerStatuses: peerStatuses);
 
-    if (targetHeight > PercChainTip.height(hub.ledger)) {
+    if (!quick && targetHeight > PercChainTip.height(hub.ledger)) {
       var imported = false;
       if (importEndpoint != null &&
           PercPublicEndpoint.isInternetEndpoint(importEndpoint)) {
@@ -297,7 +332,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
       }
     }
 
-    await _mergeInboundFromRendezvousPeers(hub);
+    if (!quick) {
+      await _mergeInboundFromRendezvousPeers(hub);
+    }
 
     final localTip = PercChainTip.hash(hub.ledger);
     final localHeight = PercChainTip.height(hub.ledger);
@@ -427,17 +464,18 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
   }
 
+  /// Lightweight seed poll — tip probe plus rendezvous inbound merge.
   Future<void> pollForInboundTransfers() async {
     final hub = _hub;
     if (hub == null || _activeUsername == null) return;
-
-    await _heartbeatSessionToSeed();
 
     final heightBefore = PercChainTip.height(hub.ledger);
     final pendingBefore = hub.ledger.pendingInboundFor(_activeUsername!).length;
     final balanceBefore = hub.ledger.sessionBalance;
 
-    await syncToNetworkHeight();
+    await _heartbeatSessionToSeed();
+    await quickSyncToNetworkHeight();
+    await syncInboundState();
     hub.ledger.refreshPendingInboundTransfers();
 
     final changed = PercChainTip.height(hub.ledger) != heightBefore ||
@@ -445,7 +483,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
         hub.ledger.sessionBalance != balanceBefore;
 
     if (changed) {
-      await hub.commitWithoutSessionPromotion(promoteSessionNode: true);
+      await hub.persistLocal();
     }
     notifyListeners();
   }
@@ -466,6 +504,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   void _startReceivePolling() {
     if (disableLiveNodesForTests || _activeUsername == null) return;
     _receivePollTimer?.cancel();
+    unawaited(pollForInboundTransfers());
     _receivePollTimer = Timer.periodic(
       _receivePollInterval,
       (_) {
@@ -710,7 +749,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
       _hub?.ledger.onlineNetworkNodes ?? const [];
 
   /// Connects to the internet seed node on every sync (including app launch).
-  Future<void> _connectToSeedNode(PercLedgerHub hub) async {
+  Future<void> _connectToSeedNode(PercLedgerHub hub, {required bool deep}) async {
     if (disableLiveNodesForTests) return;
     final base = await _rendezvous.baseUrl();
     if (base == null) {
@@ -722,6 +761,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     final seedUser = config.seedUsername.isNotEmpty
         ? config.seedUsername
         : PercChainConstants.seedUsername;
+    final targetGenesis = config.networkGenesisRevision;
 
     var seedStatus = await _client.fetchStatus(base);
     if (seedStatus == null) {
@@ -729,20 +769,34 @@ class PercNetworkCoordinator extends ChangeNotifier {
       return;
     }
 
-    final targetGenesis = config.networkGenesisRevision;
-    seedStatus = PercNetworkStatus(
-      evolutionaryChainId: seedStatus.evolutionaryChainId,
-      blockHeight: seedStatus.blockHeight,
-      tipHash: seedStatus.tipHash,
-      revision: seedStatus.revision,
-      networkGenesisRevision: seedStatus.networkGenesisRevision >= targetGenesis
-          ? seedStatus.networkGenesisRevision
-          : targetGenesis,
-      sessionUsername: seedStatus.sessionUsername ?? seedUser,
-      endpoint: base,
+    seedStatus = _flyClient.normalizeSeedStatus(
+      seedStatus,
+      seedUser: seedUser,
+      baseEndpoint: base,
+      targetGenesis: targetGenesis,
     );
     hub.ledger.updatePeerFromStatus(seedStatus, online: true);
     _seedConnected = true;
+    _networkBlockHeight = _flyClient.networkHeightAfterProbe(
+      local: hub.ledger,
+      seedStatus: seedStatus,
+    );
+
+    if (!deep) {
+      _syncState = _flyClient.syncStateAfterQuickProbe(
+        local: hub.ledger,
+        networkHeight: _networkBlockHeight,
+      );
+      return;
+    }
+
+    if (!_flyClient.needsFullLedger(
+      local: hub.ledger,
+      seedStatus: seedStatus,
+      targetGenesis: targetGenesis,
+    )) {
+      return;
+    }
 
     var remote = await _client.fetchLedger(base);
     remote ??= await _rendezvous.fetchRelayedLedger(username: seedUser);
@@ -767,6 +821,18 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (remoteHeight > localHeight) {
       hub.importPeerLedger(remote, expectedTipHash: seedStatus.tipHash);
     }
+  }
+
+  Future<List<PercNetworkStatus>> _collectSeedPeerStatuses(
+    PercLedger ledger,
+  ) async {
+    final seedEndpoint = ledger.networkNodes[PercChainConstants.seedUsername]
+        ?.endpoint;
+    if (seedEndpoint == null || seedEndpoint.isEmpty) return const [];
+    final status = await _client.fetchStatus(seedEndpoint);
+    if (status == null) return const [];
+    ledger.updatePeerFromStatus(status, online: true);
+    return [status];
   }
 
   Future<String?> _resolveAdvertisedEndpoint() async {

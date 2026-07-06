@@ -127,7 +127,7 @@ void main() {
     );
   });
 
-  test('send credits recipient immediately when their wallet is online', () {
+  test('send credits recipient after scenario activity when their wallet is online', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -147,6 +147,10 @@ void main() {
       amount: PercAmount.fromPerc(0.00000005),
     );
 
+    expect(ledger.pendingInboundFor('bob'), hasLength(1));
+    expect(ledger.account('bob')!.balance, PercAmount.zero);
+
+    ledger.advanceScenarioBlock('bob');
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(
       ledger.account('bob')!.balance,

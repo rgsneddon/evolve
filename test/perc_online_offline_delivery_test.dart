@@ -40,7 +40,7 @@ void main() {
     expect(status.isFreshOnSeedPeer, isFalse);
   });
 
-  test('deliverInstantly false queues until receiver signs in', () {
+  test('deliverInstantly false queues until receiver advances scenario block', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -58,11 +58,15 @@ void main() {
     expect(ledger.pendingInboundFor('bob'), hasLength(1));
 
     ledger.login('bob', 'password123');
+    expect(ledger.account('bob')!.balance, PercAmount.zero);
+    expect(ledger.pendingInboundFor('bob'), hasLength(1));
+
+    ledger.advanceScenarioBlock('bob');
     expect(ledger.account('bob')!.balance, PercAmount.fromPerc(0.00000010));
     expect(ledger.pendingInboundFor('bob'), isEmpty);
   });
 
-  test('deliverInstantly true settles when recipient session is active', () {
+  test('deliverInstantly true still pending until recipient scenario activity', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -76,6 +80,10 @@ void main() {
       deliverInstantly: true,
     );
 
+    expect(ledger.pendingInboundFor('bob'), hasLength(1));
+    expect(ledger.account('bob')!.balance, PercAmount.zero);
+
+    ledger.advanceScenarioBlock('bob');
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(
       ledger.account('bob')!.balance,
@@ -104,6 +112,14 @@ void main() {
     final receiver = PercLedger.fromJson(sender.toJson());
     receiver.login('bob', 'password123');
 
+    expect(receiver.pendingInboundFor('bob'), hasLength(1));
+    expect(receiver.account('bob')!.balance, PercAmount.zero);
+    expect(
+      receiver.account('bob')!.transactions.any((tx) => !tx.isConfirmed),
+      isTrue,
+    );
+
+    receiver.advanceScenarioBlock('bob');
     expect(receiver.pendingInboundFor('bob'), isEmpty);
     expect(
       receiver.account('bob')!.balance,

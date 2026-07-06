@@ -74,7 +74,8 @@ class PercLedgerHub extends ChangeNotifier {
     _ledger = loaded;
     _revision++;
     notifyListeners();
-    await network.syncToNetworkHeight();
+    await network.quickSyncToNetworkHeight();
+    network.scheduleDeepSync();
   }
 
   Future<void> onWalletSessionStarted(String username) async {

@@ -785,6 +785,9 @@ final _en = {
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
   'wallet_tx_received': 'Received from {user}',
+  'wallet_tx_pending': 'Pending',
+  'wallet_tx_pending_hint':
+      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
   'wallet_login_language_label': 'Language',
   'wallet_password_mismatch': 'Passwords do not match',
   'wallet_endpoint_label': 'Endpoint: {endpoint}',
@@ -876,6 +879,10 @@ final _en = {
       'Complete X sign-in in your browser. This window and the browser tab will close automatically when you are connected.',
   'grok_connecting_mobile':
       'Complete X sign-in in the browser tab. You will return to Evolve automatically when your account is connected.',
+  'grok_connecting_background':
+      'X sign-in opened in your browser. Keep using Evolve — connection completes automatically when you authorize.',
+  'grok_connecting_mobile_background':
+      'X sign-in opened in your browser. Return to Evolve anytime — your account connects automatically after you authorize.',
   'grok_connect_failed': 'X connection failed — try again or leave Grok construe off.',
   'grok_connect_cancelled': 'X connection cancelled.',
   'grok_premium_required':
@@ -1606,6 +1613,9 @@ final _es = {
   'wallet_tx_reward': 'Recompensa de análisis',
   'wallet_tx_sent': 'Enviado a {user}',
   'wallet_tx_received': 'Recibido de {user}',
+  'wallet_tx_pending': 'Pendiente',
+  'wallet_tx_pending_hint':
+      'Ejecute un escenario en la sección Análisis para confirmar esta transferencia y acreditar su saldo.',
   'grok_construe_label': 'CONSTRUIR CON GROK',
   'grok_bar_hint':
       'Requiere X Premium. Escriba la pregunta y pulse COMENZAR CONSTRUCCIÓN GROK — Grok rellena ω/σ/Iτ/Jμ desde el discurso público y datos (sin repetir la pregunta).',
@@ -1656,6 +1666,10 @@ final _es = {
       'Complete el inicio de sesión de X en su navegador. Esta ventana y la pestaña del navegador se cerrarán automáticamente al conectarse.',
   'grok_connecting_mobile':
       'Complete el inicio de sesión de X en la pestaña del navegador. Volverá a Evolve automáticamente al conectarse.',
+  'grok_connecting_background':
+      'Inicio de sesión de X abierto en el navegador. Siga usando Evolve — la conexión se completa automáticamente al autorizar.',
+  'grok_connecting_mobile_background':
+      'Inicio de sesión de X abierto en el navegador. Vuelva a Evolve cuando quiera — su cuenta se conecta automáticamente tras autorizar.',
   'grok_connect_failed': 'Falló la conexión con X.',
   'grok_connect_cancelled': 'Conexión con X cancelada.',
   'grok_premium_required': 'Se requiere X Premium para construir con Grok.',

@@ -60,6 +60,8 @@ void main() {
       amount: oneCent,
     );
     ledger.login('bob', 'password123');
+    expect(ledger.account('bob')!.balance, PercAmount.zero);
+    ledger.advanceScenarioBlock('bob');
     expect(ledger.account('bob')!.balance, oneCent);
   });
 
@@ -85,13 +87,16 @@ void main() {
     expect(tx.kind, PercTxKind.transfer);
     expect(tx.amount, oneCent);
     expect(tx.toUsername, PercChainConstants.treasuryUsername);
+    expect(ledger.pendingInboundFor(PercChainConstants.treasuryUsername), hasLength(1));
+    ledger.advanceScenarioBlock(PercChainConstants.treasuryUsername);
     expect(ledger.pendingInboundFor(PercChainConstants.treasuryUsername), isEmpty);
     expect(
       treasury.transactions.any(
         (t) =>
             t.kind == PercTxKind.transfer &&
             t.amount == oneCent &&
-            t.fromUsername == 'alice',
+            t.fromUsername == 'alice' &&
+            t.isConfirmed,
       ),
       isTrue,
     );

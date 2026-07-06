@@ -21,7 +21,7 @@ void main() {
     PercChainConstants.walletOnlineReceiveDelayOverride = null;
   });
 
-  test('offline recipient receives PERC on login within receive window', () {
+  test('offline recipient receives PERC after scenario activity within receive window', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -37,7 +37,10 @@ void main() {
     expect(ledger.pendingInboundFor('bob'), hasLength(1));
 
     ledger.login('bob', 'password123');
+    expect(ledger.account('bob')!.balance, PercAmount.zero);
+    expect(ledger.pendingInboundFor('bob'), hasLength(1));
 
+    ledger.advanceScenarioBlock('bob');
     expect(
       ledger.account('bob')!.balance,
       PercAmount.fromPerc(0.00000010),

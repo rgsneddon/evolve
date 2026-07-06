@@ -14,8 +14,8 @@ import '../services/grok_auth_client.dart';
 import '../services/grok_construal_service.dart';
 
 import '../services/grok_oauth_flow.dart';
+import '../services/grok_oauth_launcher.dart';
 import '../services/grok_proxy_launcher.dart';
-import '../widgets/x_oauth_connecting_dialog.dart';
 import '../services/grok_heuristic_construal.dart';
 import '../services/narrative_construct_construal.dart';
 import '../services/grok_service_config.dart';
@@ -148,6 +148,23 @@ class EvolveProvider extends ChangeNotifier {
       final status = await _activeGrokAuth.fetchStatus();
       if (status.canConstrue) {
         grokSession = status;
+      }
+    } catch (_) {}
+  }
+
+  /// Re-syncs X OAuth after the app returns from the browser auth tab.
+  Future<void> resumeGrokOAuthCheck() async {
+    if (_grokProxyBaseUrl.isEmpty || _usesHeuristicConstrual) return;
+    try {
+      await _ensureGrokProxyReady();
+      await _syncGrokSessionFromProxy();
+      if (grokSession.canConstrue) {
+        grokPendingAuthorizeUrl = null;
+        isConnectingGrok = false;
+        statusMessage = strings
+            .t('grok_connected_as')
+            .replaceAll('{user}', grokSession.screenName);
+        notifyListeners();
       }
     } catch (_) {}
   }
@@ -499,12 +516,10 @@ class EvolveProvider extends ChangeNotifier {
         if (!context.mounted) return false;
         statusMessage = strings.t('grok_connecting');
         notifyListeners();
-        grokSession = await _awaitXOAuthConnection(
+        grokSession = await _runBackgroundXOAuth(
           context,
           authorize: authorize,
           auth: auth,
-          redirectUri: login.redirectUri,
-          clientId: login.clientId,
         );
       }
 
@@ -573,46 +588,41 @@ class EvolveProvider extends ChangeNotifier {
     }
   }
 
-  /// Opens X OAuth in the browser, polls the proxy, and auto-dismisses when connected.
-  Future<GrokSession> _awaitXOAuthConnection(
+  /// Opens X OAuth in the background so the main app stays usable.
+  Future<GrokSession> _runBackgroundXOAuth(
     BuildContext context, {
     required Uri authorize,
     required GrokAuthClient auth,
-    String redirectUri = '',
-    String clientId = '',
   }) async {
     final useMobileAuth = GrokOAuthFlow.usesMobileDeepLink;
-    final sessionFuture = useMobileAuth
-        ? GrokOAuthFlow.completeAuthorization(
-            authorizeUrl: authorize,
-            auth: auth,
-          )
-        : auth.waitForSession();
-    var result = const GrokSession();
+    if (context.mounted) {
+      _showGrokSnackBar(
+        context,
+        strings.t(
+          useMobileAuth
+              ? 'grok_connecting_mobile_background'
+              : 'grok_connecting_background',
+        ),
+      );
+    }
 
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => XOAuthConnectingDialog(
-        authorize: authorize,
-        redirectUri: redirectUri,
-        clientId: clientId,
-        sessionFuture: sessionFuture,
-        useMobileAuth: useMobileAuth,
-        title: strings.t('grok_connect_title'),
-        body: useMobileAuth
-            ? strings.t('grok_connecting_mobile')
-            : strings.t('grok_connecting'),
-        redirectHint: useMobileAuth ? strings.t('grok_oauth_redirect_hint') : '',
-        cancelLabel: strings.t('grok_dialog_cancel'),
-        onFinished: (session, tab) {
-          result = session;
-          tab?.close();
-        },
-      ),
-    );
+    OAuthLaunchHandle? tab;
+    if (!useMobileAuth) {
+      tab = GrokOAuthLauncher.prepareTab();
+      await GrokOAuthLauncher.launch(authorize, handle: tab);
+    }
 
-    return result;
+    try {
+      if (useMobileAuth) {
+        return GrokOAuthFlow.completeAuthorization(
+          authorizeUrl: authorize,
+          auth: auth,
+        );
+      }
+      return auth.waitForSession();
+    } finally {
+      tab?.close();
+    }
   }
 
   Future<void> _showGrokDialog(

@@ -1478,6 +1478,9 @@ class _WalletScreenState extends State<WalletScreen> {
     }
 
     final prefix = isOut ? '-' : '+';
+    final isPendingInbound = isIn &&
+        tx.kind == PercTxKind.transfer &&
+        !tx.isConfirmed;
 
     return Card(
       child: Padding(
@@ -1495,14 +1498,53 @@ class _WalletScreenState extends State<WalletScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (isPendingInbound)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFB74D).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            strings.t('wallet_tx_pending'),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFFFB74D),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   Text(
                     tx.timestamp.toLocal().toString().substring(0, 19),
                     style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
                   ),
+                  if (isPendingInbound) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      strings.t('wallet_tx_pending_hint'),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFFFFB74D),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
