@@ -118,6 +118,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
       ),
       padding: const EdgeInsets.all(14),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
