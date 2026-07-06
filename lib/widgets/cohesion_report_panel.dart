@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/evolve_result.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/evolve_provider.dart';
+import '../providers/locale_provider.dart';
 import '../services/conclusion_explainer.dart';
 
 import 'explainer_card.dart';
@@ -18,8 +20,8 @@ class CohesionReportPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<EvolveProvider>();
-    final locale = provider.locale;
-    final strings = provider.strings;
+    final locale = context.watch<LocaleProvider>().config;
+    final strings = AppLocalizations.of(locale);
     final report = result.cohesionReport;
     final weightedScs = result.partOne.overallScs;
     final refinedScs = result.core.refinedScs;

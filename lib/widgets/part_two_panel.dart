@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/evolve_result.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/evolve_provider.dart';
+import '../providers/locale_provider.dart';
 
 /// PART TWO — Broader Political Continuum Integration (shown after Calculate).
 class PartTwoPanel extends StatelessWidget {
@@ -14,7 +16,7 @@ class PartTwoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<EvolveProvider>();
-    final strings = provider.strings;
+    final strings = AppLocalizations.of(context.watch<LocaleProvider>().config);
     final out = provider.output;
     final copyText = _copyPayload(strings);
 

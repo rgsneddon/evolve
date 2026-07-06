@@ -103,17 +103,32 @@ class AppUpdateChecker {
   }
 
   static String updateUrlForRelease(String release) {
+    return updateUrlsForRelease(release).first;
+  }
+
+  /// Ordered download candidates — first reachable link wins in the UI.
+  static List<String> updateUrlsForRelease(String release) {
     if (kIsWeb) {
-      return 'https://rgsneddon.github.io/evolve/';
+      return const ['https://rgsneddon.github.io/evolve/'];
     }
     final tag = 'v$release';
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return '$releasesBaseUrl/$tag/evolve-v$release-android-setup.apk';
+        return [
+          '$releasesBaseUrl/$tag/evolve-v$release-android-setup.apk',
+          '$downloadsBaseUrl$tag/evolve-v$release-android-setup.apk',
+          'https://github.com/rgsneddon/evolve/releases/tag/$tag',
+          '$downloadsBaseUrl$tag/',
+        ];
       case TargetPlatform.windows:
-        return '$releasesBaseUrl/$tag/evolve-v$release-windows-x64-setup.exe';
+        return [
+          '$releasesBaseUrl/$tag/evolve-v$release-windows-x64-setup.exe',
+          '$downloadsBaseUrl$tag/evolve-v$release-windows-x64-setup.exe',
+          'https://github.com/rgsneddon/evolve/releases/tag/$tag',
+          '$downloadsBaseUrl$tag/',
+        ];
       default:
-        return downloadsBaseUrl;
+        return [downloadsBaseUrl];
     }
   }
 

@@ -40,12 +40,12 @@ function Sync-GhPagesDownloads {
     $versionDst = Join-Path $downloadsDst "v$Version"
     New-Item -ItemType Directory -Path $versionDst -Force | Out-Null
 
-    # Host checksum sidecars on Pages. Windows setup (~23 MB) is copied for legacy
-    # in-app update links; large Android APKs stay on GitHub Releases only.
+    # Host installers + checksum sidecars on Pages for legacy in-app update links.
     Get-ChildItem $stagedDir -File | Where-Object {
         $_.Extension -in '.sha256', '.sha512', '.json' -or
         $_.Name -like 'CHECKSUMS*' -or
-        $_.Name -like '*-windows-x64-setup.exe'
+        $_.Name -like '*-windows-x64-setup.exe' -or
+        $_.Name -like '*-android-setup.apk'
     } | ForEach-Object {
         Copy-Item $_.FullName (Join-Path $versionDst $_.Name) -Force
     }

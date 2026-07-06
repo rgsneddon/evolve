@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/perc/models/perc_account.dart';
+import 'package:evolve/perc/models/perc_block.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
+import 'package:evolve/perc/models/perc_pending_inbound_transfer.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_auth.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
@@ -61,6 +64,50 @@ void main() {
       ),
       throwsStateError,
     );
+  });
+
+  test('restoring local wallet remaps privacy alias transfers to real username', () {
+    final local = PercLedger.empty();
+    local.ensureTreasuryAccount();
+    local.setupTreasuryPassword('password12345');
+    local.launchBlockchain();
+    local.register('alice', 'password12345');
+    final aliceAddr = local.account('alice')!.address;
+
+    final remote = PercLedger.fromJson(local.toJson());
+    remote.accounts.clear();
+    remote.accounts['GLAL7'] = PercAccount(
+      username: 'GLAL7',
+      passwordHash: '',
+      salt: 'remote-salt',
+      address: aliceAddr,
+      passwordSet: false,
+      balance: PercAmount.fromPerc(0.5),
+      transactions: [],
+    );
+    remote.pendingInboundTransfers.add(
+      PercPendingInboundTransfer(
+        id: 'pending-1',
+        fromUsername: 'bob',
+        toUsername: 'GLAL7',
+        amount: PercAmount.smallestUnit,
+        sentAt: DateTime.now().toUtc(),
+      ),
+    );
+    remote.blocks.add(
+      PercBlock(
+        index: remote.blocks.length,
+        timestamp: DateTime.now().toUtc(),
+        transactions: const [],
+        treasuryEmitted: PercAmount.zero,
+      ),
+    );
+
+    local.importPeerLedger(remote);
+
+    expect(local.account('alice'), isNotNull);
+    expect(local.account('GLAL7'), isNull);
+    expect(local.pendingInboundFor('alice'), hasLength(1));
   });
 
   test('mergeDiscoverableAccounts stubs wallets from peer ledger', () {

@@ -1,0 +1,272 @@
+Found 270 wallet/splash/ward keys in _en
+Spanish supplement candidates (still English): 19
+splash_enter_app	Enter Evolve
+splash_preparing_wallet	Preparing wallet…
+splash_signed_in_as	Signed in as {user}
+splash_version_checking	Checking for updates…
+splash_version_latest	You have the latest version ({version})
+splash_version_update	Update available: {latest} — you have {current}
+splash_version_update_action	Get the update
+wallet_address_copied	Address copied
+wallet_address_label	Your Perccent address
+wallet_app_gate_note	Evolve unlocks after you register and receive a Perccent address on this device.
+wallet_app_gate_title	Create your wallet first
+wallet_avg_block_time	Average time per block: {time}
+wallet_back_to_sign_in	Back to sign in
+wallet_balance_label	Available balance
+wallet_block_height	Block height: {height}
+wallet_blockchain_awaiting_launch	Blockchain awaits rgsnedds sign-in on the seed treasury tab to launch.
+wallet_blockchain_launch_body	Treasurer signed in — the Perccent chain is live. Run scenarios to advance blocks.
+wallet_blockchain_launch_ok	Let's go
+wallet_blockchain_launch_title	Blockchain launched!
+wallet_burned_note	Every send network fee (0.00000001 PERC) is permanently burned — removed from circulation across the Perccent chain.
+wallet_burned_title	Burned PERC
+wallet_burned_total	Cumulative burned: {amount} PERC
+wallet_camera_permission_allow	Allow camera
+wallet_camera_permission_body	Evolve needs your camera to scan another user's PERC Receive QR code when sending Perccent coins.
+wallet_camera_permission_denied	Camera access denied — allow camera in settings to scan PERC QR codes.
+wallet_camera_permission_not_now	Not now
+wallet_camera_permission_open_settings	Open settings
+wallet_camera_permission_settings_body	Camera access is turned off for Evolve. Open settings and enable Camera to scan PERC QR codes.
+wallet_camera_permission_title	Allow camera access
+wallet_choose_username	Choose username
+wallet_chronoflux_graph_empty	Run a percent chance or social cohesion analysis to populate Chronoflux variable graphs.
+wallet_chronoflux_graph_note	Pentagon radar and five-point time series for ρt, ω, σ, Iτ, Jμ — times match Chronoflux input order across scenario draws.
+wallet_chronoflux_graph_title	Chronoflux five-point variables
+wallet_cooldown_popup_body	Your wallet already drew from treasury within the last 7 minutes. The Perccent chain advances on scenarios — your next eligible draw (and block) is in approximately {blockWait}. You can draw xx/100 PERC again after {wait}.
+wallet_cooldown_popup_ok	OK
+wallet_cooldown_popup_title	Treasury draw on cooldown
+wallet_copy_address	Copy address
+wallet_create_password	Create password
+wallet_creator_credit	Created by rgsneddon · utilising Grok · Roy D Herbert (Chronoflux Principia) · Valdok · Beam CTO Alex Romanov — Beam-privacy Perccent fork
+wallet_dapp_analysis	Analysis Gallery
+wallet_dapp_bridge	Side Chain Bridge
+wallet_dapp_bridge_note	Microblocks on the Chronoflux side chain seal into main-chain blocks at 100M.
+wallet_dapp_featured_label	MAIN DAPP · v2.0
+wallet_dapp_governance	Perccent Governance
+wallet_dapp_main_chain	Main chain
+wallet_dapp_mesh	Wallet Mesh Bridges
+wallet_dapp_mesh_peer	Concurrent mesh bridge — active
+wallet_dapp_minter	Asset Minter
+wallet_dapp_names	Perccent Name Service
+wallet_dapp_send_receive	Send / Receive
+wallet_dapp_send_receive_note	Every registered wallet can receive PERC. Send only to a PERC address.
+wallet_dapp_side_chain	Chronoflux Side Chain
+wallet_dapp_suite_subtitle	Beam-suite structure — side chain, send/receive, bridges, and governance for all users
+wallet_dapp_suite_title	Perccent dapp suite
+wallet_dapp_ward_voting	Community Ward Voting
+wallet_details_section	Chain & network details
+wallet_evolution_app	App version: {version}
+wallet_evolution_chain	Evolutionary chain: {id}
+wallet_evolution_epochs	Evolution epochs: {count}
+wallet_evolution_note	Every app version connects to the same chain — evolution verified by the Chronoflux Principia.
+wallet_evolution_principia	Chronoflux Principia: {id}
+wallet_evolution_title	Evolutionary blockchain
+wallet_evolution_versions	Connected versions: {versions}
+wallet_explorer_block_current	Block #{height}
+wallet_explorer_block_label	Current block
+wallet_explorer_confirmations	{count} confirmation(s) required — fully confirmed
+wallet_explorer_confirmed	Fully confirmed (1 block)
+wallet_explorer_cumulative_chart	Cumulative treasury minted
+wallet_explorer_degenerate_body	The same vector cannot define the frame and supply spatial drift. The drift is projected away when the projector is built from the direction it tests.
+wallet_explorer_degenerate_title	Degenerate one-vector ansatz — not an admissible frame-flow representation
+wallet_explorer_emission_chart	Treasury emission per block
+wallet_explorer_empty	No blocks yet — run a scenario to advance the chain.
+wallet_explorer_frame_flow_center	Lawful frame-flow split — frame defines the slice; drift remains inside the slice
+wallet_explorer_frame_flow_status	A2 status: lawful frame-flow split; projector built from frame only; drift remains measurable. 
+wallet_explorer_frame_flow_subtitle	Degenerate one-vector ansatz set aside; lawful continuity split retained — microblocks bundled into wards of {bundle}.
+wallet_explorer_frame_flow_title	Lawful Frame-Flow Split — 10,000 Block Wards
+wallet_explorer_genesis_renewal	Genesis renewal — cycle #{cycle} (283M PERC Perccent)
+wallet_explorer_history	BLOCK HISTORY
+wallet_explorer_label_drift	Spatial drift vμ inside slice
+wallet_explorer_label_frame	Frame normal nμ defines slicing
+wallet_explorer_label_projector	Projector h(n)μν from frame
+wallet_explorer_label_split	Split nμ vμ = 0 orthogonal
+wallet_explorer_lawful_title	Lawful variables
+wallet_explorer_legend_emission	Treasury Perccent (PERC)
+wallet_explorer_legend_txs	Transactions
+wallet_explorer_link	the blockchain explorer
+wallet_explorer_microblock_fair_usage	Fair app usage
+wallet_explorer_microblock_height	Fair-usage microblocks logged: {count}
+wallet_explorer_microblock_log_count	Log entries: {count}
+wallet_explorer_microblock_log_empty	No microblocks yet — type in the analysis fields after blockchain launch.
+wallet_explorer_microblock_log_entry	#{index} ward {ward} · μ{pos} · {time} · {label}{extra}
+wallet_explorer_microblock_log_note	Each microblock records one fair app interaction — keystrokes and field edits on the analysis form.
+wallet_explorer_microblock_log_title	Fair-usage microblock log
+wallet_explorer_microblock_log_truncated	Showing last {shown} of {total} logged microblocks
+wallet_explorer_shard_count	{visible} / {visible} wards in field — {lit} bundled in current seal cycle
+wallet_explorer_subtitle	Graph-based Perccent chain dapp
+wallet_explorer_title	the blockchain explorer
+wallet_explorer_trigger	Triggered by {user}
+wallet_explorer_tx_count	{count} transaction(s)
+wallet_explorer_ward_cycle	Current cycle: {completed} / {total} wards bundled — ward #{ward} filling ({pending} / {bundle} microblocks)
+wallet_explorer_ward_field_count	{wards} wards in field — {lit} bundled ({bundle} microblocks each)
+wallet_explorer_ward_legend	Green = sealed ward · Blue = ward in progress · Dark = pending
+wallet_explorer_ward_lifetime	Lifetime wards sealed: {count}
+wallet_explorer_ward_pending	Active ward #{ward}: {pending} / {bundle} microblocks
+wallet_explorer_ward_seal_progress	Seal cycle: {completed} / {total} block wards — ward filling {pending} / {bundle} microblocks
+wallet_explorer_ward_subtitle	Each ward seals {bundle} Chronoflux microblocks. 10,000 wards complete one main-chain seal cycle.
+wallet_explorer_ward_title	Ward bundles — dynamic microblock explorer
+wallet_faucet_base	Base reward
+wallet_faucet_bonus	Outcome bonus
+wallet_faucet_cooldown	Next treasury draw in approximately {wait}
+wallet_faucet_note	Tap Calculate percent chance or Calculate social cohesion score to draw xx/100 PERC from treasury — xx is the two-digit outcome (percent or SCS) — once every 7 minutes.
+wallet_faucet_outcome	Outcome reward
+wallet_faucet_title	Analysis faucet
+wallet_faucet_total	Total credited
+wallet_login_note	Sign in with the username you chose when you created your wallet.
+wallet_login_title	Evolve Wallet sign-in
+wallet_logout	Sign out
+wallet_mesh_connected	Connected to {count} other wallet(s) on the shared Perccent chain
+wallet_mesh_incomplete	Mesh linking wallets…
+wallet_mesh_network_synced	Seed connected — internet height {height} — node {node}
+wallet_mesh_network_syncing	Syncing to internet block height {height}…
+wallet_mesh_peers	Peers: {peers}
+wallet_mesh_title	Concurrent wallet mesh
+wallet_opening_error	The wallet could not open. Check your connection and try again.
+wallet_opening_message	Your Perccent wallet is loading. Please wait…
+wallet_opening_retry	Try again
+wallet_opening_title	Opening wallet
+wallet_password	Password
+wallet_password_confirm	Confirm password
+wallet_privacy_note	Perccent is forked from Beam privacy — confidential addresses and shielded balances on-device.
+wallet_privacy_title	Beam-confidential Perccent
+wallet_receive	Receive
+wallet_receive_note	Others can scan this QR code or copy your PERC address to send Perccent (PERC) to you.
+wallet_receive_qr_hint	Scan to send PERC
+wallet_receive_title	Receive Perccent
+wallet_register	Create account
+wallet_register_note	Pick a username and password — your Perccent address is generated from them on this device.
+wallet_register_title	Create your wallet
+wallet_scenario_block_capped	Scenario block cap reached ({max} scenario checks)
+wallet_scenario_block_height	Your scenario block: {current} / {max}
+wallet_seed_block_anchor	Seed anchor: block {block}
+wallet_send	Send
+wallet_send_address_pick	Or pick a known address
+wallet_send_amount	Amount (PERC)
+wallet_send_amount_helper	Divisible to 0.00000001 PERC (1 cent). All wallets can receive any amount down to 1 cent.
+wallet_send_amount_hint	0.00000001
+wallet_send_confirm	Send Perccent
+wallet_send_memo	Memo (optional)
+wallet_send_scan_body	Point your camera at another user's Receive QR code to fill in their PERC address.
+wallet_send_scan_camera_error	Could not access the camera. Allow camera permission in device settings, then try again.
+wallet_send_scan_cancel	Cancel scan
+wallet_send_scan_invalid	That QR code is not a valid PERC address.
+wallet_send_scan_qr	Scan QR code
+wallet_send_scan_ready	Camera ready — align the QR code in the frame.
+wallet_send_scan_title	Scan PERC address
+wallet_send_scan_unavailable	QR scan needs a phone or tablet camera (Android/iOS). Paste the PERC address instead.
+wallet_send_title	Send Perccent
+wallet_send_to	To PERC address
+wallet_send_to_hint	Paste or scan the recipient PERC address
+wallet_session_expired	Your wallet session ended after 7 minutes away from the seed connection — sign in again to run SCS analyses.
+wallet_sidechain_height	Side-chain microblock height
+wallet_sidechain_id	Side chain ID
+wallet_sidechain_last_seal	Last seal block
+wallet_sidechain_main_height	Parent main-chain height
+wallet_sidechain_parent	Parent chain
+wallet_sidechain_pending	Seal cycle: {completed} / {total} wards — {pending} / {bundle} microblocks in active ward
+wallet_sign_in	Sign in
+wallet_signed_in_as	Signed in as {user}
+wallet_staking_earned	Total staking earned: {amount} PERC
+wallet_staking_note	Confirmed held PERC earns 5 cent each block (10% of the 50 cent base) after 1 block confirmation. 1 PERC = 100,000,000 cent (0.00000001 PERC each).
+wallet_staking_title	Cumulative staking
+wallet_subtitle	Perccent chain · scenario-driven treasury
+wallet_supply_infinite	Infinite continuum supply (∞ PERC)
+wallet_sync_button	Sync wallet
+wallet_sync_partial	Partial sync — local height {local}, network height {network}
+wallet_sync_seed_offline	Cannot reach the seed node — check your internet connection and try again
+wallet_sync_success	Wallet synced to seed — block height {height}
+wallet_sync_syncing	Syncing…
+wallet_time_confirmations_title	Chronoflux TIME confirmations
+wallet_title	Evolve Wallet
+wallet_transactions_empty	Run a percent-chance or social-cohesion calculation on Analysis to receive your first Perccent faucet payout.
+wallet_transactions_title	RECENT TRANSACTIONS
+wallet_treasury_cycle	Treasury cycle #{cycle}
+wallet_treasury_inflation_critical	Treasury at 1 cent reserve — pool renewal mint on next scenario
+wallet_treasury_inflation_epoch	Last inflation epoch: {time}
+wallet_treasury_inflation_next	Time to next inflation: {wait}
+wallet_treasury_inflation_ready	Inflation ready — run a scenario
+wallet_treasury_manual_send_note	Treasury is active — 0.00000001 PERC/min emission and scenario faucet payouts continue. Manual sends from evolve_treasury are disabled.
+wallet_treasury_minted	{minted} PERC minted ({pct}% continuum)
+wallet_treasury_note	Perccent chain advances on scenario analysis — not on Grok construal or field keystrokes. Treasury earns 0.00000001 PERC per elapsed minute — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.
+wallet_treasury_offline_note	Treasury awaits blockchain launch. Run analysis after launch to draw from the faucet.
+wallet_treasury_pool	Treasury pool (faucet): {amount} PERC
+wallet_treasury_remaining	Treasury remaining: {amount} PERC
+wallet_treasury_send_locked	Manual sends from evolve_treasury are disabled. Emission and faucet payouts continue.
+wallet_treasury_setup_link	Treasury holder? Secure treasury account
+wallet_treasury_setup_note	Treasury holder receives all scenario-driven emissions. Create your password now (first use only).
+wallet_treasury_setup_title	Secure treasury account
+wallet_treasury_title	Treasury emission
+wallet_treasury_username	Treasury username
+wallet_tx_fee_burned	Network fee burned
+wallet_tx_genesis	Genesis renewal (283M PERC Perccent)
+wallet_tx_received	Received from {user}
+wallet_tx_revert	Returned transfer
+wallet_tx_reward	Analysis reward
+wallet_tx_sent	Sent to {user}
+wallet_tx_staking	Staking reward
+wallet_tx_treasury	Treasury emission
+wallet_username	Username
+wallet_username_hint	e.g. parish_ward_42
+wallet_username_rules	3–24 characters: lowercase letters, numbers, underscores.
+ward_conclusion_link_button	Vote on this conclusion in Community Ward
+ward_conclusion_link_grok_badge	Includes Grok construal context
+ward_conclusion_link_grok_note	Grok construal:
+ward_conclusion_link_loaded	Loaded from Evolve analysis conclusion
+ward_conclusion_link_question	Posed question
+ward_conclusion_link_summary_header	Evolve analysis — ward proposal summary
+ward_conclusion_link_vote_prefill_header	My vote is informed by this Evolve analysis:
+ward_dual_populate_button	Populate proposal & vote fields
+ward_dual_populated_from_link_ok	Linked conclusion enriched with % and SCS — proposal and vote fields updated.
+ward_dual_populated_ok	Proposal and vote fields filled with % and SCS combined.
+ward_dual_populator_from_link_note	Using the Evolve conclusion link — runs % and SCS for that scenario and fills proposal and vote fields with both.
+ward_dual_populator_note	Run percent chance and social cohesion score together, then populate proposal and vote fields with both metrics.
+ward_dual_populator_title	Dual analysis — % and SCS
+ward_dual_rerun_from_link_button	Re-run % + SCS for linked scenario
+ward_dual_run_button	Run % + SCS analysis
+ward_dual_summary_header	Evolve dual analysis — ward proposal summary
+ward_dual_vote_prefill_header	My vote is informed by this dual Chronoflux analysis:
+ward_grok_available	Grok construal available for ward analysis
+ward_grok_heuristic_mode	Heuristic Grok construal — discourse levers applied
+ward_grok_live_connected	Live Grok connected — ω/σ/Iτ/Jμ filled before analysis
+ward_grok_use_construal	Use Grok construal
+ward_proposal_by	Proposed by {user}
+ward_proposal_days_left	{days} day(s) left in listing
+ward_proposal_listed_ok	Proposal listed for all wallets — voting open for 10 days.
+ward_proposal_submit_button	List for 10 days
+ward_proposal_submit_title	Submit a ward proposal
+ward_proposal_summary_label	Proposal summary
+ward_proposal_title_label	Proposal title
+ward_proposal_ward_label	Community ward
+ward_scenario_free_note	Open checker only — does not credit PERC. Use the Analysis tab for faucet rewards.
+ward_scenario_intro	Free open scenario probability checker — runs both percent chance and social cohesion score (SCS) from the Chronoflux paper without treasury draw.
+ward_scenario_need_question	Enter a posed question to run the checker.
+ward_scenario_percent_title	Percent chance
+ward_scenario_question_hint	What outcome should the ward weigh?
+ward_scenario_question_label	Posed question
+ward_scenario_run	Run open scenario check
+ward_scenario_scs_title	Social cohesion score
+ward_scenario_topic_label	Scenario topic (optional)
+ward_voting_abstain	Abstain
+ward_voting_against	Against
+ward_voting_already_cast	This wallet has voted — one vote per wallet per proposal.
+ward_voting_cast_ok	Vote and comment recorded on the ward ledger.
+ward_voting_comment_choice_abstain	Abstain
+ward_voting_comment_choice_against	Against
+ward_voting_comment_choice_for	For
+ward_voting_comment_hint	Explain how Chronoflux analysis informs your vote…
+ward_voting_comment_label	Your comment
+ward_voting_for	For
+ward_voting_intro	Submit a proposal for everyone to see for 10 days. Each wallet may cast one vote per proposal.
+ward_voting_login_required	Sign in to submit a proposal or cast your vote. Live results below are public — no vote required to view.
+ward_voting_no_ballots_yet	No votes yet — results will appear here as wallets vote.
+ward_voting_no_proposals	No open ward proposals at this time.
+ward_voting_public_comments	Public comments
+ward_voting_public_results_note	Vote tallies and comments update for every wallet as ballots are cast.
+ward_voting_public_results_title	Live public results
+ward_voting_select_proposal	Select proposal
+ward_voting_tab_scenario	Scenario checker
+ward_voting_tab_vote	Vote
+ward_voting_total_ballots	{count} wallet(s) voted
+ward_voting_vote_locked	Vote recorded for this wallet

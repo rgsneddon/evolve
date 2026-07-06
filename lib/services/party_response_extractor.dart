@@ -1,3 +1,5 @@
+import 'evolve_engine_runner.dart';
+
 /// Attributed party response extracted from a linked narrative.
 class ExtractedPartyResponse {
   const ExtractedPartyResponse({required this.party, required this.excerpt});
@@ -99,7 +101,7 @@ class PartyResponseExtractor {
         if (seen.contains(key)) continue;
         seen.add(key);
         found.add(ExtractedPartyResponse(party: party, excerpt: excerpt));
-        if (found.length >= 6) return found;
+        if (found.length >= kMaxPartyResponseFragments) return found;
       }
     }
 

@@ -67,9 +67,9 @@ const walletStringsFr = <String, String>{
   'wallet_balance_label': 'Solde disponible',
   'wallet_block_height': 'Hauteur de bloc : {height}',
   'wallet_blockchain_awaiting_launch':
-      'La blockchain attend la connexion rgsnedds sur l\'onglet trésorerie seed pour le lancement.',
+      'Connexion au nœud semence Perccent — les récompenses de scénario s\'activent une fois la synchronisation terminée.',
   'wallet_blockchain_launch_body':
-      'Trésorier connecté — la chaîne Perccent est active. Lancez des scénarios pour avancer les blocs.',
+      'La chaîne Perccent est active. Lancez des scénarios pour avancer les blocs.',
   'wallet_blockchain_launch_ok': 'C\'est parti',
   'wallet_blockchain_launch_title': 'Blockchain lancée !',
   'wallet_burned_note':
@@ -433,9 +433,9 @@ const walletStringsDe = <String, String>{
   'wallet_balance_label': 'Verfügbares Guthaben',
   'wallet_block_height': 'Blockhöhe: {height}',
   'wallet_blockchain_awaiting_launch':
-      'Blockchain wartet auf die rgsnedds-Anmeldung auf der Registerkarte „Seed Treasury“, um gestartet zu werden.',
+      'Verbindung zum live Perccent-Seed-Knoten — Szenario-Belohnungen nach Abschluss der Synchronisation.',
   'wallet_blockchain_launch_body':
-      'Schatzmeister angemeldet – die Perccent-Kette ist live. Führen Sie Szenarien aus, um Blöcke voranzutreiben.',
+      'Die Perccent-Kette ist live. Führen Sie Szenarien aus, um Blöcke voranzutreiben.',
   'wallet_blockchain_launch_ok': 'Lass uns gehen',
   'wallet_blockchain_launch_title': 'Blockchain gestartet!',
   'wallet_burned_note':
@@ -799,9 +799,9 @@ const walletStringsPt = <String, String>{
   'wallet_balance_label': 'Saldo disponível',
   'wallet_block_height': 'Altura do bloco: {height}',
   'wallet_blockchain_awaiting_launch':
-      'O Blockchain aguarda o login do rgsnedds na guia do tesouro inicial para ser lançado.',
+      'A ligar ao nó semilla Perccent — recompensas de cenário após sincronização.',
   'wallet_blockchain_launch_body':
-      'Tesoureiro conectado — a cadeia Perccent está ativa. Execute cenários para avançar blocos.',
+      'A cadeia Perccent está ativa. Execute cenários para avançar blocos.',
   'wallet_blockchain_launch_ok': 'Vamos',
   'wallet_blockchain_launch_title': 'Blockchain lançado!',
   'wallet_burned_note':
@@ -1161,9 +1161,9 @@ const walletStringsAr = <String, String>{
   'wallet_balance_label': 'الرصيد المتاح',
   'wallet_block_height': 'ارتفاع الكتلة: {height}',
   'wallet_blockchain_awaiting_launch':
-      'ينتظر Blockchain تسجيل الدخول rgsnedds في علامة تبويب خزانة البذور ليتم إطلاقه.',
+      'جارٍ الاتصال بعقدة البذرة Perccent — تُفعَّل مكافآت السيناريو بعد اكتمال المزامنة.',
   'wallet_blockchain_launch_body':
-      'قام أمين الصندوق بتسجيل الدخول — سلسلة Perccent موجودة. قم بتشغيل السيناريوهات لتقدم الكتل.',
+      'سلسلة Perccent نشطة. شغّل السيناريوهات لتقدّم الكتل.',
   'wallet_blockchain_launch_ok': 'دعنا نذهب',
   'wallet_blockchain_launch_title': 'تم إطلاق سلسلة الكتل!',
   'wallet_burned_note':
@@ -1515,8 +1515,8 @@ const walletStringsZh = <String, String>{
   'wallet_back_to_sign_in': '返回登录',
   'wallet_balance_label': '可用余额',
   'wallet_block_height': '区块高度：{height}',
-  'wallet_blockchain_awaiting_launch': '区块链等待rgsnedds在种子金库选项卡上登录才能启动。',
-  'wallet_blockchain_launch_body': '财务主管登录 — Perccent 链已上线。运行场景以推进块。',
+  'wallet_blockchain_awaiting_launch': '正在连接 Perccent 种子节点 — 同步完成后解锁情景奖励。',
+  'wallet_blockchain_launch_body': 'Perccent 链已上线。运行情景分析以推进区块。',
   'wallet_blockchain_launch_ok': '我们走吧',
   'wallet_blockchain_launch_title': '区块链上线！',
   'wallet_burned_note': '每笔发送网络费用 (0.00000001 PERC) 都会被永久销毁——从Perccent链的流通中删除。',
@@ -1845,9 +1845,9 @@ const walletStringsHi = <String, String>{
   'wallet_balance_label': 'उपलब्ध शेष राशि',
   'wallet_block_height': 'ब्लॉक ऊंचाई: {height}',
   'wallet_blockchain_awaiting_launch':
-      'ब्लॉकचेन लॉन्च होने के लिए सीड ट्रेजरी टैब पर rgsnedds साइन-इन का इंतजार कर रहा है।',
+      'लाइव Perccent सीड से कनेक्ट हो रहा है — सिंक पूरा होने पर परिदृश्य पुरस्कार सक्रिय होंगे।',
   'wallet_blockchain_launch_body':
-      'कोषाध्यक्ष ने हस्ताक्षर किए - Perccent श्रृंखला लाइव है। ब्लॉकों को आगे बढ़ाने के लिए परिदृश्य चलाएँ।',
+      'Perccent श्रृंखला लाइव है। ब्लॉक आगे बढ़ाने के लिए परिदृश्य चलाएँ।',
   'wallet_blockchain_launch_ok': 'चल दर',
   'wallet_blockchain_launch_title': 'ब्लॉकचेन लॉन्च!',
   'wallet_burned_note':
@@ -2199,8 +2199,8 @@ const walletStringsJa = <String, String>{
   'wallet_back_to_sign_in': 'サインインに戻る',
   'wallet_balance_label': '利用可能残高',
   'wallet_block_height': 'ブロックの高さ: {height}',
-  'wallet_blockchain_awaiting_launch': 'ブロックチェーンは、シード トレジャリー タブで rgsnedds にサインインして起動するのを待ちます。',
-  'wallet_blockchain_launch_body': '財務担当者がサインインしました — Perccent チェーンはライブです。シナリオを実行してブロックを進めます。',
+  'wallet_blockchain_awaiting_launch': 'ライブ Perccent シードに接続中 — 同期完了後にシナリオ報酬が有効になります。',
+  'wallet_blockchain_launch_body': 'Perccent チェーンはライブです。シナリオを実行してブロックを進めてください。',
   'wallet_blockchain_launch_ok': 'さあ行こう',
   'wallet_blockchain_launch_title': 'ブロックチェーンがスタートしました！',
   'wallet_burned_note': 'すべての送信ネットワーク料金 (0.00000001 PERC) は永久に焼かれ、Perccent チェーン全体の流通から削除されます。',

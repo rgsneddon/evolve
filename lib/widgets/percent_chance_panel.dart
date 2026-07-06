@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../l10n/localized_output.dart';
 import '../models/evolve_result.dart';
 import '../models/part_percent_breakdown.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/evolve_provider.dart';
+import '../providers/locale_provider.dart';
 import '../services/conclusion_explainer.dart';
 import '../services/question_semantics.dart';
 
@@ -21,8 +23,8 @@ class PercentChancePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<EvolveProvider>();
-    final locale = provider.locale;
-    final strings = provider.strings;
+    final locale = context.watch<LocaleProvider>().config;
+    final strings = AppLocalizations.of(locale);
     final compact = MediaQuery.sizeOf(context).width < 520;
     final split = ConclusionExplainer.splitGrokReply(result.grokStyleReply, locale);
     final posedSubject = QuestionSemantics.fromText(

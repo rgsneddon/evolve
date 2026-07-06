@@ -9,9 +9,6 @@ import {
   listBlocks,
 } from './explorer_api.js';
 import { LedgerStore, blockHeight, tipHash } from './ledger_store.js';
-import { TreasuryAdmin } from './treasury_admin.js';
-import { buildTreasuryWalletView } from './treasury_api.js';
-import { launchBlockchainFromTreasuryLogin } from './blockchain_launch.js';
 import { regenerateTreasuryIfLow } from './treasury_regeneration.js';
 import {
   obfuscateUsername,
@@ -68,11 +65,6 @@ function findRelayEntryByAddress(address) {
 }
 
 const store = new LedgerStore(DATA_DIR);
-const treasuryAdmin = new TreasuryAdmin(DATA_DIR);
-
-function requireTreasuryAuth(req) {
-  return treasuryAdmin.sessionFromAuthHeader(req.headers.authorization ?? '');
-}
 
 function publicEndpoint() {
   const explicit = (process.env.PERC_PUBLIC_ENDPOINT ?? process.env.RENDER_EXTERNAL_URL ?? '').trim();
@@ -236,82 +228,6 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
-
-  if (req.method === 'GET' && url.pathname === '/api/treasury/auth/setup-needed') {
-    return json(res, 200, {
-      needsPasswordSetup: treasuryAdmin.needsPasswordSetup(),
-      blockchainLaunched:
-        treasuryAdmin.isBlockchainLaunched() || (store.ledger?.blockchainLaunched ?? false),
-    });
-  }
-
-  if (req.method === 'POST' && url.pathname === '/api/treasury/auth/login') {
-    const data = await readBody(req);
-    const result = treasuryAdmin.login({
-      username: data.username,
-      password: data.password,
-      confirmPassword: data.confirmPassword,
-    });
-    if (!result.ok) {
-      return json(res, result.needsSetup ? 400 : 401, result);
-    }
-
-    let launch = null;
-    if (!treasuryAdmin.isBlockchainLaunched()) {
-      launch = launchBlockchainFromTreasuryLogin(store, {
-        adminPassword: data.password,
-        launchedBy: result.username,
-      });
-      if (launch.ok && launch.launched) {
-        treasuryAdmin.markBlockchainLaunched();
-        await registerSeed();
-      } else if (!launch.ok) {
-        return json(res, 500, { ...result, launchError: launch.error });
-      }
-    }
-
-    return json(res, 200, {
-      ...result,
-      blockchainLaunched: treasuryAdmin.isBlockchainLaunched(),
-      launch,
-    });
-  }
-
-  if (req.method === 'POST' && url.pathname === '/api/treasury/auth/logout') {
-    const session = requireTreasuryAuth(req);
-    const data = await readBody(req);
-    treasuryAdmin.logout(data.token ?? (req.headers.authorization ?? '').replace('Bearer ', ''));
-    return json(res, 200, { ok: true, username: session?.username ?? null });
-  }
-
-  if (req.method === 'GET' && url.pathname === '/api/treasury/auth/status') {
-    const session = requireTreasuryAuth(req);
-    if (!session) return json(res, 401, { ok: false, authenticated: false });
-    return json(res, 200, {
-      ok: true,
-      authenticated: true,
-      username: session.username,
-      needsPasswordSetup: treasuryAdmin.needsPasswordSetup(),
-    });
-  }
-
-  if (req.method === 'GET' && url.pathname === '/api/treasury/wallet') {
-    const session = requireTreasuryAuth(req);
-    if (!session) return json(res, 401, { ok: false, error: 'Treasury login required' });
-    return json(res, 200, buildTreasuryWalletView(store));
-  }
-
-  if (req.method === 'POST' && url.pathname === '/api/treasury/bootstrap-epoch') {
-    const session = requireTreasuryAuth(req);
-    if (!session) return json(res, 401, { ok: false, error: 'Treasury login required' });
-    const result = store.bootstrapEpoch({ seedUsername: SEED_USERNAME });
-    if (!result.ok) return json(res, 400, result);
-    peers.clear();
-    ledgers.clear();
-    addresses.clear();
-    await registerSeed();
-    return json(res, 200, result);
-  }
 
   if (req.method === 'GET' && url.pathname === '/api/network') {
     return json(
@@ -555,10 +471,6 @@ server.listen(PORT, bindHost, async () => {
   if (store.ensureGenesisRevision(CHAIN_GENESIS_REVISION)) {
     peers.clear();
     ledgers.clear();
-    if (treasuryAdmin.record) {
-      treasuryAdmin.record.blockchainLaunched = false;
-      treasuryAdmin.save();
-    }
     console.log('Chain reset to block 0 with new treasury wallet');
   }
   const annualBootstrap = store.maybeAnnualBootstrap({ seedUsername: SEED_USERNAME });

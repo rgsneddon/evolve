@@ -83,7 +83,11 @@ class SplashVersionStatus extends StatelessWidget {
                     decoration: TextDecoration.underline,
                   ),
                   recognizer: TapGestureRecognizer()
-                    ..onTap = () => _openUpdate(status.updateUrl),
+                    ..onTap = () => _openUpdate(
+                          AppUpdateChecker.updateUrlsForRelease(
+                            status.latestRelease,
+                          ),
+                        ),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -115,10 +119,16 @@ class SplashVersionStatus extends StatelessWidget {
     );
   }
 
-  Future<void> _openUpdate(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _openUpdate(List<String> urls) async {
+    for (final url in urls) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        final opened = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (opened) return;
+      }
     }
   }
 }

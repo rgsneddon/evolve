@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/party_response_scs.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/evolve_provider.dart';
+import '../providers/locale_provider.dart';
 
 /// Per-party SCS breakdown when a linked narrative relies on attributed responses.
 class PartyResponsePanel extends StatelessWidget {
@@ -15,7 +17,7 @@ class PartyResponsePanel extends StatelessWidget {
     if (!refinement.applied) return const SizedBox.shrink();
 
     final provider = context.watch<EvolveProvider>();
-    final strings = provider.strings;
+    final strings = AppLocalizations.of(context.watch<LocaleProvider>().config);
     final out = provider.output;
 
     return Container(

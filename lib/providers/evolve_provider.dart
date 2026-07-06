@@ -21,6 +21,7 @@ import '../services/narrative_construct_construal.dart';
 import '../services/grok_service_config.dart';
 import '../services/narrative_link_reader.dart';
 import '../services/evolve_engine.dart';
+import '../services/evolve_engine_runner.dart';
 import '../services/input_edit_guard.dart';
 import '../services/pathway_construal_service.dart';
 
@@ -660,9 +661,7 @@ class EvolveProvider extends ChangeNotifier {
     locale = config;
 
     if (result != null && (regionChanged || languageChanged)) {
-      _reanalyze();
-      _persistCurrentMode();
-      statusMessage = strings.t('locale_updated');
+      _reanalyzeAndPersist(statusMessage: strings.t('locale_updated'));
     } else if (regionChanged || languageChanged) {
       _persistCurrentMode();
     }
@@ -831,47 +830,25 @@ class EvolveProvider extends ChangeNotifier {
         working = await _fetchAndApplyConstrual(working, persistToForm: true);
       }
 
-      await Future<void>.delayed(const Duration(milliseconds: 150));
-      _reanalyze(working);
+      await _reanalyze(working);
       _persistCurrentMode();
-      if (result != null) {
-        final recorder = scenarioRunRecorder;
-        if (recorder != null) {
-          await recorder(
-            input: working,
-            locale: locale,
-            mode: mode,
-            result: result!,
-          );
-        }
-        if (analysisRewardHandler != null) {
-          final core = result!.core;
-          final outcomeScore = mode == AnalysisMode.percentChance
-              ? result!.percentChance
-              : core.refinedScs;
-          await analysisRewardHandler!(
-            mode: mode,
-            outcomeScore: outcomeScore,
-            memo: _analysisRewardMemo(working, mode),
-            continuumScs: outcomeScore,
-            vortexScs: core.vortexScs,
-            shearScs: core.shearScs,
-            resistanceScs: core.resistanceScs,
-            flowScs: core.flowScs,
-          );
-        }
-      }
       statusMessage = grokConstrualEnabled
           ? strings.t('grok_construal_applied')
           : strings.t('status_done');
+      isRunning = false;
+      notifyListeners();
+
+      await _runPostCalculateWork(working);
     } on GrokAuthException {
       statusMessage = strings.t('grok_construal_failed');
       grokConstrualEnabled = false;
       grokSession = const GrokSession();
       grokFilledFields = {};
     } finally {
-      isRunning = false;
-      notifyListeners();
+      if (isRunning) {
+        isRunning = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -976,23 +953,24 @@ class EvolveProvider extends ChangeNotifier {
         final parentQuestion = source.posedQuestion.trim().isNotEmpty
             ? source.posedQuestion
             : source.scenarioQuery;
-        final results = <GrokConstrualResult>[];
-        for (final item in multi.parts) {
-          final sub = source.copyWith(
-            posedQuestion: item.subQuestion,
-            parentPosedQuestion: parentQuestion,
-            activePathwayLabel: item.label,
-            siblingPathwayLabels:
-                labels.where((label) => label != item.label).toList(),
-            pathwayConstruals: const {},
-            continuumText: '',
-            vortexText: '',
-            shearText: '',
-            resistanceText: '',
-            flowText: '',
-          );
-          results.add(await _fetchConstrualSuggestions(sub));
-        }
+        final results = await Future.wait(
+          multi.parts.map((item) {
+            final sub = source.copyWith(
+              posedQuestion: item.subQuestion,
+              parentPosedQuestion: parentQuestion,
+              activePathwayLabel: item.label,
+              siblingPathwayLabels:
+                  labels.where((label) => label != item.label).toList(),
+              pathwayConstruals: const {},
+              continuumText: '',
+              vortexText: '',
+              shearText: '',
+              resistanceText: '',
+              flowText: '',
+            );
+            return _fetchConstrualSuggestions(sub);
+          }),
+        );
         final withPathways = PathwayConstrualService.applyPerPathwayResults(
           source: source,
           pathwayConstruals:
@@ -1073,8 +1051,59 @@ class EvolveProvider extends ChangeNotifier {
         _ => '',
       };
 
-  void _reanalyze([ScenarioInput? source]) {
-    result = _engine.analyze(source ?? input, mode: mode, locale: locale);
+  Future<void> _reanalyze([ScenarioInput? source]) async {
+    final src = source ?? input;
+    if (kIsWeb) {
+      result = _engine.analyze(src, mode: mode, locale: locale);
+      return;
+    }
+    result = await runEvolveAnalyze(
+      input: src,
+      mode: mode,
+      locale: locale,
+    );
+  }
+
+  Future<void> _reanalyzeAndPersist({String? statusMessage}) async {
+    await _reanalyze();
+    _persistCurrentMode();
+    if (statusMessage != null) {
+      this.statusMessage = statusMessage;
+    }
+    notifyListeners();
+  }
+
+  Future<void> _runPostCalculateWork(ScenarioInput working) async {
+    final analysis = result;
+    if (analysis == null) return;
+
+    final recorder = scenarioRunRecorder;
+    if (recorder != null) {
+      await recorder(
+        input: working,
+        locale: locale,
+        mode: mode,
+        result: analysis,
+      );
+    }
+
+    final reward = analysisRewardHandler;
+    if (reward != null) {
+      final core = analysis.core;
+      final outcomeScore = mode == AnalysisMode.percentChance
+          ? analysis.percentChance
+          : core.refinedScs;
+      await reward(
+        mode: mode,
+        outcomeScore: outcomeScore,
+        memo: _analysisRewardMemo(working, mode),
+        continuumScs: outcomeScore,
+        vortexScs: core.vortexScs,
+        shearScs: core.shearScs,
+        resistanceScs: core.resistanceScs,
+        flowScs: core.flowScs,
+      );
+    }
   }
 
   void _persistCurrentMode() {

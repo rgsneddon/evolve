@@ -50,7 +50,8 @@ New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
 Get-ChildItem $srcDir -File | Where-Object {
     $_.Extension -in '.sha256', '.sha512', '.json' -or
     $_.Name -like 'CHECKSUMS*' -or
-    $_.Name -like '*-windows-x64-setup.exe'
+    $_.Name -like '*-windows-x64-setup.exe' -or
+    $_.Name -like '*-android-setup.apk'
 } | ForEach-Object {
     Copy-Item $_.FullName (Join-Path $dstDir $_.Name) -Force
 }

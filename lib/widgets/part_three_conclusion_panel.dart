@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/part_three_conclusion.dart';
-import '../providers/evolve_provider.dart';
+import '../l10n/app_localizations.dart';
+import '../providers/locale_provider.dart';
 class PartThreeConclusionPanel extends StatelessWidget {
   const PartThreeConclusionPanel({super.key, required this.conclusion});
 
@@ -11,7 +12,7 @@ class PartThreeConclusionPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final strings = context.watch<EvolveProvider>().strings;
+    final strings = AppLocalizations.of(context.watch<LocaleProvider>().config);
     final copyText = _copyPayload();
 
     return Container(

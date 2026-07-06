@@ -11,10 +11,10 @@ import '../perc/widgets/wallet_auth_panel.dart';
 import '../providers/locale_provider.dart';
 import '../services/app_update_check.dart';
 import '../perc/widgets/wallet_language_selector.dart';
-import '../widgets/evolve_splash_video.dart';
+import '../widgets/evolve_splash_poster.dart';
 import '../widgets/splash_version_status.dart';
 
-/// Launch screen — looping article banner until the user signs in or enters.
+/// Launch screen — static banner until the user signs in or enters.
 class EvolveLoadingScreen extends StatefulWidget {
   const EvolveLoadingScreen({
     super.key,
@@ -130,7 +130,7 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          EvolveSplashVideo(active: !authVisible),
+          const EvolveSplashPoster(),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(

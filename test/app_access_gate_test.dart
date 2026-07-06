@@ -10,8 +10,7 @@ import 'package:evolve/providers/evolve_provider.dart';
 import 'test_locale_provider.dart';
 import 'package:evolve/screens/evolve_loading_screen.dart';
 import 'package:evolve/widgets/evolve_banner.dart';
-import 'package:evolve/widgets/evolve_banner_loop.dart';
-import 'package:evolve/widgets/evolve_splash_video.dart';
+
 
 Future<void> _unlockApp(PercWalletProvider wallet) async {
   await wallet.initialize();
@@ -24,15 +23,11 @@ void main() {
     PercLedgerHub.resetForTest();
     PercWalletProvider.sessionTimeoutEnabled = false;
     EvolveLoadingScreen.introDurationOverride = Duration.zero;
-    EvolveSplashVideo.staticFallbackOverride = true;
-    EvolveBannerLoop.loopDurationOverride = const Duration(seconds: 60);
   });
 
   tearDown(() {
     PercWalletProvider.sessionTimeoutEnabled = true;
     EvolveLoadingScreen.introDurationOverride = null;
-    EvolveSplashVideo.staticFallbackOverride = null;
-    EvolveBannerLoop.loopDurationOverride = null;
   });
 
   testWidgets('app shows wallet gate until PERC address is registered', (tester) async {

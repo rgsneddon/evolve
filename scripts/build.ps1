@@ -28,7 +28,7 @@ switch ($Platform) {
         & $flutter build windows $mode
         $envSrc = Join-Path $Root 'grok_proxy.local.env'
         $envDst = Join-Path $Root 'build\windows\x64\runner\Release\grok_proxy.local.env'
-        if (Test-Path $envSrc) {
+        if ((Test-Path $envSrc) -and (Test-Path (Split-Path $envDst -Parent))) {
             Copy-Item $envSrc $envDst -Force
             Write-Host 'Copied grok_proxy.local.env beside evolve.exe' -ForegroundColor Cyan
         } else {

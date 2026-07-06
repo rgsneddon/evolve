@@ -92,50 +92,7 @@
     .error { color: var(--danger); padding: 12px; background: rgba(239,68,68,0.1); border-radius: 8px; margin-bottom: 16px; }
     footer { color: var(--muted); font-size: 0.8rem; margin-top: 32px; }
     a { color: var(--accent); }
-    .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .tab {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      border-radius: 999px;
-      padding: 8px 16px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    .tab.active { background: rgba(108,99,255,0.18); border-color: var(--accent); color: var(--text); }
-    .panel { display: none; }
-    .panel.active { display: block; }
-    .form-grid { display: grid; gap: 12px; max-width: 420px; }
-    .form-grid label { display: grid; gap: 6px; font-size: 0.85rem; color: var(--muted); }
-    .form-grid input {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      padding: 10px 12px;
-      font-size: 0.95rem;
-    }
-    .form-grid input:read-only { opacity: 0.7; }
     .hint { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
-    .treasury-hint {
-      background: rgba(108,99,255,0.08);
-      border: 1px solid rgba(108,99,255,0.25);
-      color: var(--muted);
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-size: 0.88rem;
-      line-height: 1.5;
-      margin-bottom: 18px;
-    }
-    .launch-success {
-      background: rgba(0,212,170,0.12);
-      border: 1px solid rgba(0,212,170,0.35);
-      color: var(--online);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      font-size: 0.9rem;
-    }
     .chart-layout {
       display: grid;
       grid-template-columns: minmax(260px, 340px) 1fr;
@@ -194,15 +151,10 @@
       <h1>Perccent Network Explorer</h1>
       <p class="sub">Evolve Chronoflux seed node &middot; rendezvous &middot; peer status</p>
       <p class="sub" style="margin-top:8px" id="endpoint-line"></p>
-      <nav class="tabs" style="margin-top:16px">
-        <button class="tab active" data-tab="explorer" type="button">Explorer</button>
-        <button class="tab" data-tab="treasury" type="button">Treasury</button>
-      </nav>
     </header>
 
     <div id="error" class="error" style="display:none"></div>
 
-    <div id="panel-explorer" class="panel active">
     <div class="grid" id="stats"></div>
 
     <section id="treasury-emission-public" style="display:none">
@@ -252,57 +204,6 @@
       <h2 id="detail-title">Block detail</h2>
       <pre class="mono" id="detail-body" style="white-space:pre-wrap;margin-top:12px"></pre>
     </section>
-    </div>
-
-    <div id="panel-treasury" class="panel">
-      <section id="treasury-login-section" class="card">
-        <h2>Treasury access</h2>
-        <p class="hint" id="treasury-login-hint">Create your password on first login to launch the blockchain (one-time). After launch, treasury emission is visible to everyone.</p>
-        <form id="treasury-login-form" class="form-grid" style="margin-top:16px">
-          <label>User
-            <input id="treasury-user" type="text" value="rgsnedds" readonly>
-          </label>
-          <label>Password
-            <input id="treasury-password" type="password" autocomplete="current-password" placeholder="Enter password">
-          </label>
-          <label id="treasury-confirm-wrap" style="display:none">Confirm password
-            <input id="treasury-confirm" type="password" autocomplete="new-password" placeholder="Confirm password">
-          </label>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn" type="submit" id="treasury-login-btn">Sign in</button>
-          </div>
-          <p class="hint" id="treasury-login-error" style="color:var(--danger);display:none"></p>
-        </form>
-      </section>
-
-      <section id="treasury-wallet-section" style="display:none">
-        <div id="treasury-launch-notice" class="launch-success" style="display:none"></div>
-        <div class="treasury-hint" id="treasury-send-hint" style="display:none">Manual sends from evolve_treasury are disabled. Treasury emission, regeneration, and faucet payouts continue.</div>
-        <div class="toolbar">
-          <h2 style="margin:0">Treasury wallet</h2>
-          <button class="btn secondary" id="treasury-logout-btn" type="button">Sign out</button>
-        </div>
-        <div class="grid" id="treasury-stats"></div>
-        <section style="margin-top:20px">
-          <h2>Recent treasury transactions</h2>
-          <div class="card" style="padding:0; overflow:hidden">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Kind</th>
-                  <th>Amount</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Memo</th>
-                </tr>
-              </thead>
-              <tbody id="treasury-txs"></tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-    </div>
 
     <footer>
       API: <a href="/api/network">/api/network</a> &middot;
@@ -314,9 +215,6 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const TREASURY_TOKEN_KEY = 'perc_treasury_token';
-    let treasuryNeedsSetup = true;
-    let activeTab = 'explorer';
 
     function pill(online) {
       const cls = online ? 'online' : 'offline';
@@ -553,7 +451,7 @@
             <td>${b.displayLabel || '—'}</td>
             <td><button class="btn secondary" data-block="${b.index}">View</button></td>
           </tr>`).join('')
-        : '<tr><td colspan="6" class="muted">No blocks yet — rgsnedds must sign in on the Treasury tab to launch the blockchain.</td></tr>';
+        : '<tr><td colspan="6" class="muted">No blocks yet — the Perccent chain will appear here as scenarios advance.</td></tr>';
       $('blocks-meta').textContent = data.total
         ? `Showing ${rows.length} of ${data.total} blocks (newest first)`
         : '';
@@ -628,174 +526,6 @@
         resetCountdown();
       }
     }
-
-    function switchTab(tab) {
-      activeTab = tab;
-      document.querySelectorAll('.tab').forEach((el) => {
-        el.classList.toggle('active', el.dataset.tab === tab);
-      });
-      document.querySelectorAll('.panel').forEach((el) => {
-        el.classList.toggle('active', el.id === `panel-${tab}`);
-      });
-      if (tab === 'treasury') loadTreasuryPanel();
-    }
-
-    function treasuryToken() {
-      return sessionStorage.getItem(TREASURY_TOKEN_KEY);
-    }
-
-    function setTreasuryToken(token) {
-      if (token) sessionStorage.setItem(TREASURY_TOKEN_KEY, token);
-      else sessionStorage.removeItem(TREASURY_TOKEN_KEY);
-    }
-
-    function showTreasuryLogin(message) {
-      $('treasury-login-section').style.display = 'block';
-      $('treasury-wallet-section').style.display = 'none';
-      const err = $('treasury-login-error');
-      if (message) {
-        err.textContent = message;
-        err.style.display = 'block';
-      } else {
-        err.style.display = 'none';
-      }
-    }
-
-    function showTreasuryWallet() {
-      $('treasury-login-section').style.display = 'none';
-      $('treasury-wallet-section').style.display = 'block';
-    }
-
-    function renderTreasuryWallet(data) {
-      const emission = data.treasuryEmission;
-      $('treasury-send-hint').style.display = data.blockchainLaunched ? 'block' : 'none';
-      const emissionCards = emission ? `
-        <div class="card"><div class="label">Emission rate</div><div class="value">${emissionRateLabel(emission)}</div></div>
-        <div class="card"><div class="label">Cumulative minted</div><div class="value">${emission.cumulativeMinted} PERC</div></div>
-      ` : '';
-      $('treasury-stats').innerHTML = `
-        <div class="card"><div class="label">Wallet</div><div class="value mono" style="font-size:1rem">${data.username}</div></div>
-        <div class="card"><div class="label">Balance</div><div class="value">${data.balance} PERC</div></div>
-        <div class="card"><div class="label">Block height</div><div class="value">${data.blockHeight}</div></div>
-        <div class="card"><div class="label">Blockchain</div><div class="value">${data.blockchainLaunched ? 'Launched' : 'Awaiting your sign-in'}</div></div>
-        ${emissionCards}
-        <div class="card"><div class="label">Address</div><div class="value mono" style="font-size:0.82rem">${data.addressShielded}</div></div>
-      `;
-      const txs = data.recentTransactions || [];
-      $('treasury-txs').innerHTML = txs.length
-        ? txs.map((tx) => `
-          <tr>
-            <td>${tx.id}</td>
-            <td>${tx.kind}</td>
-            <td>${tx.amount}</td>
-            <td>${tx.from ?? '—'}</td>
-            <td>${tx.to ?? '—'}</td>
-            <td class="muted">${tx.memo ?? '—'}</td>
-          </tr>`).join('')
-        : '<tr><td colspan="6" class="muted">No treasury transactions yet.</td></tr>';
-    }
-
-    async function treasuryFetch(path, options = {}) {
-      const headers = { ...(options.headers || {}) };
-      const token = treasuryToken();
-      if (token) headers.Authorization = `Bearer ${token}`;
-      if (options.body) headers['Content-Type'] = 'application/json';
-      const res = await fetch(path, { ...options, headers });
-      return res;
-    }
-
-    async function loadTreasuryPanel() {
-      const token = treasuryToken();
-      if (!token) {
-        try {
-          const setupRes = await fetch('/api/treasury/auth/setup-needed');
-          const setup = setupRes.ok ? await setupRes.json() : { needsPasswordSetup: true };
-          treasuryNeedsSetup = setup.needsPasswordSetup !== false;
-        } catch {
-          treasuryNeedsSetup = true;
-        }
-        $('treasury-confirm-wrap').style.display = treasuryNeedsSetup ? 'grid' : 'none';
-        $('treasury-login-btn').textContent = treasuryNeedsSetup
-          ? 'Create password & sign in'
-          : 'Sign in';
-        $('treasury-login-hint').textContent = treasuryNeedsSetup
-          ? 'Create your password on first login to launch the blockchain (one-time).'
-          : 'Sign in with your treasury admin password.';
-        showTreasuryLogin();
-        return;
-      }
-      const statusRes = await treasuryFetch('/api/treasury/auth/status');
-      if (!statusRes.ok) {
-        setTreasuryToken(null);
-        showTreasuryLogin('Session expired — sign in again.');
-        return;
-      }
-      const walletRes = await treasuryFetch('/api/treasury/wallet');
-      if (!walletRes.ok) {
-        showTreasuryLogin('Treasury wallet unavailable.');
-        return;
-      }
-      showTreasuryWallet();
-      renderTreasuryWallet(await walletRes.json());
-    }
-
-    document.querySelectorAll('.tab').forEach((btn) => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-
-    $('treasury-login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const password = $('treasury-password').value;
-      const confirmPassword = $('treasury-confirm').value;
-      const payload = {
-        username: $('treasury-user').value.trim(),
-        password,
-      };
-      if ($('treasury-confirm-wrap').style.display !== 'none') {
-        payload.confirmPassword = confirmPassword;
-      }
-      const res = await fetch('/api/treasury/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        if (data.needsSetup) {
-          treasuryNeedsSetup = true;
-          $('treasury-confirm-wrap').style.display = 'grid';
-          $('treasury-login-btn').textContent = 'Create password & sign in';
-        }
-        showTreasuryLogin(data.error || 'Login failed');
-        return;
-      }
-      setTreasuryToken(data.token);
-      $('treasury-password').value = '';
-      $('treasury-confirm').value = '';
-      $('treasury-confirm-wrap').style.display = 'none';
-      $('treasury-login-btn').textContent = 'Sign in';
-      if (data.launch?.launched) {
-        const notice = $('treasury-launch-notice');
-        notice.textContent =
-          `Blockchain launched — genesis block #0 created with ${data.launch.treasuryBalance} PERC treasury emission. Manual sends from evolve_treasury are now disabled.`;
-        notice.style.display = 'block';
-        await refresh();
-      }
-      await loadTreasuryPanel();
-    });
-
-    $('treasury-logout-btn').addEventListener('click', async () => {
-      const token = treasuryToken();
-      if (token) {
-        await treasuryFetch('/api/treasury/auth/logout', {
-          method: 'POST',
-          body: JSON.stringify({ token }),
-        });
-      }
-      setTreasuryToken(null);
-      showTreasuryLogin();
-      switchTab('treasury');
-    });
 
     $('refresh-btn').addEventListener('click', refresh);
     resetCountdown();

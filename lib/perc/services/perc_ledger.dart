@@ -277,6 +277,8 @@ class PercLedger {
     String? expectedTipHash,
     bool force = false,
   }) {
+    mergeNetworkStateFromPeer(remote);
+
     final remoteChainId = remote.evolutionaryChainId.isEmpty
         ? PercChainConstants.evolutionaryChainId
         : remote.evolutionaryChainId;
@@ -427,6 +429,20 @@ class PercLedger {
     for (final entry in localWallets.entries) {
       final username = entry.key;
       final local = entry.value;
+      final aliasKeys = accounts.entries
+          .where(
+            (e) =>
+                e.key != username &&
+                e.value.address == local.address &&
+                !e.value.passwordSet,
+          )
+          .map((e) => e.key)
+          .toList();
+      for (final alias in aliasKeys) {
+        _rewriteUsernameReferences(alias, username);
+        accounts.remove(alias);
+      }
+
       final remote = accounts[username];
       if (remote == null) {
         accounts[username] = local;
@@ -435,6 +451,25 @@ class PercLedger {
       remote.passwordHash = local.passwordHash;
       remote.salt = local.salt;
       remote.passwordSet = true;
+      remote.balance = local.balance;
+      remote.lastFaucetDrawAt = local.lastFaucetDrawAt;
+      remote.cumulativeStakingEarned = local.cumulativeStakingEarned;
+      remote.scenarioBlockHeight = local.scenarioBlockHeight;
+      remote.transactions
+        ..clear()
+        ..addAll(local.transactions);
+    }
+  }
+
+  /// Adopts launch flags from the internet seed without replacing local chain state.
+  void adoptNetworkLaunchState(PercLedger remote) {
+    if (!remote.blockchainLaunched) return;
+    blockchainLaunched = true;
+    if (remote.treasuryGenesisDone) {
+      treasuryGenesisDone = true;
+    }
+    if (remote.networkGenesisRevision > networkGenesisRevision) {
+      networkGenesisRevision = remote.networkGenesisRevision;
     }
   }
 
@@ -570,6 +605,91 @@ class PercLedger {
         // Username collision with a different local address — skip.
       }
     }
+  }
+
+  /// Merges launch flags, address book, and inbound transfers without replacing chain tip.
+  void mergeNetworkStateFromPeer(PercLedger remote) {
+    adoptNetworkLaunchState(remote);
+    mergeDiscoverableAccounts(remote);
+    mergePendingInboundFromPeer(remote);
+    mergeInboundTransferTxsFromPeer(remote);
+    final session = sessionUsername;
+    if (session != null) {
+      refreshPendingInboundTransfers();
+    }
+  }
+
+  void mergePendingInboundFromPeer(PercLedger remote) {
+    final seen = pendingInboundTransfers.map((p) => p.id).toSet();
+    for (final pending in remote.pendingInboundTransfers) {
+      if (seen.contains(pending.id)) continue;
+      final recipient = _localWalletForRemoteParty(pending.toUsername, remote);
+      if (recipient == null) continue;
+      pendingInboundTransfers.add(
+        PercPendingInboundTransfer(
+          id: pending.id,
+          fromUsername: pending.fromUsername,
+          toUsername: recipient.username,
+          amount: pending.amount,
+          sentAt: pending.sentAt,
+          memo: pending.memo,
+          recipientBroughtOnlineAt: pending.recipientBroughtOnlineAt,
+        ),
+      );
+      seen.add(pending.id);
+    }
+  }
+
+  /// Pulls transfer txs from a shorter/divergent peer chain (cross-version gossip).
+  void mergeInboundTransferTxsFromPeer(PercLedger remote) {
+    final knownIds = <String>{};
+    for (final acc in accounts.values) {
+      for (final tx in acc.transactions) {
+        knownIds.add(tx.id);
+      }
+    }
+    for (final block in remote.blocks) {
+      for (final tx in block.transactions) {
+        if (tx.kind != PercTxKind.transfer) continue;
+        if (knownIds.contains(tx.id)) continue;
+        if (pendingInboundTransfers.any((p) => p.id == tx.id)) continue;
+        final toUser = tx.toUsername;
+        if (toUser == null || toUser.isEmpty) continue;
+        final recipient = _localWalletForRemoteParty(toUser, remote);
+        if (recipient == null) continue;
+        pendingInboundTransfers.add(
+          PercPendingInboundTransfer(
+            id: tx.id,
+            fromUsername: tx.fromUsername ?? '',
+            toUsername: recipient.username,
+            amount: tx.amount,
+            sentAt: tx.timestamp,
+            memo: tx.memo,
+          ),
+        );
+        knownIds.add(tx.id);
+      }
+    }
+  }
+
+  PercAccount? _localWalletForRemoteParty(String remoteUsername, PercLedger remote) {
+    PercAccount? remoteParty;
+    for (final acc in remote.accounts.values) {
+      if (acc.username == remoteUsername) {
+        remoteParty = acc;
+        break;
+      }
+    }
+    if (remoteParty != null && remoteParty.address.isNotEmpty) {
+      for (final local in accounts.values) {
+        if (local.passwordSet && local.address == remoteParty!.address) {
+          return local;
+        }
+      }
+    }
+    final direct = _accountFor(remoteUsername);
+    if (direct != null && direct.passwordSet) return direct;
+    return null;
   }
 
   PercAccount? _accountForAddress(String address) {
@@ -1010,6 +1130,25 @@ class PercLedger {
     blocks
       ..clear()
       ..addAll(remappedBlocks);
+
+    final remappedPending = pendingInboundTransfers
+        .map(
+          (pending) => PercPendingInboundTransfer(
+            id: pending.id,
+            fromUsername: pending.fromUsername == from
+                ? to
+                : pending.fromUsername,
+            toUsername: pending.toUsername == from ? to : pending.toUsername,
+            amount: pending.amount,
+            sentAt: pending.sentAt,
+            memo: pending.memo,
+            recipientBroughtOnlineAt: pending.recipientBroughtOnlineAt,
+          ),
+        )
+        .toList();
+    pendingInboundTransfers
+      ..clear()
+      ..addAll(remappedPending);
   }
 
   PercTransaction _remapTxUsernames(
@@ -1549,17 +1688,36 @@ class PercLedger {
     return '${window.inSeconds} seconds';
   }
 
+  bool _pendingTargetsUser(PercPendingInboundTransfer pending, String username) {
+    if (pending.toUsername == username) return true;
+    final receiver = _accountFor(username);
+    if (receiver == null) return false;
+    final alias = _accountFor(pending.toUsername);
+    return alias != null && alias.address == receiver.address;
+  }
+
+  PercAccount? _resolvePendingRecipient(PercPendingInboundTransfer pending) {
+    final direct = _accountFor(pending.toUsername);
+    if (direct != null) return direct;
+    for (final acc in accounts.values) {
+      if (acc.passwordSet && _pendingTargetsUser(pending, acc.username)) {
+        return acc;
+      }
+    }
+    return null;
+  }
+
   void _settlePendingInbound(String username, DateTime now) {
     final window = PercChainConstants.walletOnlineReceiveDelayEffective;
     final toSettle = pendingInboundTransfers
-        .where((p) => p.toUsername == username)
+        .where((p) => _pendingTargetsUser(p, username))
         .where((p) => !now.isBefore(p.sentAt))
         .where((p) => now.isBefore(p.sentAt.add(window)))
         .toList();
     if (toSettle.isEmpty) return;
 
     for (final pending in toSettle) {
-      final receiver = _accountFor(pending.toUsername);
+      final receiver = _resolvePendingRecipient(pending);
       if (receiver == null) continue;
       _credit(receiver, pending.amount);
       final tx = PercTransaction(
@@ -1604,7 +1762,7 @@ class PercLedger {
   }) {
     if (!blockchainLaunched) {
       throw StateError(
-        'Blockchain not launched — rgsnedds must sign in on the seed treasury tab first',
+        'Blockchain not launched — sync wallet to the internet seed node first',
       );
     }
     final from = PercAuth.normalizeUsername(fromUsername);

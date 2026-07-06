@@ -25,6 +25,9 @@ void main() {
       ),
     );
     expect(info.updateUrl, contains('evolve-v3.3.12-'));
+    final fallbacks = AppUpdateChecker.updateUrlsForRelease('3.3.12');
+    expect(fallbacks.length, greaterThanOrEqualTo(2));
+    expect(fallbacks.first, info.updateUrl);
   });
 
   test('reports up to date when remote matches or is older', () async {

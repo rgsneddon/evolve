@@ -297,6 +297,8 @@ class PercNetworkCoordinator extends ChangeNotifier {
       }
     }
 
+    await _mergeInboundFromRendezvousPeers(hub);
+
     final localTip = PercChainTip.hash(hub.ledger);
     final localHeight = PercChainTip.height(hub.ledger);
     if (localHeight == _networkBlockHeight) {
@@ -538,6 +540,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (local != null) return local;
 
     await syncToNetworkHeight();
+    final seedLedger = await _fetchSeedLedgerForDiscovery();
+    if (seedLedger != null) {
+      hub.ledger.mergeNetworkStateFromPeer(seedLedger);
+    }
     local = hub.ledger.accountForAddress(normalized);
     if (local != null) return local;
 
@@ -547,6 +553,38 @@ class PercNetworkCoordinator extends ChangeNotifier {
     return null;
   }
 
+  Future<void> _mergeInboundFromRendezvousPeers(PercLedgerHub hub) async {
+    if (disableLiveNodesForTests) return;
+    final peers = await _rendezvous.fetchPeers();
+    final seen = <String>{};
+    for (final status in peers) {
+      final username = status.sessionUsername?.trim();
+      final address = status.walletAddress?.trim();
+      if ((username == null || username.isEmpty) &&
+          (address == null || address.isEmpty)) {
+        continue;
+      }
+      final key = '${username ?? ''}|${address ?? ''}';
+      if (seen.contains(key)) continue;
+      seen.add(key);
+
+      final relayed = await _rendezvous.fetchRelayedLedger(
+        username: username,
+        address: address,
+      );
+      if (relayed != null) {
+        hub.ledger.mergeNetworkStateFromPeer(relayed);
+      }
+    }
+  }
+
+  Future<PercLedger?> _fetchSeedLedgerForDiscovery() async {
+    if (disableLiveNodesForTests) return null;
+    final base = await _rendezvous.baseUrl();
+    if (base == null) return null;
+    return _client.fetchLedger(base);
+  }
+
   Future<PercAccount?> _discoverAccountOnNetwork(String normalized) async {
     final hub = _hub;
     if (hub == null || disableLiveNodesForTests) return null;
@@ -554,7 +592,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     PercAccount? _localHit() => hub.ledger.accountForAddress(normalized);
 
     void _mergeRemote(PercLedger remote) =>
-        hub.ledger.mergeDiscoverableAccounts(remote);
+        hub.ledger.mergeNetworkStateFromPeer(remote);
 
     PercAccount? _ensureFromRemote(PercLedger remote) {
       final acc = remote.accountForAddress(normalized);
@@ -692,6 +730,8 @@ class PercNetworkCoordinator extends ChangeNotifier {
       hub.resetFromSeedLedger(remote, expectedTipHash: seedStatus.tipHash);
       return;
     }
+
+    hub.ledger.mergeNetworkStateFromPeer(remote);
 
     if (remoteHeight > localHeight) {
       hub.importPeerLedger(remote, expectedTipHash: seedStatus.tipHash);

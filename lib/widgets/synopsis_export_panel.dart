@@ -6,7 +6,8 @@ import '../models/analysis_mode.dart';
 import '../models/locale_config.dart';
 import '../models/scenario_input.dart';
 import '../models/evolve_result.dart';
-import '../providers/evolve_provider.dart';
+import '../l10n/app_localizations.dart';
+import '../providers/locale_provider.dart';
 import '../services/synopsis_delivery.dart';
 import '../services/synopsis_exporter.dart';
 import '../services/synopsis_filename.dart';
@@ -35,7 +36,7 @@ class _SynopsisExportPanelState extends State<SynopsisExportPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final strings = context.watch<EvolveProvider>().strings;
+    final strings = AppLocalizations.of(context.watch<LocaleProvider>().config);
     final compact = MediaQuery.sizeOf(context).width < 520;
     final stamp = DateTime.now();
     final synopsis = _exporter.export(

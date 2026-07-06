@@ -4,6 +4,8 @@ import '../services/scenario_lean_context.dart';
 import 'discourse_strings.dart';
 import 'part_three_slim_strings.dart';
 import 'analysis_ui_strings.dart';
+import 'fcg_strings.dart';
+import 'results_ui_strings.dart';
 import 'wallet_strings.dart';
 import 'weight_construal_strings.dart';
 
@@ -690,10 +692,10 @@ final _en = {
       'Your wallet already drew from treasury within the last 7 minutes. The Perccent chain advances on scenarios — your next eligible draw (and block) is in approximately {blockWait}. You can draw xx/100 PERC again after {wait}.',
   'wallet_cooldown_popup_ok': 'OK',
   'wallet_blockchain_awaiting_launch':
-      'Blockchain awaits rgsnedds sign-in on the seed treasury tab to launch.',
+      'Connecting to the live Perccent seed — scenario rewards unlock once sync completes.',
   'wallet_blockchain_launch_title': 'Blockchain launched!',
   'wallet_blockchain_launch_body':
-      'Treasurer signed in — the Perccent chain is live. Run scenarios to advance blocks.',
+      'The Perccent chain is live. Run scenarios to advance blocks.',
   'wallet_blockchain_launch_ok': 'Let\'s go',
   'wallet_faucet_base': 'Base reward',
   'wallet_faucet_bonus': 'Outcome bonus',
@@ -1505,10 +1507,10 @@ final _es = {
       'Su monedero ya retiró de la tesorería en los últimos 7 minutos. La cadena avanza con escenarios — su próximo retiro (y bloque) es en aproximadamente {blockWait}. Puede retirar xx/100 PERC de nuevo tras {wait}.',
   'wallet_cooldown_popup_ok': 'OK',
   'wallet_blockchain_awaiting_launch':
-      'La cadena espera el primer inicio de sesión del tesorero.',
+      'Conectando al nodo semilla Perccent — las recompensas de escenario se activan al sincronizar.',
   'wallet_blockchain_launch_title': '¡Cadena lanzada!',
   'wallet_blockchain_launch_body':
-      'El tesorero inició sesión — la cadena Perccent está activa.',
+      'La cadena Perccent está activa. Ejecute escenarios para avanzar bloques.',
   'wallet_blockchain_launch_ok': 'Adelante',
   'wallet_faucet_base': 'Recompensa base',
   'wallet_faucet_bonus': 'Bono por resultado',
@@ -1885,7 +1887,13 @@ final _fr = {
   'part3_action_3':
       '{agent} : Annoncer des mesures datées sur {subject}{topic_suffix} avec suivi public. {flow_hook}',
   ...sharedInfoStringsFr,
+  ...discourseStringsFr,
+  ...leanMitigateVariants(discourseStringsFr),
+  ...partThreeSlimFr,
+  ...weightConstrualFr,
   ...analysisUiStringsFr,
+  ...fcgStringsFr,
+  ...resultsUiStringsFr,
   ...walletStringsFr,
   ...walletStringsProviderFr,
 };
@@ -1907,7 +1915,13 @@ final _de = {
   'pct_probability': '~{n}% Wahrscheinlichkeit für {subject}',
   'explainer_how_read': 'So lesen Sie diese Schlussfolgerung',
   ...sharedInfoStringsDe,
+  ...discourseStringsDe,
+  ...leanMitigateVariants(discourseStringsDe),
+  ...partThreeSlimDe,
+  ...weightConstrualDe,
   ...analysisUiStringsDe,
+  ...fcgStringsDe,
+  ...resultsUiStringsDe,
   ...walletStringsDe,
   ...walletStringsProviderDe,
 };
@@ -1926,7 +1940,13 @@ final _pt = {
   'part3_context': 'O/A {agent} — ações ligadas a este cenário: {binding}',
   'part3_input_binding': 'Ligado às suas entradas: {binding}',
   ...sharedInfoStringsPt,
+  ...discourseStringsPt,
+  ...leanMitigateVariants(discourseStringsPt),
+  ...partThreeSlimPt,
+  ...weightConstrualPt,
   ...analysisUiStringsPt,
+  ...fcgStringsPt,
+  ...resultsUiStringsPt,
   ...walletStringsPt,
   ...walletStringsProviderPt,
 };
@@ -1948,7 +1968,13 @@ final _ar = {
   'pct_probability': '~{n}% احتمال {subject}',
   'explainer_how_read': 'كيفية قراءة هذه الخلاصة',
   ...sharedInfoStringsAr,
+  ...discourseStringsAr,
+  ...leanMitigateVariants(discourseStringsAr),
+  ...partThreeSlimAr,
+  ...weightConstrualAr,
   ...analysisUiStringsAr,
+  ...fcgStringsAr,
+  ...resultsUiStringsAr,
   ...walletStringsAr,
   ...walletStringsProviderAr,
 };
@@ -1973,7 +1999,13 @@ final _zh = {
   'explainer_how_read': '如何理解此结论',
   'region_focus_banner': 'ω 焦点：{region} — 请针对该地区提出问题',
   ...sharedInfoStringsZh,
+  ...discourseStringsZh,
+  ...leanMitigateVariants(discourseStringsZh),
+  ...partThreeSlimZh,
+  ...weightConstrualZh,
   ...analysisUiStringsZh,
+  ...fcgStringsZh,
+  ...resultsUiStringsZh,
   ...walletStringsZh,
   ...walletStringsProviderZh,
 };
@@ -1992,7 +2024,13 @@ final _hi = {
   'part3_context': '{agent} — इस परिदृश्य से जुड़े कार्य: {binding}',
   'part3_input_binding': 'आपके इनपुट से बंधा: {binding}',
   ...sharedInfoStringsHi,
+  ...discourseStringsHi,
+  ...leanMitigateVariants(discourseStringsHi),
+  ...partThreeSlimHi,
+  ...weightConstrualHi,
   ...analysisUiStringsHi,
+  ...fcgStringsHi,
+  ...resultsUiStringsHi,
   ...walletStringsHi,
   ...walletStringsProviderHi,
 };
@@ -2014,7 +2052,13 @@ final _ja = {
   'pct_probability': '~{n}% の確率：{subject}',
   'explainer_how_read': 'この結論の読み方',
   ...sharedInfoStringsJa,
+  ...discourseStringsJa,
+  ...leanMitigateVariants(discourseStringsJa),
+  ...partThreeSlimJa,
+  ...weightConstrualJa,
   ...analysisUiStringsJa,
+  ...fcgStringsJa,
+  ...resultsUiStringsJa,
   ...walletStringsJa,
   ...walletStringsProviderJa,
 };

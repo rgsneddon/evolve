@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/app_localizations.dart';
 import '../providers/evolve_provider.dart';
+import '../providers/locale_provider.dart';
 import '../services/grok_oauth_launcher.dart';
 
 /// Amber bar below locale selector: GROK CONSTRUE (Don't use / Use).
@@ -16,7 +18,7 @@ class GrokConstrualBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<EvolveProvider>();
-    final s = provider.strings;
+    final s = AppLocalizations.of(context.watch<LocaleProvider>().config);
     final compact = MediaQuery.sizeOf(context).width < 720;
     final enabled = provider.grokConstrualEnabled;
     final busy = provider.isConnectingGrok || provider.isConstruing;
