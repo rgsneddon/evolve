@@ -252,36 +252,13 @@ Standard web server logs (IP address, user agent, request path, timestamps) may 
 collected by Render when you visit the explorer.
 
 
-3.9 Treasury administrator access (hosted, restricted)
+3.9 Treasury administrator access (hosted)
 
-The seed node provides a separate Treasury tab on the explorer for the designated
-treasury administrator account (configured as username "rgsnedds"). This is not
-the same as registering that username as a PERC wallet inside the Evolve app
-(that username is reserved in the app).
-
-When you use the Treasury tab:
-
-  First login (one-time password creation)
-    - You choose an administrator password (minimum 8 characters). Only a salted
-      password hash is stored on the seed node's persistent disk at
-      /var/data/treasury_admin.json. We do not store your plaintext password.
-    - On first successful login, the blockchain launches once: a genesis treasury
-      block is created, the evolve_treasury wallet password is set on the seed
-      ledger using the same password you chose, and treasury outbound sends are
-      permanently locked.
-
-  Later logins
-    - You authenticate with your administrator username and password.
-    - The server issues a session bearer token stored in your browser
-      sessionStorage for up to 24 hours.
-    - Authenticated sessions can view treasury wallet details (shielded address,
-      balance, transactions, emission data) via /api/treasury/wallet.
-
-  Sign out
-    - Ends the browser session token on the server.
-
-The Treasury tab and treasury wallet details are not public. Only the emission
-summary on the Explorer tab becomes public after launch (Section 3.8).
+The Perccent blockchain has launched on the public seed node. The former Treasury
+tab and treasury administrator login on the explorer have been removed. Treasury
+emission summaries remain public on the Explorer page (Section 3.8). Manual sends
+from evolve_treasury stay disabled; automated emission, regeneration, and faucet
+payouts continue on the chain.
 
 
 3.10 Beam-confidential Perccent addresses
