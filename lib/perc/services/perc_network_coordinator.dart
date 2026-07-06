@@ -477,6 +477,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     await quickSyncToNetworkHeight();
     await syncInboundState();
     hub.ledger.refreshPendingInboundTransfers();
+    hub.ledger.settlePendingInboundOnActivity(_activeUsername!);
 
     final changed = PercChainTip.height(hub.ledger) != heightBefore ||
         hub.ledger.pendingInboundFor(_activeUsername!).length != pendingBefore ||
@@ -625,26 +626,50 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
   Future<void> _mergeInboundFromRendezvousPeers(PercLedgerHub hub) async {
     if (disableLiveNodesForTests) return;
-    final peers = await _rendezvous.fetchPeers();
     final seen = <String>{};
-    for (final status in peers) {
-      final username = status.sessionUsername?.trim();
-      final address = status.walletAddress?.trim();
-      if ((username == null || username.isEmpty) &&
-          (address == null || address.isEmpty)) {
-        continue;
-      }
-      final key = '${username ?? ''}|${address ?? ''}';
-      if (seen.contains(key)) continue;
-      seen.add(key);
 
+    Future<void> mergeRelay({String? username, String? address}) async {
+      final u = username?.trim();
+      final a = address?.trim();
+      if ((u == null || u.isEmpty) && (a == null || a.isEmpty)) return;
+      final key = '${u ?? ''}|${a ?? ''}';
+      if (seen.contains(key)) return;
+      seen.add(key);
       final relayed = await _rendezvous.fetchRelayedLedger(
-        username: username,
-        address: address,
+        username: u,
+        address: a,
       );
       if (relayed != null) {
         hub.ledger.mergeNetworkStateFromPeer(relayed);
       }
+    }
+
+    final peers = await _rendezvous.fetchPeers();
+    for (final status in peers) {
+      await mergeRelay(
+        username: status.sessionUsername,
+        address: status.walletAddress,
+      );
+    }
+
+    // Sender may be offline from the live peer list but still have a relay slot.
+    for (final entry in hub.ledger.networkNodes.entries) {
+      final nodeUser = entry.key.trim();
+      if (nodeUser.isEmpty ||
+          nodeUser == PercChainConstants.seedUsername ||
+          nodeUser == PercChainConstants.treasuryUsername) {
+        continue;
+      }
+      await mergeRelay(username: nodeUser);
+    }
+
+    final session = hub.ledger.sessionUsername;
+    final sessionAddr = hub.ledger.sessionAccount?.address;
+    if (sessionAddr != null && sessionAddr.isNotEmpty) {
+      await mergeRelay(address: sessionAddr);
+    }
+    if (session != null) {
+      hub.ledger.settlePendingInboundOnActivity(session);
     }
   }
 

@@ -109,6 +109,7 @@ class PercLedgerHub extends ChangeNotifier {
     );
     if (session != null && _ledger.accounts.containsKey(session)) {
       _ledger.sessionUsername = session;
+      _ledger.settlePendingInboundOnActivity(session);
     }
     _revision++;
     notifyListeners();

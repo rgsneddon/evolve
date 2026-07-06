@@ -52,7 +52,7 @@ void main() {
     );
   });
 
-  test('receiver credits inbound after scenario activity, not login alone', () {
+  test('receiver credits inbound on sign-in within receive window', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -66,17 +66,6 @@ void main() {
     );
 
     ledger.login('bob', 'password123');
-
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
-    expect(
-      ledger.account('bob')!.transactions.any(
-            (tx) => tx.kind == PercTxKind.transfer && !tx.isConfirmed,
-          ),
-      isTrue,
-    );
-
-    ledger.advanceScenarioBlock('bob');
 
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(

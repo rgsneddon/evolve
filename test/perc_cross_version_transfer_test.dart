@@ -121,9 +121,6 @@ void main() {
 
     final balanceBefore = newer.account('alice')!.balance;
     newer.login('alice', 'password12345');
-    expect(newer.pendingInboundFor('alice'), hasLength(1));
-
-    newer.advanceScenarioBlock('alice');
     expect(newer.pendingInboundFor('alice'), isEmpty);
     expect(
       newer.account('alice')!.balance.microUnits,

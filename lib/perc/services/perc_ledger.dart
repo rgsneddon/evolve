@@ -616,6 +616,7 @@ class PercLedger {
     final session = sessionUsername;
     if (session != null) {
       refreshPendingInboundTransfers();
+      settlePendingInboundOnActivity(session);
     }
   }
 
@@ -1671,6 +1672,7 @@ class PercLedger {
     sessionStartedAt = t;
     sessionLastActivityAt = t;
     refreshPendingInboundTransfers(now: t);
+    settlePendingInboundOnActivity(u, now: t);
     return acc;
   }
 
@@ -1833,7 +1835,12 @@ class PercLedger {
 
   /// Settles inbound transfers for the signed-in user when still in receive window.
   void refreshPendingInboundForSession({DateTime? now}) {
-    refreshPendingInboundTransfers(now: now);
+    final t = now ?? DateTime.now().toUtc();
+    refreshPendingInboundTransfers(now: t);
+    final session = sessionUsername;
+    if (session != null) {
+      settlePendingInboundOnActivity(session, now: t);
+    }
   }
 
   PercTransaction send({
@@ -1931,6 +1938,11 @@ class PercLedger {
       triggerUsername: from,
       isGenesisRenewal: renewalTxs.isNotEmpty,
     );
+
+    final session = sessionUsername;
+    if (session != null && _pendingTargetsUser(pending, session)) {
+      settlePendingInboundOnActivity(session, now: now);
+    }
     return tx;
   }
 

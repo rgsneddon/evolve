@@ -37,10 +37,6 @@ void main() {
     expect(ledger.pendingInboundFor('bob'), hasLength(1));
 
     ledger.login('bob', 'password123');
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
-
-    ledger.advanceScenarioBlock('bob');
     expect(
       ledger.account('bob')!.balance,
       PercAmount.fromPerc(0.00000010),

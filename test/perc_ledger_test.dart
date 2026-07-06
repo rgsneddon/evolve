@@ -147,10 +147,6 @@ void main() {
       amount: PercAmount.fromPerc(0.00000005),
     );
 
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
-
-    ledger.advanceScenarioBlock('bob');
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(
       ledger.account('bob')!.balance,
