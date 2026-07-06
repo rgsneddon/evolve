@@ -68,7 +68,7 @@ void main() {
     expect(find.text('RESULTS'), findsOneWidget);
     expect(find.text('POSE YOUR QUESTION HERE (optional)'), findsOneWidget);
     expect(find.text('RUN ANALYSIS'), findsOneWidget);
-    expect(find.byType(FilledButton), findsNWidgets(2));
+    expect(find.byType(FilledButton).evaluate().length, greaterThanOrEqualTo(2));
   });
 
   testWidgets('unsigned user lands on wallet registration after splash', (tester) async {

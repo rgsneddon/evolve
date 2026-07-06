@@ -14,17 +14,19 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ## Quick start
 
+**Latest release:** v3.4.6 (build 113) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
+
 ### Windows (easiest)
 
-Download the latest **Windows** zip from this repository’s **Releases** tab, extract, and run `evolve.exe`.
+Download **evolve-v3.4.6-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
 
 ### Web
 
-Live app: deploy with `scripts/deploy_web_github.ps1` (GitHub Pages on your fork).
+Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evolve/) (GitHub Pages, base path `/evolve/`).
 
 ### Android
 
-Download the latest **Android APK** from this repository’s **Releases** tab and install on your device.
+Download **evolve-v3.4.6-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases**. Verify SHA-256 before installing. The in-app updater checks GitHub Releases, then gh-pages, when a newer build is published.
 
 ---
 
@@ -302,6 +304,9 @@ The chain is designed to grow with user activity without unbounded local storage
 | **Social narrative links** | Paste X, YouTube, Bluesky, Reddit, or Mastodon URLs in Social Cohesion mode — text fetched via Grok proxy for party-response scoring |
 | **Web Grok heuristic** | GitHub Pages builds use `@evolve_web` in-browser construal — no local proxy, no X sign-in |
 | **Android Grok** | Release APK includes `INTERNET` permission and loopback cleartext for the embedded proxy; Grok construal connects as `@evolve_mock` (or `@evolve_android` heuristic fallback) |
+| **Static splash** | Launch uses a static poster (no MP4 splash animation) for faster cold start on all platforms |
+| **Cross-version PERC** | Wallets on different app builds merge launch flags, pending inbound transfers, and transfer blocks from peers with shorter or divergent chains |
+| **In-app updates** | Windows and Android check published gh-pages `version.json` first, then GitHub Releases / gh-pages APK fallbacks |
 
 ---
 
@@ -365,6 +370,20 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 - Use a lowercase GitHub Pages path: `/evolve/` (not `/Evolve/`) when deploying under a user or org site.
 
 ---
+
+## Build requirements
+
+- **Flutter** 3.44+ (stable), **Dart** 3.12+
+- **Windows:** Visual Studio 2022 Build Tools with C++ desktop workload
+- **Android:** JDK 17+, Android SDK 35
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build_all.ps1
+powershell -ExecutionPolicy Bypass -File scripts/build_installers.ps1 -SkipCodeSign
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.6
+```
+
+If the Windows INSTALL step fails with `C:\Program Files\evolve`, delete `build\windows` and rebuild (stale CMake cache).
 
 ## Project layout
 

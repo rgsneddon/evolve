@@ -42,13 +42,14 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final inBackground = state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached ||
-        state == AppLifecycleState.hidden;
+        state == AppLifecycleState.inactive;
     PercNetworkCoordinator.instance.setAppInBackground(inBackground);
     if (state == AppLifecycleState.resumed) {
       _wallet?.checkSessionTimeout();
-      unawaited(_wallet?.refreshInboundNow());
-      unawaited(_evolve?.resumeGrokOAuthCheck());
+      final wallet = _wallet;
+      final evolve = _evolve;
+      if (wallet != null) unawaited(wallet.refreshInboundNow());
+      if (evolve != null) unawaited(evolve.resumeGrokOAuthCheck());
     }
   }
 
@@ -56,7 +57,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final wallet = context.read<PercWalletProvider>();
-    if (!identical(_wallet, wallet)) {
+    if (_wallet != wallet) {
       _wallet?.removeListener(_onWalletUpdate);
       _wallet = wallet;
       _wallet!.addListener(_onWalletUpdate);

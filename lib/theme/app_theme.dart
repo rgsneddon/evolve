@@ -16,7 +16,7 @@ class AppTheme {
         secondary: Color(0xFF00D9C0),
         surface: card,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: card,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
