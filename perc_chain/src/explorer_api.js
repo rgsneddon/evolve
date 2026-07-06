@@ -73,6 +73,7 @@ export function summarizeBlock(block, ledger) {
   const txs = block.transactions ?? [];
   return {
     index: block.index,
+    relaySourceBlockIndex: block.relaySourceBlockIndex ?? null,
     timestamp: block.timestamp,
     txCount: txs.length,
     treasuryEmitted: formatPercAmount(block.treasuryEmitted),
@@ -85,9 +86,30 @@ export function summarizeBlock(block, ledger) {
   };
 }
 
+/**
+ * Resolve a block by canonical chain index, then relay-source alias, then array position.
+ * Relay-promoted transfers keep sender timing via relaySourceBlockIndex while living on the tip.
+ */
+export function blockAtIndex(ledger, index) {
+  const blocks = ledger?.blocks ?? [];
+  if (!Number.isInteger(index) || index < 0 || !blocks.length) return null;
+
+  const canonical = blocks.find((b) => b?.index === index);
+  if (canonical) return canonical;
+
+  const relayAlias = blocks.find((b) => b?.relaySourceBlockIndex === index);
+  if (relayAlias) return relayAlias;
+
+  const positional = blocks[index];
+  if (positional != null && (positional.index == null || positional.index === index)) {
+    return positional;
+  }
+  return null;
+}
+
 export function blockHashAt(ledger, index) {
   if (!ledger?.blocks?.length) return tipHash(ledger);
-  const block = ledger.blocks[index];
+  const block = blockAtIndex(ledger, index);
   if (!block) return null;
   return tipHash({ ...ledger, blocks: [block] });
 }
@@ -107,8 +129,7 @@ export function listBlocks(ledger, { offset = 0, limit = 50 } = {}) {
 }
 
 export function getBlockDetail(ledger, index) {
-  const blocks = ledger?.blocks ?? [];
-  const block = blocks[index];
+  const block = blockAtIndex(ledger, index);
   if (!block) return null;
   return {
     ...summarizeBlock(block, ledger),

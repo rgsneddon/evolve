@@ -92,6 +92,7 @@ class PercTransferRelayAck {
 
     return PercBlock(
       index: canonicalIndex,
+      relaySourceBlockIndex: block.index,
       timestamp: block.timestamp,
       transactions: txs,
       treasuryEmitted: block.treasuryEmitted,

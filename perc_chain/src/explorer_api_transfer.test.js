@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { genericBlockLabel } from './block_display_label.js';
-import { getBlockDetail, summarizeBlock } from './explorer_api.js';
+import { blockAtIndex, getBlockDetail, summarizeBlock } from './explorer_api.js';
 
 const transferLedger = {
   blocks: [
@@ -51,7 +51,37 @@ describe('explorer transfer API', () => {
     assert.equal(transfer.memo, 'Pilot payment');
   });
 
-  it('getBlockDetail uses array index for relay-promoted canonical tip block', () => {
+  it('blockAtIndex resolves relay-promoted transfer by sender relaySourceBlockIndex', () => {
+    const ledger = {
+      blocks: [
+        { index: 0, transactions: [] },
+        { index: 1, transactions: [{ id: 's', kind: 'scenarioReward' }] },
+        {
+          index: 5,
+          relaySourceBlockIndex: 2,
+          timestamp: '2026-07-06T12:00:00.000Z',
+          transactions: [
+            {
+              id: 'tx-relay',
+              kind: 'transfer',
+              fromUsername: 'alice',
+              toUsername: 'bob',
+              amount: { microUnits: 5 },
+              blockIndex: 5,
+            },
+          ],
+        },
+      ],
+    };
+    assert.equal(blockAtIndex(ledger, 5)?.index, 5);
+    assert.equal(blockAtIndex(ledger, 2)?.index, 5);
+    assert.equal(blockAtIndex(ledger, 2)?.relaySourceBlockIndex, 2);
+    const detail = getBlockDetail(ledger, 2);
+    assert.equal(detail.transactions.find((tx) => tx.kind === 'transfer').id, 'tx-relay');
+    assert.equal(detail.relaySourceBlockIndex, 2);
+  });
+
+  it('getBlockDetail uses canonical index for relay-promoted canonical tip block', () => {
     const ledger = {
       blocks: [
         { index: 0, transactions: [] },

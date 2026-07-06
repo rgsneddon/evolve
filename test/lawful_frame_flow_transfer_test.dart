@@ -88,10 +88,10 @@ void main() {
       wallet.microblocksPerBlock,
     );
     expect(markerAngles, painters.first.transferMarkers);
-    // Graphic proof for frame_flow_transfer.log capture
-    print(
-      'GRAPHIC: LawfulFrameFlowPainter transferMarkers=${painters.first.transferMarkers} '
-      'angles=$markerAngles microblocksPerBlock=${wallet.microblocksPerBlock}',
+    expect(LawfulFrameFlowPainter.lastPaintedTransferMarkerCount, greaterThan(0));
+    expect(
+      LawfulFrameFlowPainter.lastPaintedTransferMarkerCount,
+      painters.first.transferMarkers.length,
     );
   });
 

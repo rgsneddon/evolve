@@ -615,7 +615,8 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     return transferBlocks
         .map(
           (b) =>
-              (b.index % microblocksPerBlock) / microblocksPerBlock,
+              ((b.relaySourceBlockIndex ?? b.index) % microblocksPerBlock) /
+              microblocksPerBlock,
         )
         .toList(growable: false);
   }
@@ -721,7 +722,11 @@ class LawfulFrameFlowPainter extends CustomPainter {
     _paintTransferMarkers(canvas, center, radius);
   }
 
+  @visibleForTesting
+  static int lastPaintedTransferMarkerCount = 0;
+
   void _paintTransferMarkers(Canvas canvas, Offset center, double radius) {
+    lastPaintedTransferMarkerCount = transferMarkers.length;
     if (transferMarkers.isEmpty) return;
     final ring = radius * 0.94;
     const start = -math.pi / 2;

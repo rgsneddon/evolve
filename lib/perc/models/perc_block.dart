@@ -16,9 +16,12 @@ class PercBlock {
     this.microblockSeal = false,
     this.chronofluxFingerprint,
     this.microblocksSealed,
+    this.relaySourceBlockIndex,
   });
 
   final int index;
+  /// Sender-original block index when this block was relay-promoted onto a taller tip.
+  final int? relaySourceBlockIndex;
   final DateTime timestamp;
   final List<PercTransaction> transactions;
   final PercAmount treasuryEmitted;
@@ -49,6 +52,8 @@ class PercBlock {
         if (chronofluxFingerprint != null)
           'chronofluxFingerprint': chronofluxFingerprint,
         if (microblocksSealed != null) 'microblocksSealed': microblocksSealed,
+        if (relaySourceBlockIndex != null)
+          'relaySourceBlockIndex': relaySourceBlockIndex,
       };
 
   factory PercBlock.fromJson(Map<String, dynamic> json) => PercBlock(
@@ -68,5 +73,6 @@ class PercBlock {
         microblockSeal: json['microblockSeal'] as bool? ?? false,
         chronofluxFingerprint: json['chronofluxFingerprint'] as String?,
         microblocksSealed: json['microblocksSealed'] as int?,
+        relaySourceBlockIndex: json['relaySourceBlockIndex'] as int?,
       );
 }
