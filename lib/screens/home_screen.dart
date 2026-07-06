@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/analysis_mode.dart';
 import '../perc/providers/perc_wallet_provider.dart';
 import '../providers/evolve_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
 import '../widgets/cohesion_report_panel.dart';
 import '../widgets/evolve_banner.dart';
@@ -52,7 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
           : AppBar(
               title: Consumer<EvolveProvider>(
                 builder: (context, provider, _) {
-                  final s = provider.strings;
+                  final s = AppLocalizations.of(
+                    context.watch<LocaleProvider>().config,
+                  );
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -77,9 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               toolbarHeight: 56,
             ),
-      body: Consumer<EvolveProvider>(
-        builder: (context, provider, _) {
-          final s = provider.strings;
+      body: Consumer2<EvolveProvider, LocaleProvider>(
+        builder: (context, provider, localeProv, _) {
+          final s = AppLocalizations.of(localeProv.config);
           final width = MediaQuery.sizeOf(context).width;
           final compact = width < 600;
           final narrowButtons = width < 820;

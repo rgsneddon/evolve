@@ -10,6 +10,7 @@ import '../perc/providers/perc_wallet_provider.dart';
 import '../perc/widgets/wallet_auth_panel.dart';
 import '../providers/locale_provider.dart';
 import '../services/app_update_check.dart';
+import '../perc/widgets/wallet_language_selector.dart';
 import '../widgets/evolve_splash_video.dart';
 import '../widgets/splash_version_status.dart';
 
@@ -180,7 +181,7 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Full Community Governance Suite',
+                                strings.t('splash_tagline'),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 13,
@@ -189,6 +190,8 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
                                   color: Colors.white.withValues(alpha: 0.82),
                                 ),
                               ),
+                              const SizedBox(height: 12),
+                              const WalletLanguageSelector(),
                               const SizedBox(height: 4),
                               Text(
                                 EvolveLoadingScreen.versionLabel,

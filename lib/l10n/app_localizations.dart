@@ -3,6 +3,7 @@ import '../services/scenario_input_profile.dart';
 import '../services/scenario_lean_context.dart';
 import 'discourse_strings.dart';
 import 'part_three_slim_strings.dart';
+import 'analysis_ui_strings.dart';
 import 'wallet_strings.dart';
 import 'weight_construal_strings.dart';
 
@@ -309,6 +310,7 @@ class AppLocalizations {
 final _en = {
   'app_title': 'Evolve',
   'app_subtitle': 'Social Science Chronoflux Framework',
+  'splash_tagline': 'Full Community Governance Suite',
   'nav_analysis': 'Analysis',
   'nav_wallet': 'Wallet',
   'nav_voting': 'Voting',
@@ -1251,6 +1253,7 @@ final _en = {
 final _es = {
   ..._en,
   'app_subtitle': 'Marco cronoflux de ciencias sociales',
+  'splash_tagline': 'Suite completa de gobernanza comunitaria',
   'nav_analysis': 'Análisis',
   'nav_wallet': 'Monedero',
   'nav_voting': 'Votación',
@@ -1882,6 +1885,7 @@ final _fr = {
   'part3_action_3':
       '{agent} : Annoncer des mesures datées sur {subject}{topic_suffix} avec suivi public. {flow_hook}',
   ...sharedInfoStringsFr,
+  ...analysisUiStringsFr,
   ...walletStringsFr,
   ...walletStringsProviderFr,
 };
@@ -1903,6 +1907,7 @@ final _de = {
   'pct_probability': '~{n}% Wahrscheinlichkeit für {subject}',
   'explainer_how_read': 'So lesen Sie diese Schlussfolgerung',
   ...sharedInfoStringsDe,
+  ...analysisUiStringsDe,
   ...walletStringsDe,
   ...walletStringsProviderDe,
 };
@@ -1921,6 +1926,7 @@ final _pt = {
   'part3_context': 'O/A {agent} — ações ligadas a este cenário: {binding}',
   'part3_input_binding': 'Ligado às suas entradas: {binding}',
   ...sharedInfoStringsPt,
+  ...analysisUiStringsPt,
   ...walletStringsPt,
   ...walletStringsProviderPt,
 };
@@ -1942,6 +1948,7 @@ final _ar = {
   'pct_probability': '~{n}% احتمال {subject}',
   'explainer_how_read': 'كيفية قراءة هذه الخلاصة',
   ...sharedInfoStringsAr,
+  ...analysisUiStringsAr,
   ...walletStringsAr,
   ...walletStringsProviderAr,
 };
@@ -1966,6 +1973,7 @@ final _zh = {
   'explainer_how_read': '如何理解此结论',
   'region_focus_banner': 'ω 焦点：{region} — 请针对该地区提出问题',
   ...sharedInfoStringsZh,
+  ...analysisUiStringsZh,
   ...walletStringsZh,
   ...walletStringsProviderZh,
 };
@@ -1984,6 +1992,7 @@ final _hi = {
   'part3_context': '{agent} — इस परिदृश्य से जुड़े कार्य: {binding}',
   'part3_input_binding': 'आपके इनपुट से बंधा: {binding}',
   ...sharedInfoStringsHi,
+  ...analysisUiStringsHi,
   ...walletStringsHi,
   ...walletStringsProviderHi,
 };
@@ -2005,6 +2014,7 @@ final _ja = {
   'pct_probability': '~{n}% の確率：{subject}',
   'explainer_how_read': 'この結論の読み方',
   ...sharedInfoStringsJa,
+  ...analysisUiStringsJa,
   ...walletStringsJa,
   ...walletStringsProviderJa,
 };

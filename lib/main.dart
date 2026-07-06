@@ -22,6 +22,7 @@ import 'theme/app_theme.dart';
 import 'platform/desktop_platform.dart';
 import 'widgets/app_version_badge.dart';
 import 'widgets/desktop_window_shell.dart';
+import 'widgets/locale_sync.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,10 +32,13 @@ Future<void> main() async {
   final evolveProvider = EvolveProvider();
   final walletProvider = PercWalletProvider();
   final fcgProvider = FcgVotingProvider();
+  final localeProvider = LocaleProvider();
   await Future.wait([
     evolveProvider.initialize(),
     fcgProvider.initialize(),
+    localeProvider.initialize(),
   ]);
+  evolveProvider.setLocale(localeProvider.config);
   evolveProvider.analysisRewardHandler = ({
     required AnalysisMode mode,
     required double outcomeScore,
@@ -71,6 +75,7 @@ Future<void> main() async {
     evolveProvider: evolveProvider,
     walletProvider: walletProvider,
     fcgProvider: fcgProvider,
+    localeProvider: localeProvider,
   ));
 }
 
@@ -80,17 +85,19 @@ class EvolveApp extends StatelessWidget {
     required this.evolveProvider,
     required this.walletProvider,
     required this.fcgProvider,
+    required this.localeProvider,
   });
 
   final EvolveProvider evolveProvider;
   final PercWalletProvider walletProvider;
   final FcgVotingProvider fcgProvider;
+  final LocaleProvider localeProvider;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider.value(value: localeProvider),
         ChangeNotifierProvider.value(value: evolveProvider),
         ChangeNotifierProvider.value(value: walletProvider),
         ChangeNotifierProvider.value(value: fcgProvider),
@@ -136,7 +143,9 @@ class EvolveApp extends StatelessWidget {
                 ),
               );
             },
-            home: AppBootstrapScreen(walletProvider: walletProvider),
+            home: LocaleSync(
+              child: AppBootstrapScreen(walletProvider: walletProvider),
+            ),
           );
         },
       ),

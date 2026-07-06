@@ -44,8 +44,7 @@ class WalletLanguageSelector extends StatelessWidget {
               .toList(),
           onChanged: (code) {
             if (code == null) return;
-            localeProv.setLanguage(code);
-            evolve.setLocale(localeProv.config);
+            localeProv.setLanguage(code, evolve: evolve);
           },
         ),
       ),

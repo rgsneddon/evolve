@@ -7,6 +7,7 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
+import 'test_locale_provider.dart';
 import 'package:evolve/screens/evolve_loading_screen.dart';
 import 'package:evolve/widgets/evolve_banner.dart';
 import 'package:evolve/widgets/evolve_banner_loop.dart';
@@ -50,6 +51,7 @@ void main() {
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await provider.initialize();
     await fcg.initialize();
+    final locale = await createTestLocaleProvider();
     await _unlockApp(wallet);
 
     await tester.pumpWidget(
@@ -57,6 +59,7 @@ void main() {
         evolveProvider: provider,
         walletProvider: wallet,
         fcgProvider: fcg,
+        localeProvider: locale,
       ),
     );
     await tester.pump();
@@ -79,12 +82,14 @@ void main() {
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await provider.initialize();
     await fcg.initialize();
+    final locale = await createTestLocaleProvider();
 
     await tester.pumpWidget(
       EvolveApp(
         evolveProvider: provider,
         walletProvider: wallet,
         fcgProvider: fcg,
+        localeProvider: locale,
       ),
     );
     await tester.pump();
