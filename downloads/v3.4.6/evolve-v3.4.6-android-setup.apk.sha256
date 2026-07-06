@@ -1,7 +1,7 @@
-﻿700a709130757e94b374bee47af3b006f0e17cd560f4d98db3450020b4d10ca7  evolve-v3.4.6-android-setup.apk
+﻿53a5c6109a63ad62193c48800b79c6e66c083ef61c0ae608c474568eb7baf241  evolve-v3.4.6-android-setup.apk
 algorithm=SHA256
 algorithm_secondary=SHA512
-sha512=527994ce5fa9637abefe754743b529f4684b01f7c6ea88c76f699fcd52e3724c46235b239a93f4529adaed473a694fc05f66257106b9113c016bcd8267302bd7
+sha512=c5c8a67a5726416190fb14ab4888e6d031fcd300cb0891cbdc5f169d13736defa5054761c5a586d89bc0b60c327d4a3abd19f57475dca906cf04c758cbd77d30
 version=3.4.6
 platform=android
 url=https://rgsneddon.github.io/evolve/downloads/v3.4.6/evolve-v3.4.6-android-setup.apk
