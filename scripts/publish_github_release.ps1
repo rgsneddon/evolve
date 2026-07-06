@@ -7,7 +7,8 @@ param(
     [switch]$SkipBuild,
     [switch]$SkipTests,
     [switch]$SkipPages,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [string]$EvidenceDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,6 +18,8 @@ $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\ghpages_downloads.ps1"
 
 $tag = if ($Version -match '^v') { $Version } else { "v$Version" }
+$versionNoV = $tag -replace '^v', ''
+$pagesBranch = 'gh-pages'
 $owner = Get-GitHubOwner -Root $Root
 $remote = "https://github.com/$owner/$RepoName.git"
 
@@ -70,7 +73,6 @@ if (-not (Test-Path $pagesZip)) {
 }
 Copy-Item $pagesZip (Join-Path $releaseDir "$RepoName-github-pages.zip") -Force
 
-$versionNoV = $tag -replace '^v', ''
 $installerDir = Join-Path $Root "build\downloads\v$versionNoV"
 if (Test-Path $installerDir) {
     & "$PSScriptRoot\sign_download_packages.ps1" -Version $versionNoV -SourceDir $installerDir
@@ -98,7 +100,6 @@ if (-not $SkipPages) {
     Ensure-GitIdentity -Root $DeployDir -Owner $owner
     Sync-GhPagesBranch -Branch 'gh-pages' -Remote 'origin'
 
-    # Keep download packages and static pages alongside the Flutter web bundle.
     $preserveNames = @(
         '.git', '.gitignore', 'README.md',
         'downloads', 'download.html', 'privacy_policy.txt',
@@ -158,7 +159,6 @@ $assets = Get-ChildItem $releaseDir -File | Where-Object {
     $_.Extension -notin '.sha256', '.sha512', '.json' -and $_.Name -notlike 'CHECKSUMS*'
 } | ForEach-Object { $_.FullName }
 
-# Include checksum sidecars in the GitHub Release.
 $assets += Get-ChildItem $releaseDir -File | Where-Object {
     $_.Extension -in '.sha256', '.sha512' -or $_.Name -like 'CHECKSUMS*'
 } | ForEach-Object { $_.FullName }
@@ -181,20 +181,72 @@ Evolve Chronoflux $tag
 $notes = if ($ReleaseNotes.Trim()) { $ReleaseNotes.Trim() } else { $defaultNotes }
 
 Write-Host ''
-Write-Host "Creating GitHub Release $tag on $owner/$RepoName" -ForegroundColor Cyan
+Write-Host "Publishing GitHub Release $tag on $owner/$RepoName" -ForegroundColor Cyan
 if ($DryRun) {
     Write-Host '[dry-run] Would create release with:' -ForegroundColor Yellow
     $assets | ForEach-Object { Write-Host "  $_" }
     exit 0
 }
 
-& gh release create $tag `
-    --repo "$owner/$RepoName" `
-    --title "Evolve Chronoflux $tag" `
-    --notes $notes `
-    @assets
+$releaseExists = $false
+gh release view $tag --repo "$owner/$RepoName" 2>$null | Out-Null
+if ($LASTEXITCODE -eq 0) { $releaseExists = $true }
+
+if ($releaseExists) {
+    Write-Host "Release $tag exists; uploading refreshed assets (--clobber)." -ForegroundColor Yellow
+    & gh release upload $tag --repo "$owner/$RepoName" --clobber @assets
+} else {
+    & gh release create $tag `
+        --repo "$owner/$RepoName" `
+        --title "Evolve Chronoflux $tag" `
+        --notes $notes `
+        @assets
+}
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host ''
 Write-Host "Release published: https://github.com/$owner/$RepoName/releases/tag/$tag" -ForegroundColor Green
+
+if ($EvidenceDir) {
+    New-Item -ItemType Directory -Path $EvidenceDir -Force | Out-Null
+    $logPath = Join-Path $EvidenceDir 'publish.log'
+    @(
+        "tag=$tag"
+        "version=$versionNoV"
+        "owner=$owner"
+        "repo=$RepoName"
+        "deploy_dir=$DeployDir"
+        "release_dir=$releaseDir"
+        "asset_count=$($assets.Count)"
+        "pages_url=https://$owner.github.io/$RepoName/"
+        "downloads_url=https://$owner.github.io/$RepoName/downloads/"
+        "published_utc=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')"
+    ) | Set-Content -Path $logPath -Encoding utf8
+
+    $releaseJson = Join-Path $EvidenceDir 'release_view_cli.txt'
+    gh release view $tag --repo "$owner/$RepoName" --json assets,tagName,name,url 2>&1 |
+        Out-File -FilePath $releaseJson -Encoding utf8
+    if ($LASTEXITCODE -ne 0) {
+        "gh release view failed (exit $LASTEXITCODE)" | Out-File -FilePath $releaseJson -Encoding utf8
+    }
+
+    $pagesVersionPath = Join-Path $EvidenceDir 'pages_version.json'
+    try {
+        Invoke-WebRequest -Uri "https://$owner.github.io/$RepoName/version.json" -UseBasicParsing |
+            Select-Object -ExpandProperty Content |
+            Out-File -FilePath $pagesVersionPath -Encoding utf8
+    } catch {
+        "{ `"error`": `"$($_.Exception.Message)`" }" | Out-File -FilePath $pagesVersionPath -Encoding utf8
+    }
+
+    $ghPagesList = Join-Path $EvidenceDir "ghpages_v$($versionNoV -replace '\.', '')_files.txt"
+    $ghPagesVersionDir = Join-Path $DeployDir "downloads\v$versionNoV"
+    if (Test-Path $ghPagesVersionDir) {
+        Get-ChildItem $ghPagesVersionDir -File | ForEach-Object { $_.Name } |
+            Out-File -FilePath $ghPagesList -Encoding utf8
+    } else {
+        "missing: $ghPagesVersionDir" | Out-File -FilePath $ghPagesList -Encoding utf8
+    }
+    Write-Host "Evidence written to $EvidenceDir" -ForegroundColor Cyan
+}

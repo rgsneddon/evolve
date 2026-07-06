@@ -1,4 +1,4 @@
-# Deploy versioned download packages to GitHub Pages (gh-pages branch).
+# Deploy versioned download checksum manifests to GitHub Pages (gh-pages branch).
 param(
     [string]$Version = '',
     [string]$GhPagesWorktree = ''
@@ -45,7 +45,6 @@ Sync-GhPagesBranch -Branch 'gh-pages' -Remote 'origin'
 
 $dstDir = Join-Path $GhPagesWorktree "downloads\v$Version"
 New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
-# Remove legacy full binaries from Pages; installers are on GitHub Releases.
 foreach ($bin in @('*-android-setup.apk', '*-windows-x64-setup.exe')) {
     Get-ChildItem $dstDir -Filter $bin -ErrorAction SilentlyContinue | ForEach-Object {
         Remove-Item $_.FullName -Force
@@ -65,7 +64,6 @@ foreach ($page in @('downloads\index.html', 'download.html')) {
     }
 }
 
-# Bump a sentinel so GitHub Pages always rebuilds after download-only pushes.
 $pagesDeploy = Join-Path $GhPagesWorktree '.pages-deploy'
 $stamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ'
 Set-Content -Path $pagesDeploy -Value "downloads-index-v$Version`nrebuilt=$stamp" -NoNewline
@@ -79,7 +77,6 @@ if (-not $status) {
 
 git commit -m "Deploy v$Version download packages to GitHub Pages"
 git config http.postBuffer 524288000
-# gh-pages worktree has no scripts/; skip main-repo pre-push hook.
 git push origin gh-pages --no-verify
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

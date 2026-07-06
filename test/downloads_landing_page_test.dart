@@ -1,10 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
+
+import 'test_paths.dart';
 
 void main() {
   test('downloads index matches v3.4.6 build 113 release wording', () {
-    final index = File('downloads/index.html');
+    final index = evolveRepoFile('downloads/index.html');
     expect(index.existsSync(), isTrue, reason: 'downloads/index.html must exist');
 
     final html = index.readAsStringSync();

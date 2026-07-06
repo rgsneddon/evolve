@@ -1,4 +1,5 @@
 # Keep gh-pages download landing pages in sync without wiping versioned packages.
+# gh-pages carries checksum manifests only; full installers live on GitHub Releases.
 
 function Invoke-GitCommand {
     param(
@@ -64,7 +65,6 @@ function Sync-GhPagesDownloads {
         New-Item -ItemType Directory -Path $downloadsDst -Force | Out-Null
     }
 
-    # Landing pages and docs only — never delete existing downloads/v* trees.
     foreach ($name in @('index.html', 'ssucf_framework_workings.txt')) {
         $src = Join-Path $downloadsSrc $name
         if (Test-Path $src) {
@@ -89,7 +89,6 @@ function Sync-GhPagesDownloads {
     $versionDst = Join-Path $downloadsDst "v$Version"
     New-Item -ItemType Directory -Path $versionDst -Force | Out-Null
 
-    # Checksum manifests only on Pages — full installers live on GitHub Releases.
     foreach ($bin in @('*-android-setup.apk', '*-windows-x64-setup.exe')) {
         Get-ChildItem $versionDst -Filter $bin -ErrorAction SilentlyContinue | ForEach-Object {
             Remove-Item $_.FullName -Force

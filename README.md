@@ -381,9 +381,13 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 powershell -ExecutionPolicy Bypass -File scripts/build_all.ps1
 powershell -ExecutionPolicy Bypass -File scripts/build_installers.ps1 -SkipCodeSign
 powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.6
+# Optional: capture release/Pages evidence for CI or audit
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.6 -SkipBuild -EvidenceDir .\build\release-evidence
 ```
 
 If the Windows INSTALL step fails with `C:\Program Files\evolve`, delete `build\windows` and rebuild (stale CMake cache).
+
+**Distribution layout:** Full installer packages (`.exe`, `.apk`) are staged under `build/downloads/v<version>/` and published to **GitHub Releases**. GitHub Pages (`gh-pages`) hosts the web app, downloads landing page, and **checksum manifests only** in `downloads/v<version>/` (no full binaries on Pages). Release asset proof uses `gh release view` / GitHub API, not the release web UI.
 
 ## Project layout
 

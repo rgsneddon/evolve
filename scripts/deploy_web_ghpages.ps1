@@ -1,4 +1,4 @@
-# Deploy Flutter web build to gh-pages via evolve_deploy clone.
+# Deploy Flutter web build to gh-pages via evolve_deploy clone (checksum-only downloads/).
 param(
     [string]$Version = '',
     [string]$DeployDir = ''
