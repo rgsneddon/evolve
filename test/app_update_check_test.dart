@@ -18,7 +18,13 @@ void main() {
     expect(info.checkSucceeded, isTrue);
     expect(info.updateAvailable, isTrue);
     expect(info.latestFull, '3.3.12+10');
-    expect(info.updateUrl, contains('/downloads/v3.3.12/'));
+    expect(
+      info.updateUrl,
+      startsWith(
+        'https://github.com/rgsneddon/evolve/releases/download/v3.3.12/',
+      ),
+    );
+    expect(info.updateUrl, contains('evolve-v3.3.12-'));
   });
 
   test('reports up to date when remote matches or is older', () async {

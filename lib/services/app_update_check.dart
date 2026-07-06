@@ -60,6 +60,8 @@ class AppUpdateChecker {
       'https://raw.githubusercontent.com/rgsneddon/evolve/main/version.json';
   static const downloadsBaseUrl =
       'https://rgsneddon.github.io/evolve/downloads/';
+  static const releasesBaseUrl =
+      'https://github.com/rgsneddon/evolve/releases/download';
 
   @visibleForTesting
   static Future<String?> Function(Uri url)? fetchBodyOverride;
@@ -101,16 +103,15 @@ class AppUpdateChecker {
   }
 
   static String updateUrlForRelease(String release) {
-    final versioned =
-        'https://rgsneddon.github.io/evolve/downloads/v$release/';
     if (kIsWeb) {
       return 'https://rgsneddon.github.io/evolve/';
     }
+    final tag = 'v$release';
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return '${versioned}evolve-v$release-android-setup.apk';
+        return '$releasesBaseUrl/$tag/evolve-v$release-android-setup.apk';
       case TargetPlatform.windows:
-        return '${versioned}evolve-v$release-windows-x64-setup.exe';
+        return '$releasesBaseUrl/$tag/evolve-v$release-windows-x64-setup.exe';
       default:
         return downloadsBaseUrl;
     }
