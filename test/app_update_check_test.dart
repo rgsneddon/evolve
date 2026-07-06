@@ -41,10 +41,23 @@ void main() {
     expect(info.latestFull, '3.3.11+89');
   });
 
-  test('uses newest feed when multiple sources differ', () async {
+  test('prefers gh-pages over newer main when both succeed', () async {
     AppUpdateChecker.fetchBodyOverride = (uri) async {
       if (uri.host.contains('github.io')) {
-        return '{"version":"3.3.11","build_number":"80","app_name":"evolve"}';
+        return '{"version":"3.4.6","build_number":"113","app_name":"evolve"}';
+      }
+      return '{"version":"3.4.6","build_number":"114","app_name":"evolve"}';
+    };
+
+    final info = await const AppUpdateChecker().check(current: '3.4.6+113');
+    expect(info.latestFull, '3.4.6+113');
+    expect(info.updateAvailable, isFalse);
+  });
+
+  test('falls back to main when gh-pages is unreachable', () async {
+    AppUpdateChecker.fetchBodyOverride = (uri) async {
+      if (uri.host.contains('github.io')) {
+        return null;
       }
       return '{"version":"3.3.11","build_number":"95","app_name":"evolve"}';
     };

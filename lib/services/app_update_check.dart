@@ -69,16 +69,21 @@ class AppUpdateChecker {
   Future<AppUpdateInfo> check({
     String current = PercAppVersion.current,
   }) async {
+    // gh-pages is the published release feed (installers + web). main/version.json
+    // may run ahead from the pre-push hook before a full publish — do not treat
+    // it as newer than Pages when both are reachable.
     RemoteVersionFeed? newest;
     var anySucceeded = false;
 
-    for (final url in [pagesVersionUrl, sourceVersionUrl]) {
-      final feed = await _fetchFeed(Uri.parse(url));
-      if (feed == null) continue;
+    final pagesFeed = await _fetchFeed(Uri.parse(pagesVersionUrl));
+    if (pagesFeed != null && pagesFeed.release.isNotEmpty) {
+      newest = pagesFeed;
       anySucceeded = true;
-      if (newest == null ||
-          PercAppVersion.compare(feed.full, newest.full) > 0) {
-        newest = feed;
+    } else {
+      final mainFeed = await _fetchFeed(Uri.parse(sourceVersionUrl));
+      if (mainFeed != null && mainFeed.release.isNotEmpty) {
+        newest = mainFeed;
+        anySucceeded = true;
       }
     }
 
