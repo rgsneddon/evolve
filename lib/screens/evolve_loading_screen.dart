@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../perc/perc_app_version.dart';
 import '../perc/providers/perc_wallet_provider.dart';
+import '../l10n/wallet_message_localization.dart';
 import '../perc/widgets/wallet_auth_panel.dart';
+import '../perc/widgets/wallet_credential_error_banner.dart';
 import '../providers/locale_provider.dart';
 import '../services/app_update_check.dart';
 import '../perc/widgets/wallet_language_selector.dart';
@@ -49,6 +51,8 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
   PercWalletProvider? _wallet;
   bool _checkingUpdate = true;
   AppUpdateInfo? _updateInfo;
+  final _authPanelKey = GlobalKey<WalletAuthPanelState>();
+  bool _autoEnterTriggered = false;
 
   @override
   void initState() {
@@ -80,6 +84,7 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
       _wallet = wallet;
       _wallet!.addListener(_onWalletChanged);
     }
+    _maybeAutoEnterApp();
   }
 
   @override
@@ -102,12 +107,22 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
   }
 
   void _onWalletChanged() {
-    if (!mounted || !_showAuth || !widget.walletReady) return;
-    final wallet = _wallet;
-    if (wallet == null) return;
-    if (wallet.hasAppAccess && !_hadAccessAtBoot) {
-      widget.onAuthenticated?.call();
+    _maybeAutoEnterApp();
+  }
+
+  void _maybeAutoEnterApp() {
+    if (!mounted || !_showAuth || !widget.walletReady || _autoEnterTriggered) {
+      return;
     }
+    final wallet = _wallet;
+    if (wallet == null || !wallet.isWalletConnectComplete) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _autoEnterTriggered) return;
+      final current = _wallet;
+      if (current == null || !current.isWalletConnectComplete) return;
+      _autoEnterTriggered = true;
+      widget.onAuthenticated?.call();
+    });
   }
 
   @override
@@ -126,7 +141,13 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
     final authSlide = authVisible ? 0.0 : 28.0;
     final authOpacity = authVisible ? 1.0 : 0.0;
 
-    return Scaffold(
+    final credentialErrorActive = !wallet.hasAppAccess &&
+        WalletMessageLocalization.isCredentialError(wallet.errorMessage);
+
+    return WalletCredentialErrorScope(
+      active: credentialErrorActive,
+      onDismiss: () => _authPanelKey.currentState?.dismissCredentialError(),
+      child: Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -256,27 +277,13 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
           ),
         ],
       ),
+    ),
     );
   }
 
   Widget _authSection(PercWalletProvider wallet, AppLocalizations strings) {
     if (wallet.hasAppAccess) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            strings.t('splash_signed_in_as')
-                .replaceAll('{user}', wallet.loggedInUsername ?? ''),
-            style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8)),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: widget.onEnterApp ?? widget.onAuthenticated,
-            child: Text(strings.t('splash_enter_app')),
-          ),
-        ],
-      );
+      return _walletLoadingSection(strings);
     }
 
     return DecoratedBox(
@@ -287,10 +294,35 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: const WalletAuthPanel(
+        child: WalletAuthPanel(
+          key: _authPanelKey,
           compact: true,
           showCreatorCredit: false,
         ),
+      ),
+    );
+  }
+
+  Widget _walletLoadingSection(AppLocalizations strings) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            strings.t('splash_wallet_loading'),
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF9BA3B8),
+            ),
+          ),
+        ],
       ),
     );
   }

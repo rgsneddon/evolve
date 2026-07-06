@@ -26,6 +26,11 @@ class WalletMessageLocalization {
     return label;
   }
 
+  /// Wrong username or password on the wallet login form.
+  static bool isCredentialError(String? key) =>
+      key == 'wallet_err_unknown_account' ||
+      key == 'wallet_err_invalid_password';
+
   /// Maps ledger/auth exceptions to localized wallet error keys.
   static String errorKeyFromException(Object error) {
     final raw = error.toString().replaceFirst('StateError: ', '').trim();

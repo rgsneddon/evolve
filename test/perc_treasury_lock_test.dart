@@ -80,22 +80,27 @@ void main() {
     );
   });
 
-  test('treasury pool renews with 283M mint at 1 cent reserve', () {
+  test('infinite continuum skips 283M pool renewal at 1 cent reserve', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
 
+    final alice = ledger.account('alice')!;
     final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    final past = DateTime.now().toUtc().subtract(PercChainConstants.faucetCooldown);
+    alice.lastFaucetDrawAt = past;
     treasury.balance = PercChainConstants.minimumTreasuryReserve;
+    ledger.treasuryGenesisDone = true;
+    ledger.lastScenarioAt = past;
 
     ledger.creditScenario(username: 'alice', percentChance: 25);
 
-    expect(ledger.treasuryCycle, 2);
+    expect(ledger.treasuryCycle, 1);
+    expect(ledger.blocks.any((b) => b.isGenesisRenewal), isFalse);
     expect(
       treasury.balance.microUnits,
-      greaterThan(PercChainConstants.poolRenewalAllocation.microUnits),
+      lessThan(PercChainConstants.poolRenewalAllocation.microUnits),
     );
-    expect(ledger.blocks.any((b) => b.isGenesisRenewal), isTrue);
   });
 
   test('transactions are fully confirmed with one block', () {

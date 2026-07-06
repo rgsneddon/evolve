@@ -15,10 +15,12 @@ void _seedLedger(PercLedger ledger) {
 void main() {
   setUp(() {
     PercChainConstants.microblocksPerBlockOverride = 3;
+    PercChainConstants.microblocksPerWardOverride = 3;
   });
 
   tearDown(() {
     PercChainConstants.microblocksPerBlockOverride = null;
+    PercChainConstants.microblocksPerWardOverride = null;
   });
 
   test('Chronoflux micro verifier self-checks continuum equation', () {
@@ -43,11 +45,14 @@ void main() {
       expect(step.recorded, isTrue);
       expect(step.blockSealed, isFalse);
       expect(ledger.microblockCount, i + 1);
+      expect(ledger.microblockLog.length, i + 1);
     }
 
     final seal = ledger.recordMicroblock(input: input);
     expect(seal.blockSealed, isTrue);
+    expect(seal.wardAdvanced, isTrue);
     expect(ledger.microblockCount, 0);
+    expect(ledger.microblockLog, isEmpty);
     expect(ledger.blocks.length, 1);
     expect(ledger.blocks.first.microblockSeal, isTrue);
     expect(
@@ -55,6 +60,12 @@ void main() {
         (t) => t.kind == PercTxKind.chronofluxMicroblock,
       ),
       isTrue,
+    );
+    expect(
+      ledger.blocks.first.transactions.any(
+        (t) => t.kind == PercTxKind.genesisRenewal,
+      ),
+      isFalse,
     );
   });
 
@@ -73,19 +84,47 @@ void main() {
     expect(restored.microblockLog.last.wardMicroblock, 2);
   });
 
-  test('fair-usage microblocks log ward position and seal flag', () {
+  test('fair-usage ward log clears when ward fills before seal cycle ends', () {
+    PercChainConstants.microblocksPerBlockOverride = 6;
+    PercChainConstants.microblocksPerWardOverride = 3;
+
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     const input = ScenarioInput(posedQuestion: 'Fair usage keystroke');
 
     ledger.recordMicroblock(input: input);
     ledger.recordMicroblock(input: input);
+    final wardEnd = ledger.recordMicroblock(input: input);
+
+    expect(wardEnd.wardAdvanced, isTrue);
+    expect(wardEnd.blockSealed, isFalse);
+    expect(ledger.microblockCount, 3);
+    expect(ledger.microblockLog, isEmpty);
+
+    ledger.recordMicroblock(input: input);
+    expect(ledger.microblockLog.length, 1);
+    expect(ledger.microblockLog.first.wardIndex, 1);
+    expect(ledger.microblockLog.first.wardMicroblock, 1);
+  });
+
+  test('seal cycle prunes ward log without treasury cycle print', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    const input = ScenarioInput(posedQuestion: 'Prune log');
+
+    final before = ledger.treasuryBalance;
+    for (var i = 0; i < 2; i++) {
+      ledger.recordMicroblock(input: input);
+    }
     final seal = ledger.recordMicroblock(input: input);
 
     expect(seal.blockSealed, isTrue);
-    expect(ledger.microblockLog.length, 3);
-    expect(ledger.microblockLog.last.blockSealed, isTrue);
-    expect(ledger.microblockLog.first.label, contains('Fair usage'));
+    expect(seal.wardAdvanced, isTrue);
+    expect(ledger.microblockLog, isEmpty);
+    expect(
+      ledger.treasuryBalance,
+      before + PercChainConstants.treasuryLaunchAllocation,
+    );
   });
 
   test('microblocks skipped before blockchain launch', () {

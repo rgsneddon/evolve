@@ -129,6 +129,39 @@ class PercLedgerHub extends ChangeNotifier {
   }
 
   /// Persists ledger after a manual seed sync without requiring network-sync gate.
+  /// Persists a send, gossips to peers, then merges inbound state without
+  /// replacing a taller local tip.
+  Future<void> commitAfterSend({
+    String? relayRecipientUsername,
+    String? relayRecipientAddress,
+  }) async {
+    _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ledger.ensureNetworkNodes(
+      blockHeight: PercChainTip.height(_ledger),
+      tipHash: PercChainTip.hash(_ledger),
+    );
+    if (_ledger.sessionUsername != null) {
+      _ledger.setWalletOnline(
+        _ledger.sessionUsername!,
+        endpoint: network.nodeEndpoint,
+        blockHeight: PercChainTip.height(_ledger),
+        tipHash: PercChainTip.hash(_ledger),
+      );
+    }
+    _revision++;
+    notifyListeners();
+    await _store?.save(_ledger);
+    hub_sync.broadcastRevision();
+    await network.gossipToPeers();
+    await network.pushLedgerToRecipient(
+      username: relayRecipientUsername,
+      address: relayRecipientAddress,
+      ledger: _ledger,
+    );
+    await network.syncInboundState();
+    notifyListeners();
+  }
+
   Future<void> commitAfterForceSync() async {
     _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
     _ledger.ensureNetworkNodes(
@@ -147,6 +180,7 @@ class PercLedgerHub extends ChangeNotifier {
     notifyListeners();
     await _store?.save(_ledger);
     hub_sync.broadcastRevision();
+    await network.gossipToPeers();
   }
 
   Future<void> commitWithoutSessionPromotion({

@@ -1,7 +1,7 @@
 import '../models/perc_amount.dart';
 import '../perc_chain_constants.dart';
 
-/// Treasury emission — 0.00000001 PERC/minute (1 cent/min), infinite continuum.
+/// Treasury emission — aligned with max faucet draw per cooldown window.
 class PercTreasury {
   PercTreasury({
     PercAmount? cumulativeMinted,

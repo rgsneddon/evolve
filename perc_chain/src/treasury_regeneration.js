@@ -1,12 +1,11 @@
 import { formatPercAmount } from './explorer_api.js';
 import { blockHeight } from './ledger_store.js';
-
-const EMISSION_MICRO_PER_MINUTE = 1;
+import { dynamicEmissionMicroPerMinute } from './dynamic_emission.js';
 const REGEN_RATIO_PERCENT = 66;
-const TARGET_MICRO = EMISSION_MICRO_PER_MINUTE;
 
-function treasuryNeedsRegeneration(balanceMicro) {
-  return balanceMicro * 100 < TARGET_MICRO * REGEN_RATIO_PERCENT;
+
+function treasuryNeedsRegeneration(balanceMicro, targetMicro) {
+  return balanceMicro * 100 < targetMicro * REGEN_RATIO_PERCENT;
 }
 
 function amount(microUnits) {
@@ -22,7 +21,7 @@ function subAmount(a, b) {
 }
 
 /**
- * When evolve_treasury balance drops below 66% of the minute target, mint toward 0.00000001 PERC.
+ * When evolve_treasury balance drops below 66% of the minute target, mint toward the aligned rate.
  * Returns true when a regeneration block was appended.
  */
 export function regenerateTreasuryIfLow(store, treasuryUsername = 'evolve_treasury') {
@@ -33,9 +32,10 @@ export function regenerateTreasuryIfLow(store, treasuryUsername = 'evolve_treasu
   if (!treasury) return false;
 
   const balanceMicro = treasury.balance?.microUnits ?? 0;
-  if (!treasuryNeedsRegeneration(balanceMicro)) return false;
+  const targetMicro = dynamicEmissionMicroPerMinute(ledger);
+  if (!treasuryNeedsRegeneration(balanceMicro, targetMicro)) return false;
 
-  const shortfallMicro = TARGET_MICRO - balanceMicro;
+  const shortfallMicro = targetMicro - balanceMicro;
   if (shortfallMicro <= 0) return false;
 
   const now = new Date().toISOString();
@@ -81,13 +81,15 @@ export function regenerateTreasuryIfLow(store, treasuryUsername = 'evolve_treasu
 export function treasuryRegenerationStatus(ledger, treasuryUsername = 'evolve_treasury') {
   const treasury = ledger?.accounts?.[treasuryUsername];
   const balanceMicro = treasury?.balance?.microUnits ?? 0;
+  const targetMicro = dynamicEmissionMicroPerMinute(ledger);
   return {
     threshold: formatPercAmount({
-      microUnits: Math.floor((TARGET_MICRO * REGEN_RATIO_PERCENT) / 100),
+      microUnits: Math.floor((targetMicro * REGEN_RATIO_PERCENT) / 100),
     }),
-    target: '0.00000001',
+    target: formatPercAmount({ microUnits: targetMicro }),
     needsRegeneration: Boolean(
-      ledger?.blockchainLaunched && treasuryNeedsRegeneration(balanceMicro),
+      ledger?.blockchainLaunched &&
+        treasuryNeedsRegeneration(balanceMicro, targetMicro),
     ),
     balance: formatPercAmount(treasury?.balance),
   };

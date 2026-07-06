@@ -3,7 +3,7 @@ class AppPerformance {
   const AppPerformance._();
 
   static const Duration bannerLoopDuration = Duration(seconds: 48);
-  static const Duration foregroundNetworkPoll = Duration(seconds: 60);
+  static const Duration foregroundNetworkPoll = Duration(seconds: 12);
   static const Duration backgroundNetworkPoll = Duration(seconds: 120);
   static const Duration walletInflationTick = Duration(seconds: 5);
 

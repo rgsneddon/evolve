@@ -13,6 +13,17 @@ void main() {
     expect(PercChainConstants.sendTransactionFee, PercAmount.smallestUnit);
     expect(PercChainConstants.infiniteContinuumSupply, isTrue);
     expect(PercChainConstants.poolRenewalAllocation.asPerc, 283000000);
+    expect(
+      PercChainConstants.emissionForElapsedSeconds(
+        PercChainConstants.faucetCooldown.inSeconds,
+      ),
+      PercChainConstants.maxFaucetPayoutPerDraw,
+    );
+    expect(
+      PercChainConstants.treasuryEmissionPerMinute.microUnits,
+      (PercChainConstants.maxFaucetPayoutPerDraw.microUnits * 60) ~/
+          PercChainConstants.faucetCooldown.inSeconds,
+    );
     expect(PercChainConstants.confirmationsRequired, 1);
   });
 

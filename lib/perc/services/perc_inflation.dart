@@ -1,13 +1,14 @@
 import '../models/perc_amount.dart';
 import '../models/perc_block.dart';
 import '../perc_chain_constants.dart';
+import 'perc_dynamic_emission.dart';
 import 'perc_staking.dart';
 
 /// Treasury inflation — epoch marks each emission block to evolve_treasury.
 class PercInflation {
   const PercInflation._();
 
-  /// Pool at minimum reserve (1 cent); next scenario mints a fresh 283M allocation.
+  /// Pool at minimum reserve (1 cent); aligned emission accrues on the next scenario.
   static PercAmount get criticalPoolThreshold =>
       PercChainConstants.minimumTreasuryReserve;
 
@@ -18,10 +19,20 @@ class PercInflation {
       isPoolCritical(treasuryPool);
 
   /// Balance below 66% of the per-minute emission target — regenerate toward full minute allocation.
-  static bool needsRegeneration(PercAmount treasuryPool) =>
-      PercChainConstants.treasuryBalanceNeedsRegeneration(
+  static bool needsRegeneration(
+    PercAmount treasuryPool, {
+    PercEmissionContext? emissionContext,
+  }) {
+    if (emissionContext != null) {
+      return PercDynamicEmission.needsRegeneration(
         treasuryPool.microUnits,
+        emissionContext,
       );
+    }
+    return PercChainConstants.treasuryBalanceNeedsRegeneration(
+      treasuryPool.microUnits,
+    );
+  }
 
   /// Last block that minted PERC to the treasury (inflationary epoch).
   static DateTime? lastInflationEpoch(List<PercBlock> blocks) {
@@ -38,9 +49,10 @@ class PercInflation {
     required bool treasuryCapped,
     required PercAmount treasuryPool,
     required DateTime now,
+    PercEmissionContext? emissionContext,
   }) {
     if (!blockchainLaunched) return null;
-    if (needsRegeneration(treasuryPool) ||
+    if (needsRegeneration(treasuryPool, emissionContext: emissionContext) ||
         isPoolCritical(treasuryPool) ||
         treasuryCapped) {
       return Duration.zero;

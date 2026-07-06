@@ -59,7 +59,8 @@ class PercWardBundler {
     required int microblocksPerBlock,
     int? microblocksPerWard,
   }) {
-    final perWard = microblocksPerWard ?? PercChainConstants.microblocksPerWard;
+    final perWard =
+        microblocksPerWard ?? PercChainConstants.microblocksPerWardEffective;
     final wardsPerCycle = perWard > 0 ? microblocksPerBlock ~/ perWard : 0;
     final pending = pendingMicroblocks.clamp(0, microblocksPerBlock);
     final completed = perWard > 0 ? pending ~/ perWard : 0;

@@ -17,6 +17,7 @@ import '../perc_chain_constants.dart';
 import 'perc_account_privacy.dart';
 import 'perc_auth.dart';
 import 'perc_chronoflux_micro_verifier.dart';
+import 'perc_dynamic_emission.dart';
 import 'perc_block_timing.dart';
 import 'perc_chain_tip.dart';
 import 'perc_network_protocol.dart';
@@ -75,8 +76,7 @@ class PercLedger {
         cumulativeBurnedPerc = cumulativeBurnedPerc ?? PercAmount.zero,
         _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
 
-  /// Max fair-usage microblock log entries kept in ledger storage.
-  static const int microblockLogCap = 1000;
+  int get microblocksPerWard => PercChainConstants.microblocksPerWardEffective;
 
   final Map<String, PercAccount> accounts;
   final List<PercBlock> blocks;
@@ -838,8 +838,27 @@ class PercLedger {
   bool get treasuryPoolCritical =>
       PercInflation.isPoolCritical(treasuryBalance);
 
+  PercEmissionContext get emissionContext =>
+      PercDynamicEmission.contextFromLedger(this);
+
+  PercAmount get dynamicTreasuryEmissionPerMinute =>
+      PercDynamicEmission.effectiveEmissionPerMinute(emissionContext);
+
+  String get dynamicTreasuryEmissionPerMinuteLabel =>
+      dynamicTreasuryEmissionPerMinute.displayFixed8;
+
+  int get emissionLoadFactorPercent =>
+      PercDynamicEmission.loadFactorPercent(emissionContext);
+
+  int get emissionBlockTimeFactorPercent =>
+      PercDynamicEmission.blockTimeFactorPercent(emissionContext);
+
   bool get treasuryNeedsRegeneration =>
-      blockchainLaunched && PercInflation.needsRegeneration(treasuryBalance);
+      blockchainLaunched &&
+      PercInflation.needsRegeneration(
+        treasuryBalance,
+        emissionContext: emissionContext,
+      );
 
   bool get isTreasurySendLocked => blockchainLaunched;
 
@@ -853,6 +872,7 @@ class PercLedger {
         blockchainLaunched: blockchainLaunched,
         treasuryCapped: treasuryCapped,
         treasuryPool: treasuryBalance,
+        emissionContext: emissionContext,
         now: (now ?? DateTime.now()).toUtc(),
       );
 
@@ -1202,7 +1222,8 @@ class PercLedger {
     if (err != null) throw StateError(err);
   }
 
-  bool _needsTreasuryPoolRenewal() => isTreasuryAtReserve;
+  bool _needsTreasuryPoolRenewal() =>
+      !PercChainConstants.infiniteContinuumSupply && isTreasuryAtReserve;
 
   /// Mints toward the per-minute emission target when balance falls below 66%.
   List<PercTransaction> _regenerateTreasuryIfNeeded(DateTime now) {
@@ -1211,7 +1232,8 @@ class PercLedger {
     if (!treasuryNeedsRegeneration || treasuryCapped) return [];
 
     final treasury = _ensureTreasury();
-    final target = PercChainConstants.treasuryEmissionPerMinute;
+    final target = dynamicTreasuryEmissionPerMinute;
+    final threshold = PercDynamicEmission.regenerationThreshold(emissionContext);
     final shortfall = target - treasury.balance;
     if (!shortfall.isPositive) return [];
 
@@ -1224,7 +1246,7 @@ class PercLedger {
       timestamp: now,
       toUsername: PercChainConstants.treasuryUsername,
       memo:
-          'Treasury regeneration — balance below ${PercChainConstants.treasuryRegenerationThreshold.display} ${PercChainConstants.currencySymbol}',
+          'Treasury regeneration — balance below ${threshold.display} ${PercChainConstants.currencySymbol}',
       blockIndex: blocks.length,
       confirmations: _txConfirmations,
     );
@@ -1283,7 +1305,8 @@ class PercLedger {
     if (lastScenarioAt == null) return PercAmount.zero;
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
     if (elapsed <= 0) return PercAmount.zero;
-    var emission = PercChainConstants.emissionForElapsedSeconds(elapsed);
+    var emission =
+        PercDynamicEmission.emissionForElapsedSeconds(elapsed, emissionContext);
     if (!PercChainConstants.infiniteContinuumSupply &&
         emission > treasuryRemaining) {
       emission = treasuryRemaining;
@@ -1438,7 +1461,8 @@ class PercLedger {
     if (lastScenarioAt == null) return regenTxs;
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
     if (elapsed <= 0) return [];
-    var emission = PercChainConstants.emissionForElapsedSeconds(elapsed);
+    var emission =
+        PercDynamicEmission.emissionForElapsedSeconds(elapsed, emissionContext);
     if (!PercChainConstants.infiniteContinuumSupply &&
         emission > treasuryRemaining) {
       emission = treasuryRemaining;
@@ -1463,9 +1487,14 @@ class PercLedger {
 
   void _appendMicroblockLog(PercMicroblockLogEntry entry) {
     microblockLog.add(entry);
-    if (microblockLog.length > microblockLogCap) {
-      microblockLog.removeRange(0, microblockLog.length - microblockLogCap);
+    final cap = microblocksPerWard;
+    if (cap > 0 && microblockLog.length > cap) {
+      microblockLog.removeRange(0, microblockLog.length - cap);
     }
+  }
+
+  void _clearMicroblockLogForNextWard() {
+    microblockLog.clear();
   }
 
   /// Each fair-usage event verifies the Chronoflux continuum and advances one microblock.
@@ -1486,10 +1515,12 @@ class PercLedger {
     totalMicroblocks++;
     lastChronofluxFingerprint = verification.fingerprint;
 
-    final perWard = PercChainConstants.microblocksPerWard;
+    final perWard = microblocksPerWard;
     final cycleWardIndex =
         perWard > 0 ? (microblockCount - 1) ~/ perWard : 0;
-    final wardMicroblock = perWard > 0 ? ((microblockCount - 1) % perWard) + 1 : 1;
+    final wardMicroblock =
+        perWard > 0 ? ((microblockCount - 1) % perWard) + 1 : 1;
+    final wardComplete = perWard > 0 && wardMicroblock == perWard;
     final label = activityLabel ??
         (input.posedQuestion.trim().isNotEmpty
             ? input.posedQuestion.trim()
@@ -1508,7 +1539,7 @@ class PercLedger {
       ),
     );
 
-    if (microblockCount < microblocksPerBlock) {
+    if (!wardComplete) {
       return PercMicroblockRecordResult(
         recorded: true,
         microblockCount: microblockCount,
@@ -1516,9 +1547,22 @@ class PercLedger {
       );
     }
 
+    if (microblockCount < microblocksPerBlock) {
+      _clearMicroblockLogForNextWard();
+      return PercMicroblockRecordResult(
+        recorded: true,
+        microblockCount: microblockCount,
+        selfConsistent: true,
+        wardAdvanced: true,
+      );
+    }
+
     final sealedAt = (now ?? DateTime.now()).toUtc();
     final renewalTxs = _renewTreasuryPoolIfNeeded(sealedAt);
-    final blockTxs = <PercTransaction>[...renewalTxs, ..._treasuryEmissionTxs(sealedAt)];
+    final blockTxs = <PercTransaction>[
+      ...renewalTxs,
+      ..._treasuryEmissionTxs(sealedAt),
+    ];
     final emitted = blockTxs
         .where((t) => t.kind == PercTxKind.treasuryEmission)
         .fold<PercAmount>(PercAmount.zero, (a, t) => a + t.amount);
@@ -1551,21 +1595,7 @@ class PercLedger {
       microblocksSealed: sealedCount,
     );
     lastScenarioAt = sealedAt;
-
-    if (microblockLog.isNotEmpty) {
-      final last = microblockLog.last;
-      microblockLog[microblockLog.length - 1] = PercMicroblockLogEntry(
-        index: last.index,
-        timestamp: last.timestamp,
-        wardIndex: last.wardIndex,
-        wardMicroblock: last.wardMicroblock,
-        activity: last.activity,
-        label: last.label,
-        continuumPercent: last.continuumPercent,
-        fingerprint: last.fingerprint,
-        blockSealed: true,
-      );
-    }
+    _clearMicroblockLogForNextWard();
 
     return PercMicroblockRecordResult(
       recorded: true,
@@ -1573,6 +1603,7 @@ class PercLedger {
       microblockCount: 0,
       selfConsistent: true,
       blockIndex: blocks.last.index,
+      wardAdvanced: true,
     );
   }
 
@@ -1824,20 +1855,21 @@ class PercLedger {
 
     final recipientOnline =
         deliverInstantly ?? isWalletOnlineOnNetwork(to);
-    if (recipientOnline) {
-      _credit(receiver, amount);
-      receiver.transactions.insert(0, tx);
-    } else {
-      pendingInboundTransfers.add(
-        PercPendingInboundTransfer(
-          id: txId,
-          fromUsername: from,
-          toUsername: to,
-          amount: amount,
-          sentAt: now,
-          memo: memo,
-        ),
-      );
+    pendingInboundTransfers.add(
+      PercPendingInboundTransfer(
+        id: txId,
+        fromUsername: from,
+        toUsername: to,
+        amount: amount,
+        sentAt: now,
+        memo: memo,
+        recipientBroughtOnlineAt: recipientOnline ? now : null,
+      ),
+    );
+    // Credit on this device only when the recipient is the active session here.
+    // Cross-device delivery settles when the receiver wallet syncs inbound state.
+    if (recipientOnline && sessionUsername == to) {
+      refreshPendingInboundTransfers(now: now);
     }
 
     final blockTxs = <PercTransaction>[...renewalTxs, tx, feeTx];

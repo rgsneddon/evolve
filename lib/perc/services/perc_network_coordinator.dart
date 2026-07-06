@@ -396,6 +396,37 @@ class PercNetworkCoordinator extends ChangeNotifier {
   }
 
   /// Pulls network state and settles inbound PERC for the signed-in wallet.
+  /// Merges relayed peer ledgers and settles inbound PERC without replacing
+  /// a local chain tip that is already ahead of the network.
+  Future<void> syncInboundState() async {
+    final hub = _hub;
+    if (hub == null) return;
+    await _mergeInboundFromRendezvousPeers(hub);
+    hub.ledger.refreshPendingInboundTransfers();
+    notifyListeners();
+  }
+
+  /// Pushes the sender ledger toward the recipient rendezvous slot and endpoint.
+  Future<void> pushLedgerToRecipient({
+    required PercLedger ledger,
+    String? username,
+    String? address,
+  }) async {
+    if (disableLiveNodesForTests) return;
+    final session = ledger.sessionUsername;
+    if (session != null) {
+      await _rendezvous.relayLedger(username: session, ledger: ledger);
+    }
+    final normalizedUser = username?.trim();
+    if (normalizedUser != null && normalizedUser.isNotEmpty) {
+      final node = ledger.networkNodes[normalizedUser];
+      final endpoint = node?.endpoint;
+      if (endpoint != null && endpoint.isNotEmpty) {
+        await _client.pushLedger(endpoint: endpoint, ledger: ledger);
+      }
+    }
+  }
+
   Future<void> pollForInboundTransfers() async {
     final hub = _hub;
     if (hub == null || _activeUsername == null) return;

@@ -23,6 +23,7 @@ import '../services/perc_chronoflux_time_confirmations.dart';
 import '../services/perc_send_receive_actions.dart';
 import '../widgets/blockchain_launch_balloon.dart';
 import '../widgets/wallet_creator_credit.dart';
+import '../widgets/wallet_credential_error_banner.dart';
 import '../widgets/wallet_language_selector.dart';
 import '../widgets/wallet_opening_screen.dart';
 import 'blockchain_explorer_screen.dart';
@@ -43,6 +44,7 @@ class _WalletScreenState extends State<WalletScreen> {
   bool _showTreasurySetup = false;
   bool _registerDefaultSet = false;
   PercWalletProvider? _wallet;
+  final _credentialErrorKey = GlobalKey<WalletCredentialErrorBannerState>();
 
   @override
   void didChangeDependencies() {
@@ -56,6 +58,12 @@ class _WalletScreenState extends State<WalletScreen> {
     if (!_registerDefaultSet && wallet.isReady && !wallet.isLoggedIn) {
       _registerDefaultSet = true;
       _registerMode = !wallet.hasNonTreasuryAccounts;
+    }
+    if (wallet.isLoggedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(wallet.refreshInboundNow());
+      });
     }
   }
 
@@ -327,7 +335,13 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   Widget _loginRegister(PercWalletProvider wallet, AppLocalizations strings) {
-    return SafeArea(
+    final credentialErrorActive =
+        WalletMessageLocalization.isCredentialError(wallet.errorMessage);
+
+    return WalletCredentialErrorScope(
+      active: credentialErrorActive,
+      onDismiss: () => _credentialErrorKey.currentState?.dismiss(),
+      child: SafeArea(
       child: Center(
         child: SingleChildScrollView(
           child: ConstrainedBox(
@@ -393,7 +407,17 @@ class _WalletScreenState extends State<WalletScreen> {
                             labelText: strings.t('wallet_password'),
                           ),
                         ),
-                        if (wallet.localizedErrorMessage(strings) != null) ...[
+                        if (WalletMessageLocalization.isCredentialError(
+                          wallet.errorMessage,
+                        )) ...[
+                          const SizedBox(height: 10),
+                          WalletCredentialErrorBanner(
+                            key: _credentialErrorKey,
+                            errorKey: wallet.errorMessage,
+                            message: wallet.localizedErrorMessage(strings),
+                            onFadeComplete: wallet.clearCredentialError,
+                          ),
+                        ] else if (wallet.localizedErrorMessage(strings) != null) ...[
                           const SizedBox(height: 10),
                           Text(
                             wallet.localizedErrorMessage(strings)!,
@@ -448,6 +472,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -972,6 +997,24 @@ class _WalletScreenState extends State<WalletScreen> {
               Text(
                 strings.t('wallet_treasury_manual_send_note'),
                 style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8), height: 1.4),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                strings
+                    .t('wallet_treasury_dynamic_rate')
+                    .replaceAll(
+                      '{rate}',
+                      wallet.dynamicTreasuryEmissionPerMinute.displayFixed8,
+                    )
+                    .replaceAll(
+                      '{load}',
+                      '${wallet.emissionLoadFactorPercent ~/ 100}.${(wallet.emissionLoadFactorPercent % 100).toString().padLeft(2, '0')}',
+                    )
+                    .replaceAll(
+                      '{block}',
+                      '${wallet.emissionBlockTimeFactorPercent ~/ 100}.${(wallet.emissionBlockTimeFactorPercent % 100).toString().padLeft(2, '0')}',
+                    ),
+                style: const TextStyle(fontSize: 10, color: Color(0xFF5CE0A8), height: 1.35),
               ),
             ],
             ..._treasuryRemainingLines(wallet, strings),

@@ -183,38 +183,37 @@ void main() {
     expect(ledger.accounts.keys, isNot(contains('rgsneddon')));
   });
 
-  test('treasury pool renewal at 1 cent reserve resumes emission', () {
+  test('aligned emission at reserve funds faucet without pool renewal', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
+    ledger.creditScenario(username: 'alice', percentChance: 10);
 
+    final alice = ledger.account('alice')!;
     final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    final elapsed = PercChainConstants.faucetCooldown;
+    final past = DateTime.now().toUtc().subtract(elapsed);
+    alice.lastFaucetDrawAt = past;
     treasury.balance = PercChainConstants.minimumTreasuryReserve;
     ledger.treasuryGenesisDone = true;
+    ledger.lastScenarioAt = past;
 
     final result = ledger.creditScenario(
       username: 'alice',
       percentChance: 10,
-      scenarioLabel: 'Renewal',
+      scenarioLabel: 'Aligned emission',
     );
 
     expect(result.status, PercFaucetCreditStatus.credited);
-    expect(ledger.treasuryCycle, 2);
-    expect(ledger.treasuryCapped, isFalse);
+    expect(ledger.treasuryCycle, 1);
+    expect(ledger.blocks.any((b) => b.isGenesisRenewal), isFalse);
     expect(
-      ledger.cumulativeTreasuryMinted,
-      PercChainConstants.treasuryLaunchAllocation,
-    );
-    expect(ledger.blocks.any((b) => b.isGenesisRenewal), isTrue);
-    expect(
-      ledger.blocks.last.transactions.any(
-        (t) => t.kind.wireName == 'genesisRenewal',
-      ),
-      isTrue,
+      treasury.balance.microUnits,
+      greaterThan(PercChainConstants.minimumTreasuryReserve.microUnits),
     );
   });
 
-  test('send at 1 cent treasury reserve creates genesis renewal block', () {
+  test('send at 1 cent treasury reserve does not create genesis renewal', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -230,8 +229,8 @@ void main() {
       amount: PercAmount.fromPerc(0.00000010),
     );
 
-    expect(ledger.treasuryCycle, 2);
-    expect(ledger.blocks.last.isGenesisRenewal, isTrue);
+    expect(ledger.treasuryCycle, 1);
+    expect(ledger.blocks.any((b) => b.isGenesisRenewal), isFalse);
   });
 
   test('wallet provider persists ledger across reload', () async {

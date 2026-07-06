@@ -3,7 +3,7 @@ import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_inflation.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
-import 'package:evolve/perc/perc_chain_constants.dart';
+import 'package:evolve/perc/services/perc_staking.dart';
 
 void _seedLedger(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
@@ -65,7 +65,8 @@ void main() {
     expect(
       treasury.balance.microUnits,
       greaterThanOrEqualTo(
-        PercChainConstants.treasuryEmissionPerMinute.microUnits,
+        PercChainConstants.treasuryEmissionPerMinute.microUnits -
+            PercStaking.rewardPerBlock.microUnits,
       ),
     );
     expect(

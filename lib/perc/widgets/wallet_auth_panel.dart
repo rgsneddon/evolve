@@ -5,7 +5,9 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../providers/perc_wallet_provider.dart';
 import 'wallet_creator_credit.dart';
+import 'wallet_credential_error_banner.dart';
 import 'wallet_language_selector.dart';
+import '../../l10n/wallet_message_localization.dart';
 
 /// Compact wallet sign-in / registration form (splash and wallet tab).
 class WalletAuthPanel extends StatefulWidget {
@@ -21,14 +23,19 @@ class WalletAuthPanel extends StatefulWidget {
   final bool showCreatorCredit;
 
   @override
-  State<WalletAuthPanel> createState() => _WalletAuthPanelState();
+  State<WalletAuthPanel> createState() => WalletAuthPanelState();
 }
 
-class _WalletAuthPanelState extends State<WalletAuthPanel> {
+class WalletAuthPanelState extends State<WalletAuthPanel> {
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _credentialErrorKey = GlobalKey<WalletCredentialErrorBannerState>();
   bool _registerMode = false;
   bool _registerDefaultSet = false;
+
+  void dismissCredentialError() {
+    _credentialErrorKey.currentState?.dismiss();
+  }
 
   @override
   void dispose() {
@@ -144,7 +151,15 @@ class _WalletAuthPanelState extends State<WalletAuthPanel> {
           ),
           onSubmitted: (_) => _submit(wallet),
         ),
-        if (wallet.localizedErrorMessage(strings) != null) ...[
+        if (WalletMessageLocalization.isCredentialError(wallet.errorMessage)) ...[
+          const SizedBox(height: 8),
+          WalletCredentialErrorBanner(
+            key: _credentialErrorKey,
+            errorKey: wallet.errorMessage,
+            message: wallet.localizedErrorMessage(strings),
+            onFadeComplete: wallet.clearCredentialError,
+          ),
+        ] else if (wallet.localizedErrorMessage(strings) != null) ...[
           const SizedBox(height: 8),
           Text(
             wallet.localizedErrorMessage(strings)!,

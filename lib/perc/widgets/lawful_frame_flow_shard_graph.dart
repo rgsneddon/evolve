@@ -162,7 +162,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
             },
           ),
           const SizedBox(height: 10),
-          _microblockLogPanel(strings, widget.wallet.microblockLog),
+          _microblockLogPanel(strings, widget.wallet.microblockLog, wards),
           const SizedBox(height: 10),
           Text(
             strings.t('wallet_explorer_frame_flow_status'),
@@ -176,6 +176,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
   Widget _microblockLogPanel(
     AppLocalizations strings,
     List<PercMicroblockLogEntry> log,
+    PercWardView wards,
   ) {
     const displayCap = 50;
     final visible = log.length <= displayCap
@@ -203,8 +204,19 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
           ),
           const SizedBox(height: 4),
           Text(
-            strings.t('wallet_explorer_microblock_log_note'),
+            strings
+                .t('wallet_explorer_microblock_log_note')
+                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
             style: const TextStyle(fontSize: 9, color: Color(0xFF7A8299), height: 1.3),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            strings
+                .t('wallet_explorer_microblock_log_ward_status')
+                .replaceAll('{ward}', '${wards.currentWardIndex + 1}')
+                .replaceAll('{count}', '${log.length}')
+                .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
+            style: const TextStyle(fontSize: 9, color: Color(0xFF5CE0A8)),
           ),
           const SizedBox(height: 8),
           if (reversed.isEmpty)
@@ -233,7 +245,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
                     strings
                         .t('wallet_explorer_microblock_log_entry')
                         .replaceAll('{index}', '${entry.index}')
-                        .replaceAll('{ward}', '${entry.wardIndex}')
+                        .replaceAll('{ward}', '${entry.wardIndex + 1}')
                         .replaceAll('{pos}', '${entry.wardMicroblock}')
                         .replaceAll('{time}', time)
                         .replaceAll('{label}', label)
@@ -331,7 +343,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
                 .t('wallet_explorer_ward_cycle')
                 .replaceAll('{completed}', '${wards.completedWardsInCycle}')
                 .replaceAll('{total}', '${wards.wardsPerSealCycle}')
-                .replaceAll('{ward}', '${wards.currentWardIndex}')
+                .replaceAll('{ward}', '${wards.currentWardIndex + 1}')
                 .replaceAll('{pending}', '${wards.microblocksInCurrentWard}')
                 .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
             textAlign: TextAlign.center,
@@ -522,7 +534,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
           Text(
             strings
                 .t('wallet_explorer_ward_pending')
-                .replaceAll('{ward}', '${wards.currentWardIndex}')
+                .replaceAll('{ward}', '${wards.currentWardIndex + 1}')
                 .replaceAll('{pending}', '${wards.microblocksInCurrentWard}')
                 .replaceAll('{bundle}', '${wards.microblocksPerWard}'),
             style: const TextStyle(fontSize: 9, color: Color(0xFF5CE0A8)),

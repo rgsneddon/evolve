@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -43,6 +45,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
     PercNetworkCoordinator.instance.setAppInBackground(inBackground);
     if (state == AppLifecycleState.resumed) {
       _wallet?.checkSessionTimeout();
+      unawaited(_wallet?.refreshInboundNow());
     }
   }
 

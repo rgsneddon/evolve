@@ -54,8 +54,9 @@ Privacy enquiries:
 - The treasury wallet on the seed node is hidden from public peer listings. A
   one-time blockchain launch is performed only when the designated treasury
   administrator signs in on the hosted Treasury tab. After launch, treasury
-  emission statistics are shown publicly on the explorer (currently 0.00000001
-  PERC per minute); outbound treasury sends remain disabled.
+  emission statistics are shown publicly on the explorer (currently aligned with
+  the analysis faucet — up to 1 PERC per 7-minute cooldown window, about
+  0.14285714 PERC per minute); outbound treasury sends remain disabled.
 - Inside the Evolve app, you see your own username. Other users' names in your
   transaction history and wallet block explorer are shown as the same style of
   five-character alias unless you are viewing your own activity.
@@ -257,8 +258,10 @@ collected by Render when you visit the explorer.
 The Perccent blockchain has launched on the public seed node. The former Treasury
 tab and treasury administrator login on the explorer have been removed. Treasury
 emission summaries remain public on the Explorer page (Section 3.8). Manual sends
-from evolve_treasury stay disabled; automated emission, regeneration, and faucet
-payouts continue on the chain.
+from evolve_treasury stay disabled; automated faucet-aligned emission,
+regeneration, and faucet payouts continue on the chain. The legacy 283M pool
+renewal at 1-cent reserve is not used under the current infinite-continuum
+setting.
 
 
 3.10 Beam-confidential Perccent addresses

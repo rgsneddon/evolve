@@ -62,13 +62,13 @@ void main() {
     expect(ledger.pendingInboundFor('bob'), isEmpty);
   });
 
-  test('deliverInstantly true credits recipient immediately', () {
+  test('deliverInstantly true settles when recipient session is active', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
     ledger.register('bob', 'password123');
     ledger.creditScenario(username: 'alice', percentChance: 50);
-
+    ledger.login('bob', 'password123');
     ledger.send(
       fromUsername: 'alice',
       toAddress: _addr(ledger, 'bob'),
@@ -81,6 +81,35 @@ void main() {
       ledger.account('bob')!.balance,
       PercAmount.fromPerc(0.00000005),
     );
+  });
+
+  test('deliverInstantly true queues for cross-device receiver sync', () {
+    final sender = PercLedger.empty();
+    _seedLedger(sender);
+    sender.register('alice', 'password123');
+    sender.register('bob', 'password123');
+    sender.creditScenario(username: 'alice', percentChance: 50);
+    sender.login('alice', 'password123');
+
+    sender.send(
+      fromUsername: 'alice',
+      toAddress: _addr(sender, 'bob'),
+      amount: PercAmount.fromPerc(0.00000005),
+      deliverInstantly: true,
+    );
+
+    expect(sender.pendingInboundFor('bob'), hasLength(1));
+    expect(sender.account('bob')!.balance, PercAmount.zero);
+
+    final receiver = PercLedger.fromJson(sender.toJson());
+    receiver.login('bob', 'password123');
+
+    expect(receiver.pendingInboundFor('bob'), isEmpty);
+    expect(
+      receiver.account('bob')!.balance,
+      PercAmount.fromPerc(0.00000005),
+    );
+    expect(receiver.account('bob')!.transactions, isNotEmpty);
   });
 
   test('updatePeerFromStatus uses seed heartbeat for online flag', () {

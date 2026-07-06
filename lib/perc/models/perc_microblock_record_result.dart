@@ -6,6 +6,7 @@ class PercMicroblockRecordResult {
     this.microblockCount = 0,
     this.selfConsistent = false,
     this.blockIndex,
+    this.wardAdvanced = false,
   });
 
   final bool recorded;
@@ -13,6 +14,7 @@ class PercMicroblockRecordResult {
   final int microblockCount;
   final bool selfConsistent;
   final int? blockIndex;
+  final bool wardAdvanced;
 
   static const skipped = PercMicroblockRecordResult();
 }

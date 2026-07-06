@@ -4,6 +4,7 @@ import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
+import 'package:evolve/perc/services/perc_staking.dart';
 
 String _addr(PercLedger ledger, String username) =>
     ledger.account(username)!.address;
@@ -71,6 +72,10 @@ void main() {
 
     const oneCent = PercAmount.smallestUnit;
 
+    ledger.login(PercChainConstants.treasuryUsername, 'password123');
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    final before = treasury.balance;
+
     final tx = ledger.send(
       fromUsername: 'alice',
       toAddress: _addr(ledger, PercChainConstants.treasuryUsername),
@@ -80,13 +85,18 @@ void main() {
     expect(tx.kind, PercTxKind.transfer);
     expect(tx.amount, oneCent);
     expect(tx.toUsername, PercChainConstants.treasuryUsername);
+    expect(ledger.pendingInboundFor(PercChainConstants.treasuryUsername), isEmpty);
     expect(
-      ledger
-          .account(PercChainConstants.treasuryUsername)!
-          .transactions
-          .any((t) => t.id == tx.id && t.amount == oneCent),
+      treasury.transactions.any(
+        (t) =>
+            t.kind == PercTxKind.transfer &&
+            t.amount == oneCent &&
+            t.fromUsername == 'alice',
+      ),
       isTrue,
     );
+    final stakingPaid = PercStaking.rewardPerBlock * 2;
+    expect(treasury.balance, before + oneCent - stakingPaid);
   });
 
   test('ledger rejects amounts below 1 cent', () {

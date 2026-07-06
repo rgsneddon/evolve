@@ -82,13 +82,12 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text('Enter Evolve'), findsOneWidget);
-    await tester.tap(find.text('Enter Evolve'));
+    await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
+    expect(find.text('Enter Evolve'), findsNothing);
+    expect(find.text('Wallet loading…'), findsNothing);
     expect(find.byType(EvolveBanner), findsOneWidget);
     expect(find.text('RUN ANALYSIS'), findsOneWidget);
     expect(find.text('Analysis'), findsOneWidget);

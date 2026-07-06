@@ -60,6 +60,7 @@ class PercWalletProvider extends ChangeNotifier {
   bool _pendingLaunchBalloon = false;
   bool _pendingGenesisRenewalNotice = false;
   bool _syncingWallet = false;
+  bool _postLoginSyncing = false;
   bool _sessionTimedOut = false;
   bool _extendingSessionForConnection = false;
   Timer? _microblockCommitDebounce;
@@ -67,6 +68,8 @@ class PercWalletProvider extends ChangeNotifier {
 
   bool get isReady => _ready;
   bool get isSyncingWallet => _syncingWallet;
+  bool get isPostLoginSyncing => _postLoginSyncing;
+  bool get isWalletConnectComplete => hasAppAccess && !_postLoginSyncing;
   bool get sessionTimedOut => _sessionTimedOut;
   bool get isBlockchainLaunched => _ledger.isBlockchainLaunched;
   bool get isLoggedIn => _ledger.isLoggedIn;
@@ -156,6 +159,11 @@ class PercWalletProvider extends ChangeNotifier {
   int get evolutionEpoch => _ledger.evolutionEpoch;
   bool get isOnEvolutionaryChain => _ledger.isOnEvolutionaryChain;
   Duration? get averageTimePerBlock => _ledger.averageTimePerBlock;
+  PercAmount get dynamicTreasuryEmissionPerMinute =>
+      _ledger.dynamicTreasuryEmissionPerMinute;
+  int get emissionLoadFactorPercent => _ledger.emissionLoadFactorPercent;
+  int get emissionBlockTimeFactorPercent =>
+      _ledger.emissionBlockTimeFactorPercent;
 
   List<PercPendingInboundTransfer> get pendingInboundTransfers =>
       isLoggedIn
@@ -221,6 +229,8 @@ class PercWalletProvider extends ChangeNotifier {
 
   /// Re-attaches seed rendezvous for a wallet that stayed signed in locally.
   Future<void> _resumeNetworkSession(String username) async {
+    _postLoginSyncing = true;
+    notifyListeners();
     try {
       await PercLedgerHub.instance.onWalletSessionStarted(username);
       if (isLoggedIn && isConnectedToSeed) {
@@ -228,6 +238,9 @@ class PercWalletProvider extends ChangeNotifier {
       }
     } catch (_) {
       // Boot must not fail if the seed is unreachable.
+    } finally {
+      _postLoginSyncing = false;
+      notifyListeners();
     }
   }
 
@@ -329,11 +342,13 @@ class PercWalletProvider extends ChangeNotifier {
       _ledger.login(username, password);
       clearSessionTimedOut();
       _armSessionTimeout();
-      await PercLedgerHub.instance.onWalletSessionStarted(username);
-      _setStatus('wallet_status_account_created');
       notifyListeners();
-      await _commit();
+      await _completeWalletSessionStart(
+        username,
+        statusKey: 'wallet_status_account_created',
+      );
     } catch (e) {
+      _postLoginSyncing = false;
       _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
     }
@@ -345,16 +360,35 @@ class PercWalletProvider extends ChangeNotifier {
       _ledger.login(username, password);
       clearSessionTimedOut();
       _armSessionTimeout();
-      await PercLedgerHub.instance.onWalletSessionStarted(username);
-      _captureTreasuryLaunchEvent();
-      _setStatus(
-        'wallet_status_signed_in',
-        {'user': _ledger.sessionUsername ?? ''},
-      );
       notifyListeners();
-      await _commit();
+      await _completeWalletSessionStart(
+        username,
+        statusKey: 'wallet_status_signed_in',
+        statusArgs: {'user': _ledger.sessionUsername ?? ''},
+        captureLaunch: true,
+      );
     } catch (e) {
+      _postLoginSyncing = false;
       _setError(WalletMessageLocalization.errorKeyFromException(e));
+      notifyListeners();
+    }
+  }
+
+  Future<void> _completeWalletSessionStart(
+    String username, {
+    required String statusKey,
+    Map<String, String> statusArgs = const {},
+    bool captureLaunch = false,
+  }) async {
+    _postLoginSyncing = true;
+    notifyListeners();
+    try {
+      await PercLedgerHub.instance.onWalletSessionStarted(username);
+      if (captureLaunch) _captureTreasuryLaunchEvent();
+      _setStatus(statusKey, statusArgs);
+      await _commit();
+    } finally {
+      _postLoginSyncing = false;
       notifyListeners();
     }
   }
@@ -521,22 +555,43 @@ class PercWalletProvider extends ChangeNotifier {
         );
       }
       notifyListeners();
-      await _commitSendAndGossip();
+      await _commitSendAndGossip(
+        recipientUsername: recipient,
+        recipientAddress: normalizedAddress,
+      );
     } catch (e) {
       _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
     }
   }
 
+  /// Pull inbound PERC immediately (send screen, app resume, wallet tab focus).
+  Future<void> refreshInboundNow() async {
+    if (!_ready || !isLoggedIn) return;
+    await PercLedgerHub.instance.network.pollForInboundTransfers();
+    notifyListeners();
+  }
+
   /// Persists a send and gossips to the seed even when the local tip lags briefly.
-  Future<void> _commitSendAndGossip() async {
+  Future<void> _commitSendAndGossip({
+    String? recipientUsername,
+    String? recipientAddress,
+  }) async {
     try {
-      await _commit();
+      await PercLedgerHub.instance.commitAfterSend(
+        relayRecipientUsername: recipientUsername,
+        relayRecipientAddress: recipientAddress,
+      );
     } on StateError catch (e) {
       if (!e.message.contains('syncing')) rethrow;
       await PercLedgerHub.instance.network.forceSyncWalletToSeed();
       _ledger.refreshPendingInboundTransfers();
       await PercLedgerHub.instance.commitAfterForceSync();
+      await PercLedgerHub.instance.network.pushLedgerToRecipient(
+        username: recipientUsername,
+        address: recipientAddress,
+        ledger: _ledger,
+      );
     }
   }
 
@@ -716,6 +771,13 @@ class PercWalletProvider extends ChangeNotifier {
     errorMessage = null;
     statusMessageArgs = const {};
     errorMessageArgs = const {};
+  }
+
+  /// Clears a login credential warning after the user dismisses it in the UI.
+  void clearCredentialError() {
+    if (!WalletMessageLocalization.isCredentialError(errorMessage)) return;
+    _clearMessages();
+    notifyListeners();
   }
 
   /// Records one fair-usage microblock per app interaction (field keystrokes).

@@ -26,6 +26,13 @@ class PercChainConstants {
   /// Explorer wards — each ward bundles 10,000 microblocks (10,000 wards per seal cycle).
   static const int microblocksPerWard = 10000;
 
+  /// Override for tests — never set in production code.
+  @visibleForTesting
+  static int? microblocksPerWardOverride;
+
+  static int get microblocksPerWardEffective =>
+      microblocksPerWardOverride ?? microblocksPerWard;
+
   /// Each wallet accrues one progressive scenario block per concluded analysis (max 100M).
   static const int maxScenarioBlocksPerWallet = 100000000;
 
@@ -68,11 +75,17 @@ class PercChainConstants {
   /// Held PERC earns staking only after this many main-chain confirmations.
   static const int stakingConfirmationsRequired = confirmationsRequired;
 
-  /// Pool renewal allocation per cycle when treasury hits 1 cent reserve.
+  /// Legacy finite-pool renewal (only when [infiniteContinuumSupply] is false).
   static final PercAmount poolRenewalAllocation = PercAmount.fromPerc(283000000);
 
-  /// Minimum treasury reserve — 1 cent (0.00000001 PERC); pool renews at this level.
+  /// Minimum treasury reserve — 1 cent (0.00000001 PERC); staking and faucet debits stop here.
   static const PercAmount minimumTreasuryReserve = PercAmount(1);
+
+  /// Max analysis faucet payout per draw (100/100 PERC).
+  static final PercAmount maxFaucetPayoutPerDraw = PercAmount.fromPerc(1);
+
+  /// Treasury accrues one max faucet draw per wallet cooldown window.
+  static PercAmount get treasuryEmissionPerCooldown => maxFaucetPayoutPerDraw;
 
   /// Regeneration ratio — treasury tops up when balance falls below 66% of [treasuryEmissionPerMinute].
   static const int treasuryRegenerationRatioPercent = 66;
@@ -101,18 +114,25 @@ class PercChainConstants {
   /// One-time genesis mint when the seed treasury launches the blockchain.
   static final PercAmount treasuryLaunchAllocation = PercAmount.fromPerc(1);
 
-  /// Treasury emits 0.00000001 PERC per minute (1 cent/min) — infinite continuum.
-  static const PercAmount treasuryEmissionPerMinute = PercAmount.smallestUnit;
+  /// Treasury emission per minute — one max faucet draw per [faucetCooldown] window.
+  static PercAmount get treasuryEmissionPerMinute {
+    final cooldownSec = faucetCooldown.inSeconds;
+    if (cooldownSec <= 0) return treasuryEmissionPerCooldown;
+    final micro = (treasuryEmissionPerCooldown.microUnits * 60) ~/ cooldownSec;
+    return PercAmount(micro);
+  }
 
-  /// Fixed eight-decimal label for treasury emission rate (e.g. 0.00000001).
+  /// Fixed eight-decimal label for treasury emission rate (e.g. 0.14285714).
   static String get treasuryEmissionPerMinuteLabel =>
       treasuryEmissionPerMinute.displayFixed8;
 
-  /// Accrued treasury emission for [elapsedSeconds] at [treasuryEmissionPerMinute].
+  /// Accrued treasury emission for [elapsedSeconds] toward [treasuryEmissionPerCooldown].
   static PercAmount emissionForElapsedSeconds(int elapsedSeconds) {
     if (elapsedSeconds <= 0) return PercAmount.zero;
+    final cooldownSec = faucetCooldown.inSeconds;
+    if (cooldownSec <= 0) return PercAmount.zero;
     final micro =
-        (treasuryEmissionPerMinute.microUnits * elapsedSeconds) ~/ 60;
+        (treasuryEmissionPerCooldown.microUnits * elapsedSeconds) ~/ cooldownSec;
     return PercAmount(micro);
   }
 

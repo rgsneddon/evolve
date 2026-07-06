@@ -476,7 +476,9 @@ final _en = {
       'Your wallet session ended after 7 minutes away from the seed connection — sign in again to run SCS analyses.',
   'wallet_treasury_title': 'Treasury emission',
   'wallet_treasury_note':
-      'Perccent chain advances on scenario analysis — not on Grok construal or field keystrokes. Treasury earns 0.00000001 PERC per elapsed minute — infinite Chronoflux continuum supply. Treasury wallet stays offline until any user runs analysis.',
+      'Perccent chain advances on scenario analysis — not on Grok construal or field keystrokes. Treasury emission is dynamic: it scales with average block time and wallet load on top of the faucet-aligned baseline (up to 1 PERC per 7-minute window at 1.0× load). Infinite Chronoflux continuum supply.',
+  'wallet_treasury_dynamic_rate':
+      'Current emission: {rate} PERC/min — load {load}× · block pace {block}×',
   'wallet_treasury_cycle': 'Treasury cycle #{cycle}',
   'wallet_treasury_minted': '{minted} PERC minted ({pct}% continuum)',
   'wallet_treasury_remaining': 'Treasury remaining: {amount} PERC',
@@ -485,11 +487,11 @@ final _en = {
   'wallet_treasury_inflation_next': 'Time to next inflation: {wait}',
   'wallet_treasury_inflation_ready': 'Inflation ready — run a scenario',
   'wallet_treasury_inflation_critical':
-      'Treasury at 1 cent reserve — pool renewal mint on next scenario',
+      'Treasury at 1 cent reserve — aligned emission accrues on next scenario',
   'wallet_treasury_send_locked':
       'Manual sends from evolve_treasury are disabled. Emission and faucet payouts continue.',
   'wallet_treasury_manual_send_note':
-      'Treasury is active — 0.00000001 PERC/min emission and scenario faucet payouts continue. Manual sends from evolve_treasury are disabled.',
+      'Treasury is active — faucet-aligned emission (~0.14285714 PERC/min) and scenario payouts continue. Manual sends from evolve_treasury are disabled.',
   'wallet_treasury_offline_note':
       'Treasury awaits blockchain launch. Run analysis after launch to draw from the faucet.',
   'wallet_block_height': 'Block height: {height}',
@@ -669,7 +671,9 @@ final _en = {
   'wallet_explorer_microblock_height': 'Fair-usage microblocks logged: {count}',
   'wallet_explorer_microblock_log_title': 'Fair-usage microblock log',
   'wallet_explorer_microblock_log_note':
-      'Each microblock records one fair app interaction — keystrokes and field edits on the analysis form.',
+      'Each microblock records one fair app interaction — keystrokes and field edits on the analysis form. The log holds up to {bundle} entries per ward; when a ward fills, the log clears for the next ward.',
+  'wallet_explorer_microblock_log_ward_status':
+      'Ward {ward} log: {count} / {bundle} entries',
   'wallet_explorer_microblock_log_empty':
       'No microblocks yet — type in the analysis fields after blockchain launch.',
   'wallet_explorer_microblock_log_entry':
@@ -729,6 +733,7 @@ final _en = {
       'Evolve unlocks after you register and receive a Perccent address on this device.',
   'splash_enter_app': 'Enter Evolve',
   'splash_preparing_wallet': 'Preparing wallet…',
+  'splash_wallet_loading': 'Wallet loading…',
   'splash_signed_in_as': 'Signed in as {user}',
   'splash_version_checking': 'Checking for updates…',
   'splash_version_latest': 'You have the latest version ({version})',
@@ -1411,7 +1416,9 @@ final _es = {
       'Su sesión de cartera terminó tras 7 minutos sin conexión al nodo semilla — inicie sesión de nuevo para ejecutar análisis SCS.',
   'wallet_treasury_title': 'Emisión de tesorería',
   'wallet_treasury_note':
-      'La cadena Perccent avanza con análisis de escenarios — no con construcción Grok ni pulsaciones de campo. La tesorería gana 0,00000001 PERC por minuto transcurrido — suministro continuo infinito Chronoflux. La cartera de tesorería permanece offline hasta que un usuario ejecute un análisis.',
+      'La cadena Perccent avanza con análisis de escenarios — no con construcción Grok ni pulsaciones de campo. La emisión es dinámica: escala con el tiempo medio de bloque y la carga de carteras sobre la base del grifo (hasta 1 PERC / 7 min a 1.0×). Suministro continuo infinito Chronoflux.',
+  'wallet_treasury_dynamic_rate':
+      'Emisión actual: {rate} PERC/min — carga {load}× · ritmo de bloque {block}×',
   'wallet_treasury_cycle': 'Ciclo de tesorería #{cycle}',
   'wallet_treasury_minted': '{minted} PERC acuñados ({pct}% continuo)',
   'wallet_treasury_remaining': 'Tesorería restante: {amount} PERC',
@@ -1420,11 +1427,11 @@ final _es = {
   'wallet_treasury_inflation_next': 'Tiempo hasta la próxima inflación: {wait}',
   'wallet_treasury_inflation_ready': 'Inflación lista — ejecute un escenario',
   'wallet_treasury_inflation_critical':
-      'Tesorería en reserva de 1 cent — acuñación de 283M en el próximo escenario',
+      'Tesorería en reserva de 1 cent — la emisión alineada se acumula en el próximo escenario',
   'wallet_treasury_send_locked':
       'Los envíos manuales desde evolve_treasury están deshabilitados. La emisión y el grifo continúan.',
   'wallet_treasury_manual_send_note':
-      'La tesorería está activa — emisión de 0,00000001 PERC/min y pagos del grifo continúan. Los envíos manuales desde evolve_treasury están deshabilitados.',
+      'La tesorería está activa — emisión alineada con el grifo (~0,14285714 PERC/min) y pagos continúan. Los envíos manuales desde evolve_treasury están deshabilitados.',
   'wallet_treasury_offline_note':
       'La tesorería espera el lanzamiento de la cadena. Ejecute un análisis tras el lanzamiento para usar el grifo.',
   'wallet_block_height': 'Altura de bloque: {height}',
@@ -1485,7 +1492,9 @@ final _es = {
   'wallet_explorer_microblock_height': 'Microbloques de uso justo registrados: {count}',
   'wallet_explorer_microblock_log_title': 'Registro de microbloques de uso justo',
   'wallet_explorer_microblock_log_note':
-      'Cada microbloque registra una interacción justa en la app — pulsaciones y ediciones en el formulario de análisis.',
+      'Cada microbloque registra una interacción justa en la app — pulsaciones y ediciones en el formulario de análisis. El registro guarda hasta {bundle} entradas por ward; al completar un ward, se limpia para el siguiente.',
+  'wallet_explorer_microblock_log_ward_status':
+      'Registro ward {ward}: {count} / {bundle} entradas',
   'wallet_explorer_microblock_log_empty':
       'Sin microbloques aún — escriba en los campos de análisis tras el lanzamiento de la cadena.',
   'wallet_explorer_microblock_log_entry':
@@ -1545,6 +1554,7 @@ final _es = {
       'Evolve se desbloquea tras registrarse y recibir una dirección Perccent en este dispositivo.',
   'splash_enter_app': 'Entrar en Evolve',
   'splash_preparing_wallet': 'Preparando monedero…',
+  'splash_wallet_loading': 'Cargando monedero…',
   'splash_signed_in_as': 'Sesión iniciada como {user}',
   'splash_version_checking': 'Comprobando actualizaciones…',
   'splash_version_latest': 'Tiene la última versión ({version})',
