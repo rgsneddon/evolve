@@ -53,6 +53,11 @@ $preserveNames = @(
 Get-ChildItem -Force | Where-Object { $_.Name -notin $preserveNames } | Remove-Item -Recurse -Force
 Copy-Item -Path (Join-Path $webDir '*') -Destination $DeployDir -Recurse -Force
 
+$nojekyll = Join-Path $DeployDir '.nojekyll'
+if (-not (Test-Path $nojekyll)) {
+    New-Item -ItemType File -Path $nojekyll -Force | Out-Null
+}
+
 foreach ($extra in @('download.html', 'privacy_policy.txt', 'fcg_white_paper.html', 'fcg_white_paper.txt')) {
     $src = Join-Path $Root $extra
     if (Test-Path $src) {
