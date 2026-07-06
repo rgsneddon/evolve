@@ -27,6 +27,7 @@ import 'perc_faucet_cooldown.dart';
 import 'perc_inflation.dart';
 import 'perc_staking.dart';
 import 'perc_treasury.dart';
+import 'perc_transfer_relay_ack.dart';
 
 /// Local Perccent ledger — blocks advance on scenarios, transfers, and Chronoflux microblock seals.
 class PercLedger {
@@ -613,78 +614,11 @@ class PercLedger {
     mergeDiscoverableAccounts(remote);
     mergePendingInboundFromPeer(remote);
     mergeInboundTransferTxsFromPeer(remote);
-    mergeTransferBlocksFromPeer(remote);
+    PercTransferRelayAck.acknowledgeRelayTransfers(this, remote);
     final session = sessionUsername;
     if (session != null) {
       refreshPendingInboundTransfers();
       settlePendingInboundOnActivity(session);
-    }
-  }
-
-  /// Appends main-chain transfer blocks from a shorter peer relay ledger so
-  /// explorers and lawful frame-flow can render them without replacing the tip.
-  void mergeTransferBlocksFromPeer(PercLedger remote) {
-    if (remote.networkGenesisRevision != networkGenesisRevision) return;
-
-    final knownIds = <String>{};
-    for (final block in blocks) {
-      for (final tx in block.transactions) {
-        if (tx.kind == PercTxKind.transfer) knownIds.add(tx.id);
-      }
-    }
-
-    for (final block in remote.blocks) {
-      final transfers = block.transactions
-          .where((tx) => tx.kind == PercTxKind.transfer)
-          .toList(growable: false);
-      if (transfers.isEmpty) continue;
-      if (transfers.every((tx) => knownIds.contains(tx.id))) continue;
-
-      final newIndex = blocks.length;
-      final txs = block.transactions
-          .map(
-            (tx) => PercTransaction(
-              id: tx.id,
-              kind: tx.kind,
-              amount: tx.amount,
-              timestamp: tx.timestamp,
-              fromUsername: tx.fromUsername,
-              toUsername: tx.toUsername,
-              memo: tx.memo,
-              scenarioLabel: tx.scenarioLabel,
-              percentChance: tx.percentChance,
-              blockIndex: newIndex,
-              confirmations: tx.confirmations,
-              chronofluxFingerprint: tx.chronofluxFingerprint,
-              microblockIndex: tx.microblockIndex,
-              continuumScs: tx.continuumScs,
-              vortexScs: tx.vortexScs,
-              shearScs: tx.shearScs,
-              resistanceScs: tx.resistanceScs,
-              flowScs: tx.flowScs,
-            ),
-          )
-          .toList(growable: false);
-
-      blocks.add(
-        PercBlock(
-          index: newIndex,
-          timestamp: block.timestamp,
-          transactions: txs,
-          treasuryEmitted: block.treasuryEmitted,
-          scenarioLabel: block.scenarioLabel,
-          triggerUsername: block.triggerUsername,
-          treasuryCycle: block.treasuryCycle,
-          isGenesisRenewal: block.isGenesisRenewal,
-          confirmations: block.confirmations,
-          microblockSeal: block.microblockSeal,
-          chronofluxFingerprint: block.chronofluxFingerprint,
-          microblocksSealed: block.microblocksSealed,
-        ),
-      );
-      for (final tx in transfers) {
-        knownIds.add(tx.id);
-      }
     }
   }
 

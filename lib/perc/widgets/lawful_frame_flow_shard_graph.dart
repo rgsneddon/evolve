@@ -340,7 +340,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
                         AnimatedBuilder(
                           animation: _spin,
                           builder: (context, _) => CustomPaint(
-                            painter: _LawfulFrameFlowPainter(
+                            painter: LawfulFrameFlowPainter(
                               density: _density!,
                               wards: wards,
                               rotation: _spin.value * math.pi * 2,
@@ -688,8 +688,8 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
 
 }
 
-class _LawfulFrameFlowPainter extends CustomPainter {
-  _LawfulFrameFlowPainter({
+class LawfulFrameFlowPainter extends CustomPainter {
+  LawfulFrameFlowPainter({
     required this.density,
     required this.wards,
     required this.rotation,
@@ -1018,7 +1018,7 @@ class _LawfulFrameFlowPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _LawfulFrameFlowPainter old) =>
+  bool shouldRepaint(covariant LawfulFrameFlowPainter old) =>
       old.density != density ||
       old.wards.completedWardsInCycle != wards.completedWardsInCycle ||
       old.wards.microblocksInCurrentWard != wards.microblocksInCurrentWard ||

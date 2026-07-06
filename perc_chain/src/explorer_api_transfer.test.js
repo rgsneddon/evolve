@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { genericBlockLabel } from './block_display_label.js';
-import { getBlockDetail, summarizeBlock } from './explorer_api.js';
+import { blockAtIndex, getBlockDetail, summarizeBlock } from './explorer_api.js';
 
 const transferLedger = {
   blocks: [
@@ -49,5 +49,34 @@ describe('explorer transfer API', () => {
     assert.equal(transfer.to, 'bob');
     assert.equal(transfer.amount, '0.0000001');
     assert.equal(transfer.memo, 'Pilot payment');
+  });
+
+  it('blockAtIndex resolves relay-promoted blocks by block.index field', () => {
+    const ledger = {
+      blocks: [
+        { index: 0, transactions: [] },
+        { index: 1, transactions: [{ id: 's', kind: 'scenarioReward' }] },
+        { index: 2, transactions: [{ id: 's2', kind: 'scenarioReward' }] },
+        {
+          index: 2,
+          timestamp: '2026-07-06T12:00:00.000Z',
+          transactions: [
+            {
+              id: 'tx-relay',
+              kind: 'transfer',
+              fromUsername: 'alice',
+              toUsername: 'bob',
+              amount: { microUnits: 5 },
+              blockIndex: 2,
+            },
+          ],
+        },
+      ],
+    };
+    const hit = blockAtIndex(ledger, 2);
+    assert.ok(hit);
+    assert.equal(hit.transactions.find((tx) => tx.kind === 'transfer').id, 'tx-relay');
+    const detail = getBlockDetail(ledger, 2);
+    assert.equal(detail.transactions.find((tx) => tx.kind === 'transfer').id, 'tx-relay');
   });
 });

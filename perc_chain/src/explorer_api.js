@@ -1,5 +1,6 @@
 import { maskEndpoint } from './endpoint_privacy.js';
 import { genericBlockLabel } from './block_display_label.js';
+import { blockHasTransfer } from './transfer_relay_ack.js';
 import { buildDynamicEmissionStats } from './dynamic_emission.js';
 import { blockHeight, tipHash } from './ledger_store.js';
 import { seedBlockHeightFromLedger } from './seed_block.js';
@@ -85,9 +86,22 @@ export function summarizeBlock(block, ledger) {
   };
 }
 
+export function blockAtIndex(ledger, index) {
+  const blocks = ledger?.blocks ?? [];
+  if (!blocks.length) return null;
+  const needle = Number(index);
+  if (!Number.isFinite(needle) || needle < 0) return null;
+  const byField = blocks.filter((b) => b?.index === needle);
+  if (byField.length > 0) {
+    const transfer = byField.find(blockHasTransfer);
+    return transfer ?? byField[byField.length - 1];
+  }
+  return blocks[needle] ?? null;
+}
+
 export function blockHashAt(ledger, index) {
   if (!ledger?.blocks?.length) return tipHash(ledger);
-  const block = ledger.blocks[index];
+  const block = blockAtIndex(ledger, index);
   if (!block) return null;
   return tipHash({ ...ledger, blocks: [block] });
 }
@@ -107,8 +121,7 @@ export function listBlocks(ledger, { offset = 0, limit = 50 } = {}) {
 }
 
 export function getBlockDetail(ledger, index) {
-  const blocks = ledger?.blocks ?? [];
-  const block = blocks[index];
+  const block = blockAtIndex(ledger, index);
   if (!block) return null;
   return {
     ...summarizeBlock(block, ledger),

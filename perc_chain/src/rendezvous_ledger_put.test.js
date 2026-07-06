@@ -4,11 +4,15 @@ import fs from 'fs';
 import http from 'http';
 import os from 'os';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { LedgerStore } from './ledger_store.js';
 import { createGenesisLedger } from './genesis.js';
 import { applyRelayLedgerPut } from './rendezvous_ledger_put.js';
-import { getBlockDetail } from './explorer_api.js';
+import { blockAtIndex, getBlockDetail } from './explorer_api.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, '..', '..');
+const FIXTURE_PATH = path.join(REPO_ROOT, 'perc_chain', 'fixtures', 'relay_after_send.json');
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
 const SEED_USERNAME = 'evolve_seed_node';
 const MICROBLOCKS_PER_BLOCK = 100_000_000;
@@ -53,36 +57,9 @@ function scenarioBlock(previous, index, label) {
   };
 }
 
-function senderRelayWithTransfer(base) {
-  const index = base.blocks.length;
-  return {
-    ...base,
-    blocks: [
-      ...base.blocks,
-      {
-        index,
-        timestamp: '2026-07-06T12:00:00.000Z',
-        triggerUsername: 'android_user',
-        transactions: [
-          {
-            id: 'tx-relay-transfer-1',
-            kind: 'transfer',
-            fromUsername: 'android_user',
-            toUsername: 'windows_user',
-            amount: { microUnits: 10 },
-            memo: 'Relayed send',
-            timestamp: '2026-07-06T12:00:00.000Z',
-          },
-          {
-            id: 'tx-relay-fee-1',
-            kind: 'feeBurn',
-            fromUsername: 'android_user',
-            amount: { microUnits: 1 },
-          },
-        ],
-      },
-    ],
-  };
+function loadSendRelayFixture() {
+  const raw = fs.readFileSync(FIXTURE_PATH, 'utf8');
+  return JSON.parse(raw);
 }
 
 function createPutHandler(ctx) {
@@ -116,6 +93,7 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
   let tmpDir;
 
   beforeEach(() => {
+    assert.ok(fs.existsSync(FIXTURE_PATH), 'run flutter test test/write_send_relay_fixture_test.dart first');
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'perc-rendezvous-put-'));
   });
 
@@ -123,15 +101,18 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('applyRelayLedgerPut merges transfer from shorter sender relay over taller seed', () => {
+  it('golden path: PercLedger.send fixture preserves tx.id on seed after PUT', () => {
+    const fixture = loadSendRelayFixture();
+    const senderRelay = fixture.ledger;
+    const expectedTxId = fixture.transferTxId;
+    const expectedBlockIndex = fixture.transferBlockIndex;
+
     const store = new LedgerStore(tmpDir);
     let tall = launchLedger(createGenesisLedger({ genesisRevision: 2, chainId: CHAIN_ID }));
-    tall = scenarioBlock(tall, tall.blocks.length, 'Scenario A');
-    tall = scenarioBlock(tall, tall.blocks.length, 'Scenario B');
+    tall = scenarioBlock(tall, tall.blocks.length, 'Seed scenario A');
+    tall = scenarioBlock(tall, tall.blocks.length, 'Seed scenario B');
     store.forceReplaceLedger(tall);
 
-    const senderBase = launchLedger(createGenesisLedger({ genesisRevision: 2, chainId: CHAIN_ID }));
-    const senderRelay = senderRelayWithTransfer(senderBase);
     assert.ok(senderRelay.blocks.length < tall.blocks.length);
 
     const ledgers = new Map();
@@ -147,29 +128,32 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
 
     assert.equal(result.ok, true);
     assert.equal(result.imported, true);
-    assert.equal(store.ledger.blocks.length, tall.blocks.length + 1);
 
-    const transferIndex = store.ledger.blocks.length - 1;
-    const detail = getBlockDetail(store.ledger, transferIndex);
+    const promoted = store.ledger.blocks.find((b) =>
+      (b.transactions ?? []).some((tx) => tx.id === expectedTxId),
+    );
+    assert.ok(promoted);
+    assert.equal(promoted.index, expectedBlockIndex);
+    assert.equal(promoted.transactions.find((tx) => tx.kind === 'transfer').blockIndex, expectedBlockIndex);
+
+    const detail = getBlockDetail(store.ledger, expectedBlockIndex);
     assert.ok(detail);
     assert.equal(detail.displayLabel, 'Manual tx');
     const transfer = detail.transactions.find((tx) => tx.kind === 'transfer');
     assert.ok(transfer);
-    assert.equal(transfer.from, 'android_user');
-    assert.equal(transfer.to, 'windows_user');
-    assert.equal(transfer.amount, '0.0000001');
-    assert.equal(store.ledger.microblocksPerBlock, MICROBLOCKS_PER_BLOCK);
+    assert.equal(transfer.id, expectedTxId);
+    assert.equal(blockAtIndex(store.ledger, expectedBlockIndex).index, expectedBlockIndex);
   });
 
-  it('HTTP PUT /perc/rendezvous/ledger imports transfer block detail with kind transfer', async () => {
+  it('HTTP PUT /perc/rendezvous/ledger imports send fixture with same tx.id', async () => {
+    const fixture = loadSendRelayFixture();
+    const senderRelay = fixture.ledger;
+    const expectedTxId = fixture.transferTxId;
+
     const store = new LedgerStore(tmpDir);
     let tall = launchLedger(createGenesisLedger({ genesisRevision: 2, chainId: CHAIN_ID }));
     tall = scenarioBlock(tall, tall.blocks.length, 'Seed activity');
     store.forceReplaceLedger(tall);
-
-    const senderRelay = senderRelayWithTransfer(
-      launchLedger(createGenesisLedger({ genesisRevision: 2, chainId: CHAIN_ID })),
-    );
 
     const ctx = { store, ledgers: new Map(), addresses: new Map() };
     const server = http.createServer(createPutHandler(ctx));
@@ -188,9 +172,10 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
       assert.equal(payload.ok, true);
       assert.equal(payload.imported, true);
 
-      const detail = getBlockDetail(store.ledger, store.ledger.blocks.length - 1);
+      const detail = getBlockDetail(store.ledger, fixture.transferBlockIndex);
       assert.equal(detail.displayLabel, 'Manual tx');
-      assert.ok(detail.transactions.some((tx) => tx.kind === 'transfer'));
+      const transfer = detail.transactions.find((tx) => tx.kind === 'transfer');
+      assert.equal(transfer.id, expectedTxId);
     } finally {
       await new Promise((resolve) => server.close(resolve));
     }

@@ -76,12 +76,19 @@ void main() {
     );
     expect(find.textContaining('Block #'), findsWidgets);
     expect(find.textContaining('0.00000005'), findsWidgets);
+    final painters = tester
+        .widgetList<CustomPaint>(find.byType(CustomPaint))
+        .map((w) => w.painter)
+        .whereType<LawfulFrameFlowPainter>()
+        .toList();
+    expect(painters, isNotEmpty);
+    expect(painters.first.transferMarkers, isNotEmpty);
     expect(
       LawfulFrameFlowShardGraph.transferMarkerAnglesForBlocks(
         wallet.blocks,
         wallet.microblocksPerBlock,
       ),
-      isNotEmpty,
+      painters.first.transferMarkers,
     );
   });
 

@@ -10,7 +10,7 @@ import {
   bootstrapSeedEpoch,
   isAnnualBootstrapDue,
 } from './seed_bootstrap.js';
-import { mergeTransferBlocksFromPeer } from './transfer_block_merge.js';
+import { acknowledgeRelayTransfers } from './transfer_relay_ack.js';
 
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
 
@@ -143,8 +143,8 @@ export class LedgerStore {
       return true;
     }
     if (!this.ledger) return false;
-    const merged = mergeTransferBlocksFromPeer(this.ledger, remote);
-    if (!merged.merged) return false;
+    const ack = acknowledgeRelayTransfers(this.ledger, remote);
+    if (!ack.ok) return false;
     this.ledger = compactLedgerForSeed(this.ledger);
     this.revision += 1;
     this.save();

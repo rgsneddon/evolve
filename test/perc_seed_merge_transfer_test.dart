@@ -5,6 +5,7 @@ import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_block_display_label.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 
+
 void _seed(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password12345');
@@ -24,7 +25,7 @@ void main() {
     final amount = PercAmount.fromPerc(0.00000010);
     final windowsAddr = sender.account('windows_user')!.address;
 
-    sender.send(
+    final sentTx = sender.send(
       fromUsername: 'android_user',
       toAddress: windowsAddr,
       amount: amount,
@@ -59,6 +60,10 @@ void main() {
           ),
       isTrue,
     );
-    expect(receiver.blocks.any(PercBlockDisplayLabel.hasTransfer), isTrue);
+    final transferBlock = receiver.blocks.lastWhere(PercBlockDisplayLabel.hasTransfer);
+    expect(
+      PercBlockDisplayLabel.transferTransactions(transferBlock).first.id,
+      sentTx.id,
+    );
   });
 }
