@@ -387,6 +387,8 @@ powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Ver
 
 If the Windows INSTALL step fails with `C:\Program Files\evolve`, delete `build\windows` and rebuild (stale CMake cache).
 
+**Distribution layout:** Full installer packages (`.exe`, `.apk`) are staged under `build/downloads/v<version>/` and published to **GitHub Releases**. GitHub Pages (`gh-pages`) hosts the web app, downloads landing page, and **checksum manifests only** in `downloads/v<version>/` (no full binaries on Pages). Release asset proof uses `gh release view` / GitHub API, not the release web UI.
+
 ## Project layout
 
 ```
@@ -410,6 +412,6 @@ Evolve and this Chronoflux implementation are **proprietary software** offered u
 | Use | License |
 |-----|---------|
 | Personal, private, non-commercial use | [LICENSE](LICENSE) (proprietary grant) |
-| Commercial use, redistribution, SaaS, or derivative products for sale | Separate **Commercial License** — contact [licensing@evolve-chronoflux.dev](mailto:licensing@evolve-chronoflux.dev) |
+| Commercial use, redistribution, SaaS, or derivative products for sale | Separate **Commercial License** — contact [russell.gray.sneddon@gmail.com](mailto:russell.gray.sneddon@gmail.com) |
 
 Third-party dependencies (Flutter packages, fonts, etc.) remain under their own licenses; see `NOTICES` in build outputs.
