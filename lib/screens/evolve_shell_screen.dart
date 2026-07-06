@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../perc/models/perc_faucet_credit_result.dart';
 import '../perc/providers/perc_wallet_provider.dart';
+import '../perc/services/perc_network_coordinator.dart';
 import '../perc/services/perc_faucet_cooldown.dart';
 import '../providers/locale_provider.dart';
 import '../fcg/screens/fcg_voting_screen.dart';
@@ -36,6 +37,10 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final inBackground = state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden;
+    PercNetworkCoordinator.instance.setAppInBackground(inBackground);
     if (state == AppLifecycleState.resumed) {
       _wallet?.checkSessionTimeout();
     }

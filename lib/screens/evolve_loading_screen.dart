@@ -129,7 +129,7 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const EvolveSplashVideo(),
+          EvolveSplashVideo(active: !authVisible),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(

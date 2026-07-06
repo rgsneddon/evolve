@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../services/app_performance.dart';
 import '../../l10n/wallet_message_localization.dart';
 import '../../platform/desktop_platform.dart';
 import '../../providers/locale_provider.dart';
@@ -42,7 +43,6 @@ class _WalletScreenState extends State<WalletScreen> {
   bool _showTreasurySetup = false;
   bool _registerDefaultSet = false;
   PercWalletProvider? _wallet;
-  Timer? _inflationTicker;
 
   @override
   void didChangeDependencies() {
@@ -56,20 +56,6 @@ class _WalletScreenState extends State<WalletScreen> {
     if (!_registerDefaultSet && wallet.isReady && !wallet.isLoggedIn) {
       _registerDefaultSet = true;
       _registerMode = !wallet.hasNonTreasuryAccounts;
-    }
-    _syncInflationTicker(wallet);
-  }
-
-  void _syncInflationTicker(PercWalletProvider wallet) {
-    final needsTicker =
-        wallet.isBlockchainLaunched && wallet.timeToNextInflation != null;
-    if (needsTicker && _inflationTicker == null) {
-      _inflationTicker = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
-    } else if (!needsTicker && _inflationTicker != null) {
-      _inflationTicker!.cancel();
-      _inflationTicker = null;
     }
   }
 
@@ -86,7 +72,6 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   void dispose() {
-    _inflationTicker?.cancel();
     _wallet?.removeListener(_onWalletUpdate);
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
@@ -98,7 +83,6 @@ class _WalletScreenState extends State<WalletScreen> {
   Widget build(BuildContext context) {
     final wallet = context.watch<PercWalletProvider>();
     final strings = AppLocalizations.of(context.watch<LocaleProvider>().config);
-    _syncInflationTicker(wallet);
 
     if (!wallet.isReady) {
       return WalletOpeningScreen(strings: strings);
@@ -146,29 +130,8 @@ class _WalletScreenState extends State<WalletScreen> {
         );
       }
 
-      final inflationLine = wallet.treasuryPoolCritical
-          ? strings.t('wallet_treasury_inflation_critical')
-          : wallet.inflationReady
-              ? strings.t('wallet_treasury_inflation_ready')
-              : strings
-                  .t('wallet_treasury_inflation_next')
-                  .replaceAll(
-                    '{wait}',
-                    PercInflation.formatCountdown(wallet.timeToNextInflation!),
-                  );
       lines.add(
-        Text(
-          inflationLine,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: wallet.treasuryPoolCritical
-                ? const Color(0xFFFF8A65)
-                : wallet.inflationReady
-                    ? const Color(0xFF00D9C0)
-                    : const Color(0xFF6C63FF),
-          ),
-        ),
+        _TreasuryInflationLine(wallet: wallet, strings: strings),
       );
     }
 
@@ -1510,4 +1473,80 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
+}
+
+/// Localized inflation countdown — ticks every few seconds without rebuilding wallet.
+class _TreasuryInflationLine extends StatefulWidget {
+  const _TreasuryInflationLine({
+    required this.wallet,
+    required this.strings,
+  });
+
+  final PercWalletProvider wallet;
+  final AppLocalizations strings;
+
+  @override
+  State<_TreasuryInflationLine> createState() => _TreasuryInflationLineState();
+}
+
+class _TreasuryInflationLineState extends State<_TreasuryInflationLine> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TreasuryInflationLine oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncTimer();
+  }
+
+  void _syncTimer() {
+    final needsTicker = widget.wallet.isBlockchainLaunched &&
+        widget.wallet.timeToNextInflation != null &&
+        !widget.wallet.inflationReady;
+    if (needsTicker && _timer == null) {
+      _timer = Timer.periodic(AppPerformance.walletInflationTick, (_) {
+        if (mounted) setState(() {});
+      });
+    } else if (!needsTicker && _timer != null) {
+      _timer!.cancel();
+      _timer = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final wallet = widget.wallet;
+    final strings = widget.strings;
+    final inflationLine = wallet.treasuryPoolCritical
+        ? strings.t('wallet_treasury_inflation_critical')
+        : wallet.inflationReady
+            ? strings.t('wallet_treasury_inflation_ready')
+            : strings.t('wallet_treasury_inflation_next').replaceAll(
+                  '{wait}',
+                  PercInflation.formatCountdown(wallet.timeToNextInflation!),
+                );
+    return Text(
+      inflationLine,
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: wallet.treasuryPoolCritical
+            ? const Color(0xFFFF8A65)
+            : wallet.inflationReady
+                ? const Color(0xFF00D9C0)
+                : const Color(0xFF6C63FF),
+      ),
+    );
+  }
 }

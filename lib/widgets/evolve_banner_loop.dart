@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../services/app_performance.dart';
+import 'evolve_splash_poster.dart';
+
 /// Full-bleed article banner — continuous horizontal pan loop (seamless tile).
 class EvolveBannerLoop extends StatefulWidget {
   const EvolveBannerLoop({
     super.key,
     this.assetPath = 'assets/banner/evolve.jpg',
-    this.loopDuration = const Duration(seconds: 24),
+    this.loopDuration = AppPerformance.bannerLoopDuration,
   });
 
   static const defaultAssetPath = 'assets/banner/evolve.jpg';
@@ -21,7 +24,7 @@ class EvolveBannerLoop extends StatefulWidget {
 }
 
 class _EvolveBannerLoopState extends State<EvolveBannerLoop>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _controller;
 
   Duration get _loopDuration =>
@@ -30,18 +33,42 @@ class _EvolveBannerLoopState extends State<EvolveBannerLoop>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: _loopDuration)
-      ..repeat();
+    WidgetsBinding.instance.addObserver(this);
+    _controller = AnimationController(vsync: this, duration: _loopDuration);
+    _startIfNeeded();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _startIfNeeded();
+  }
+
+  void _startIfNeeded() {
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    final active = lifecycle != AppLifecycleState.paused &&
+        lifecycle != AppLifecycleState.detached &&
+        lifecycle != AppLifecycleState.hidden;
+    if (!active) {
+      _controller.stop();
+      return;
+    }
+    if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return EvolveSplashPoster(assetPath: widget.assetPath);
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         final height = constraints.maxHeight;
@@ -90,7 +117,7 @@ class _EvolveBannerLoopState extends State<EvolveBannerLoop>
         widget.assetPath,
         fit: BoxFit.cover,
         alignment: Alignment.center,
-        filterQuality: FilterQuality.medium,
+        filterQuality: FilterQuality.low,
         semanticLabel: 'Evolve banner',
         errorBuilder: (_, __, ___) => Container(
           color: const Color(0xFF12182A),

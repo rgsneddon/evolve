@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../services/app_performance.dart';
 import '../models/perc_microblock_log_entry.dart';
 import '../models/perc_side_chain.dart';
 import '../providers/perc_wallet_provider.dart';
@@ -27,7 +28,7 @@ class LawfulFrameFlowShardGraph extends StatefulWidget {
 }
 
 class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _spin;
   PercShardDensity? _density;
   var _building = false;
@@ -35,11 +36,30 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _spin = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 48),
-    )..repeat();
+    );
+    _syncSpin();
     _rebuildDensity();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _syncSpin();
+  }
+
+  void _syncSpin() {
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    final active = lifecycle != AppLifecycleState.paused &&
+        lifecycle != AppLifecycleState.detached &&
+        lifecycle != AppLifecycleState.hidden;
+    if (active && !_spin.isAnimating) {
+      _spin.repeat();
+    } else if (!active && _spin.isAnimating) {
+      _spin.stop();
+    }
   }
 
   @override
@@ -59,7 +79,11 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     if (_building) return;
     _building = true;
     final wards = PercWardBundler.fromSideChain(widget.wallet.sideChain);
-    final built = await PercShardDensity.buildForWards(wards: wards);
+    final built = await PercShardDensity.buildForWards(
+      wards: wards,
+      angularBins: AppPerformance.shardAngularBins,
+      radialBins: AppPerformance.shardRadialBins,
+    );
     if (!mounted) return;
     setState(() {
       _density = built;
@@ -69,6 +93,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _spin.dispose();
     super.dispose();
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../services/app_performance.dart';
 import '../models/perc_account.dart';
 import '../models/perc_peer_node.dart';
 import '../perc_chain_constants.dart';
@@ -42,6 +43,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   String? _publicEndpoint;
   bool _seedConnected = false;
   Timer? _receivePollTimer;
+  bool _appInBackground = false;
 
   PercNetworkSyncState get syncState => _syncState;
   bool get isConnectedToSeed => _seedConnected;
@@ -415,11 +417,24 @@ class PercNetworkCoordinator extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Slow network polling while the app is minimized or on another desktop.
+  void setAppInBackground(bool inBackground) {
+    if (_appInBackground == inBackground) return;
+    _appInBackground = inBackground;
+    if (_receivePollTimer != null) {
+      _startReceivePolling();
+    }
+  }
+
+  Duration get _receivePollInterval => _appInBackground
+      ? AppPerformance.backgroundNetworkPoll
+      : AppPerformance.foregroundNetworkPoll;
+
   void _startReceivePolling() {
     if (disableLiveNodesForTests || _activeUsername == null) return;
     _receivePollTimer?.cancel();
     _receivePollTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      _receivePollInterval,
       (_) {
         pollForInboundTransfers();
       },
