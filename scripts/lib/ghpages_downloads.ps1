@@ -6,8 +6,12 @@ function Sync-GhPagesBranch {
         [string]$Remote = 'origin'
     )
 
-    git fetch $Remote $Branch 2>$null
-    if ($LASTEXITCODE -ne 0) { throw "git fetch $Remote $Branch failed" }
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    git fetch $Remote $Branch 2>&1 | Out-Null
+    $fetchExit = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+    if ($fetchExit -ne 0) { throw "git fetch $Remote $Branch failed (exit $fetchExit)" }
 
     $tracking = "$Remote/$Branch"
     $current = git branch --show-current 2>$null
