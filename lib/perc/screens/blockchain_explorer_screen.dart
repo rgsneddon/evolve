@@ -9,7 +9,9 @@ import '../models/perc_block.dart';
 import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../services/perc_account_privacy.dart';
+import '../services/perc_block_display_label.dart';
 import '../services/perc_block_timing.dart';
+
 import '../services/perc_ward_bundler.dart';
 import '../services/chronoflux_variable_history.dart';
 import '../widgets/chronoflux_five_point_graph_panel.dart';
@@ -266,6 +268,9 @@ class BlockchainExplorerScreen extends StatelessWidget {
   }
 
   Widget _blockTile(PercBlock block, AppLocalizations strings) {
+    final label = PercBlockDisplayLabel.forBlock(block);
+    final transfers = PercBlockDisplayLabel.transferTransactions(block);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -280,6 +285,17 @@ class BlockchainExplorerScreen extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF6C63FF),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: transfers.isNotEmpty
+                        ? const Color(0xFFFFB347)
+                        : const Color(0xFF9BA3B8),
                   ),
                 ),
                 const Spacer(),
@@ -341,6 +357,28 @@ class BlockchainExplorerScreen extends StatelessWidget {
                   .replaceAll('{count}', '${block.transactions.length}'),
               style: const TextStyle(fontSize: 11, color: Color(0xFF9BA3B8)),
             ),
+            for (final tx in transfers) ...[
+              const SizedBox(height: 6),
+              Text(
+                strings
+                    .t('wallet_explorer_transfer_row')
+                    .replaceAll('{amount}', tx.amount.displayFixed8)
+                    .replaceAll('{symbol}', PercChainConstants.currencySymbol)
+                    .replaceAll(
+                      '{from}',
+                      PercAccountPrivacy.publicDisplayName(tx.fromUsername),
+                    )
+                    .replaceAll(
+                      '{to}',
+                      PercAccountPrivacy.publicDisplayName(tx.toUsername),
+                    ),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFFFB347),
+                ),
+              ),
+            ],
             if (block.isConfirmed) ...[
               const SizedBox(height: 4),
               Text(

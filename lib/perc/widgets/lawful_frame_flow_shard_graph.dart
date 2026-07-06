@@ -5,9 +5,13 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/app_performance.dart';
+import '../models/perc_block.dart';
 import '../models/perc_microblock_log_entry.dart';
 import '../models/perc_side_chain.dart';
+import '../perc_chain_constants.dart';
 import '../providers/perc_wallet_provider.dart';
+import '../services/perc_account_privacy.dart';
+import '../services/perc_block_display_label.dart';
 import '../services/perc_shard_density.dart';
 import '../services/perc_ward_bundler.dart';
 
@@ -70,6 +74,7 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     if (oldWidget.wallet.microblockCount != widget.wallet.microblockCount ||
         oldWidget.wallet.totalMicroblocks != widget.wallet.totalMicroblocks ||
         oldWidget.wallet.microblockLog.length != widget.wallet.microblockLog.length ||
+        oldWidget.wallet.blockHeight != widget.wallet.blockHeight ||
         oldSide.pendingMicroblocks != newSide.pendingMicroblocks) {
       _rebuildDensity();
     }
@@ -163,6 +168,8 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
           ),
           const SizedBox(height: 10),
           _microblockLogPanel(strings, widget.wallet.microblockLog, wards),
+          const SizedBox(height: 10),
+          _transferLanePanel(strings, _transferBlocks(widget.wallet.blocks)),
           const SizedBox(height: 10),
           Text(
             strings.t('wallet_explorer_frame_flow_status'),
@@ -328,6 +335,10 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
                               pulse:
                                   (math.sin(_spin.value * math.pi * 4) + 1) / 2,
                               progress: progress,
+                              transferMarkers: _transferMarkerAngles(
+                                _transferBlocks(widget.wallet.blocks),
+                                widget.wallet.microblocksPerBlock,
+                              ),
                             ),
                             child: const SizedBox.expand(),
                           ),
@@ -579,6 +590,90 @@ class _LawfulFrameFlowShardGraphState extends State<LawfulFrameFlowShardGraph>
     );
   }
 
+  static List<PercBlock> _transferBlocks(List<PercBlock> blocks) =>
+      blocks
+          .where(PercBlockDisplayLabel.hasTransfer)
+          .toList(growable: false);
+
+  static List<double> _transferMarkerAngles(
+    List<PercBlock> transferBlocks,
+    int microblocksPerBlock,
+  ) {
+    if (transferBlocks.isEmpty || microblocksPerBlock <= 0) return const [];
+    return transferBlocks
+        .map(
+          (b) =>
+              (b.index % microblocksPerBlock) / microblocksPerBlock,
+        )
+        .toList(growable: false);
+  }
+
+  Widget _transferLanePanel(AppLocalizations strings, List<PercBlock> blocks) {
+    const cap = 8;
+    final visible = blocks.length <= cap
+        ? blocks
+        : blocks.sublist(blocks.length - cap);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFFFB347).withOpacity(0.55)),
+        color: const Color(0xFF12100C),
+      ),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            strings.t('wallet_explorer_transfer_lane_title'),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFFFB347),
+            ),
+          ),
+          const SizedBox(height: 6),
+          if (visible.isEmpty)
+            Text(
+              strings.t('wallet_explorer_transfer_lane_empty'),
+              style: const TextStyle(fontSize: 9, color: Color(0xFF7A8299)),
+            )
+          else
+            ...visible.reversed.map((block) {
+              final tx = PercBlockDisplayLabel.transferTransactions(block).first;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  strings
+                      .t('wallet_explorer_transfer_lane_entry')
+                      .replaceAll('{index}', '${block.index}')
+                      .replaceAll('{amount}', tx.amount.displayFixed8)
+                      .replaceAll(
+                        '{symbol}',
+                        PercChainConstants.currencySymbol,
+                      )
+                      .replaceAll(
+                        '{from}',
+                        PercAccountPrivacy.publicDisplayName(tx.fromUsername),
+                      )
+                      .replaceAll(
+                        '{to}',
+                        PercAccountPrivacy.publicDisplayName(tx.toUsername),
+                      ),
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontFamily: 'monospace',
+                    color: Color(0xFFFFD8A8),
+                    height: 1.3,
+                  ),
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
 }
 
 class _LawfulFrameFlowPainter extends CustomPainter {
@@ -588,6 +683,7 @@ class _LawfulFrameFlowPainter extends CustomPainter {
     required this.rotation,
     required this.pulse,
     required this.progress,
+    this.transferMarkers = const [],
   });
 
   final PercShardDensity density;
@@ -595,6 +691,7 @@ class _LawfulFrameFlowPainter extends CustomPainter {
   final double rotation;
   final double pulse;
   final double progress;
+  final List<double> transferMarkers;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -609,6 +706,29 @@ class _LawfulFrameFlowPainter extends CustomPainter {
     _paintCore(canvas, center, radius);
     _paintProgressRing(canvas, center, radius);
     _paintWardProgressRing(canvas, center, radius);
+    _paintTransferMarkers(canvas, center, radius);
+  }
+
+  void _paintTransferMarkers(Canvas canvas, Offset center, double radius) {
+    if (transferMarkers.isEmpty) return;
+    final ring = radius * 0.94;
+    const start = -math.pi / 2;
+    for (final fraction in transferMarkers) {
+      final angle = start + fraction * math.pi * 2 + rotation * 0.15;
+      final point = Offset(
+        center.dx + math.cos(angle) * ring,
+        center.dy + math.sin(angle) * ring,
+      );
+      final paint = Paint()
+        ..color = const Color(0xFFFFB347).withOpacity(0.95)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(point, 4.5, paint);
+      final halo = Paint()
+        ..color = const Color(0xFFFFB347).withOpacity(0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+      canvas.drawCircle(point, 7, halo);
+    }
   }
 
   /// Ward bundle fill inside the microblock shard field (aggregate, not per-ward).
@@ -893,7 +1013,8 @@ class _LawfulFrameFlowPainter extends CustomPainter {
       old.wards.pendingMicroblocks != wards.pendingMicroblocks ||
       old.rotation != rotation ||
       old.pulse != pulse ||
-      old.progress != progress;
+      old.progress != progress ||
+      old.transferMarkers.length != transferMarkers.length;
 }
 
 /// Heatmap of all wards in the current seal cycle (100 × 100 = 10,000 wards).

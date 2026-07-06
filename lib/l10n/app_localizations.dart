@@ -641,6 +641,12 @@ final _en = {
   'wallet_explorer_history': 'BLOCK HISTORY',
   'wallet_explorer_trigger': 'Triggered by {user}',
   'wallet_explorer_tx_count': '{count} transaction(s)',
+  'wallet_explorer_transfer_row': 'Manual tx · {amount} {symbol} · {from} → {to}',
+  'wallet_explorer_transfer_lane_title': 'Main-chain transfer lane (100M microblock framework)',
+  'wallet_explorer_transfer_lane_entry':
+      'Block #{index} · {amount} {symbol} · {from} → {to}',
+  'wallet_explorer_transfer_lane_empty':
+      'No Perccent transfers yet — sends appear here on the lawful split.',
   'wallet_explorer_genesis_renewal': 'Genesis renewal — cycle #{cycle} (283M PERC Perccent)',
   'wallet_explorer_confirmations': '{count} confirmation(s) required — fully confirmed',
   'wallet_explorer_confirmed': 'Fully confirmed (1 block)',
