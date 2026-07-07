@@ -98,7 +98,10 @@ void main() {
     await walletA.register('shareduser', 'password12345');
 
     final addr = walletA.address;
-    final resolved = PercLedgerHub.instance.ledger.accountForAddress(addr);
+    final localResolved =
+        PercLedgerHub.instance.ledger.accountForAddress(addr);
+    final networkResolved =
+        await PercLedgerHub.instance.network.resolveAccountByAddress(addr);
 
     _writeLog(
       'cross_wallet_registration_chain.log',
@@ -107,19 +110,24 @@ void main() {
       'sessionATip=${PercChainTip.hash(PercLedgerHub.instance.ledger)}\n'
       'seedTip=${PercChainTip.hash(seed)}\n'
       'address=$addr\n'
-      'resolvedUsername=${resolved?.username}\n',
+      'localResolvedUsername=${localResolved?.username}\n'
+      'networkResolvedUsername=${networkResolved?.username}\n',
     );
 
     expect(walletB.blockHeight, walletA.blockHeight);
+    expect(walletB.blockHeight, PercChainTip.height(seed));
     expect(walletB.networkBlockHeight, walletA.networkBlockHeight);
     expect(
       PercChainTip.hash(PercLedgerHub.instance.ledger),
       PercChainTip.hash(seed),
     );
-    expect(resolved?.username, 'shareduser');
+    expect(localResolved?.username, 'shareduser');
+    expect(networkResolved?.username, 'shareduser');
   });
 
   test('registration with unreachable seed allows connect with offline status', () async {
+    final seed = _tallSeedLedger();
+    PercNetworkCoordinator.instance.registerTestSeedLedger(seed);
     PercNetworkCoordinator.instance.testSeedReachable = false;
 
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
@@ -138,6 +146,33 @@ void main() {
     expect(
       PercNetworkCoordinator.instance.activeUsernameForTest,
       'offlineuser',
+    );
+
+    PercNetworkCoordinator.instance.testSeedReachable = true;
+    await PercNetworkCoordinator.instance.runDeepSyncForTest();
+
+    final ledger = PercLedgerHub.instance.ledger;
+    final published = wallet.onlineNetworkNodes
+        .any((n) => n.username == 'offlineuser' && n.online);
+
+    _writeLog(
+      'registration_recovery_after_sync.log',
+      'username=offlineuser\n'
+      'afterHeight=${ledger.blockHeight}\n'
+      'seedHeight=${PercChainTip.height(seed)}\n'
+      'afterTip=${PercChainTip.hash(ledger)}\n'
+      'seedTip=${PercChainTip.hash(seed)}\n'
+      'publishedOnline=$published\n'
+      'pendingRecovery=${PercNetworkCoordinator.instance.hasPendingRegistrationRecovery}\n',
+    );
+
+    expect(ledger.blockHeight, PercChainTip.height(seed));
+    expect(PercChainTip.hash(ledger), PercChainTip.hash(seed));
+    expect(ledger.account('offlineuser'), isNotNull);
+    expect(published, isTrue);
+    expect(
+      PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
+      isFalse,
     );
   });
 

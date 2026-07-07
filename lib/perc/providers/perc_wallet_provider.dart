@@ -74,9 +74,6 @@ class PercWalletProvider extends ChangeNotifier {
   bool _pendingSeedSetup = false;
   String? _pendingRegistrationPassword;
   bool _registrationAwaitingSeedAlignment = false;
-  String? _deferredRegistrationUsername;
-  String? _deferredRegistrationPassword;
-  List<String>? _deferredRegistrationMnemonic;
   List<String>? _pendingRegistrationMnemonic;
   bool _sessionTimedOut = false;
   bool _extendingSessionForConnection = false;
@@ -238,6 +235,8 @@ class PercWalletProvider extends ChangeNotifier {
 
   Future<void> initialize() async {
     await PercLedgerHub.instance.initialize(_store);
+    PercLedgerHub.instance.network.onPendingRegistrationRecoveryReady =
+        _publishRegistrationIfRecovered;
     _ledger.refreshPendingInboundTransfers();
     if (_ledger.isLoggedIn) {
       if (_ledger.isWalletSessionExpired()) {
@@ -556,11 +555,6 @@ class PercWalletProvider extends ChangeNotifier {
     _registrationAwaitingSeedAlignment = false;
     notifyListeners();
     try {
-      _storeDeferredRegistration(
-        username: username,
-        password: password,
-        seedMnemonic: seedMnemonic,
-      );
       PercLedgerHub.instance.network.setPendingRegistrationRecovery(
         username: username,
         password: password,
@@ -601,41 +595,22 @@ class PercWalletProvider extends ChangeNotifier {
   Future<bool> _publishRegistrationIfRecovered({String? statusKey}) async {
     final hub = PercLedgerHub.instance;
     final network = hub.network;
-    if (_deferredRegistrationUsername == null &&
-        !network.hasPendingRegistrationRecovery) {
-      return false;
-    }
+    if (!network.hasPendingRegistrationRecovery) return false;
     if (!network.isSyncedToNetwork) return false;
     if (!network.isPendingRegistrationAligned(hub)) return false;
 
-    final username = _ledger.sessionUsername ?? _deferredRegistrationUsername;
+    final username =
+        _ledger.sessionUsername ?? network.pendingRegistrationUsernameForTest;
     if (username == null || !hasAppAccess) return false;
 
     await hub.onWalletSessionStarted(username);
     await hub.commitAfterForceSync();
     network.clearPendingRegistrationRecovery();
     _registrationAwaitingSeedAlignment = false;
-    _clearDeferredRegistration();
     if (statusKey != null) {
       _setStatus(statusKey);
     }
     return true;
-  }
-
-  void _storeDeferredRegistration({
-    required String username,
-    required String password,
-    List<String>? seedMnemonic,
-  }) {
-    _deferredRegistrationUsername = username;
-    _deferredRegistrationPassword = password;
-    _deferredRegistrationMnemonic = seedMnemonic;
-  }
-
-  void _clearDeferredRegistration() {
-    _deferredRegistrationUsername = null;
-    _deferredRegistrationPassword = null;
-    _deferredRegistrationMnemonic = null;
   }
 
   Future<void> syncWalletToSeed() async {
@@ -649,15 +624,7 @@ class PercWalletProvider extends ChangeNotifier {
       final network = hub.network;
 
       if (network.hasPendingRegistrationRecovery) {
-        final username = _deferredRegistrationUsername ??
-            network.pendingRegistrationUsernameForTest!;
-        final password = _deferredRegistrationPassword ??
-            network.pendingRegistrationPasswordForTest!;
-        final adoption = await hub.adoptSeedChainForRegistration(
-          username: username,
-          password: password,
-          seedMnemonic: _deferredRegistrationMnemonic,
-        );
+        final adoption = await hub.adoptPendingRegistrationChain();
         _ledger.refreshPendingInboundTransfers();
         _registrationAwaitingSeedAlignment =
             PercRegistrationCompletion.decide(adoption).markAwaiting;
@@ -709,7 +676,6 @@ class PercWalletProvider extends ChangeNotifier {
     final username = _ledger.sessionUsername;
     _ledger.logout();
     _registrationAwaitingSeedAlignment = false;
-    _clearDeferredRegistration();
     PercLedgerHub.instance.network.clearPendingRegistrationRecovery();
     if (username != null) {
       await PercLedgerHub.instance.onWalletSessionEnded(username);

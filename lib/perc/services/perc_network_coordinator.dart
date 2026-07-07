@@ -74,6 +74,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     instance.settlementPeerTargets.clear();
     instance.clearTestSeedLedger();
     instance.clearPendingRegistrationRecovery();
+    instance.onPendingRegistrationRecoveryReady = null;
     instance._detach();
   }
 
@@ -127,6 +128,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
   int _pendingSeedHeight = 0;
   String _pendingSeedTipHash = '';
   String _pendingSeedChainId = '';
+
+  /// Invoked when pending registration becomes aligned after background sync.
+  Future<bool> Function()? onPendingRegistrationRecoveryReady;
 
   @visibleForTesting
   String? get activeUsernameForTest => _activeUsername;
@@ -194,10 +198,50 @@ class PercNetworkCoordinator extends ChangeNotifier {
     );
   }
 
-  bool clearPendingRegistrationRecoveryIfAligned(PercLedgerHub hub) {
-    if (!isPendingRegistrationAligned(hub)) return false;
-    clearPendingRegistrationRecovery();
-    return true;
+  /// Re-adopts the seed chain using credentials held for pending registration.
+  Future<PercRegistrationSeedAdoption> adoptPendingRegistrationChain() async {
+    final username = _pendingRegistrationUsername;
+    final password = _pendingRegistrationPassword;
+    if (username == null || password == null) {
+      return const PercRegistrationSeedAdoption(
+        seedReachable: false,
+        isAligned: false,
+        seedHeight: 0,
+        seedTipHash: '',
+        seedChainId: PercChainConstants.evolutionaryChainId,
+      );
+    }
+    return adoptSeedChainForRegistration(
+      username: username,
+      password: password,
+      seedMnemonic: _pendingRegistrationMnemonic,
+    );
+  }
+
+  Future<void> _maybeNotifyPendingRegistrationRecovery(
+    PercLedgerHub hub,
+  ) async {
+    if (!hasPendingRegistrationRecovery) return;
+    if (!isPendingRegistrationAligned(hub)) return;
+    if (!isSyncedToNetwork) return;
+    await onPendingRegistrationRecoveryReady?.call();
+  }
+
+  void _applyTestSeedForPendingRegistration(PercLedgerHub hub) {
+    if (!disableLiveNodesForTests) return;
+    if (!hasPendingRegistrationRecovery) return;
+    if (!testSeedReachable || testSeedLedger == null) return;
+
+    final seed = PercLedger.fromJson(testSeedLedger!.toJson());
+    final status = PercNetworkStatus.fromLedger(
+      seed,
+      revision: 1,
+      endpoint: 'http://test-seed/perc',
+    );
+    _applySeedLedgerToHub(hub, seed, status);
+    _networkBlockHeight = PercChainTip.height(seed);
+    _syncState = PercNetworkSyncState.synced;
+    _seedConnected = true;
   }
 
   static final PercNetworkCoordinator instance = PercNetworkCoordinator();
@@ -309,17 +353,11 @@ class PercNetworkCoordinator extends ChangeNotifier {
   /// Background catch-up after the shell is visible.
   void scheduleDeepSync() {
     final hub = _hub;
-    if (hub == null || disableLiveNodesForTests || _deepSyncRunning) return;
+    if (hub == null || _deepSyncRunning) return;
     _deepSyncRunning = true;
     unawaited(() async {
       try {
-        await _syncWithRetries(hub, attempts: 2);
-        hub.ledger.refreshPendingInboundTransfers();
-        final session = hub.ledger.sessionUsername;
-        if (session != null) {
-          hub.ledger.reconcileSessionStakingFromChain(session, applyCredits: true);
-        }
-        await hub.persistLocal();
+        await _runDeepSyncBody(hub);
       } catch (_) {
         // Background sync must not surface to splash/login.
       } finally {
@@ -327,6 +365,28 @@ class PercNetworkCoordinator extends ChangeNotifier {
         notifyListeners();
       }
     }());
+  }
+
+  @visibleForTesting
+  Future<void> runDeepSyncForTest() async {
+    final hub = _hub;
+    if (hub == null) return;
+    await _runDeepSyncBody(hub);
+    notifyListeners();
+  }
+
+  Future<void> _runDeepSyncBody(PercLedgerHub hub) async {
+    if (!disableLiveNodesForTests) {
+      await _syncWithRetries(hub, attempts: 2);
+    }
+    _applyTestSeedForPendingRegistration(hub);
+    hub.ledger.refreshPendingInboundTransfers();
+    final session = hub.ledger.sessionUsername;
+    if (session != null) {
+      hub.ledger.reconcileSessionStakingFromChain(session, applyCredits: true);
+    }
+    await hub.persistLocal();
+    await _maybeNotifyPendingRegistrationRecovery(hub);
   }
 
   Future<void> onSessionEnded([String? username]) async {
@@ -582,7 +642,13 @@ class PercNetworkCoordinator extends ChangeNotifier {
       }
     }
     _reapplyPendingRegistrationIfNeeded(hub);
-    clearPendingRegistrationRecoveryIfAligned(hub);
+    if (hasPendingRegistrationRecovery) {
+      _rememberPendingSeedTarget(
+        seedHeight: PercChainTip.height(hub.ledger),
+        seedTipHash: PercChainTip.hash(hub.ledger),
+        seedChainId: PercChainAlignment.effectiveChainId(hub.ledger),
+      );
+    }
   }
 
   /// Manual sync — pull from seed, merge peers, re-publish wallet, gossip chain.

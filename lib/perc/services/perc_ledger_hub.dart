@@ -99,6 +99,10 @@ class PercLedgerHub extends ChangeNotifier {
         seedMnemonic: seedMnemonic,
       );
 
+  /// Re-adopts the seed chain for a registration still awaiting network publish.
+  Future<PercRegistrationSeedAdoption> adoptPendingRegistrationChain() =>
+      network.adoptPendingRegistrationChain();
+
   Future<void> onWalletSessionEnded([String? username]) async {
     await network.onSessionEnded(username);
   }
