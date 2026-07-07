@@ -299,25 +299,23 @@ void main() {
     ledger.register('staker', 'password123');
     ledger.register('runner', 'password123');
     ledger.creditScenario(username: 'staker', percentChance: 10);
+    ledger.account('staker')!.balance = PercAmount.fromPerc(1);
+    ledger.account('runner')!.balance = PercAmount.zero;
 
-    final stakerBefore = ledger.account('staker')!.balance;
-    const fee = PercChainConstants.sendTransactionFee;
-    final postDebit = stakerBefore - PercAmount(1) - fee;
-    final maxStaking = PercStaking.rewardForBalance(postDebit);
-
+    final maxStaking =
+        PercStaking.rewardForBalance(PercAmount.fromPerc(1));
+    final scenarioReward =
+        PercFaucet.computeScenarioReward(percentChance: 10).total;
     final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
-    treasury.balance =
-        PercChainConstants.minimumTreasuryReserve + maxStaking;
+    final regenFloor = PercChainConstants.treasuryRegenerationThreshold;
+    treasury.balance = regenFloor + maxStaking + scenarioReward;
 
-    ledger.send(
-      fromUsername: 'staker',
-      toAddress: _addr(ledger, 'runner'),
-      amount: PercAmount(1),
-    );
+    ledger.creditScenario(username: 'runner', percentChance: 10);
 
+    expect(treasury.balance, regenFloor);
     expect(
-      treasury.balance,
-      PercChainConstants.minimumTreasuryReserve,
+      treasury.balance.microUnits,
+      greaterThanOrEqualTo(PercChainConstants.minimumTreasuryReserve.microUnits),
     );
   });
 

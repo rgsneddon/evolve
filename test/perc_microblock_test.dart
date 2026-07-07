@@ -68,6 +68,12 @@ void main() {
       ),
       isFalse,
     );
+    expect(
+      ledger.blocks.first.transactions.any(
+        (t) => t.kind == PercTxKind.stakingReward,
+      ),
+      isFalse,
+    );
   });
 
   test('microblock state persists in ledger json round-trip', () {

@@ -191,6 +191,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
       try {
         await _syncWithRetries(hub, attempts: 2);
         hub.ledger.refreshPendingInboundTransfers();
+        final session = hub.ledger.sessionUsername;
+        if (session != null) {
+          hub.ledger.reconcileSessionStakingFromChain(session, applyCredits: true);
+        }
         await hub.persistLocal();
       } catch (_) {
         // Background sync must not surface to splash/login.
@@ -242,6 +246,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
     await deepSyncToNetworkHeight();
 
     final session = hub.ledger.sessionUsername;
+    if (session != null) {
+      hub.ledger.reconcileSessionStakingFromChain(session, applyCredits: true);
+    }
     if (!disableLiveNodesForTests &&
         session != null &&
         session != PercChainConstants.treasuryUsername &&

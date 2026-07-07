@@ -101,6 +101,9 @@ class PercWalletProvider extends ChangeNotifier {
   PercAmount get balance => _ledger.sessionBalance;
   PercAmount get cumulativeStaking =>
       _ledger.sessionAccount?.cumulativeStakingEarned ?? PercAmount.zero;
+
+  /// Chain-derived staking owed for the signed-in wallet (calculated at login).
+  PercAmount get stakingOwedCalculated => _ledger.sessionStakingOwedCalculated;
   String get address => _ledger.sessionAccount?.address ?? '';
   List<PercTransaction> get transactions =>
       List.unmodifiable(_ledger.sessionAccount?.transactions ?? const []);

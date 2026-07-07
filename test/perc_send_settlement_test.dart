@@ -160,11 +160,7 @@ void main() {
 
     expect(devices.sender.pendingInboundFor('bob'), isEmpty);
     final postDebit = aliceBefore - amount - PercChainConstants.sendTransactionFee;
-    final stakingReward = PercStaking.rewardForBalance(postDebit);
-    expect(
-      devices.sender.account('alice')!.balance,
-      postDebit + stakingReward,
-    );
+    expect(devices.sender.account('alice')!.balance, postDebit);
     expect(
       devices.sender.account('alice')!.transactions.any(
             (tx) => tx.amount == amount && tx.isConfirmed,
@@ -196,11 +192,7 @@ void main() {
 
     expect(devices.sender.pendingInboundFor('bob'), isEmpty);
     final postDebit = aliceBefore - amount - PercChainConstants.sendTransactionFee;
-    final stakingReward = PercStaking.rewardForBalance(postDebit);
-    expect(
-      devices.sender.account('alice')!.balance,
-      postDebit + stakingReward,
-    );
+    expect(devices.sender.account('alice')!.balance, postDebit);
     expect(
       devices.sender.account('alice')!.transactions.any(
             (tx) => tx.amount == amount && tx.isConfirmed,

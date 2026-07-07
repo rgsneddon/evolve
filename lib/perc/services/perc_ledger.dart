@@ -127,6 +127,8 @@ class PercLedger {
   int nextWardProposalId;
   final List<PercPendingInboundTransfer> pendingInboundTransfers;
   final List<PercSettlementWitness> settlementWitnesses;
+  /// Staking owed to the signed-in wallet, calculated from chain at login.
+  PercAmount sessionStakingOwedCalculated = PercAmount.zero;
   final List<PercMicroblockLogEntry> microblockLog;
   final Map<String, String> seedRecoveryCatalog;
   final PercChronofluxMicroVerifier _microVerifier;
@@ -626,10 +628,49 @@ class PercLedger {
     }
   }
 
+  /// Adopts chain balances for network-discovered holder stubs so scenario staking
+  /// can credit every user wallet known on the shared network ledger.
+  void mergeNetworkAccountBalances(PercLedger remote) {
+    for (final entry in remote.accounts.entries) {
+      final username = entry.key;
+      if (username == PercChainConstants.treasuryUsername ||
+          username == PercChainConstants.seedUsername) {
+        continue;
+      }
+      final remoteAcc = entry.value;
+      if (remoteAcc.address.isEmpty) continue;
+      PercAccount? local = accounts[username];
+      if (local == null) {
+        try {
+          local = ensureRemoteAccount(
+            username: username,
+            address: remoteAcc.address,
+          );
+        } on StateError {
+          continue;
+        }
+      }
+      if (local.passwordSet) continue;
+      if (remoteAcc.balance.microUnits > local.balance.microUnits) {
+        local.balance = remoteAcc.balance;
+      }
+      if (remoteAcc.cumulativeStakingEarned.microUnits >
+          local.cumulativeStakingEarned.microUnits) {
+        local.cumulativeStakingEarned = remoteAcc.cumulativeStakingEarned;
+      }
+      for (final tx in remoteAcc.transactions) {
+        if (tx.kind != PercTxKind.stakingReward) continue;
+        if (local.transactions.any((t) => t.id == tx.id)) continue;
+        local.transactions.insert(0, tx);
+      }
+    }
+  }
+
   /// Merges launch flags, address book, and inbound transfers without replacing chain tip.
   void mergeNetworkStateFromPeer(PercLedger remote) {
     adoptNetworkLaunchState(remote);
     mergeDiscoverableAccounts(remote);
+    mergeNetworkAccountBalances(remote);
     applyInboundRelayFromSender(remote);
     reconcileSettledTransfersFromPeer(remote);
     final session = sessionUsername;
@@ -1636,6 +1677,43 @@ class PercLedger {
     return total;
   }
 
+  PercAmount calculateStakingOwed(String username) {
+    return PercStaking.stakingOwedFromChain(
+      blocks: blocks,
+      username: PercAuth.normalizeUsername(username),
+    );
+  }
+
+  /// Calculates staking owed at login; after full sync applies chain-recorded credits.
+  void reconcileSessionStakingFromChain(
+    String username, {
+    required bool applyCredits,
+  }) {
+    final u = PercAuth.normalizeUsername(username);
+    final acc = _accountFor(u);
+    if (acc == null) return;
+
+    final owed = calculateStakingOwed(u);
+    sessionStakingOwedCalculated = owed;
+
+    if (!applyCredits) return;
+
+    final chainTxs = PercStaking.stakingTransactionsFromChain(
+      blocks: blocks,
+      username: u,
+    );
+    final delta = owed - acc.cumulativeStakingEarned;
+    if (!delta.isPositive) return;
+
+    acc.cumulativeStakingEarned = owed;
+    acc.balance = acc.balance + delta;
+    for (final tx in chainTxs) {
+      if (!acc.transactions.any((t) => t.id == tx.id)) {
+        acc.transactions.insert(0, tx);
+      }
+    }
+  }
+
   void _applyStakingRewards(DateTime now, List<PercTransaction> blockTxs) {
     final treasury = _ensureTreasury();
     final blockIndex = blocks.length;
@@ -1643,6 +1721,7 @@ class PercLedger {
 
     for (final entry in accounts.entries) {
       if (entry.key == PercChainConstants.treasuryUsername) continue;
+      if (entry.key == PercChainConstants.seedUsername) continue;
       final confirmed = PercStaking.confirmedBalanceForStaking(
         walletBalance: entry.value.balance,
         sameBlockIncoming: _sameBlockIncomingFor(entry.key, blockTxs),
@@ -1715,9 +1794,12 @@ class PercLedger {
     bool microblockSeal = false,
     String? chronofluxFingerprint,
     int? microblocksSealed,
+    bool applyStaking = false,
   }) {
     if (blockTxs.isEmpty) return;
-    _applyStakingRewards(timestamp, blockTxs);
+    if (applyStaking) {
+      _applyStakingRewards(timestamp, blockTxs);
+    }
     _appendBlock(
       timestamp: timestamp,
       txs: blockTxs,
@@ -1910,6 +1992,7 @@ class PercLedger {
     sessionStartedAt = t;
     sessionLastActivityAt = t;
     refreshPendingInboundTransfers(now: t);
+    reconcileSessionStakingFromChain(u, applyCredits: false);
     return acc;
   }
 
@@ -2607,6 +2690,9 @@ class PercLedger {
       }
     }
 
+    final applyStaking =
+        blockTxs.any((tx) => tx.kind == PercTxKind.scenarioReward);
+
     if (cooldownLeft != null) {
       if (blockTxs.isNotEmpty) {
         _finalizeBlock(
@@ -2616,6 +2702,7 @@ class PercLedger {
           scenarioLabel: scenarioLabel,
           triggerUsername: u,
           isGenesisRenewal: isGenesisRenewal,
+          applyStaking: applyStaking,
         );
         lastScenarioAt = now;
       }
@@ -2640,6 +2727,7 @@ class PercLedger {
         scenarioLabel: scenarioLabel,
         triggerUsername: u,
         isGenesisRenewal: isGenesisRenewal,
+        applyStaking: applyStaking,
       );
     }
 

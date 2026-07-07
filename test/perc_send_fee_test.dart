@@ -53,12 +53,11 @@ void main() {
       isTrue,
     );
     final postDebit = aliceBefore - amount - fee;
-    final stakingReward = PercStaking.rewardForBalance(postDebit);
-    expect(ledger.account('alice')!.balance, postDebit + stakingReward);
+    expect(ledger.account('alice')!.balance, postDebit);
     expect(ledger.sessionBalance, ledger.account('alice')!.balance);
     expect(
       ledger.account(PercChainConstants.treasuryUsername)!.balance,
-      treasuryBefore - stakingReward,
+      treasuryBefore,
     );
     expect(ledger.cumulativeBurnedPerc, fee);
     expect(ledger.pendingInboundFor('bob'), isEmpty);
@@ -135,13 +134,7 @@ void main() {
     );
 
     expect(ledger.cumulativeBurnedPerc, burnedAfterSend);
-    final stakingOnRevert = PercStaking.rewardForBalance(
-      PercStaking.confirmedBalanceForStaking(
-        walletBalance: aliceAfterSend,
-        sameBlockIncoming: PercAmount.smallestUnit,
-      ),
-    );
-    expect(ledger.account('alice')!.balance, aliceAfterSend + stakingOnRevert);
+    expect(ledger.account('alice')!.balance, aliceAfterSend);
     expect(ledger.pendingInboundFor('bob'), isEmpty);
   });
 

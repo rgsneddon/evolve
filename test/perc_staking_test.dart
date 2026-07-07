@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/perc/models/perc_account.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
@@ -186,6 +187,86 @@ void main() {
     );
   });
 
+  test('send and revert blocks do not pay staking', () {
+    final ledger = PercLedger.empty();
+    _seed(ledger);
+    ledger.register('bob', 'password123');
+    ledger.creditScenario(username: 'staker', percentChance: 50);
+
+    final treasuryBefore =
+        ledger.account(PercChainConstants.treasuryUsername)!.balance;
+    final stakerBefore = ledger.account('staker')!.balance;
+
+    ledger.send(
+      fromUsername: 'staker',
+      toAddress: ledger.account('bob')!.address,
+      amount: PercAmount.fromPerc(0.00000010),
+    );
+
+    expect(
+      ledger.blocks.last.transactions.any(
+        (t) => t.kind == PercTxKind.stakingReward,
+      ),
+      isFalse,
+    );
+    expect(
+      ledger.account(PercChainConstants.treasuryUsername)!.balance,
+      treasuryBefore,
+    );
+    expect(ledger.account('staker')!.balance.microUnits, lessThan(stakerBefore.microUnits));
+  });
+
+  test('login calculates staking owed from chain', () {
+    final ledger = PercLedger.empty();
+    _seed(ledger);
+    ledger.register('bob', 'password123');
+    ledger.creditScenario(username: 'staker', percentChance: 10);
+    ledger.account('staker')!.balance = PercAmount.fromPerc(1);
+    ledger.creditScenario(username: 'bob', percentChance: 10);
+
+    final expected = PercStaking.rewardForBalance(PercAmount.fromPerc(1));
+    ledger.login('staker', 'password123');
+
+    expect(ledger.calculateStakingOwed('staker'), expected);
+    expect(ledger.sessionStakingOwedCalculated, expected);
+  });
+
+  test('network stub holder receives staking after balance merge', () {
+    final network = PercLedger.empty();
+    _seed(network);
+    network.register('alice', 'password123');
+    network.register('bob', 'password123');
+    network.creditScenario(username: 'alice', percentChance: 50);
+
+    final runner = PercLedger.fromJson(network.toJson());
+    runner.register('charlie', 'password123');
+    final charlieAddr = runner.account('charlie')!.address;
+    runner.accounts['charlie'] = PercAccount(
+      username: 'charlie',
+      passwordHash: '',
+      salt: '',
+      address: charlieAddr,
+      passwordSet: false,
+    );
+    runner.account('alice')!.balance = PercAmount.fromPerc(1.5);
+
+    final remote = PercLedger.fromJson(runner.toJson());
+    remote.accounts['charlie'] = PercAccount(
+      username: 'charlie',
+      passwordHash: '',
+      salt: '',
+      address: charlieAddr,
+      passwordSet: false,
+      balance: PercAmount.fromPerc(2),
+    );
+
+    runner.mergeNetworkAccountBalances(remote);
+    runner.creditScenario(username: 'bob', percentChance: 20);
+
+    final charlieReward = PercStaking.rewardForBalance(PercAmount.fromPerc(2));
+    expect(runner.account('charlie')!.cumulativeStakingEarned, charlieReward);
+  });
+
   test('login full sync reconciles staking via hub import', () async {
     PercLedgerHub.resetForTest();
     final store = PercWalletStoreMemory();
@@ -208,6 +289,8 @@ void main() {
 
     hub.importPeerLedger(remote, expectedTipHash: PercChainTip.hash(remote));
     hub.ledger.login('staker', 'password123');
+    expect(hub.ledger.calculateStakingOwed('staker'), expectedReward);
+    hub.ledger.reconcileSessionStakingFromChain('staker', applyCredits: true);
 
     expect(
       hub.ledger.sessionAccount!.cumulativeStakingEarned,

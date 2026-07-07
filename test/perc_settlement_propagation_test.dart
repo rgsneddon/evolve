@@ -42,11 +42,7 @@ void main() {
 
     expect(devices.sender.pendingInboundFor(devices.receiverUser), isEmpty);
     final postDebit = aliceBefore - amount - PercChainConstants.sendTransactionFee;
-    final stakingReward = PercStaking.rewardForBalance(postDebit);
-    expect(
-      devices.sender.account(devices.senderUser)!.balance,
-      postDebit + stakingReward,
-    );
+    expect(devices.sender.account(devices.senderUser)!.balance, postDebit);
     expect(
       devices.sender.account(devices.senderUser)!.transactions.any(
             (tx) =>

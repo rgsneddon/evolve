@@ -213,9 +213,11 @@ class PercLedgerHub extends ChangeNotifier {
       blockHeight: PercChainTip.height(_ledger),
       tipHash: PercChainTip.hash(_ledger),
     );
-    if (_ledger.sessionUsername != null) {
+    final session = _ledger.sessionUsername;
+    if (session != null) {
+      _ledger.reconcileSessionStakingFromChain(session, applyCredits: true);
       _ledger.setWalletOnline(
-        _ledger.sessionUsername!,
+        session,
         endpoint: network.nodeEndpoint,
         blockHeight: PercChainTip.height(_ledger),
         tipHash: PercChainTip.hash(_ledger),
