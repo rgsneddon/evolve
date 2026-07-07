@@ -6,7 +6,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path $PSScriptRoot -Parent
-. "$PSScriptRoot\lib\github.ps1"
 Set-Location $Root
 
 New-Item -ItemType Directory -Path $ScratchDir -Force | Out-Null
@@ -39,21 +38,23 @@ $auditFiles = @("pubspec.yaml", "lib/perc/perc_app_version.dart", "version.json"
 $audit = @("=== version audit $(Get-Date -Format o) ===")
 foreach ($f in $auditFiles) {
   $audit += "---- $f ----"
-  $audit += (Select-String -Path $f -Pattern '4\.0\.0|3\.4\.8|136|135' | ForEach-Object { $_.Line })
+  $audit += (Select-String -Path $f -Pattern '4\.0\.0|3\.4\.8|136|137' | ForEach-Object { $_.Line })
 }
 $audit | Set-Content (Join-Path $ScratchDir "version_audit.log") -Encoding utf8
 
 $doc = @("=== doc spotcheck $(Get-Date -Format o) ===")
 $doc += (Select-String -Path README.md -Pattern 'Security tab|treasury|scenario-only|v4\.0\.0|build 136' | ForEach-Object { $_.Line })
 $doc += "--- privacy_policy.txt ---"
-$doc += (Select-String -Path privacy_policy.txt -Pattern 'Last updated|Security tab|treasury|scenario-only' | ForEach-Object { $_.Line })
+$doc += (Select-String -Path privacy_policy.txt -Pattern 'Last updated|Security tab|treasury|scenario-only|v4\.0\.0|build 136' | ForEach-Object { $_.Line })
+$doc += "--- LICENSE ---"
+$doc += (Select-String -Path LICENSE -Pattern 'Copyright|Chronoflux|dual' | Select-Object -First 5 | ForEach-Object { $_.Line })
 $doc | Set-Content (Join-Path $ScratchDir "doc_spotcheck.log") -Encoding utf8
 
 flutter test test/downloads_landing_page_test.dart --reporter expanded 2>&1 |
   Set-Content (Join-Path $ScratchDir "landing_page_test.log") -Encoding utf8
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# (c) Full build + installers + publish (no manual gh release delete)
+# (c) Release build then idempotent publish (clobber upload, no release delete)
 Write-StepLog "build_all" {
   powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\build_all.ps1" -SkipTests
 }
@@ -62,7 +63,6 @@ Write-StepLog "build_installers" {
   powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\build_installers.ps1" -SkipWindowsBuild -SkipApkBuild -SkipDeploy -SkipCodeSign
 }
 
-# Re-check tree after builds (fixture may change during tests in build_all if not skipped)
 $dirtyAfter = git status --porcelain
 if ($dirtyAfter) {
   git add -A
@@ -72,16 +72,16 @@ if ($dirtyAfter) {
 
 Write-StepLog "publish" {
   powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\publish_github_release.ps1" `
-    -Version $Version -SkipBuild -RecreateRelease -EvidenceDir $ScratchDir
+    -Version $Version -SkipBuild -EvidenceDir $ScratchDir
 }
 
-# (d) Mirror evidence to C:\Users\rgsne\goal\ and scratch
+# (d) Mirror evidence + materialize session goal deliverables
 & "$PSScriptRoot\capture_release_evidence.ps1" -ScratchDir $ScratchDir -BaseRef $BaseRef -Version $Version
 
-# (e) Push main and tag (skip pre-push auto-bump — version pinned for this release)
+# (e) Push main and tag once when ahead (no force unless tag drifted)
 $ahead = git rev-list --count origin/main..HEAD 2>$null
 if ($ahead -and [int]$ahead -gt 0) {
-  git push origin main --no-verify
+  git push origin main
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
@@ -94,15 +94,22 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Moving tag $tag from $localTag to HEAD $head" -ForegroundColor Yellow
     git tag -f $tag $head
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    git push origin $tag --force
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  } else {
+    $remoteTagLine = git ls-remote --tags origin "refs/tags/$tag" 2>$null
+    if (-not $remoteTagLine) {
+      git push origin $tag
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
   }
-  git push origin $tag --force --no-verify
-  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } else {
   git tag -a $tag -m "Evolve Chronoflux $tag"
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  git push origin $tag --no-verify
+  git push origin $tag
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
-$goalDir = 'C:\Users\rgsne\goal'
-Write-Host "Finalize complete. Evidence: $ScratchDir and $goalDir" -ForegroundColor Green
+& "$PSScriptRoot\capture_release_evidence.ps1" -ScratchDir $ScratchDir -BaseRef $BaseRef -Version $Version
+
+Write-Host "Finalize complete. Evidence: $ScratchDir and C:\Users\rgsne\goal" -ForegroundColor Green
