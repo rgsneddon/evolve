@@ -97,4 +97,4 @@ if ($LASTEXITCODE -eq 0) {
   }
 }
 
-Write-Host "Finalize complete. Evidence: $ScratchDir and C:\Users\rgsne\goal\" -ForegroundColor Green
+Write-Host "Finalize complete. Evidence: $ScratchDir and C:\Users\rgsne\goal" -ForegroundColor Green
