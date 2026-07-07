@@ -5,6 +5,8 @@ import 'package:evolve/perc/services/perc_chain_tip.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_network_protocol.dart';
 
+import 'support/two_device_harness.dart';
+
 String _addr(PercLedger ledger, String username) =>
     ledger.account(username)!.address;
 
@@ -40,7 +42,7 @@ void main() {
     expect(status.isFreshOnSeedPeer, isFalse);
   });
 
-  test('deliverInstantly false queues until receiver advances scenario block', () {
+  test('pending transfer credits receiver only after scenario block advance', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -56,13 +58,25 @@ void main() {
 
     expect(ledger.account('bob')!.balance, PercAmount.zero);
     expect(ledger.pendingInboundFor('bob'), hasLength(1));
+    expect(
+      ledger.account('bob')!.transactions.any((tx) => !tx.isConfirmed),
+      isTrue,
+    );
 
     ledger.login('bob', 'password123');
+    expect(ledger.account('bob')!.balance, PercAmount.zero);
+    expect(ledger.pendingInboundFor('bob'), hasLength(1));
+
+    ledger.advanceScenarioBlock('bob');
     expect(ledger.account('bob')!.balance, PercAmount.fromPerc(0.00000010));
     expect(ledger.pendingInboundFor('bob'), isEmpty);
+    expect(
+      ledger.account('bob')!.transactions.any((tx) => tx.isConfirmed),
+      isTrue,
+    );
   });
 
-  test('deliverInstantly true credits signed-in recipient on inbound refresh', () {
+  test('login alone does not credit queued inbound transfer', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -77,41 +91,39 @@ void main() {
     );
 
     ledger.refreshPendingInboundForSession();
-    expect(ledger.pendingInboundFor('bob'), isEmpty);
+    expect(ledger.pendingInboundFor('bob'), hasLength(1));
     expect(
       ledger.account('bob')!.balance,
-      PercAmount.fromPerc(0.00000005),
+      PercAmount.zero,
     );
   });
 
-  test('deliverInstantly true queues for cross-device receiver sync', () {
-    final sender = PercLedger.empty();
-    _seedLedger(sender);
-    sender.register('alice', 'password123');
-    sender.register('bob', 'password123');
-    sender.creditScenario(username: 'alice', percentChance: 50);
-    sender.login('alice', 'password123');
+  test('cross-device receiver confirms after scenario on synced ledger', () {
+    final devices = TwoDeviceHarness.create();
+    devices.linkDevices();
+    devices.fundSender();
+    devices.loginSender();
 
-    sender.send(
-      fromUsername: 'alice',
-      toAddress: _addr(sender, 'bob'),
-      amount: PercAmount.fromPerc(0.00000005),
+    devices.send(
+      PercAmount.fromPerc(0.00000005),
       deliverInstantly: true,
     );
 
-    expect(sender.pendingInboundFor('bob'), hasLength(1));
-    expect(sender.account('bob')!.balance, PercAmount.zero);
+    expect(devices.sender.pendingInboundFor('bob'), hasLength(1));
 
-    final receiver = PercLedger.fromJson(sender.toJson());
-    receiver.login('bob', 'password123');
+    devices.relayInitiationToReceiver();
+    devices.loginReceiver();
 
-    receiver.refreshPendingInboundForSession();
-    expect(receiver.pendingInboundFor('bob'), isEmpty);
+    expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
+    expect(devices.receiver.account('bob')!.balance, PercAmount.zero);
+
+    devices.receiverScenario();
+    expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
     expect(
-      receiver.account('bob')!.balance,
+      devices.receiver.account('bob')!.balance,
       PercAmount.fromPerc(0.00000005),
     );
-    expect(receiver.account('bob')!.transactions, isNotEmpty);
+    expect(devices.receiver.account('bob')!.transactions, isNotEmpty);
   });
 
   test('updatePeerFromStatus uses seed heartbeat for online flag', () {

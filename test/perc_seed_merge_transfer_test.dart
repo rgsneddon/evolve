@@ -52,6 +52,16 @@ void main() {
     receiver.mergeNetworkStateFromPeer(sender);
     receiver.refreshPendingInboundForSession();
 
+    expect(receiver.pendingInboundFor('windows_user'), hasLength(1));
+    expect(receiver.account('windows_user')!.balance, PercAmount.zero);
+    expect(
+      receiver.account('windows_user')!.transactions.any(
+            (tx) => !tx.isConfirmed && tx.amount == amount,
+          ),
+      isTrue,
+    );
+
+    receiver.advanceScenarioBlock('windows_user');
     expect(receiver.pendingInboundFor('windows_user'), isEmpty);
     expect(receiver.account('windows_user')!.balance, amount);
     expect(

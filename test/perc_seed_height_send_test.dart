@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_peer_node.dart';
-import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 
@@ -16,7 +15,7 @@ void _seedLedger(PercLedger ledger) {
 }
 
 void main() {
-  test('send confirms at seed height when local tip is shorter', () {
+  test('send anchors at seed height while pending until scenario confirm', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -42,7 +41,7 @@ void main() {
       seedConfirmationBlockHeight: seedHeight,
     );
 
-    expect(tx.isConfirmed, isTrue);
+    expect(tx.isConfirmed, isFalse);
     expect(tx.blockIndex, seedHeight);
     expect(ledger.account('bob')!.balance, PercAmount.zero);
     expect(ledger.pendingInboundFor('bob'), hasLength(1));
@@ -50,9 +49,13 @@ void main() {
       ledger.account('bob')!.transactions.single.isConfirmed,
       isFalse,
     );
+    expect(
+      ledger.blocks.any((b) => b.transactions.any((t) => t.id == tx.id)),
+      isTrue,
+    );
   });
 
-  test('receiver credits inbound on sign-in within receive window', () {
+  test('receiver credits inbound only after scenario within receive window', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -66,7 +69,10 @@ void main() {
     );
 
     ledger.login('bob', 'password123');
+    expect(ledger.pendingInboundFor('bob'), hasLength(1));
+    expect(ledger.account('bob')!.balance, PercAmount.zero);
 
+    ledger.advanceScenarioBlock('bob');
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(
       ledger.account('bob')!.balance,

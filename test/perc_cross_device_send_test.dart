@@ -1,44 +1,37 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
-import 'package:evolve/perc/services/perc_ledger.dart';
 
-void _seed(PercLedger ledger) {
-  ledger.ensureTreasuryAccount();
-  ledger.setupTreasuryPassword('password12345');
-  ledger.launchBlockchain();
-}
+import 'support/two_device_harness.dart';
 
 void main() {
   test('receiver ledger merges pending inbound from sender relay state', () {
-    final sender = PercLedger.empty();
-    _seed(sender);
-    sender.register('android_user', 'password12345');
-    sender.register('windows_user', 'password12345');
-    sender.creditScenario(username: 'android_user', percentChance: 80);
-    sender.login('android_user', 'password12345');
-
-    final windowsAddr = sender.account('windows_user')!.address;
-    final amount = PercAmount.fromPerc(0.00000010);
-
-    sender.send(
-      fromUsername: 'android_user',
-      toAddress: windowsAddr,
-      amount: amount,
-      deliverInstantly: true,
+    final devices = TwoDeviceHarness.create(
+      senderUser: 'android_user',
+      receiverUser: 'windows_user',
+      password: 'password12345',
     );
+    devices.linkDevices();
+    devices.fundSender(percentChance: 80);
+    devices.loginSender();
 
-    expect(sender.pendingInboundFor('windows_user'), hasLength(1));
-    expect(sender.account('windows_user')!.balance, PercAmount.zero);
-    expect(sender.account('android_user')!.transactions, isNotEmpty);
+    final amount = PercAmount.fromPerc(0.00000010);
+    devices.send(amount, deliverInstantly: true);
 
-    final receiver = PercLedger.fromJson(sender.toJson());
-    receiver.login('windows_user', 'password12345');
+    expect(devices.sender.pendingInboundFor('windows_user'), hasLength(1));
+    expect(devices.sender.account('windows_user')!.balance, PercAmount.zero);
+    expect(devices.sender.account('android_user')!.transactions, isNotEmpty);
 
-    receiver.refreshPendingInboundForSession();
-    expect(receiver.pendingInboundFor('windows_user'), isEmpty);
-    expect(receiver.account('windows_user')!.balance, amount);
+    devices.relayInitiationToReceiver();
+    devices.loginReceiver();
+
+    expect(devices.receiver.pendingInboundFor('windows_user'), hasLength(1));
+    expect(devices.receiver.account('windows_user')!.balance, PercAmount.zero);
+
+    devices.receiverScenario();
+    expect(devices.receiver.pendingInboundFor('windows_user'), isEmpty);
+    expect(devices.receiver.account('windows_user')!.balance, amount);
     expect(
-      receiver.account('windows_user')!.transactions.any(
+      devices.receiver.account('windows_user')!.transactions.any(
             (tx) => tx.amount == amount && tx.isConfirmed,
           ),
       isTrue,

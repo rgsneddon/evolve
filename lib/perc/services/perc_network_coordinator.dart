@@ -477,7 +477,6 @@ class PercNetworkCoordinator extends ChangeNotifier {
     await quickSyncToNetworkHeight();
     await syncInboundState();
     hub.ledger.refreshPendingInboundTransfers();
-    hub.ledger.settlePendingInboundOnActivity(_activeUsername!);
 
     final changed = PercChainTip.height(hub.ledger) != heightBefore ||
         hub.ledger.pendingInboundFor(_activeUsername!).length != pendingBefore ||
@@ -640,7 +639,8 @@ class PercNetworkCoordinator extends ChangeNotifier {
         address: a,
       );
       if (relayed != null) {
-        hub.ledger.mergeNetworkStateFromPeer(relayed);
+        hub.ledger.ingestInboundTransferInitiation(relayed);
+        hub.ledger.reconcileSettledTransfersFromPeer(relayed);
       }
     }
 
@@ -669,7 +669,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
       await mergeRelay(address: sessionAddr);
     }
     if (session != null) {
-      hub.ledger.settlePendingInboundOnActivity(session);
+      hub.ledger.refreshPendingInboundTransfers();
     }
   }
 

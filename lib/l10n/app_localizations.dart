@@ -803,8 +803,7 @@ final _en = {
   'wallet_tx_sent': 'Sent to {user}',
   'wallet_tx_received': 'Received from {user}',
   'wallet_tx_pending': 'Pending',
-  'wallet_tx_pending_hint':
-      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
+  'wallet_tx_pending_hint': 'Run a scenario to confirm this tx.',
   'wallet_login_language_label': 'Language',
   'wallet_password_mismatch': 'Passwords do not match',
   'wallet_endpoint_label': 'Endpoint: {endpoint}',
@@ -825,6 +824,8 @@ final _en = {
       'Genesis block — treasury cycle {cycle} renewed (283M {symbol} {name})',
   'wallet_status_sent_instant':
       'Sent {amount} {symbol} to {dest} (network fee {fee} {symbol})',
+  'wallet_status_sent_pending':
+      'Sent {amount} {symbol} to {dest} (network fee {fee} {symbol}) — awaiting recipient scenario confirmation',
   'wallet_status_sent_queued':
       'Sent {amount} {symbol} to {dest} (network fee {fee} {symbol}) — queued until they sign in on the network within {delay}, otherwise returns to your wallet',
   'wallet_status_treasury_empty': 'Treasury empty — run another scenario later',

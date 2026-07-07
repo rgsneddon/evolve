@@ -1481,9 +1481,10 @@ class _WalletScreenState extends State<WalletScreen> {
     }
 
     final prefix = isOut ? '-' : '+';
-    final isPendingInbound = isIn &&
-        tx.kind == PercTxKind.transfer &&
-        !tx.isConfirmed;
+    final isPendingTransfer =
+        tx.kind == PercTxKind.transfer && !tx.isConfirmed;
+    final isPendingInbound = isIn && isPendingTransfer;
+    final isPendingOutbound = isOut && isPendingTransfer;
 
     return Card(
       child: Padding(
@@ -1512,7 +1513,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                         ),
                       ),
-                      if (isPendingInbound)
+                      if (isPendingInbound || isPendingOutbound)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,

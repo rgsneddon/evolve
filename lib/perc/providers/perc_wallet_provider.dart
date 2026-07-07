@@ -65,6 +65,7 @@ class PercWalletProvider extends ChangeNotifier {
   bool _extendingSessionForConnection = false;
   Timer? _microblockCommitDebounce;
   Timer? _sessionExpiryTimer;
+  Timer? _ephemeralStatusTimer;
 
   bool get isReady => _ready;
   bool get isSyncingWallet => _syncingWallet;
@@ -516,17 +517,12 @@ class PercWalletProvider extends ChangeNotifier {
         return;
       }
       final recipient = resolved.username;
-      final recipientOnline =
-          await PercLedgerHub.instance.network.isRecipientOnlineOnSeed(
-        username: recipient,
-        address: normalizedAddress,
-      );
       _ledger.send(
         fromUsername: _ledger.sessionUsername!,
         toAddress: normalizedAddress,
         amount: amount,
         memo: memo,
-        deliverInstantly: recipientOnline,
+        deliverInstantly: false,
         seedConfirmationBlockHeight:
             PercLedgerHub.instance.network.networkBlockHeight,
       );
@@ -535,8 +531,8 @@ class PercWalletProvider extends ChangeNotifier {
       if (_pendingGenesisRenewalNotice) {
         _setGenesisRenewalStatus();
       } else {
-        _setStatus(
-          'wallet_status_sent_instant',
+        _setEphemeralStatus(
+          'wallet_status_sent_pending',
           {
             'amount': amount.displayFixed8,
             'symbol': PercChainConstants.currencySymbol,
@@ -725,9 +721,23 @@ class PercWalletProvider extends ChangeNotifier {
   void clearSessionTimedOut() => _sessionTimedOut = false;
 
   void _setStatus(String? key, [Map<String, String> args = const {}]) {
+    _ephemeralStatusTimer?.cancel();
+    _ephemeralStatusTimer = null;
     statusMessage = key;
     statusMessageArgs = args;
     if (key != null) errorMessage = null;
+  }
+
+  void _setEphemeralStatus(String key, [Map<String, String> args = const {}]) {
+    _setStatus(key, args);
+    _ephemeralStatusTimer?.cancel();
+    _ephemeralStatusTimer = Timer(const Duration(seconds: 15), () {
+      if (statusMessage == key) {
+        statusMessage = null;
+        statusMessageArgs = const {};
+        notifyListeners();
+      }
+    });
   }
 
   void _setError(String key, [Map<String, String> args = const {}]) {
@@ -799,6 +809,7 @@ class PercWalletProvider extends ChangeNotifier {
   @override
   void dispose() {
     _microblockCommitDebounce?.cancel();
+    _ephemeralStatusTimer?.cancel();
     _cancelSessionTimeout();
     PercLedgerHub.instance.removeListener(_onHubLedgerChanged);
     PercLedgerHub.instance.network.removeListener(_onNetworkActivity);

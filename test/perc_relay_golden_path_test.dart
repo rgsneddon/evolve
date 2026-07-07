@@ -29,7 +29,6 @@ void main() {
     final receiver = PercLedger.empty();
     _seed(receiver);
     receiver.register('windows_user', 'password12345');
-    receiver.register('android_user', 'password12345');
     for (var i = 0; receiver.blockHeight <= sender.blockHeight; i++) {
       receiver.blocks.add(
         PercBlock(
@@ -61,6 +60,10 @@ void main() {
 
     receiver.login('windows_user', 'password12345');
     receiver.refreshPendingInboundForSession();
+    expect(receiver.pendingInboundFor('windows_user'), hasLength(1));
+    expect(receiver.account('windows_user')!.balance, PercAmount.zero);
+
+    receiver.advanceScenarioBlock('windows_user');
     expect(receiver.account('windows_user')!.balance, PercAmount.fromPerc(0.00000005));
     expect(receiver.pendingInboundFor('windows_user'), isEmpty);
   });
