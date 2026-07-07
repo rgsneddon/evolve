@@ -559,14 +559,13 @@ class PercWalletProvider extends ChangeNotifier {
         seedMnemonic: seedMnemonic,
       );
 
-      await PercLedgerHub.instance.onWalletSessionStarted(username);
-      await PercLedgerHub.instance.commitAfterForceSync();
-
       if (!adoption.seedReachable) {
         _registrationAwaitingSeedAlignment = false;
+        await PercLedgerHub.instance.persistLocal();
         _setStatus('wallet_sync_seed_offline');
       } else if (!adoption.isAligned) {
         _registrationAwaitingSeedAlignment = true;
+        await PercLedgerHub.instance.persistLocal();
         _setStatus(
           'wallet_sync_partial',
           {
@@ -576,6 +575,8 @@ class PercWalletProvider extends ChangeNotifier {
         );
       } else {
         _registrationAwaitingSeedAlignment = false;
+        await PercLedgerHub.instance.onWalletSessionStarted(username);
+        await PercLedgerHub.instance.commitAfterForceSync();
         _setStatus(statusKey);
       }
     } finally {
@@ -599,6 +600,13 @@ class PercWalletProvider extends ChangeNotifier {
       if (!network.isConnectedToSeed) {
         _setError('wallet_sync_seed_offline');
       } else if (network.isSyncedToNetwork) {
+        if (_registrationAwaitingSeedAlignment) {
+          _registrationAwaitingSeedAlignment = false;
+          if (isLoggedIn && loggedInUsername != null) {
+            await PercLedgerHub.instance.onWalletSessionStarted(loggedInUsername!);
+            await PercLedgerHub.instance.commitAfterForceSync();
+          }
+        }
         _setStatus(
           'wallet_sync_success',
           {'height': '$networkBlockHeight'},

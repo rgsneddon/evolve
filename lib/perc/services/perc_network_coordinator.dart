@@ -298,30 +298,11 @@ class PercNetworkCoordinator extends ChangeNotifier {
         _networkBlockHeight = _maxKnownHeight();
       }
     } else {
-      await _connectToSeedNode(hub, deep: true);
-      seedReachable = _seedConnected;
-      if (seedReachable) {
-        await deepSyncToNetworkHeight();
-        final seedEndpoint = hub.ledger
-            .networkNodes[PercChainConstants.seedUsername]
-            ?.endpoint;
-        if (seedEndpoint != null && seedEndpoint.isNotEmpty) {
-          final remoteStatus = await _client.fetchStatus(seedEndpoint);
-          final remoteLedger = await _client.fetchLedger(seedEndpoint);
-          if (remoteStatus != null) seedStatus = remoteStatus;
-          if (remoteLedger != null) seedLedger = remoteLedger;
-        }
-        seedStatus = PercNetworkStatus(
-          evolutionaryChainId: seedStatus.evolutionaryChainId.isEmpty
-              ? PercChainConstants.evolutionaryChainId
-              : seedStatus.evolutionaryChainId,
-          blockHeight: _networkBlockHeight,
-          tipHash: seedStatus.tipHash.isNotEmpty
-              ? seedStatus.tipHash
-              : PercChainTip.hash(hub.ledger),
-          revision: hub.revision,
-          networkGenesisRevision: hub.ledger.networkGenesisRevision,
-        );
+      final fetched = await _fetchAndApplyCanonicalSeed(hub);
+      seedReachable = fetched.reachable;
+      seedLedger = fetched.ledger;
+      if (fetched.reachable) {
+        seedStatus = fetched.status;
       }
     }
 
@@ -392,6 +373,61 @@ class PercNetworkCoordinator extends ChangeNotifier {
         mnemonic: seedMnemonic,
       );
     }
+  }
+
+  /// Fetches the internet seed status + ledger and imports/resets local state.
+  Future<({
+    bool reachable,
+    PercLedger? ledger,
+    PercNetworkStatus status,
+  })> _fetchAndApplyCanonicalSeed(PercLedgerHub hub) async {
+    final fallbackStatus = PercNetworkStatus(
+      evolutionaryChainId: PercChainAlignment.effectiveChainId(hub.ledger),
+      blockHeight: PercChainTip.height(hub.ledger),
+      tipHash: PercChainTip.hash(hub.ledger),
+      revision: hub.revision,
+      networkGenesisRevision: hub.ledger.networkGenesisRevision,
+    );
+
+    final base = await _rendezvous.baseUrl();
+    if (base == null) {
+      _seedConnected = false;
+      return (reachable: false, ledger: null, status: fallbackStatus);
+    }
+
+    final config = await PercNetworkConfig.load();
+    final seedUser = config.seedUsername.isNotEmpty
+        ? config.seedUsername
+        : PercChainConstants.seedUsername;
+    final targetGenesis = config.networkGenesisRevision;
+
+    var seedStatus = await _client.fetchStatus(base);
+    if (seedStatus == null) {
+      _seedConnected = false;
+      return (reachable: false, ledger: null, status: fallbackStatus);
+    }
+
+    seedStatus = _flyClient.normalizeSeedStatus(
+      seedStatus,
+      seedUser: seedUser,
+      baseEndpoint: base,
+      targetGenesis: targetGenesis,
+    );
+    hub.ledger.updatePeerFromStatus(seedStatus, online: true);
+    _seedConnected = true;
+    _networkBlockHeight = _flyClient.networkHeightAfterProbe(
+      local: hub.ledger,
+      seedStatus: seedStatus,
+    );
+
+    var remote = await _client.fetchLedger(base);
+    remote ??= await _rendezvous.fetchRelayedLedger(username: seedUser);
+    if (remote == null) {
+      return (reachable: true, ledger: null, status: seedStatus);
+    }
+
+    _applySeedLedgerToHub(hub, remote, seedStatus);
+    return (reachable: true, ledger: remote, status: seedStatus);
   }
 
   void _applySeedLedgerToHub(

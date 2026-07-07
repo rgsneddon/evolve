@@ -133,20 +133,34 @@ void main() {
     expect(wallet.statusMessage, 'wallet_sync_seed_offline');
   });
 
-  test('registration completion awaits seed adoption before session publish', () {
+  test('aligned registration publishes only after adopt import completes', () async {
+    final seed = _tallSeedLedger();
+    PercNetworkCoordinator.instance.registerTestSeedLedger(seed);
+
+    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    await wallet.initialize();
+    await wallet.setupTreasuryPassword('password12345');
+    await wallet.register('pathuser', 'password12345');
+
+    final published = wallet.onlineNetworkNodes
+        .any((n) => n.username == 'pathuser' && n.online);
+
     _writeLog(
       'registration_sync_path.log',
-      'PercWalletProvider.completeRegistrationSeedSetup\n'
-      '  -> _completeRegistrationSessionStart\n'
-      '     1. PercLedgerHub.adoptSeedChainForRegistration (deep seed import)\n'
-      '     2. PercLedgerHub.onWalletSessionStarted\n'
-      '     3. PercLedgerHub.commitAfterForceSync\n'
-      'isWalletConnectComplete blocks while _registrationAwaitingSeedAlignment\n',
+      'flow=adopt_then_publish\n'
+      'alignedHeight=${wallet.blockHeight}\n'
+      'seedHeight=${PercChainTip.height(seed)}\n'
+      'tipsMatch=${PercChainTip.hash(PercLedgerHub.instance.ledger) == PercChainTip.hash(seed)}\n'
+      'publishedOnline=$published\n'
+      'walletConnectComplete=${wallet.isWalletConnectComplete}\n',
     );
+
+    expect(wallet.blockHeight, PercChainTip.height(seed));
     expect(
-      PercWalletProvider(store: PercWalletStoreMemory())
-          .registrationAwaitingSeedAlignment,
-      isFalse,
+      PercChainTip.hash(PercLedgerHub.instance.ledger),
+      PercChainTip.hash(seed),
     );
+    expect(wallet.isWalletConnectComplete, isTrue);
+    expect(published, isTrue);
   });
 }

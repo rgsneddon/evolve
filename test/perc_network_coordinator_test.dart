@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/perc/models/perc_amount.dart';
+import 'package:evolve/perc/models/perc_block.dart';
 import 'package:evolve/services/app_performance.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_chain_tip.dart';
@@ -15,6 +17,28 @@ void _launchChainForTests() {
   PercLedgerHub.instance.ledger.launchBlockchain();
 }
 
+PercLedger _registrationSeedLedger() {
+  final seed = PercLedger.empty();
+  seed.ensureTreasuryAccount();
+  seed.setupTreasuryPassword('password12345');
+  seed.launchBlockchain();
+  seed.consumeBlockchainLaunchEvent();
+  seed.blocks.add(
+    PercBlock(
+      index: seed.blocks.length,
+      timestamp: DateTime.utc(2026, 1, 1),
+      transactions: const [],
+      treasuryEmitted: PercAmount.zero,
+      scenarioLabel: 'coordinator seed',
+    ),
+  );
+  return seed;
+}
+
+void _registerSeedForTests() {
+  PercNetworkCoordinator.instance.registerTestSeedLedger(_registrationSeedLedger());
+}
+
 void main() {
   setUp(() {
     PercNetworkConfig.resetForTest();
@@ -27,6 +51,7 @@ void main() {
   });
 
   test('online wallet registers as network node at current block height', () async {
+    _registerSeedForTests();
     final store = PercWalletStoreMemory();
     final wallet = PercWalletProvider(store: store);
     await wallet.initialize();
@@ -44,6 +69,7 @@ void main() {
   });
 
   test('all wallets on hub share the same block height', () async {
+    _registerSeedForTests();
     final store = PercWalletStoreMemory();
     final walletA = PercWalletProvider(store: store);
     final walletB = PercWalletProvider(store: store);
@@ -82,6 +108,7 @@ void main() {
   });
 
   test('recipient delivery uses network online presence', () async {
+    _registerSeedForTests();
     final store = PercWalletStoreMemory();
     final wallet = PercWalletProvider(store: store);
     await wallet.initialize();
