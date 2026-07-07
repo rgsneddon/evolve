@@ -44,7 +44,6 @@ class TwoDeviceHarness {
     );
   }
 
-  /// Each device learns the other wallet's address for sends and relay merge.
   void linkDevices() {
     sender.mergeDiscoverableAccounts(receiver);
     receiver.mergeDiscoverableAccounts(sender);
@@ -68,38 +67,30 @@ class TwoDeviceHarness {
     );
   }
 
-  /// Simulates commitAfterSend push delivery to recipient rendezvous slot.
+  /// commitAfterSend push delivery → [applyInboundRelayFromSender].
   void pushSendToReceiver() {
-    receiver.ingestInboundTransferInitiation(sender);
+    receiver.applyInboundRelayFromSender(sender);
   }
 
   void relayInitiationToReceiver() => pushSendToReceiver();
 
-  /// Simulates rendezvous poll / mergeRelay (no explicit ingest call).
+  /// Rendezvous poll path — same relay applier as push.
   void pollRelayToReceiver() {
-    receiver.mergeNetworkStateFromPeer(sender);
-  }
-
-  void refreshSenderSnapshotOnReceiver() {
-    receiver.mergeNetworkStateFromPeer(sender);
+    receiver.applyInboundRelayFromSender(sender);
   }
 
   void mergeSenderFromReceiver() {
     sender.mergeNetworkStateFromPeer(receiver);
   }
 
-  /// Receiver scenario with fresh sender peer attestation (not stale cache).
+  /// Cross-device scenario requires live [sender] peer attestation.
   void receiverScenario() {
-    receiver.advanceScenarioBlock(
-      receiverUser,
-      senderPeerAtSettlement: sender,
-    );
+    receiver.advanceScenarioBlock(receiverUser, senderPeer: sender);
   }
 
-  /// Full cross-device settlement: scenario → sender debit → confirm on receiver.
+  /// Scenario credit + witness on receiver, then sender debit via reconcile.
   void crossDeviceScenarioAndSettle() {
     receiverScenario();
     mergeSenderFromReceiver();
-    receiver.mergeNetworkStateFromPeer(sender);
   }
 }

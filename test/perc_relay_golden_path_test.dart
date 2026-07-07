@@ -63,7 +63,7 @@ void main() {
     expect(receiver.pendingInboundFor('windows_user'), hasLength(1));
     expect(receiver.account('windows_user')!.balance, PercAmount.zero);
 
-    receiver.advanceScenarioBlock('windows_user');
+    receiver.advanceScenarioBlock('windows_user', senderPeer: relay);
     expect(receiver.account('windows_user')!.balance, PercAmount.fromPerc(0.00000005));
     expect(receiver.pendingInboundFor('windows_user'), isEmpty);
   });

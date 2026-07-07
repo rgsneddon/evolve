@@ -639,7 +639,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
         address: a,
       );
       if (relayed != null) {
-        hub.ledger.ingestInboundTransferInitiation(relayed);
+        hub.ledger.applyInboundRelayFromSender(relayed);
         hub.ledger.reconcileSettledTransfersFromPeer(relayed);
       }
     }

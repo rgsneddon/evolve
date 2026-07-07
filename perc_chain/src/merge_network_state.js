@@ -19,6 +19,27 @@ export function listObservedPendingTransfers(ledger) {
   }));
 }
 
+export function listSettlementWitnessIds(ledger) {
+  return (ledger?.settlementWitnesses ?? [])
+    .filter((w) => w?.senderCanDebit)
+    .map((w) => w.transferId);
+}
+
+export function mergeSettlementWitnessesFromPeer(canonical, remote) {
+  if (!canonical || !remote) return 0;
+  canonical.settlementWitnesses = canonical.settlementWitnesses ?? [];
+  const seen = new Set(canonical.settlementWitnesses.map((w) => w.id ?? w.transferId));
+  let merged = 0;
+  for (const witness of remote.settlementWitnesses ?? []) {
+    const id = witness?.transferId;
+    if (!id || seen.has(id)) continue;
+    canonical.settlementWitnesses.push({ ...witness });
+    seen.add(id);
+    merged += 1;
+  }
+  return merged;
+}
+
 export function listSettledTransferIds(ledger) {
   const ids = new Set();
   for (const block of ledger?.blocks ?? []) {
@@ -79,8 +100,9 @@ export function mergeNetworkStateFromPeer(canonical, remote) {
   }
 
   const pendingMerged = mergePendingInboundFromPeer(canonical, remote);
+  const witnessesMerged = mergeSettlementWitnessesFromPeer(canonical, remote);
   const ack = acknowledgeRelayTransfers(canonical, remote);
-  return { pendingMerged, ...ack };
+  return { pendingMerged, witnessesMerged, ...ack };
 }
 
 export function seedObservesTransferInitiation(canonical, relay) {

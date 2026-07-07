@@ -30,7 +30,7 @@ import 'perc_inflation.dart';
 import 'perc_staking.dart';
 import 'perc_treasury.dart';
 import 'perc_transfer_relay_ack.dart';
-import 'perc_transfer_settlement.dart';
+import 'perc_settlement_witness.dart';
 
 /// Local Perccent ledger — blocks advance on scenarios, transfers, and Chronoflux microblock seals.
 class PercLedger {
@@ -67,6 +67,7 @@ class PercLedger {
     List<WardBallot>? wardBallots,
     this.nextWardProposalId = 1,
     List<PercPendingInboundTransfer>? pendingInboundTransfers,
+    List<PercSettlementWitness>? settlementWitnesses,
     List<PercMicroblockLogEntry>? microblockLog,
     PercChronofluxMicroVerifier? microVerifier,
   })  : walletPeers = walletPeers ?? <String, List<String>>{},
@@ -76,6 +77,7 @@ class PercLedger {
         wardProposals = wardProposals ?? [],
         wardBallots = wardBallots ?? [],
         pendingInboundTransfers = pendingInboundTransfers ?? [],
+        settlementWitnesses = settlementWitnesses ?? [],
         microblockLog = microblockLog ?? [],
         cumulativeBurnedPerc = cumulativeBurnedPerc ?? PercAmount.zero,
         _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
@@ -112,14 +114,9 @@ class PercLedger {
   final List<WardBallot> wardBallots;
   int nextWardProposalId;
   final List<PercPendingInboundTransfer> pendingInboundTransfers;
+  final List<PercSettlementWitness> settlementWitnesses;
   final List<PercMicroblockLogEntry> microblockLog;
   final PercChronofluxMicroVerifier _microVerifier;
-
-  /// Immutable sender relay snapshots keyed by sender username (cross-device).
-  final Map<String, PercLedger> _senderRelaySnapshots = {};
-
-  /// Cross-device credits awaiting sender debit confirmation on peer merge.
-  final Map<String, PercPendingInboundTransfer> _provisionalSettlements = {};
 
   List<PercPendingInboundTransfer> pendingInboundFor(String username) {
     final u = PercAuth.normalizeUsername(username);
@@ -619,13 +616,9 @@ class PercLedger {
 
   /// Merges launch flags, address book, and inbound transfers without replacing chain tip.
   void mergeNetworkStateFromPeer(PercLedger remote) {
-    _cacheSenderRelaySnapshotsFrom(remote);
-    finalizeOrRevertProvisionalSettlementsFromSender(remote);
     adoptNetworkLaunchState(remote);
     mergeDiscoverableAccounts(remote);
-    mergePendingInboundFromPeer(remote);
-    mergeInboundTransferTxsFromPeer(remote);
-    PercTransferRelayAck.acknowledgeRelayTransfers(this, remote);
+    applyInboundRelayFromSender(remote);
     reconcileSettledTransfersFromPeer(remote);
     final session = sessionUsername;
     if (session != null) {
@@ -950,7 +943,7 @@ class PercLedger {
   /// Advances the user's numerically progressive scenario block (1 per conclusion, max 100M).
   int advanceScenarioBlock(
     String username, {
-    PercLedger? senderPeerAtSettlement,
+    PercLedger? senderPeer,
   }) {
     final acc = _accountFor(PercAuth.normalizeUsername(username));
     if (acc == null) return 0;
@@ -958,10 +951,7 @@ class PercLedger {
       return acc.scenarioBlockHeight;
     }
     acc.scenarioBlockHeight++;
-    settlePendingInboundOnActivity(
-      username,
-      senderPeerAtSettlement: senderPeerAtSettlement,
-    );
+    settlePendingInboundOnActivity(username, senderPeer: senderPeer);
     return acc.scenarioBlockHeight;
   }
 
@@ -1856,22 +1846,7 @@ class PercLedger {
   ) =>
       sender.balance >= pending.totalHold;
 
-  void _cacheSenderRelaySnapshotsFrom(PercLedger remote) {
-    for (final pending in remote.pendingInboundTransfers) {
-      final from = PercAuth.normalizeUsername(pending.fromUsername);
-      if (from.isEmpty || _senderIsLocalWallet(from)) continue;
-      _senderRelaySnapshots[from] = PercLedger.fromJson(remote.toJson());
-    }
-  }
-
-  bool _senderCanDebitOnPeer(PercPendingInboundTransfer pending) {
-    final from = PercAuth.normalizeUsername(pending.fromUsername);
-    final snapshot = _senderRelaySnapshots[from];
-    if (snapshot == null) return false;
-    return _senderCanDebitOnPeerFrom(snapshot, pending);
-  }
-
-  bool _senderCanDebitOnPeerFrom(
+  bool _attestSenderCanDebitOnPeer(
     PercLedger peer,
     PercPendingInboundTransfer pending,
   ) {
@@ -1885,60 +1860,33 @@ class PercLedger {
     return sender.balance >= pending.totalHold;
   }
 
-  bool _senderOutboundSettledOnPeer(
-    PercLedger peer,
-    PercPendingInboundTransfer pending,
-  ) {
-    final from = PercAuth.normalizeUsername(pending.fromUsername);
-    final sender = peer.account(from);
-    if (sender == null) return false;
-    final txs = sender.transactions.where(
-      (t) => t.id == pending.id && t.kind == PercTxKind.transfer,
-    );
-    return txs.isNotEmpty && txs.first.isConfirmed;
-  }
-
-  /// Confirms or reverts cross-device credits once sender peer state is fresh.
-  void finalizeOrRevertProvisionalSettlementsFromSender(PercLedger senderPeer) {
-    if (_provisionalSettlements.isEmpty) return;
-
-    for (final entry
-        in Map<String, PercPendingInboundTransfer>.from(_provisionalSettlements)
-            .entries) {
-      final pending = entry.value;
-      if (_senderOutboundSettledOnPeer(senderPeer, pending)) {
-        _provisionalSettlements.remove(entry.key);
-        continue;
-      }
-      if (_senderCanDebitOnPeerFrom(senderPeer, pending)) continue;
-
-      _revertProvisionalInboundSettlement(pending);
-      _provisionalSettlements.remove(entry.key);
+  void _mergeSettlementWitnessesFromPeer(PercLedger remote) {
+    final seen = settlementWitnesses.map((w) => w.transferId).toSet();
+    for (final witness in remote.settlementWitnesses) {
+      if (seen.contains(witness.transferId)) continue;
+      settlementWitnesses.add(witness);
+      seen.add(witness.transferId);
     }
   }
 
-  void _revertProvisionalInboundSettlement(PercPendingInboundTransfer pending) {
-    final receiver = _resolvePendingRecipient(pending);
-    if (receiver != null && receiver.balance >= pending.amount) {
-      receiver.balance = receiver.balance - pending.amount;
+  bool _remoteWitnessPresent(PercLedger remote, String transferId) =>
+      remote.settlementWitnesses.any(
+        (w) => w.transferId == transferId && w.senderCanDebit,
+      );
+
+  /// Unified inbound relay: pending, tx lists, transfer blocks, witnesses.
+  int applyInboundRelayFromSender(PercLedger remote) {
+    final pendingBefore = pendingInboundTransfers.length;
+    mergePendingInboundFromPeer(remote);
+    mergeInboundTransferTxsFromPeer(remote);
+    PercTransferRelayAck.acknowledgeRelayTransfers(this, remote);
+    _mergeSettlementWitnessesFromPeer(remote);
+    final session = sessionUsername;
+    if (session != null) {
+      refreshPendingInboundTransfers();
     }
-    receiver?.transactions.removeWhere(
-      (tx) => tx.id == pending.id && tx.isConfirmed,
-    );
-    if (receiver != null) {
-      _ensurePendingInboundTxListed(receiver, pending);
-    }
-    if (!pendingInboundTransfers.any((p) => p.id == pending.id)) {
-      pendingInboundTransfers.add(pending);
-    }
+    return pendingInboundTransfers.length - pendingBefore;
   }
-
-  @visibleForTesting
-  bool senderCanDebitOnPeerForTest(PercPendingInboundTransfer pending) =>
-      _senderCanDebitOnPeer(pending);
-
-  @visibleForTesting
-  int get provisionalSettlementCount => _provisionalSettlements.length;
 
   bool _senderTransferConfirmed(String transferId, String fromUsername) {
     final sender = _accountFor(fromUsername);
@@ -1977,28 +1925,38 @@ class PercLedger {
 
     for (final pending
         in List<PercPendingInboundTransfer>.from(pendingInboundTransfers)) {
-      if (!PercTransferSettlementDecision.isLocalOutboundHold(
+      if (!isLocalOutboundHold(
         pending: pending,
         senderIsLocalWallet: _senderIsLocalWallet,
       )) {
         continue;
       }
-      if (remotePendingIds.contains(pending.id)) continue;
-      if (!remoteSettledIds.contains(pending.id)) continue;
+
+      final hasWitness = _remoteWitnessPresent(remote, pending.id);
+      final remoteSettled =
+          remoteSettledIds.contains(pending.id) &&
+              !remotePendingIds.contains(pending.id);
+      if (!hasWitness && !remoteSettled) continue;
 
       final sender = _accountFor(pending.fromUsername);
       if (sender == null) continue;
 
-      final effects = PercTransferSettlementDecision.evaluate(
-        phase: PercTransferSettlementPhase.senderPeerReconcile,
+      final plan = planSettlement(
+        phase: SettlementPhase.senderPeerReconcile,
         senderIsLocalWallet: true,
         senderCanDebit: _canDebitSenderForPending(sender, pending),
+        senderPeerProvided: true,
+        remoteWitnessPresent: hasWitness,
+        remoteSettledWithoutPending: remoteSettled,
       );
-      if (!effects.shouldSettle) continue;
+      if (!plan.shouldApply) continue;
 
       final blockTxs = <PercTransaction>[];
-      if (!_applySenderSettlement(pending, t, blockTxs: blockTxs)) continue;
-      if (effects.removePending) {
+      if (plan.debitSender &&
+          !_applySenderSettlement(pending, t, blockTxs: blockTxs)) {
+        continue;
+      }
+      if (plan.removePending) {
         pendingInboundTransfers.remove(pending);
       }
       _finalizeBlock(
@@ -2013,14 +1971,7 @@ class PercLedger {
   /// Applies sender relay state so the recipient sees pending inbound txs
   /// immediately after a cross-device send is gossiped.
   void ingestInboundTransferInitiation(PercLedger remote) {
-    _cacheSenderRelaySnapshotsFrom(remote);
-    mergePendingInboundFromPeer(remote);
-    mergeInboundTransferTxsFromPeer(remote);
-    PercTransferRelayAck.acknowledgeRelayTransfers(this, remote);
-    final session = sessionUsername;
-    if (session != null) {
-      refreshPendingInboundTransfers();
-    }
+    applyInboundRelayFromSender(remote);
   }
 
   bool _applySenderSettlement(
@@ -2109,13 +2060,10 @@ class PercLedger {
   /// Credits inbound PERC after the receiver advances their scenario block height.
   void settlePendingInboundOnActivity(
     String username, {
-    PercLedger? senderPeerAtSettlement,
+    PercLedger? senderPeer,
     DateTime? now,
   }) {
     final t = (now ?? DateTime.now()).toUtc();
-    if (senderPeerAtSettlement != null) {
-      _cacheSenderRelaySnapshotsFrom(senderPeerAtSettlement);
-    }
     _revertExpiredPendingInbound(t);
     final window = PercChainConstants.walletOnlineReceiveDelayEffective;
     final toSettle = pendingInboundTransfers
@@ -2125,6 +2073,9 @@ class PercLedger {
         .toList();
     if (toSettle.isEmpty) return;
 
+    final receiverAccount = _accountFor(username);
+    final scenarioBlock = receiverAccount?.scenarioBlockHeight ?? 0;
+
     for (final pending in toSettle) {
       final receiver = _resolvePendingRecipient(pending);
       if (receiver == null) continue;
@@ -2133,44 +2084,46 @@ class PercLedger {
       final senderIsLocal = _senderIsLocalWallet(pending.fromUsername);
       final senderCanDebit = senderIsLocal
           ? sender != null && _canDebitSenderForPending(sender, pending)
-          : senderPeerAtSettlement != null
-              ? _senderCanDebitOnPeerFrom(senderPeerAtSettlement, pending)
-              : _senderCanDebitOnPeer(pending);
-      final effects = PercTransferSettlementDecision.evaluate(
-        phase: PercTransferSettlementPhase.recipientScenario,
+          : senderPeer != null &&
+              _attestSenderCanDebitOnPeer(senderPeer, pending);
+
+      final plan = planSettlement(
+        phase: SettlementPhase.recipientScenario,
         senderIsLocalWallet: senderIsLocal,
         senderCanDebit: senderCanDebit,
+        senderPeerProvided: senderIsLocal || senderPeer != null,
+        remoteWitnessPresent: false,
+        remoteSettledWithoutPending: false,
       );
-      if (!effects.shouldSettle) continue;
+      if (!plan.shouldApply) continue;
 
       final confirmedTx = _confirmedTransferTx(pending, t);
       final blockTxs = <PercTransaction>[confirmedTx];
-      var settled = false;
 
-      settled = PercTransferSettlementDecision.applyTransferSettlement(
-        effects: effects,
-        debitSender: () =>
-            _applySenderSettlement(pending, t, blockTxs: blockTxs),
-        creditReceiver: () {
-          _credit(receiver, pending.amount);
-          _replaceOrInsertTx(receiver, confirmedTx);
-          return true;
-        },
-        removePending: () => pendingInboundTransfers.remove(pending),
-        markProvisional: () {
-          _provisionalSettlements[pending.id] = PercPendingInboundTransfer(
-            id: pending.id,
-            fromUsername: pending.fromUsername,
-            toUsername: pending.toUsername,
-            amount: pending.amount,
-            fee: pending.fee,
-            sentAt: pending.sentAt,
-            memo: pending.memo,
-            recipientBroughtOnlineAt: pending.recipientBroughtOnlineAt,
-          );
-        },
-      );
-      if (!settled) continue;
+      if (plan.debitSender &&
+          !_applySenderSettlement(pending, t, blockTxs: blockTxs)) {
+        continue;
+      }
+
+      if (plan.creditReceiver) {
+        _credit(receiver, pending.amount);
+        _replaceOrInsertTx(receiver, confirmedTx);
+      }
+
+      if (plan.emitWitness) {
+        settlementWitnesses.add(
+          PercSettlementWitness(
+            transferId: pending.id,
+            receiverScenarioBlock: scenarioBlock,
+            senderCanDebit: true,
+            witnessedAt: t,
+          ),
+        );
+      }
+
+      if (plan.removePending) {
+        pendingInboundTransfers.remove(pending);
+      }
 
       _finalizeBlock(
         timestamp: t,
@@ -2482,6 +2435,8 @@ class PercLedger {
         'nextWardProposalId': nextWardProposalId,
         'pendingInboundTransfers':
             pendingInboundTransfers.map((p) => p.toJson()).toList(),
+        'settlementWitnesses':
+            settlementWitnesses.map((w) => w.toJson()).toList(),
         'microblockLog': microblockLog.map((e) => e.toJson()).toList(),
       };
 
@@ -2557,6 +2512,14 @@ class PercLedger {
           (json['pendingInboundTransfers'] as List<dynamic>? ?? [])
               .map(
                 (e) => PercPendingInboundTransfer.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
+              .toList(),
+      settlementWitnesses:
+          (json['settlementWitnesses'] as List<dynamic>? ?? [])
+              .map(
+                (e) => PercSettlementWitness.fromJson(
                   e as Map<String, dynamic>,
                 ),
               )

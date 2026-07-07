@@ -61,7 +61,7 @@ void main() {
       isTrue,
     );
 
-    receiver.advanceScenarioBlock('windows_user');
+    receiver.advanceScenarioBlock('windows_user', senderPeer: sender);
     expect(receiver.pendingInboundFor('windows_user'), isEmpty);
     expect(receiver.account('windows_user')!.balance, amount);
     expect(

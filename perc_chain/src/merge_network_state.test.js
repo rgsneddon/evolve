@@ -2,7 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   mergeNetworkStateFromPeer,
+  mergeSettlementWitnessesFromPeer,
   listObservedPendingTransfers,
+  listSettlementWitnessIds,
   seedObservesTransferInitiation,
   seedObservesScenarioSettlement,
 } from './merge_network_state.js';
@@ -171,6 +173,31 @@ describe('mergeNetworkStateFromPeer', () => {
     assert.equal(settlement.pendingCount, 0);
     assert.deepEqual(settlement.settledIds, ['tx-flow-1']);
     assert.equal(settlement.spendableSettled, true);
+  });
+
+  it('merges settlement witnesses from receiver relay', () => {
+    const seed = {
+      networkGenesisRevision: 2,
+      blocks: [{ index: 0, transactions: [] }],
+      pendingInboundTransfers: [],
+      settlementWitnesses: [],
+    };
+    const receiverRelay = {
+      networkGenesisRevision: 2,
+      pendingInboundTransfers: [],
+      settlementWitnesses: [
+        {
+          transferId: 'tx-witness-1',
+          receiverScenarioBlock: 2,
+          senderCanDebit: true,
+          witnessedAt: '2026-07-07T12:05:00.000Z',
+        },
+      ],
+      blocks: [],
+    };
+    const merged = mergeSettlementWitnessesFromPeer(seed, receiverRelay);
+    assert.equal(merged, 1);
+    assert.deepEqual(listSettlementWitnessIds(seed), ['tx-witness-1']);
   });
 
   it('merges pending without replacing taller canonical tip', () => {

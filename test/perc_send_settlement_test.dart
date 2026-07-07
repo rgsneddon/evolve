@@ -46,14 +46,14 @@ void main() {
     ledger.advanceScenarioBlock('bob');
 
     expect(ledger.pendingInboundFor('bob'), isEmpty);
-    expect(ledger.account('bob')!.balance, amount);
+    expect(ledger.account('bob')!.balance.microUnits, amount.microUnits);
     expect(
       alice.transactions
           .firstWhere((tx) => tx.kind == PercTxKind.transfer)
           .isConfirmed,
       isTrue,
     );
-    expect(alice.balance, lessThan(amount + fee));
+    expect(alice.balance.microUnits, lessThan((amount + fee).microUnits));
   });
 
   test('receiver not credited when local sender lacks funds at scenario', () {
@@ -75,7 +75,7 @@ void main() {
     ledger.advanceScenarioBlock('bob');
 
     expect(ledger.pendingInboundFor('bob'), hasLength(1));
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
+    expect(ledger.account('bob')!.balance.microUnits, 0);
     expect(
       ledger.account('bob')!.transactions.any((tx) => tx.isConfirmed),
       isFalse,
@@ -112,7 +112,7 @@ void main() {
     );
   });
 
-  test('cross-device receiver not credited when sender peer lacks funds at scenario', () {
+  test('cross-device defers when sender peer lacks funds at scenario', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -120,23 +120,19 @@ void main() {
 
     final amount = PercAmount.fromPerc(0.00000010);
     devices.send(amount, deliverInstantly: false);
-    devices.relayInitiationToReceiver();
+    devices.pushSendToReceiver();
 
     devices.sender.account('alice')!.balance = PercAmount.zero;
-    devices.refreshSenderSnapshotOnReceiver();
     devices.loginReceiver();
     devices.receiverScenario();
 
     expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
-    expect(devices.receiver.account('bob')!.balance, PercAmount.zero);
-    expect(
-      devices.receiver.account('bob')!.transactions.any((tx) => tx.isConfirmed),
-      isFalse,
-    );
+    expect(devices.receiver.account('bob')!.balance.microUnits, 0);
+    expect(devices.receiver.settlementWitnesses, isEmpty);
     expect(devices.sender.pendingInboundTransfers, isNotEmpty);
   });
 
-  test('cross-device reverts provisional credit when sender cannot debit at merge', () {
+  test('cross-device defers scenario without live sender peer', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -144,27 +140,17 @@ void main() {
 
     final amount = PercAmount.fromPerc(0.00000005);
     devices.send(amount, deliverInstantly: false);
-    devices.relayInitiationToReceiver();
+    devices.pushSendToReceiver();
     devices.loginReceiver();
-    devices.receiverScenario();
 
-    expect(devices.receiver.account('bob')!.balance, amount);
-    expect(devices.receiver.provisionalSettlementCount, 1);
+    devices.receiver.advanceScenarioBlock('bob');
 
-    devices.sender.account('alice')!.balance = PercAmount.zero;
-    devices.receiver.mergeNetworkStateFromPeer(devices.sender);
-
-    expect(devices.receiver.account('bob')!.balance, PercAmount.zero);
-    expect(devices.receiver.provisionalSettlementCount, 0);
     expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
-    expect(
-      devices.receiver.account('bob')!.transactions.any((tx) => tx.isConfirmed),
-      isFalse,
-    );
-    expect(devices.sender.pendingInboundTransfers, isNotEmpty);
+    expect(devices.receiver.account('bob')!.balance.microUnits, 0);
+    expect(devices.receiver.settlementWitnesses, isEmpty);
   });
 
-  test('cross-device sender debits after receiver scenario merge', () {
+  test('cross-device sender debits after witness scenario merge', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -176,20 +162,21 @@ void main() {
     final aliceBefore = devices.sender.account('alice')!.balance;
     expect(devices.sender.pendingInboundFor('bob'), hasLength(1));
 
-    devices.relayInitiationToReceiver();
+    devices.pushSendToReceiver();
     devices.loginReceiver();
     devices.crossDeviceScenarioAndSettle();
-    expect(devices.receiver.account('bob')!.balance, amount);
+
+    expect(devices.receiver.account('bob')!.balance.microUnits, amount.microUnits);
     expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
-    expect(devices.receiver.provisionalSettlementCount, 0);
+    expect(devices.receiver.settlementWitnesses, hasLength(1));
+    expect(devices.receiver.settlementWitnesses.first.transferId, isNotEmpty);
 
     expect(devices.sender.pendingInboundFor('bob'), isEmpty);
     expect(
-      devices.sender.account('alice')!.balance,
-      aliceBefore -
-          amount -
-          PercChainConstants.sendTransactionFee +
-          PercStaking.rewardPerBlock,
+      devices.sender.account('alice')!.balance.microUnits,
+      (aliceBefore - amount - PercChainConstants.sendTransactionFee +
+              PercStaking.rewardPerBlock)
+          .microUnits,
     );
     expect(
       devices.sender.account('alice')!.transactions.any(
