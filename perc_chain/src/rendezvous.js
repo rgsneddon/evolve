@@ -22,6 +22,8 @@ const peers = new Map();
 const ledgers = new Map();
 /** @type {Map<string, string>} wallet address → sessionUsername */
 const addresses = new Map();
+/** @type {Map<string, { envelope: string, updatedAt: number }>} */
+const seedRecoveries = new Map();
 
 function findRelayEntryByAddress(address) {
   const needle = (address ?? '').trim();
@@ -175,6 +177,36 @@ const server = http.createServer(async (req, res) => {
       return json(res, 404, { error: 'address not found' });
     }
     return json(res, 200, { address });
+  }
+
+  if (req.method === 'PUT' && url.pathname === '/perc/rendezvous/seed-recovery') {
+    const data = await readBody(req);
+    const fingerprint = data.fingerprint?.trim();
+    const envelope = data.envelope?.trim();
+    if (!fingerprint || !envelope) {
+      return json(res, 400, { error: 'fingerprint and envelope required' });
+    }
+    seedRecoveries.set(fingerprint, {
+      envelope,
+      updatedAt: Date.now(),
+    });
+    return json(res, 200, { ok: true });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/perc/rendezvous/seed-recovery') {
+    const fingerprint = url.searchParams.get('fingerprint')?.trim();
+    if (!fingerprint) {
+      return json(res, 400, { error: 'fingerprint required' });
+    }
+    const entry = seedRecoveries.get(fingerprint);
+    if (!entry?.envelope) {
+      return json(res, 404, { error: 'seed recovery envelope not found' });
+    }
+    return json(res, 200, {
+      fingerprint,
+      envelope: entry.envelope,
+      updatedAt: entry.updatedAt ?? null,
+    });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/ledger') {

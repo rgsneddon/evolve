@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
@@ -34,6 +35,7 @@ import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
 import '../services/perc_wallet_backup.dart';
 import '../services/perc_seed_recovery.dart';
+import '../services/perc_network_rendezvous.dart';
 
 class PercWalletProvider extends ChangeNotifier {
   /// Disable auto-logout timers in widget/unit tests (see test setUp).
@@ -420,7 +422,21 @@ class PercWalletProvider extends ChangeNotifier {
   Future<void> recoverFromSeedPhrase(List<String> words) async {
     _clearMessages();
     try {
-      final restored = _ledger.recoverFromSeedEnvelope(mnemonic: words);
+      var restored = _ledger.tryRecoverFromSeedEnvelope(mnemonic: words);
+      if (restored == null) {
+        final fp = PercSeedRecovery.fingerprint(words);
+        final remoteEnvelope =
+            await PercNetworkRendezvous().fetchSeedRecoveryEnvelope(
+          fingerprint: fp,
+        );
+        if (remoteEnvelope == null) {
+          throw StateError('No seed recovery envelope found for this phrase');
+        }
+        restored = PercSeedRecovery.decryptLedgerEnvelope(
+          envelope: base64Decode(remoteEnvelope),
+          words: words,
+        );
+      }
       final session = restored.sessionUsername ??
           restored.accounts.keys.firstWhere(
             (k) => k != PercChainConstants.treasuryUsername,

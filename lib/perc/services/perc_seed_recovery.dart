@@ -74,6 +74,63 @@ class PercSeedRecovery {
     return PercWalletBackup.importEncrypted(bytes: envelope, passphrase: passphrase);
   }
 
+  /// Stores mnemonic encrypted at rest using account credentials (no user prompt).
+  static String encryptMnemonicAtRest({
+    required List<String> mnemonic,
+    required String passwordHash,
+    required String salt,
+    Random? random,
+  }) {
+    validateMnemonic(mnemonic);
+    final rng = random ?? Random.secure();
+    final nonce = Uint8List.fromList(List.generate(12, (_) => rng.nextInt(256)));
+    final key = _deriveAtRestKey(passwordHash: passwordHash, salt: salt);
+    final plaintext = utf8.encode(normalizeMnemonic(mnemonic));
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(
+        true,
+        AEADParameters(KeyParameter(key), 128, nonce, Uint8List(0)),
+      );
+    final ciphertext = cipher.process(Uint8List.fromList(plaintext));
+    return base64Encode(Uint8List.fromList([...nonce, ...ciphertext]));
+  }
+
+  static List<String> decryptMnemonicAtRest({
+    required String encrypted,
+    required String passwordHash,
+    required String salt,
+  }) {
+    final raw = base64Decode(encrypted);
+    if (raw.length < 13) throw FormatException('Corrupt encrypted mnemonic');
+    final nonce = Uint8List.fromList(raw.sublist(0, 12));
+    final ciphertext = Uint8List.fromList(raw.sublist(12));
+    final key = _deriveAtRestKey(passwordHash: passwordHash, salt: salt);
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(
+        false,
+        AEADParameters(KeyParameter(key), 128, nonce, Uint8List(0)),
+      );
+    final plaintext = utf8.decode(cipher.process(ciphertext));
+    final words = plaintext.split(' ').where((w) => w.isNotEmpty).toList();
+    validateMnemonic(words);
+    return words;
+  }
+
+  static Uint8List _deriveAtRestKey({
+    required String passwordHash,
+    required String salt,
+  }) {
+    final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
+      ..init(
+        Pbkdf2Parameters(
+          Uint8List.fromList(utf8.encode('perc-seed-at-rest:$salt')),
+          100000,
+          32,
+        ),
+      );
+    return derivator.process(Uint8List.fromList(utf8.encode(passwordHash)));
+  }
+
   static List<String> _encodeMnemonic(Uint8List entropy) {
     if (entropy.length != 16) {
       throw ArgumentError('Expected 128-bit entropy for 12 words');

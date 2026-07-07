@@ -497,6 +497,27 @@ class PercNetworkCoordinator extends ChangeNotifier {
     return null;
   }
 
+  /// Publishes encrypted seed recovery envelopes for the signed-in wallet.
+  Future<void> publishSeedRecoveryEnvelopes() async {
+    if (disableLiveNodesForTests) return;
+    final hub = _hub;
+    final session = hub?.ledger.sessionUsername;
+    if (hub == null || session == null) return;
+    final acc = hub.ledger.account(session);
+    final fingerprint = acc?.seedFingerprint;
+    final envelope = acc?.seedRecoveryEnvelope;
+    if (fingerprint == null ||
+        fingerprint.isEmpty ||
+        envelope == null ||
+        envelope.isEmpty) {
+      return;
+    }
+    await _rendezvous.publishSeedRecoveryEnvelope(
+      fingerprint: fingerprint,
+      envelopeB64: envelope,
+    );
+  }
+
   /// Pushes settlement witnesses to sender rendezvous slots after receiver scenario.
   Future<void> propagateSettlementWitnesses() async {
     final hub = _hub;

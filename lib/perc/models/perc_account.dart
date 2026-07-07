@@ -15,6 +15,7 @@ class PercAccount {
     this.passwordSwitchCommit,
     this.seedFingerprint,
     this.seedRecoveryEnvelope,
+    this.encryptedSeedMnemonic,
     List<PercTransaction>? transactions,
   }) : transactions = transactions ?? [];
 
@@ -30,6 +31,7 @@ class PercAccount {
   String? passwordSwitchCommit;
   String? seedFingerprint;
   String? seedRecoveryEnvelope;
+  String? encryptedSeedMnemonic;
   final List<PercTransaction> transactions;
 
   Map<String, dynamic> toJson() => {
@@ -48,6 +50,8 @@ class PercAccount {
         if (seedFingerprint != null) 'seedFingerprint': seedFingerprint,
         if (seedRecoveryEnvelope != null)
           'seedRecoveryEnvelope': seedRecoveryEnvelope,
+        if (encryptedSeedMnemonic != null)
+          'encryptedSeedMnemonic': encryptedSeedMnemonic,
         'transactions': transactions.map((t) => t.toJson()).toList(),
       };
 
@@ -71,6 +75,7 @@ class PercAccount {
         passwordSwitchCommit: json['passwordSwitchCommit'] as String?,
         seedFingerprint: json['seedFingerprint'] as String?,
         seedRecoveryEnvelope: json['seedRecoveryEnvelope'] as String?,
+        encryptedSeedMnemonic: json['encryptedSeedMnemonic'] as String?,
         transactions: (json['transactions'] as List<dynamic>? ?? [])
             .map((t) =>
                 PercTransaction.fromJson(Map<String, dynamic>.from(t as Map)))

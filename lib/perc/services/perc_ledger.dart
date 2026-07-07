@@ -79,6 +79,7 @@ class PercLedger {
     List<PercPendingInboundTransfer>? pendingInboundTransfers,
     List<PercSettlementWitness>? settlementWitnesses,
     List<PercMicroblockLogEntry>? microblockLog,
+    Map<String, String>? seedRecoveryCatalog,
     PercChronofluxMicroVerifier? microVerifier,
   })  : walletPeers = walletPeers ?? <String, List<String>>{},
         networkNodes = networkNodes ?? <String, PercPeerNode>{},
@@ -89,6 +90,7 @@ class PercLedger {
         pendingInboundTransfers = pendingInboundTransfers ?? [],
         settlementWitnesses = settlementWitnesses ?? [],
         microblockLog = microblockLog ?? [],
+        seedRecoveryCatalog = seedRecoveryCatalog ?? <String, String>{},
         cumulativeBurnedPerc = cumulativeBurnedPerc ?? PercAmount.zero,
         _microVerifier = microVerifier ?? const PercChronofluxMicroVerifier();
 
@@ -126,6 +128,7 @@ class PercLedger {
   final List<PercPendingInboundTransfer> pendingInboundTransfers;
   final List<PercSettlementWitness> settlementWitnesses;
   final List<PercMicroblockLogEntry> microblockLog;
+  final Map<String, String> seedRecoveryCatalog;
   final PercChronofluxMicroVerifier _microVerifier;
 
   List<PercPendingInboundTransfer> pendingInboundFor(String username) {
@@ -667,6 +670,7 @@ class PercLedger {
   void attachSeedRecoveryEnvelope({
     required String username,
     required List<String> mnemonic,
+    bool persistEncryptedMnemonic = true,
   }) {
     final acc = _accountFor(username);
     if (acc == null) throw StateError('Unknown account');
@@ -675,11 +679,41 @@ class PercLedger {
       ledger: snapshotForBackup(),
       words: mnemonic,
     );
-    acc.seedFingerprint = PercSeedRecovery.fingerprint(mnemonic);
-    acc.seedRecoveryEnvelope = base64Encode(envelope);
+    final fp = PercSeedRecovery.fingerprint(mnemonic);
+    final envelopeB64 = base64Encode(envelope);
+    acc.seedFingerprint = fp;
+    acc.seedRecoveryEnvelope = envelopeB64;
+    seedRecoveryCatalog[fp] = envelopeB64;
+    if (persistEncryptedMnemonic) {
+      acc.encryptedSeedMnemonic = PercSeedRecovery.encryptMnemonicAtRest(
+        mnemonic: mnemonic,
+        passwordHash: acc.passwordHash,
+        salt: acc.salt,
+      );
+    }
   }
 
-  PercLedger recoverFromSeedEnvelope({
+  /// Re-encrypts seed envelopes after ledger mutations when mnemonic is stored at rest.
+  void refreshSeedRecoveryEnvelopes() {
+    for (final acc in accounts.values) {
+      final encrypted = acc.encryptedSeedMnemonic;
+      if (encrypted == null || encrypted.isEmpty) continue;
+      try {
+        final mnemonic = PercSeedRecovery.decryptMnemonicAtRest(
+          encrypted: encrypted,
+          passwordHash: acc.passwordHash,
+          salt: acc.salt,
+        );
+        attachSeedRecoveryEnvelope(
+          username: acc.username,
+          mnemonic: mnemonic,
+          persistEncryptedMnemonic: false,
+        );
+      } catch (_) {}
+    }
+  }
+
+  PercLedger? tryRecoverFromSeedEnvelope({
     required List<String> mnemonic,
     String? expectedFingerprint,
   }) {
@@ -688,16 +722,41 @@ class PercLedger {
     if (expectedFingerprint != null && expectedFingerprint != fp) {
       throw StateError('Seed phrase does not match this wallet');
     }
-    for (final acc in accounts.values) {
-      final envelopeB64 = acc.seedRecoveryEnvelope;
-      if (envelopeB64 == null || envelopeB64.isEmpty) continue;
-      if (acc.seedFingerprint != null && acc.seedFingerprint != fp) continue;
-      final envelope = base64Decode(envelopeB64);
-      return PercSeedRecovery.decryptLedgerEnvelope(
-        envelope: envelope,
-        words: mnemonic,
-      );
+
+    PercLedger? tryDecrypt(String? envelopeB64) {
+      if (envelopeB64 == null || envelopeB64.isEmpty) return null;
+      try {
+        return PercSeedRecovery.decryptLedgerEnvelope(
+          envelope: base64Decode(envelopeB64),
+          words: mnemonic,
+        );
+      } catch (_) {
+        return null;
+      }
     }
+
+    for (final acc in accounts.values) {
+      if (acc.seedFingerprint != null && acc.seedFingerprint != fp) continue;
+      final restored = tryDecrypt(acc.seedRecoveryEnvelope);
+      if (restored != null) return restored;
+    }
+
+    final catalogEnvelope = seedRecoveryCatalog[fp];
+    final fromCatalog = tryDecrypt(catalogEnvelope);
+    if (fromCatalog != null) return fromCatalog;
+
+    return null;
+  }
+
+  PercLedger recoverFromSeedEnvelope({
+    required List<String> mnemonic,
+    String? expectedFingerprint,
+  }) {
+    final restored = tryRecoverFromSeedEnvelope(
+      mnemonic: mnemonic,
+      expectedFingerprint: expectedFingerprint,
+    );
+    if (restored != null) return restored;
     throw StateError('No seed recovery envelope found for this phrase');
   }
 
@@ -707,6 +766,7 @@ class PercLedger {
       if (seen.contains(pending.id)) continue;
       final recipient = _localWalletForRemoteParty(pending.toUsername, remote);
       if (recipient == null) continue;
+      if (!pending.switchCommitmentValid) continue;
       final localPending = PercPendingInboundTransfer(
         id: pending.id,
         fromUsername: pending.fromUsername,
@@ -716,6 +776,7 @@ class PercLedger {
         sentAt: pending.sentAt,
         memo: pending.memo,
         recipientBroughtOnlineAt: pending.recipientBroughtOnlineAt,
+        switchCommitment: pending.switchCommitment,
       );
       pendingInboundTransfers.add(localPending);
       _ensurePendingInboundTxListed(recipient, localPending);
@@ -1308,6 +1369,7 @@ class PercLedger {
             sentAt: pending.sentAt,
             memo: pending.memo,
             recipientBroughtOnlineAt: pending.recipientBroughtOnlineAt,
+            switchCommitment: pending.switchCommitment,
           ),
         )
         .toList();
@@ -1870,6 +1932,13 @@ class PercLedger {
     )) {
       throw StateError('Invalid password');
     }
+    final expectedSwitch =
+        PercAuth.passwordSwitchCommit(acc.passwordHash, acc.salt);
+    if (acc.passwordSwitchCommit == null) {
+      acc.passwordSwitchCommit = expectedSwitch;
+    } else if (acc.passwordSwitchCommit != expectedSwitch) {
+      throw StateError('Wallet security commitment mismatch');
+    }
     sessionUsername = u;
     final t = (now ?? DateTime.now()).toUtc();
     sessionStartedAt = t;
@@ -2076,6 +2145,7 @@ class PercLedger {
           remoteSettledIds.contains(pending.id) &&
               !remotePendingIds.contains(pending.id);
       if (!hasWitness && !remoteSettled) continue;
+      if (!pending.switchCommitmentValid) continue;
 
       final sender = _accountFor(pending.fromUsername);
       if (sender == null) continue;
@@ -2118,6 +2188,7 @@ class PercLedger {
     DateTime t, {
     required List<PercTransaction> blockTxs,
   }) {
+    if (!pending.switchCommitmentValid) return false;
     final sender = _accountFor(pending.fromUsername);
     if (sender == null || !_canDebitSenderForPending(sender, pending)) {
       return false;
@@ -2233,6 +2304,7 @@ class PercLedger {
     final scenarioBlock = receiverAccount?.scenarioBlockHeight ?? 0;
 
     for (final pending in toSettle) {
+      if (!pending.switchCommitmentValid) continue;
       final receiver = _resolvePendingRecipient(pending);
       if (receiver == null) continue;
 
@@ -2673,6 +2745,8 @@ class PercLedger {
         'settlementWitnesses':
             settlementWitnesses.map((w) => w.toJson()).toList(),
         'microblockLog': microblockLog.map((e) => e.toJson()).toList(),
+        if (seedRecoveryCatalog.isNotEmpty)
+          'seedRecoveryCatalog': Map<String, String>.from(seedRecoveryCatalog),
       };
 
   factory PercLedger.fromJson(Map<String, dynamic> json) {
@@ -2764,7 +2838,22 @@ class PercLedger {
             (e) => PercMicroblockLogEntry.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
+      seedRecoveryCatalog: _seedRecoveryCatalogFromJson(
+        json['seedRecoveryCatalog'],
+      ),
     )..repairForAppUpgrade();
+  }
+
+  static Map<String, String> _seedRecoveryCatalogFromJson(Object? raw) {
+    if (raw is! Map) return {};
+    final catalog = <String, String>{};
+    for (final entry in raw.entries) {
+      final value = entry.value;
+      if (value is String && value.isNotEmpty) {
+        catalog[entry.key as String] = value;
+      }
+    }
+    return catalog;
   }
 
   static Map<String, List<String>> _walletPeersFromJson(Object? raw) {

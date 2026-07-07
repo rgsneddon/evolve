@@ -132,10 +132,12 @@ class PercLedgerHub extends ChangeNotifier {
 
   Future<void> persistLocal() async {
     _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ledger.refreshSeedRecoveryEnvelopes();
     _revision++;
     notifyListeners();
     await _store?.save(_ledger);
     hub_sync.broadcastRevision();
+    await network.publishSeedRecoveryEnvelopes();
   }
 
   Future<void> commit() async {
@@ -150,6 +152,7 @@ class PercLedgerHub extends ChangeNotifier {
     String? relayRecipientAddress,
   }) async {
     _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ledger.refreshSeedRecoveryEnvelopes();
     _ledger.ensureNetworkNodes(
       blockHeight: PercChainTip.height(_ledger),
       tipHash: PercChainTip.hash(_ledger),
@@ -173,12 +176,14 @@ class PercLedgerHub extends ChangeNotifier {
       ledger: _ledger,
     );
     await network.syncInboundState();
+    await network.publishSeedRecoveryEnvelopes();
     notifyListeners();
   }
 
   /// Persists after scenario, gossips witnesses, and notifies senders to reconcile.
   Future<void> commitAfterScenario() async {
     _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ledger.refreshSeedRecoveryEnvelopes();
     _ledger.ensureNetworkNodes(
       blockHeight: PercChainTip.height(_ledger),
       tipHash: PercChainTip.hash(_ledger),
@@ -197,11 +202,13 @@ class PercLedgerHub extends ChangeNotifier {
     hub_sync.broadcastRevision();
     await network.gossipToPeers();
     await network.propagateSettlementWitnesses();
+    await network.publishSeedRecoveryEnvelopes();
     notifyListeners();
   }
 
   Future<void> commitAfterForceSync() async {
     _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ledger.refreshSeedRecoveryEnvelopes();
     _ledger.ensureNetworkNodes(
       blockHeight: PercChainTip.height(_ledger),
       tipHash: PercChainTip.hash(_ledger),
@@ -219,6 +226,7 @@ class PercLedgerHub extends ChangeNotifier {
     await _store?.save(_ledger);
     hub_sync.broadcastRevision();
     await network.gossipToPeers();
+    await network.publishSeedRecoveryEnvelopes();
   }
 
   Future<void> commitWithoutSessionPromotion({

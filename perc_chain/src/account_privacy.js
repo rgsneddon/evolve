@@ -25,6 +25,10 @@ const SECRET_FIELD_KEYS = new Set([
   'passwordHash',
   'salt',
   'passwordSet',
+  'encryptedSeedMnemonic',
+  'seedRecoveryEnvelope',
+  'seedFingerprint',
+  'passwordSwitchCommit',
 ]);
 
 export function privacySalt() {

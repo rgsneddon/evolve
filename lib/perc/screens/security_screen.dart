@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
@@ -103,6 +104,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
               style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8))),
           const SizedBox(height: 8),
           TextField(
+            key: const Key('security_seed_field'),
             controller: _seedCtrl,
             maxLines: 3,
             decoration: InputDecoration(
@@ -112,6 +114,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
           ),
           const SizedBox(height: 8),
           FilledButton.icon(
+            key: const Key('security_seed_recover_button'),
             onPressed: () => _recoverSeed(wallet),
             icon: const Icon(Icons.key_outlined),
             label: Text(strings.t('security_seed_recover_action')),
@@ -157,10 +160,17 @@ class _SecurityScreenState extends State<SecurityScreen> {
       final name =
           'perccent-wallet-backup-${DateTime.now().toUtc().toIso8601String().replaceAll(':', '-').split('.').first}.percbackup';
       if (kIsWeb) {
-        await Clipboard.setData(ClipboardData(text: String.fromCharCodes(bytes)));
+        final encoded = base64Encode(bytes);
+        await Clipboard.setData(
+          ClipboardData(text: 'PERCBACKUP1:$encoded'),
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Backup copied — save as .percbackup')),
+            const SnackBar(
+              content: Text(
+                'Backup copied (base64) — paste into a .percbackup file',
+              ),
+            ),
           );
         }
         return;

@@ -158,6 +158,43 @@ class PercNetworkRendezvous {
     }
   }
 
+  Future<void> publishSeedRecoveryEnvelope({
+    required String fingerprint,
+    required String envelopeB64,
+  }) async {
+    final base = await baseUrl();
+    if (base == null) return;
+    final uri = Uri.parse('$base/perc/rendezvous/seed-recovery');
+    await _putWithRetry(
+      uri,
+      jsonEncode({
+        'fingerprint': fingerprint,
+        'envelope': envelopeB64,
+      }),
+    );
+  }
+
+  Future<String?> fetchSeedRecoveryEnvelope({
+    required String fingerprint,
+  }) async {
+    final base = await baseUrl();
+    if (base == null) return null;
+    final uri = Uri.parse(
+      '$base/perc/rendezvous/seed-recovery?fingerprint=${Uri.encodeComponent(fingerprint)}',
+    );
+    try {
+      final response = await _getWithRetry(uri);
+      if (response?.statusCode != 200) return null;
+      final json = jsonDecode(response!.body);
+      if (json is! Map) return null;
+      final envelope = json['envelope'] as String?;
+      if (envelope == null || envelope.isEmpty) return null;
+      return envelope;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<PercLedger?> fetchRelayedLedger({
     String? username,
     String? address,
@@ -197,6 +234,24 @@ class PercNetworkRendezvous {
       try {
         final response = await _http
             .post(
+              uri,
+              headers: {'Content-Type': 'application/json'},
+              body: body,
+            )
+            .timeout(PercChainConstants.networkRequestTimeout);
+        if (response.statusCode >= 200 && response.statusCode < 300) return;
+      } catch (_) {}
+      if (i < attempts - 1) {
+        await Future<void>.delayed(Duration(milliseconds: 250 * (i + 1)));
+      }
+    }
+  }
+
+  Future<void> _putWithRetry(Uri uri, String body, {int attempts = 3}) async {
+    for (var i = 0; i < attempts; i++) {
+      try {
+        final response = await _http
+            .put(
               uri,
               headers: {'Content-Type': 'application/json'},
               body: body,

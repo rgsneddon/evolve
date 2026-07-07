@@ -1,4 +1,5 @@
 import '../perc_chain_constants.dart';
+import '../services/perc_switch_commitment.dart';
 import 'perc_amount.dart';
 
 /// Cross-device transfer record while relay settles on the network.
@@ -15,7 +16,10 @@ class PercPendingInboundTransfer {
     PercAmount? fee,
     this.memo,
     this.recipientBroughtOnlineAt,
-  }) : fee = fee ?? PercChainConstants.sendTransactionFee;
+    String? switchCommitment,
+  })  : fee = fee ?? PercChainConstants.sendTransactionFee,
+        switchCommitment = switchCommitment ??
+            PercSwitchCommitment.forTransferId(id);
 
   final String id;
   final String fromUsername;
@@ -25,8 +29,12 @@ class PercPendingInboundTransfer {
   final DateTime sentAt;
   final String? memo;
   DateTime? recipientBroughtOnlineAt;
+  final String switchCommitment;
 
   PercAmount get totalHold => amount + fee;
+
+  bool get switchCommitmentValid =>
+      PercSwitchCommitment.validates(switchCommitment, 'transfer:$id');
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -39,6 +47,7 @@ class PercPendingInboundTransfer {
         if (recipientBroughtOnlineAt != null)
           'recipientBroughtOnlineAt':
               recipientBroughtOnlineAt!.toIso8601String(),
+        'switchCommitment': switchCommitment,
       };
 
   factory PercPendingInboundTransfer.fromJson(Map<String, dynamic> json) {
@@ -52,6 +61,7 @@ class PercPendingInboundTransfer {
           : PercAmount.fromJson(json['fee'] as Map<String, dynamic>),
       sentAt: DateTime.parse(json['sentAt'] as String),
       memo: json['memo'] as String?,
+      switchCommitment: json['switchCommitment'] as String?,
     );
     if (json['recipientBroughtOnlineAt'] != null) {
       pending.recipientBroughtOnlineAt =
