@@ -150,16 +150,17 @@ void main() {
     expect(devices.receiver.settlementWitnesses, isEmpty);
   });
 
-  test('cross-device credits receiver via senderPeerResolver without merge', () {
+  test('cross-device scenario credits receiver then sender debits on witness propagate', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
     devices.loginSender();
 
     final amount = PercAmount.fromPerc(0.00000005);
-    devices.send(amount, deliverInstantly: false);
-    devices.pushSendToReceiver();
+    devices.sendAndRelay(amount, deliverInstantly: false);
     devices.loginReceiver();
+
+    final aliceBefore = devices.sender.account('alice')!.balance;
 
     devices.receiver.advanceScenarioBlock(
       'bob',
@@ -170,6 +171,22 @@ void main() {
     expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
     expect(devices.receiver.settlementWitnesses, hasLength(1));
     expect(devices.sender.pendingInboundFor('bob'), hasLength(1));
+
+    devices.propagateWitnessToSender();
+
+    expect(devices.sender.pendingInboundFor('bob'), isEmpty);
+    expect(
+      devices.sender.account('alice')!.balance.microUnits,
+      (aliceBefore - amount - PercChainConstants.sendTransactionFee +
+              PercStaking.rewardPerBlock)
+          .microUnits,
+    );
+    expect(
+      devices.sender.account('alice')!.transactions.any(
+            (tx) => tx.amount == amount && tx.isConfirmed,
+          ),
+      isTrue,
+    );
   });
 
   test('cross-device sender debits after witness scenario merge', () {

@@ -629,6 +629,11 @@ class PercLedger {
     }
   }
 
+  /// Sender-side ingest after receiver scenario emits a settlement witness.
+  void ingestSettlementWitnessFromReceiver(PercLedger receiver) {
+    mergeNetworkStateFromPeer(receiver);
+  }
+
   bool _transferBlockExists(String transferId) {
     for (final block in blocks) {
       for (final tx in block.transactions) {

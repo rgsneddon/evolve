@@ -49,6 +49,11 @@ class PercNetworkCoordinator extends ChangeNotifier {
   bool _appInBackground = false;
   final Map<String, PercLedger> _senderPeerCache = {};
 
+  /// In-memory sender ledgers for [propagateSettlementWitnesses] when live nodes
+  /// are disabled (models HTTP push + sender ingest in integration tests).
+  @visibleForTesting
+  final Map<String, PercLedger> settlementPeerTargets = {};
+
   PercNetworkSyncState get syncState => _syncState;
   bool get isConnectedToSeed => _seedConnected;
   int get networkBlockHeight => _networkBlockHeight;
@@ -65,6 +70,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   static void resetForTest() {
     disableLiveNodesForTests = true;
     instance._senderPeerCache.clear();
+    instance.settlementPeerTargets.clear();
     instance._detach();
   }
 
@@ -493,7 +499,6 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
   /// Pushes settlement witnesses to sender rendezvous slots after receiver scenario.
   Future<void> propagateSettlementWitnesses() async {
-    if (disableLiveNodesForTests) return;
     final hub = _hub;
     if (hub == null || hub.ledger.settlementWitnesses.isEmpty) return;
 
@@ -501,6 +506,16 @@ class PercNetworkCoordinator extends ChangeNotifier {
     for (final witness in hub.ledger.settlementWitnesses) {
       final from = hub.ledger.lookupTransferSender(witness.transferId);
       if (from != null) senders.add(from);
+    }
+
+    if (disableLiveNodesForTests) {
+      for (final sender in senders) {
+        final target = settlementPeerTargets[sender];
+        if (target != null) {
+          target.ingestSettlementWitnessFromReceiver(hub.ledger);
+        }
+      }
+      return;
     }
 
     for (final sender in senders) {

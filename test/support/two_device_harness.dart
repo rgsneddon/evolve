@@ -67,6 +67,12 @@ class TwoDeviceHarness {
     );
   }
 
+  /// Models [PercLedgerHub.commitAfterSend] → push → [applyInboundRelayFromSender].
+  void sendAndRelay(PercAmount amount, {bool deliverInstantly = false}) {
+    send(amount, deliverInstantly: deliverInstantly);
+    pushSendToReceiver();
+  }
+
   /// commitAfterSend push delivery → [applyInboundRelayFromSender].
   void pushSendToReceiver() {
     receiver.applyInboundRelayFromSender(sender);
@@ -79,18 +85,21 @@ class TwoDeviceHarness {
     receiver.applyInboundRelayFromSender(sender);
   }
 
-  void mergeSenderFromReceiver() {
-    sender.mergeNetworkStateFromPeer(receiver);
+  /// Models [propagateSettlementWitnesses] → sender [ingestSettlementWitnessFromReceiver].
+  void propagateWitnessToSender() {
+    sender.ingestSettlementWitnessFromReceiver(receiver);
   }
+
+  void mergeSenderFromReceiver() => propagateWitnessToSender();
 
   /// Cross-device scenario requires live [sender] peer attestation.
   void receiverScenario() {
     receiver.advanceScenarioBlock(receiverUser, senderPeer: sender);
   }
 
-  /// Scenario credit + witness on receiver, then sender debit via reconcile.
+  /// Scenario credit + witness on receiver, then sender debit at confirm.
   void crossDeviceScenarioAndSettle() {
     receiverScenario();
-    mergeSenderFromReceiver();
+    propagateWitnessToSender();
   }
 }

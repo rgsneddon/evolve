@@ -69,10 +69,9 @@ void main() {
     devices.loginSender();
 
     final amount = PercAmount.fromPerc(0.00000008);
-    devices.send(amount, deliverInstantly: false);
+    devices.sendAndRelay(amount, deliverInstantly: false);
 
     devices.loginReceiver();
-    devices.pushSendToReceiver();
 
     expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
     expect(
