@@ -2,7 +2,7 @@ param(
   [string]$ScratchDir = "",
   [string]$BaseRef = "3d09a3f",
   [string]$Version = "4.0.0",
-  [string]$WorkspaceGoalDir = "C:\Users\rgsne\goal"
+  [string]$WorkspaceGoalDir = 'C:\Users\rgsne\goal'
 )
 
 $ErrorActionPreference = "Stop"
@@ -50,7 +50,7 @@ $manifest = @{
   repo = $RepoRoot
   git_base = $BaseRef
   git_head = $gitHead
-  patch_file = "C:\Users\rgsne\goal\evolve_app_release.patch"
+  patch_file = 'C:\Users\rgsne\goal\evolve_app_release.patch'
   deliverables = @($paths)
   scratch_evidence = @{
     test_results = "implementer/test_results.log"
@@ -71,10 +71,10 @@ $verificationIndex = @{
     @{ step = 3; description = "Doc accuracy spot-check"; evidence = @("doc_spotcheck.log"); status = "pass" }
     @{ step = 4; description = "build_all.ps1 release build"; evidence = @("build_all.log"); status = "pass" }
     @{ step = 5; description = "publish_github_release.ps1"; evidence = @("publish.log", "release_view_cli.txt", "pages_version.json"); status = "pass" }
-    @{ step = 6; description = "git diff evidence"; evidence = @("CHANGED_FILES.log", "PATCH_DELTA.diff", "C:\Users\rgsne\goal\evolve_app_release.patch"); status = "pass" }
+    @{ step = 6; description = "git diff evidence"; evidence = @("CHANGED_FILES.log", "PATCH_DELTA.diff", 'C:\Users\rgsne\goal\evolve_app_release.patch'); status = "pass" }
   )
   notes = @(
-    "Canonical deliverables at C:\Users\rgsne\goal\ (verifier path)."
+    'Canonical deliverables at C:\Users\rgsne\goal\ (verifier path).'
     "Harness CHANGED_FILES input is .grok-only; use deliverables_manifest.json for evolve_app paths."
     "Release proof: gh release view v4.0.0 --json assets and live version.json."
   )
@@ -89,8 +89,8 @@ $releaseRecord = @(
   "scratch_dir=$ScratchDir"
   "workspace_goal=$WorkspaceGoalDir"
   "deliverables_count=$($paths.Count)"
-  "patch_file=C:\Users\rgsne\goal\evolve_app_release.patch"
-  "changed_files_log=C:\Users\rgsne\goal\evolve_app_CHANGED_FILES.log"
+  'patch_file=C:\Users\rgsne\goal\evolve_app_release.patch'
+  'changed_files_log=C:\Users\rgsne\goal\evolve_app_CHANGED_FILES.log'
 )
 
 $goalDirs = @(

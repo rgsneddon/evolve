@@ -86,15 +86,16 @@ if ($ahead -and [int]$ahead -gt 0) {
 $tag = "v$Version"
 git show-ref --verify --quiet "refs/tags/$tag"
 if ($LASTEXITCODE -eq 0) {
-  $localTag = (git rev-parse $tag^{commit}).Trim()
+  $localTag = (git rev-parse "${tag}^{commit}").Trim()
   $remoteTag = (git ls-remote --tags origin "refs/tags/$tag" 2>$null) -replace ".*refs/tags/$tag", ""
   if ($remoteTag) { $remoteTag = $remoteTag.Trim() }
   if ($localTag -ne $remoteTag) {
-    Write-Host "Tag $tag exists locally at $localTag; remote at $remoteTag — skipping tag push (no force)." -ForegroundColor Yellow
+    Write-Host "Tag $tag exists locally at $localTag; remote at $remoteTag - skipping tag push (no force)." -ForegroundColor Yellow
   } else {
     git push origin $tag
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   }
 }
 
-Write-Host "Finalize complete. Evidence: $ScratchDir and C:\Users\rgsne\goal" -ForegroundColor Green
+$goalDir = 'C:\Users\rgsne\goal'
+Write-Host "Finalize complete. Evidence: $ScratchDir and $goalDir" -ForegroundColor Green
