@@ -19,6 +19,11 @@ void main() {
   setUp(() {
     PercNetworkConfig.resetForTest();
     PercLedgerHub.resetForTest();
+    PercWalletProvider.sessionTimeoutEnabled = false;
+  });
+
+  tearDown(() {
+    PercWalletProvider.sessionTimeoutEnabled = true;
   });
 
   test('online wallet registers as network node at current block height', () async {
