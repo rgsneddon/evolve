@@ -270,7 +270,8 @@ if ($EvidenceDir) {
     $buildLogPath = if ($EvidenceDir) { Join-Path $EvidenceDir 'build_all.log' } else { $null }
     $buildEvidenceComplete = $false
     if ($buildLogPath -and (Test-Path $buildLogPath)) {
-        $buildEvidenceComplete = Select-String -Path $buildLogPath -Pattern 'All builds complete' -Quiet
+        $buildLogText = Get-Content $buildLogPath -Raw -ErrorAction SilentlyContinue
+        $buildEvidenceComplete = $buildLogText -match 'All builds complete'
     }
     $skipBuildLogged = $SkipBuild -and -not $buildEvidenceComplete
     $skipBuildReason = if (-not $SkipBuild) {
