@@ -55,26 +55,11 @@ flutter test test/downloads_landing_page_test.dart --reporter expanded 2>&1 |
   Set-Content (Join-Path $ScratchDir "landing_page_test.log") -Encoding utf8
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# (c) Release build then idempotent publish (clobber upload, no release delete)
-Write-StepLog "build_all" {
-  powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\build_all.ps1" -SkipTests
-}
-
-Write-StepLog "build_installers" {
-  powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\build_installers.ps1" -SkipWindowsBuild -SkipApkBuild -SkipDeploy -SkipCodeSign
-}
-
-$dirtyAfter = git status --porcelain
-if ($dirtyAfter) {
-  git add -A
-  git commit -m "chore: sync post-build downloads index and relay fixture for v$Version"
-  if ($LASTEXITCODE -ne 0) { throw "Post-build commit failed" }
-}
-
+# (c) Full build + installers + publish (build included in publish; logs to scratch)
 Write-StepLog "publish" {
   $env:EVOLVE_RELEASE_PINNED = "$Version+136"
   powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\publish_github_release.ps1" `
-    -Version $Version -SkipBuild -EvidenceDir $ScratchDir
+    -Version $Version -SkipTests -RecreateRelease -EvidenceDir $ScratchDir
 }
 
 # (d) Mirror evidence + materialize session goal deliverables

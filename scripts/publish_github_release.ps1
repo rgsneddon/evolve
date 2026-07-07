@@ -31,12 +31,37 @@ if (-not $DeployDir) {
 Set-Location $Root
 
 if (-not $SkipBuild) {
+    $buildLog = if ($EvidenceDir) { Join-Path $EvidenceDir 'build_all.log' } else { $null }
     if ($SkipTests) {
-        & "$PSScriptRoot\build_all.ps1" -SkipTests
+        if ($buildLog) {
+            & "$PSScriptRoot\build_all.ps1" -SkipTests *>&1 | Tee-Object -FilePath $buildLog
+        } else {
+            & "$PSScriptRoot\build_all.ps1" -SkipTests
+        }
     } else {
-        & "$PSScriptRoot\build_all.ps1"
+        if ($buildLog) {
+            & "$PSScriptRoot\build_all.ps1" *>&1 | Tee-Object -FilePath $buildLog
+        } else {
+            & "$PSScriptRoot\build_all.ps1"
+        }
     }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    $installerLog = if ($EvidenceDir) { Join-Path $EvidenceDir 'build_installers.log' } else { $null }
+    if ($installerLog) {
+        & "$PSScriptRoot\build_installers.ps1" -SkipWindowsBuild -SkipApkBuild -SkipDeploy -SkipCodeSign *>&1 |
+            Tee-Object -FilePath $installerLog
+    } else {
+        & "$PSScriptRoot\build_installers.ps1" -SkipWindowsBuild -SkipApkBuild -SkipDeploy -SkipCodeSign
+    }
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    $dirtyAfter = git status --porcelain
+    if ($dirtyAfter) {
+        git add -A
+        git commit -m "chore: sync post-build downloads index and relay fixture for v$versionNoV"
+        if ($LASTEXITCODE -ne 0) { throw 'Post-build commit failed' }
+    }
 }
 
 try {
