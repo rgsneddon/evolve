@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
@@ -35,20 +34,24 @@ import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
 import '../services/perc_wallet_backup.dart';
 import '../services/perc_seed_recovery.dart';
-import '../services/perc_network_rendezvous.dart';
+import '../services/security_recovery_service.dart';
 
 class PercWalletProvider extends ChangeNotifier {
   /// Disable auto-logout timers in widget/unit tests (see test setUp).
   @visibleForTesting
   static bool sessionTimeoutEnabled = true;
 
-  PercWalletProvider({PercWalletStore? store})
-      : _store = store ?? createPercWalletStore() {
+  PercWalletProvider({
+    PercWalletStore? store,
+    SecurityRecoveryService? recoveryService,
+  })  : _store = store ?? createPercWalletStore(),
+        _recoveryService = recoveryService ?? SecurityRecoveryService.production() {
     PercLedgerHub.instance.addListener(_onHubLedgerChanged);
     PercLedgerHub.instance.network.addListener(_onNetworkActivity);
   }
 
   final PercWalletStore _store;
+  final SecurityRecoveryService _recoveryService;
   PercLedger get _ledger => PercLedgerHub.instance.ledger;
   bool _ready = false;
   PercFaucetReward? lastReward;
@@ -394,16 +397,11 @@ class PercWalletProvider extends ChangeNotifier {
   ) async {
     _clearMessages();
     try {
-      final restored = PercWalletBackup.importEncrypted(
+      final restored = _recoveryService.importEncryptedBackup(
         bytes: bytes,
         passphrase: passphrase,
       );
-      final session = restored.sessionUsername ??
-          restored.accounts.keys.firstWhere(
-            (k) => k != PercChainConstants.treasuryUsername,
-            orElse: () => '',
-          );
-      if (session.isEmpty) throw StateError('Backup contains no user wallet');
+      final session = SecurityRecoveryService.resolveSessionUsername(restored);
       await PercLedgerHub.instance.restoreFromBackup(
         restored,
         sessionUsername: session,
@@ -422,34 +420,11 @@ class PercWalletProvider extends ChangeNotifier {
   Future<void> recoverFromSeedPhrase(List<String> words) async {
     _clearMessages();
     try {
-      var restored = _ledger.tryRecoverFromSeedEnvelope(mnemonic: words);
-      if (restored == null) {
-        final fp = PercSeedRecovery.fingerprint(words);
-        final rendezvous = PercNetworkRendezvous();
-        final hasNetwork = (await rendezvous.baseUrl()) != null;
-        final remoteEnvelope = await rendezvous.fetchSeedRecoveryEnvelope(
-          fingerprint: fp,
-        );
-        if (remoteEnvelope == null) {
-          throw StateError(
-            hasNetwork
-                ? 'No seed recovery envelope found for this phrase'
-                : 'Seed recovery requires network rendezvous',
-          );
-        }
-        restored = PercSeedRecovery.decryptLedgerEnvelope(
-          envelope: base64Decode(remoteEnvelope),
-          words: words,
-        );
-      }
-      final session = restored.sessionUsername ??
-          restored.accounts.keys.firstWhere(
-            (k) => k != PercChainConstants.treasuryUsername,
-            orElse: () => '',
-          );
-      if (session.isEmpty) {
-        throw StateError('Seed recovery envelope missing user wallet');
-      }
+      final restored = await _recoveryService.recoverLedgerFromSeed(
+        ledger: _ledger,
+        words: words,
+      );
+      final session = SecurityRecoveryService.resolveSessionUsername(restored);
       await PercLedgerHub.instance.restoreFromBackup(
         restored,
         sessionUsername: session,

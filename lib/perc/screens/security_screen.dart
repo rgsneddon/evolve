@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,13 +7,18 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../providers/perc_wallet_provider.dart';
-import '../services/perc_wallet_backup_clipboard.dart';
 import '../services/security_backup_files.dart';
-import '../services/security_backup_test_hooks.dart';
+import '../services/security_recovery_service.dart';
 
 /// Backup export, file restore, and optional seed-phrase recovery.
 class SecurityScreen extends StatefulWidget {
-  const SecurityScreen({super.key});
+  const SecurityScreen({
+    super.key,
+    this.recoveryService,
+  });
+
+  /// Optional injected ports (widget tests supply a [BackupBytesResolver]).
+  final SecurityRecoveryService? recoveryService;
 
   @override
   State<SecurityScreen> createState() => _SecurityScreenState();
@@ -27,6 +30,9 @@ class _SecurityScreenState extends State<SecurityScreen> {
   final _seedCtrl = TextEditingController();
   bool _obscureExport = true;
   bool _obscureRestore = true;
+
+  SecurityRecoveryService get _recovery =>
+      widget.recoveryService ?? SecurityRecoveryService.production();
 
   @override
   void dispose() {
@@ -162,12 +168,13 @@ class _SecurityScreenState extends State<SecurityScreen> {
   Future<void> _exportBackup(PercWalletProvider wallet) async {
     try {
       final bytes = wallet.exportEncryptedBackup(_exportPassCtrl.text);
-      SecurityBackupTestHooks.lastExportedBytes = bytes;
       final name =
           'perccent-wallet-backup-${DateTime.now().toUtc().toIso8601String().replaceAll(':', '-').split('.').first}.percbackup';
       if (kIsWeb) {
         await Clipboard.setData(
-          ClipboardData(text: PercWalletBackupClipboard.encodeForClipboard(bytes)),
+          ClipboardData(
+            text: SecurityRecoveryService.encodeBackupForClipboard(bytes),
+          ),
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -199,41 +206,10 @@ class _SecurityScreenState extends State<SecurityScreen> {
 
   Future<void> _restoreBackup(PercWalletProvider wallet) async {
     try {
-      final bytes = await _resolveBackupBytes();
+      final bytes = await _recovery.resolveBackupBytes();
       if (bytes == null) return;
       await wallet.restoreFromEncryptedBackup(bytes, _restorePassCtrl.text);
     } catch (_) {}
-  }
-
-  Future<Uint8List?> _resolveBackupBytes() async {
-    final testPicker = SecurityBackupTestHooks.backupBytesPicker;
-    if (testPicker != null) {
-      return testPicker();
-    }
-
-    if (kIsWeb) {
-      final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
-      final fromClipboard = PercWalletBackupClipboard.decode(
-        clipboard?.text ?? '',
-      );
-      if (fromClipboard != null) return fromClipboard;
-
-      final group = const XTypeGroup(
-        label: 'PERC Backup',
-        extensions: ['percbackup', 'json'],
-      );
-      final file = await openFile(acceptedTypeGroups: [group]);
-      if (file == null) return null;
-      return file.readAsBytes();
-    }
-
-    final file = await openFile(
-      acceptedTypeGroups: const [
-        XTypeGroup(label: 'PERC Backup', extensions: ['percbackup', 'json']),
-      ],
-    );
-    if (file == null) return null;
-    return file.readAsBytes();
   }
 
   Future<void> _recoverSeed(PercWalletProvider wallet) async {
