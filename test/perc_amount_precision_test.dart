@@ -44,7 +44,7 @@ void main() {
     );
   });
 
-  test('user wallet receives smallest unit 0.00000001 PERC', () {
+  test('user wallet receives smallest unit 0.00000001 PERC on near-instant send', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -61,8 +61,6 @@ void main() {
       deliverInstantly: false,
     );
     ledger.login('bob', 'password123');
-    expect(ledger.account('bob')!.balance, oneCent);
-    ledger.advanceScenarioBlock('bob');
     expect(ledger.account('bob')!.balance, oneCent);
   });
 
@@ -88,8 +86,6 @@ void main() {
     expect(tx.kind, PercTxKind.transfer);
     expect(tx.amount, oneCent);
     expect(tx.toUsername, PercChainConstants.treasuryUsername);
-    expect(ledger.pendingInboundFor(PercChainConstants.treasuryUsername), hasLength(1));
-    ledger.settlePendingInboundOnActivity(PercChainConstants.treasuryUsername);
     expect(ledger.pendingInboundFor(PercChainConstants.treasuryUsername), isEmpty);
     expect(
       treasury.transactions.any(
@@ -103,7 +99,7 @@ void main() {
     );
     expect(
       treasury.balance,
-      before + oneCent - PercStaking.rewardPerBlock,
+      before + oneCent - PercStaking.rewardPerBlock * 2,
     );
   });
 

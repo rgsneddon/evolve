@@ -15,7 +15,7 @@ void _seedLedger(PercLedger ledger) {
 }
 
 void main() {
-  test('send anchors at seed height while pending until scenario confirm', () {
+  test('send anchors at seed height and settles recipient near-instantly', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -41,13 +41,12 @@ void main() {
       seedConfirmationBlockHeight: seedHeight,
     );
 
-    expect(tx.isConfirmed, isFalse);
     expect(tx.blockIndex, seedHeight);
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
+    expect(ledger.account('bob')!.balance, PercAmount.fromPerc(0.00000005));
+    expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(
-      ledger.account('bob')!.transactions.single.isConfirmed,
-      isFalse,
+      ledger.account('bob')!.transactions.any((t) => t.isConfirmed),
+      isTrue,
     );
     expect(
       ledger.blocks.any((b) => b.transactions.any((t) => t.id == tx.id)),
@@ -55,7 +54,7 @@ void main() {
     );
   });
 
-  test('receiver credits inbound only after scenario within receive window', () {
+  test('receiver credits inbound near-instantly on same-device send', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -69,10 +68,6 @@ void main() {
     );
 
     ledger.login('bob', 'password123');
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
-
-    ledger.advanceScenarioBlock('bob');
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(
       ledger.account('bob')!.balance,

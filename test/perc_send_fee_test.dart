@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
+import 'package:evolve/perc/models/perc_pending_inbound_transfer.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_currency.dart';
@@ -26,7 +27,7 @@ void main() {
     );
   });
 
-  test('sender reserves amount plus fee until recipient confirms via scenario', () {
+  test('sender debits amount plus fee on near-instant same-device settlement', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -47,24 +48,27 @@ void main() {
       deliverInstantly: false,
     );
 
-    expect(tx.isConfirmed, isFalse);
-    expect(ledger.account('alice')!.balance, aliceBefore + PercStaking.rewardPerBlock);
-    expect(ledger.sessionBalance, aliceBefore - amount - fee + PercStaking.rewardPerBlock);
     expect(
-      ledger.account(PercChainConstants.treasuryUsername)!.balance,
-      treasuryBefore - PercStaking.rewardPerBlock,
+      ledger.account('alice')!.transactions.firstWhere((t) => t.id == tx.id).isConfirmed,
+      isTrue,
     );
-    expect(ledger.cumulativeBurnedPerc, PercAmount.zero);
-    expect(ledger.pendingInboundFor('bob').single.amount, amount);
-
-    ledger.login('bob', 'password123');
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
-    ledger.advanceScenarioBlock('bob');
     expect(
-      ledger.account('alice')!.balance,
-      aliceBefore - amount - fee + PercStaking.rewardPerBlock * 2,
+      ledger.account('alice')!.balance.microUnits,
+      aliceBefore.microUnits -
+          amount.microUnits -
+          fee.microUnits +
+          PercStaking.rewardPerBlock.microUnits * 2,
+    );
+    expect(ledger.sessionBalance, ledger.account('alice')!.balance);
+    expect(
+      ledger.account(PercChainConstants.treasuryUsername)!.balance.microUnits,
+      treasuryBefore.microUnits - PercStaking.rewardPerBlock.microUnits * 2,
     );
     expect(ledger.cumulativeBurnedPerc, fee);
+    expect(ledger.pendingInboundFor('bob'), isEmpty);
+
+    ledger.login('bob', 'password123');
+    expect(ledger.account('bob')!.balance, amount);
     expect(
       ledger.account('alice')!.transactions.any(
             (t) => t.kind == PercTxKind.feeBurn && t.amount == fee,
@@ -96,8 +100,6 @@ void main() {
       deliverInstantly: false,
     );
 
-    expect(ledger.cumulativeBurnedPerc, PercAmount.zero);
-    ledger.advanceScenarioBlock('bob');
     expect(ledger.cumulativeBurnedPerc, fee + fee);
   });
 
@@ -121,14 +123,22 @@ void main() {
     );
     final aliceAfterSend = ledger.account('alice')!.balance;
     final burnedAfterSend = ledger.cumulativeBurnedPerc;
-    final sentAt = ledger.pendingInboundFor('bob').single.sentAt;
+    ledger.pendingInboundTransfers.add(
+      PercPendingInboundTransfer(
+        id: 'tx-stale-fee',
+        fromUsername: 'alice',
+        toUsername: 'bob',
+        amount: PercAmount.smallestUnit,
+        fee: fee,
+        sentAt: DateTime.utc(2026, 1, 1),
+      ),
+    );
 
     ledger.refreshPendingInboundTransfers(
-      now: sentAt.add(const Duration(seconds: 3)),
+      now: DateTime.utc(2026, 1, 1, 0, 0, 3),
     );
 
     expect(ledger.cumulativeBurnedPerc, burnedAfterSend);
-    expect(ledger.cumulativeBurnedPerc, PercAmount.zero);
     expect(ledger.account('alice')!.balance, aliceAfterSend + PercStaking.rewardPerBlock);
     expect(ledger.pendingInboundFor('bob'), isEmpty);
   });
@@ -165,8 +175,6 @@ void main() {
       amount: PercAmount.smallestUnit,
       deliverInstantly: false,
     );
-    ledger.advanceScenarioBlock('bob');
-
     final restored = PercLedger.fromJson(ledger.toJson());
     expect(restored.cumulativeBurnedPerc, PercChainConstants.sendTransactionFee);
   });

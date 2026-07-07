@@ -5,7 +5,6 @@ import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_block_display_label.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 
-
 void _seed(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password12345');
@@ -15,16 +14,20 @@ void _seed(PercLedger ledger) {
 
 void main() {
   test('rendezvous-style sender ledger merge credits signed-in receiver', () {
+    final receiver = PercLedger.empty();
+    _seed(receiver);
+    receiver.register('windows_user', 'password12345');
+    receiver.login('windows_user', 'password12345');
+    final windowsAddr = receiver.account('windows_user')!.address;
+
     final sender = PercLedger.empty();
     _seed(sender);
     sender.register('android_user', 'password12345');
-    sender.register('windows_user', 'password12345');
+    sender.ensureRemoteAccount(username: 'windows_user', address: windowsAddr);
     sender.creditScenario(username: 'android_user', percentChance: 80);
     sender.login('android_user', 'password12345');
 
     final amount = PercAmount.fromPerc(0.00000010);
-    final windowsAddr = sender.account('windows_user')!.address;
-
     final sentTx = sender.send(
       fromUsername: 'android_user',
       toAddress: windowsAddr,
@@ -41,27 +44,12 @@ void main() {
     );
     expect(sender.microblocksPerBlock, PercChainConstants.microblocksPerBlock);
 
-    final receiver = PercLedger.empty();
-    _seed(receiver);
-    receiver.register('windows_user', 'password12345');
-    receiver.login('windows_user', 'password12345');
-
     expect(receiver.pendingInboundFor('windows_user'), isEmpty);
     expect(receiver.account('windows_user')!.balance, PercAmount.zero);
 
     receiver.mergeNetworkStateFromPeer(sender);
     receiver.refreshPendingInboundForSession();
 
-    expect(receiver.pendingInboundFor('windows_user'), hasLength(1));
-    expect(receiver.account('windows_user')!.balance, PercAmount.zero);
-    expect(
-      receiver.account('windows_user')!.transactions.any(
-            (tx) => !tx.isConfirmed && tx.amount == amount,
-          ),
-      isTrue,
-    );
-
-    receiver.advanceScenarioBlock('windows_user', senderPeer: sender);
     expect(receiver.pendingInboundFor('windows_user'), isEmpty);
     expect(receiver.account('windows_user')!.balance, amount);
     expect(
