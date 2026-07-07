@@ -71,6 +71,8 @@ class PercWalletProvider extends ChangeNotifier {
   bool _syncingWallet = false;
   bool _postLoginSyncing = false;
   bool _pendingSeedSetup = false;
+  String? _pendingRegistrationPassword;
+  bool _registrationAwaitingSeedAlignment = false;
   List<String>? _pendingRegistrationMnemonic;
   bool _sessionTimedOut = false;
   bool _extendingSessionForConnection = false;
@@ -82,8 +84,13 @@ class PercWalletProvider extends ChangeNotifier {
   bool get isSyncingWallet => _syncingWallet;
   bool get isPostLoginSyncing => _postLoginSyncing;
   bool get pendingSeedSetup => _pendingSeedSetup;
+  bool get registrationAwaitingSeedAlignment =>
+      _registrationAwaitingSeedAlignment;
   bool get isWalletConnectComplete =>
-      hasAppAccess && !_postLoginSyncing && !_pendingSeedSetup;
+      hasAppAccess &&
+      !_postLoginSyncing &&
+      !_pendingSeedSetup &&
+      !_registrationAwaitingSeedAlignment;
   bool get sessionTimedOut => _sessionTimedOut;
   bool get isBlockchainLaunched => _ledger.isBlockchainLaunched;
   bool get isLoggedIn => _ledger.isLoggedIn;
@@ -359,6 +366,8 @@ class PercWalletProvider extends ChangeNotifier {
       _ledger.register(username, password);
       _ledger.login(username, password);
       _pendingRegistrationMnemonic = null;
+      _pendingRegistrationPassword = password;
+      _registrationAwaitingSeedAlignment = false;
       _pendingSeedSetup = true;
       clearSessionTimedOut();
       notifyListeners();
@@ -368,6 +377,8 @@ class PercWalletProvider extends ChangeNotifier {
     } catch (e) {
       _pendingSeedSetup = false;
       _pendingRegistrationMnemonic = null;
+      _pendingRegistrationPassword = null;
+      _registrationAwaitingSeedAlignment = false;
       _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
     }
@@ -389,29 +400,28 @@ class PercWalletProvider extends ChangeNotifier {
     if (!_pendingSeedSetup) return;
     _clearMessages();
     final username = _ledger.sessionUsername;
-    if (username == null) {
+    final password = _pendingRegistrationPassword;
+    if (username == null || password == null) {
       _pendingSeedSetup = false;
       _pendingRegistrationMnemonic = null;
+      _pendingRegistrationPassword = null;
       notifyListeners();
       return;
     }
     try {
-      if (enableSeed) {
-        final mnemonic = _pendingRegistrationMnemonic;
-        if (mnemonic == null || mnemonic.isEmpty) {
-          throw StateError('Generate a seed phrase before continuing');
-        }
-        _ledger.attachSeedRecoveryEnvelope(
-          username: PercAuth.normalizeUsername(username),
-          mnemonic: mnemonic,
-        );
+      final mnemonic = enableSeed ? _pendingRegistrationMnemonic : null;
+      if (enableSeed && (mnemonic == null || mnemonic.isEmpty)) {
+        throw StateError('Generate a seed phrase before continuing');
       }
       _pendingSeedSetup = false;
       _pendingRegistrationMnemonic = null;
+      _pendingRegistrationPassword = null;
       _armSessionTimeout();
       notifyListeners();
-      await _completeWalletSessionStart(
-        username,
+      await _completeRegistrationSessionStart(
+        username: username,
+        password: password,
+        seedMnemonic: mnemonic,
         statusKey: enableSeed
             ? 'wallet_status_account_created_seed'
             : 'wallet_status_account_created',
@@ -526,6 +536,48 @@ class PercWalletProvider extends ChangeNotifier {
       if (captureLaunch) _captureTreasuryLaunchEvent();
       _setStatus(statusKey, statusArgs);
       await PercLedgerHub.instance.persistLocal();
+    } finally {
+      _postLoginSyncing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _completeRegistrationSessionStart({
+    required String username,
+    required String password,
+    required String statusKey,
+    List<String>? seedMnemonic,
+  }) async {
+    _postLoginSyncing = true;
+    _registrationAwaitingSeedAlignment = false;
+    notifyListeners();
+    try {
+      final adoption =
+          await PercLedgerHub.instance.adoptSeedChainForRegistration(
+        username: username,
+        password: password,
+        seedMnemonic: seedMnemonic,
+      );
+
+      await PercLedgerHub.instance.onWalletSessionStarted(username);
+      await PercLedgerHub.instance.commitAfterForceSync();
+
+      if (!adoption.seedReachable) {
+        _registrationAwaitingSeedAlignment = false;
+        _setStatus('wallet_sync_seed_offline');
+      } else if (!adoption.isAligned) {
+        _registrationAwaitingSeedAlignment = true;
+        _setStatus(
+          'wallet_sync_partial',
+          {
+            'local': '${_ledger.blockHeight}',
+            'network': '${adoption.seedHeight}',
+          },
+        );
+      } else {
+        _registrationAwaitingSeedAlignment = false;
+        _setStatus(statusKey);
+      }
     } finally {
       _postLoginSyncing = false;
       notifyListeners();

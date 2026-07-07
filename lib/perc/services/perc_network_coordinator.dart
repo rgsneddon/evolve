@@ -6,6 +6,7 @@ import '../../services/app_performance.dart';
 import '../models/perc_account.dart';
 import '../models/perc_peer_node.dart';
 import '../perc_chain_constants.dart';
+import 'perc_chain_alignment.dart';
 import 'perc_chain_tip.dart';
 import 'perc_ledger.dart';
 import 'perc_ledger_hub.dart';
@@ -71,6 +72,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     disableLiveNodesForTests = true;
     instance._senderPeerCache.clear();
     instance.settlementPeerTargets.clear();
+    instance.clearTestSeedLedger();
     instance._detach();
   }
 
@@ -96,6 +98,26 @@ class PercNetworkCoordinator extends ChangeNotifier {
   void setSeedConnectedForTest(bool connected) {
     _seedConnected = connected;
     notifyListeners();
+  }
+
+  /// Simulated internet seed ledger for registration-alignment harness tests.
+  @visibleForTesting
+  PercLedger? testSeedLedger;
+
+  /// When false, registration adoption reports seed offline (honest sync-pending).
+  @visibleForTesting
+  bool testSeedReachable = true;
+
+  @visibleForTesting
+  void registerTestSeedLedger(PercLedger seed) {
+    testSeedLedger = seed;
+    testSeedReachable = true;
+  }
+
+  @visibleForTesting
+  void clearTestSeedLedger() {
+    testSeedLedger = null;
+    testSeedReachable = true;
   }
 
   static final PercNetworkCoordinator instance = PercNetworkCoordinator();
@@ -229,6 +251,182 @@ class PercNetworkCoordinator extends ChangeNotifier {
       await hub.commitWithoutSessionPromotion();
     }
     notifyListeners();
+  }
+
+  /// Adopts the canonical seed chain before a new registration is persisted.
+  Future<PercRegistrationSeedAdoption> adoptSeedChainForRegistration({
+    required String username,
+    required String password,
+    List<String>? seedMnemonic,
+  }) async {
+    final hub = _hub;
+    if (hub == null) {
+      return const PercRegistrationSeedAdoption(
+        seedReachable: false,
+        isAligned: false,
+        seedHeight: 0,
+        seedTipHash: '',
+        seedChainId: PercChainConstants.evolutionaryChainId,
+      );
+    }
+
+    _syncState = PercNetworkSyncState.syncing;
+    notifyListeners();
+
+    var seedReachable = false;
+    PercLedger? seedLedger;
+    var seedStatus = PercNetworkStatus(
+      evolutionaryChainId: PercChainAlignment.effectiveChainId(hub.ledger),
+      blockHeight: PercChainTip.height(hub.ledger),
+      tipHash: PercChainTip.hash(hub.ledger),
+      revision: hub.revision,
+      networkGenesisRevision: hub.ledger.networkGenesisRevision,
+    );
+
+    if (disableLiveNodesForTests) {
+      if (testSeedReachable && testSeedLedger != null) {
+        seedLedger = PercLedger.fromJson(testSeedLedger!.toJson());
+        seedStatus = PercNetworkStatus.fromLedger(
+          seedLedger,
+          revision: 1,
+          endpoint: 'http://test-seed/perc',
+        );
+        _applySeedLedgerToHub(hub, seedLedger, seedStatus);
+        seedReachable = true;
+      } else {
+        _seedConnected = false;
+        _networkBlockHeight = _maxKnownHeight();
+      }
+    } else {
+      await _connectToSeedNode(hub, deep: true);
+      seedReachable = _seedConnected;
+      if (seedReachable) {
+        await deepSyncToNetworkHeight();
+        final seedEndpoint = hub.ledger
+            .networkNodes[PercChainConstants.seedUsername]
+            ?.endpoint;
+        if (seedEndpoint != null && seedEndpoint.isNotEmpty) {
+          final remoteStatus = await _client.fetchStatus(seedEndpoint);
+          final remoteLedger = await _client.fetchLedger(seedEndpoint);
+          if (remoteStatus != null) seedStatus = remoteStatus;
+          if (remoteLedger != null) seedLedger = remoteLedger;
+        }
+        seedStatus = PercNetworkStatus(
+          evolutionaryChainId: seedStatus.evolutionaryChainId.isEmpty
+              ? PercChainConstants.evolutionaryChainId
+              : seedStatus.evolutionaryChainId,
+          blockHeight: _networkBlockHeight,
+          tipHash: seedStatus.tipHash.isNotEmpty
+              ? seedStatus.tipHash
+              : PercChainTip.hash(hub.ledger),
+          revision: hub.revision,
+          networkGenesisRevision: hub.ledger.networkGenesisRevision,
+        );
+      }
+    }
+
+    _reapplyRegistrationAccount(
+      hub,
+      username: username,
+      password: password,
+      seedMnemonic: seedMnemonic,
+    );
+
+    final chainId = seedStatus.evolutionaryChainId.isEmpty
+        ? PercChainConstants.evolutionaryChainId
+        : seedStatus.evolutionaryChainId;
+    final seedHeight = seedLedger != null
+        ? PercChainTip.height(seedLedger)
+        : seedStatus.blockHeight;
+    final seedTip = seedLedger != null
+        ? PercChainTip.hash(seedLedger)
+        : seedStatus.tipHash;
+
+    final aligned = seedReachable &&
+        PercChainAlignment.isAlignedWithSeed(
+          local: hub.ledger,
+          seedChainId: chainId,
+          seedHeight: seedHeight,
+          seedTipHash: seedTip,
+        );
+
+    if (seedReachable) {
+      _networkBlockHeight = seedHeight;
+      _syncState = aligned
+          ? PercNetworkSyncState.synced
+          : PercChainAlignment.syncStateForSeed(
+              local: hub.ledger,
+              seedHeight: seedHeight,
+              seedTipHash: seedTip,
+            );
+    } else if (disableLiveNodesForTests) {
+      _syncState = PercNetworkSyncState.synced;
+    } else {
+      _syncState = PercNetworkSyncState.syncing;
+    }
+    notifyListeners();
+
+    return PercRegistrationSeedAdoption(
+      seedReachable: seedReachable,
+      isAligned: aligned,
+      seedHeight: seedHeight,
+      seedTipHash: seedTip,
+      seedChainId: chainId,
+    );
+  }
+
+  void _reapplyRegistrationAccount(
+    PercLedgerHub hub, {
+    required String username,
+    required String password,
+    List<String>? seedMnemonic,
+  }) {
+    final u = PercAuth.normalizeUsername(username);
+    if (!hub.ledger.accounts.containsKey(u)) {
+      hub.ledger.register(u, password);
+    }
+    hub.ledger.login(u, password);
+    if (seedMnemonic != null && seedMnemonic.isNotEmpty) {
+      hub.ledger.attachSeedRecoveryEnvelope(
+        username: u,
+        mnemonic: seedMnemonic,
+      );
+    }
+  }
+
+  void _applySeedLedgerToHub(
+    PercLedgerHub hub,
+    PercLedger remote,
+    PercNetworkStatus seedStatus,
+  ) {
+    hub.ledger.updatePeerFromStatus(seedStatus, online: true);
+    _seedConnected = true;
+    _networkBlockHeight = PercChainTip.height(remote);
+
+    final localHeight = PercChainTip.height(hub.ledger);
+    final remoteHeight = PercChainTip.height(remote);
+    final seedGenesis = remote.networkGenesisRevision;
+    final targetGenesis = hub.ledger.networkGenesisRevision;
+    final mustResetGenesis = seedGenesis > hub.ledger.networkGenesisRevision ||
+        (seedGenesis >= targetGenesis &&
+            localHeight > remoteHeight &&
+            remoteHeight == 0);
+
+    if (mustResetGenesis) {
+      hub.resetFromSeedLedger(
+        remote,
+        expectedTipHash: PercChainTip.hash(remote),
+      );
+      return;
+    }
+
+    hub.ledger.mergeNetworkStateFromPeer(remote);
+    if (remoteHeight > localHeight) {
+      hub.importPeerLedger(
+        remote,
+        expectedTipHash: PercChainTip.hash(remote),
+      );
+    }
   }
 
   /// Manual sync — pull from seed, merge peers, re-publish wallet, gossip chain.

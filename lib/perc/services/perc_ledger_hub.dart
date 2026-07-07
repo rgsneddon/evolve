@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../perc_app_version.dart';
+import 'perc_chain_alignment.dart';
 import 'perc_chain_evolution.dart';
 import 'perc_chain_tip.dart';
 import 'perc_ledger.dart';
@@ -81,6 +82,18 @@ class PercLedgerHub extends ChangeNotifier {
   Future<void> onWalletSessionStarted(String username) async {
     await network.onSessionStarted(username);
   }
+
+  /// Pulls the canonical seed chain and re-applies the new account before publish.
+  Future<PercRegistrationSeedAdoption> adoptSeedChainForRegistration({
+    required String username,
+    required String password,
+    List<String>? seedMnemonic,
+  }) =>
+      network.adoptSeedChainForRegistration(
+        username: username,
+        password: password,
+        seedMnemonic: seedMnemonic,
+      );
 
   Future<void> onWalletSessionEnded([String? username]) async {
     await network.onSessionEnded(username);
