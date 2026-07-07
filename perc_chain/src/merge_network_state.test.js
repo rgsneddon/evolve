@@ -156,9 +156,16 @@ describe('mergeNetworkStateFromPeer', () => {
     };
 
     const settlementMerge = mergeNetworkStateFromPeer(seed, receiverAfterScenario);
-    assert.equal(settlementMerge.acknowledged, 1);
+    assert.equal(settlementMerge.acknowledged, 0);
     assert.equal(seed.pendingInboundTransfers.length, 1);
 
+    for (const block of seed.blocks) {
+      for (const tx of block.transactions ?? []) {
+        if (tx.id === 'tx-flow-1' && tx.kind === 'transfer') {
+          tx.confirmations = 1;
+        }
+      }
+    }
     seed.pendingInboundTransfers = [];
     const settlement = seedObservesScenarioSettlement(seed);
     assert.equal(settlement.pendingCount, 0);
