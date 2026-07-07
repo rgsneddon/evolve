@@ -159,11 +159,11 @@ void main() {
     devices.propagateWitnessToSender();
 
     expect(devices.sender.pendingInboundFor('bob'), isEmpty);
+    final postDebit = aliceBefore - amount - PercChainConstants.sendTransactionFee;
+    final stakingReward = PercStaking.rewardForBalance(postDebit);
     expect(
-      devices.sender.account('alice')!.balance.microUnits,
-      (aliceBefore - amount - PercChainConstants.sendTransactionFee +
-              PercStaking.rewardPerBlock)
-          .microUnits,
+      devices.sender.account('alice')!.balance,
+      postDebit + stakingReward,
     );
     expect(
       devices.sender.account('alice')!.transactions.any(
@@ -195,11 +195,11 @@ void main() {
     expect(devices.receiver.settlementWitnesses.first.transferId, isNotEmpty);
 
     expect(devices.sender.pendingInboundFor('bob'), isEmpty);
+    final postDebit = aliceBefore - amount - PercChainConstants.sendTransactionFee;
+    final stakingReward = PercStaking.rewardForBalance(postDebit);
     expect(
-      devices.sender.account('alice')!.balance.microUnits,
-      (aliceBefore - amount - PercChainConstants.sendTransactionFee +
-              PercStaking.rewardPerBlock)
-          .microUnits,
+      devices.sender.account('alice')!.balance,
+      postDebit + stakingReward,
     );
     expect(
       devices.sender.account('alice')!.transactions.any(

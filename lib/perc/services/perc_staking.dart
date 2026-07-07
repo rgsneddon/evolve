@@ -1,16 +1,15 @@
 import '../models/perc_amount.dart';
 import '../perc_chain_constants.dart';
 
-/// Cumulative staking — flat 0.00000005 PERC per block for confirmed held PERC.
+/// Cumulative staking — 0.00000005 PERC per 1 PERC held per scenario block.
 class PercStaking {
   const PercStaking._();
 
-  /// 10% of 0.00000050 PERC base = 0.00000005 PERC each block.
-  static PercAmount get rewardPerBlock {
-    final base = PercChainConstants.scenarioBaseReward.microUnits;
-    final micro = (base * PercChainConstants.stakingYieldPercent) ~/ 100;
-    return PercAmount(micro);
-  }
+  /// 0.00000005 PERC earned per 1 PERC held (5 micro-units per 100M micro-units).
+  static const PercAmount rewardPerPercHeld = PercAmount(5);
+
+  /// Reward for exactly 1 PERC held — alias kept for treasury-reserve tests.
+  static PercAmount get rewardPerBlock => rewardPerPercHeld;
 
   /// Balance eligible for staking after [PercChainConstants.stakingConfirmationsRequired].
   static PercAmount confirmedBalanceForStaking({
@@ -22,9 +21,12 @@ class PercStaking {
     return confirmed;
   }
 
-  /// One flat staking payout per block when confirmed balance is positive.
+  /// Proportional staking payout: [rewardPerPercHeld] per whole-PERC fraction held.
   static PercAmount rewardForBalance(PercAmount balance) {
     if (!balance.isPositive) return PercAmount.zero;
-    return rewardPerBlock;
+    final micro = (balance.microUnits * rewardPerPercHeld.microUnits) ~/
+        PercChainConstants.centsPerPerc;
+    if (micro <= 0) return PercAmount.zero;
+    return PercAmount(micro);
   }
 }

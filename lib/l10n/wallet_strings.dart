@@ -280,7 +280,7 @@ const walletStringsFr = <String, String>{
   'wallet_signed_in_as': 'Connecté en tant que {user}',
   'wallet_staking_earned': 'Staking cumulé gagné : {amount} PERC',
   'wallet_staking_note':
-      'Le PERC confirmé détenu rapporte 5 cent par bloc (10 % des 50 cent de base) après 1 confirmation de bloc. 1 PERC = 100 000 000 cent (0,00000001 PERC chacun).',
+      'Le PERC confirmé détenu rapporte 0,00000005 PERC par 1 PERC détenu à chaque bloc de scénario après 1 confirmation. Le trésor finance toutes les récompenses du réseau.',
   'wallet_staking_title': 'Staking cumulatif',
   'wallet_status_account_created': 'Compte créé',
   'wallet_status_faucet_credited': '+{amount} {symbol}',
@@ -650,7 +650,7 @@ const walletStringsDe = <String, String>{
   'wallet_signed_in_as': 'Angemeldet als {user}',
   'wallet_staking_earned': 'Insgesamt verdienter Einsatz: {amount} PERC',
   'wallet_staking_note':
-      'Bestätigter gehaltener PERC verdient 5 Cent pro Block (10 % der 50-Cent-Basis) nach 1 Blockbestätigung. 1 PERC = 100.000.000 Cent (je 0.00000001 PERC).',
+      'Bestätigter gehaltener PERC verdient 0,00000005 PERC pro 1 gehaltenem PERC je Szenario-Block nach 1 Blockbestätigung. Die Schatzkammer finanziert alle Netzwerk-Belohnungen.',
   'wallet_staking_title': 'Kumulativer Einsatz',
   'wallet_status_account_created': 'Konto erstellt',
   'wallet_status_faucet_credited': '+{amount} {symbol}',
@@ -1015,7 +1015,7 @@ const walletStringsPt = <String, String>{
   'wallet_signed_in_as': 'Conectado como {user}',
   'wallet_staking_earned': 'Total de apostas ganhas: {amount} PERC',
   'wallet_staking_note':
-      'PERC mantido confirmado ganha 5 centavos por bloco (10% da base de 50 centavos) após a confirmação de 1 bloco. 1 PERC = 100.000.000 centavos (0.00000001 PERC cada).',
+      'PERC mantido confirmado ganha 0,00000005 PERC por 1 PERC mantido em cada bloco de cenário após 1 confirmação. O tesouro financia todas as recompensas da rede.',
   'wallet_staking_title': 'Piquetagem cumulativa',
   'wallet_status_account_created': 'Conta criada',
   'wallet_status_faucet_credited': '+{amount} {symbol}',
@@ -1374,7 +1374,7 @@ const walletStringsAr = <String, String>{
   'wallet_signed_in_as': 'تم تسجيل الدخول باسم {user}',
   'wallet_staking_earned': 'إجمالي الحصة المكتسبة: {amount} PERC',
   'wallet_staking_note':
-      'تربح PERC المؤكدة 5 سنتات لكل كتلة (10% من قاعدة الـ 50 سنتًا) بعد تأكيد كتلة واحدة. 1 PERC = 100,000,000 سنت (0.00000001 PERC لكل منهما).',
+      'PERC المؤكدة المحتفظ بها تكسب 0.00000005 PERC لكل 1 PERC محتفظ به في كل كتلة سيناريو بعد تأكيد واحد. الخزينة تمول جميع مكافآت الشبكة.',
   'wallet_staking_title': 'الرهن التراكمي',
   'wallet_status_account_created': 'تم إنشاء الحساب',
   'wallet_status_faucet_credited': '+{amount} {symbol}',
@@ -1704,7 +1704,7 @@ const walletStringsZh = <String, String>{
   'wallet_signed_in_as': 'Signed in as {user}',
   'wallet_staking_earned': 'Total staking earned: {amount} PERC',
   'wallet_staking_note':
-      'Confirmed held PERC earns 5 cent each block (10% of the 50 cent base) after 1 block confirmation. 1 PERC = 100,000,000 cent (0.00000001 PERC each).',
+      'Confirmed held PERC earns 0.00000005 PERC per 1 PERC held each scenario block after 1 block confirmation. Treasury funds all holder rewards network-wide.',
   'wallet_staking_title': 'Cumulative staking',
   'wallet_status_account_created': '账户已创建',
   'wallet_status_faucet_credited': '+{amount} {symbol}',
@@ -2062,7 +2062,7 @@ const walletStringsHi = <String, String>{
   'wallet_signed_in_as': 'Signed in as {user}',
   'wallet_staking_earned': 'Total staking earned: {amount} PERC',
   'wallet_staking_note':
-      'Confirmed held PERC earns 5 cent each block (10% of the 50 cent base) after 1 block confirmation. 1 PERC = 100,000,000 cent (0.00000001 PERC each).',
+      'Confirmed held PERC earns 0.00000005 PERC per 1 PERC held each scenario block after 1 block confirmation. Treasury funds all holder rewards network-wide.',
   'wallet_staking_title': 'Cumulative staking',
   'wallet_status_account_created': 'खाता बनाया गया',
   'wallet_status_faucet_credited': '+{amount} {symbol}',
@@ -2399,7 +2399,7 @@ const walletStringsJa = <String, String>{
   'wallet_signed_in_as': 'Signed in as {user}',
   'wallet_staking_earned': 'Total staking earned: {amount} PERC',
   'wallet_staking_note':
-      'Confirmed held PERC earns 5 cent each block (10% of the 50 cent base) after 1 block confirmation. 1 PERC = 100,000,000 cent (0.00000001 PERC each).',
+      'Confirmed held PERC earns 0.00000005 PERC per 1 PERC held each scenario block after 1 block confirmation. Treasury funds all holder rewards network-wide.',
   'wallet_staking_title': 'Cumulative staking',
   'wallet_status_account_created': 'アカウントを作成しました',
   'wallet_status_faucet_credited': '+{amount} {symbol}',

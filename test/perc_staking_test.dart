@@ -2,9 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
+import 'package:evolve/perc/services/perc_chain_tip.dart';
 import 'package:evolve/perc/services/perc_faucet.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
+import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_staking.dart';
+import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 
 void _seed(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
@@ -15,9 +18,9 @@ void _seed(PercLedger ledger) {
 }
 
 void main() {
-  test('staking reward is flat 0.00000005 PERC per block', () {
-    expect(PercStaking.rewardPerBlock.microUnits, 5);
-    expect(PercStaking.rewardPerBlock.displayFixed8, '0.00000005');
+  test('staking rate is 0.00000005 PERC per 1 PERC held', () {
+    expect(PercStaking.rewardPerPercHeld.microUnits, 5);
+    expect(PercStaking.rewardPerPercHeld.displayFixed8, '0.00000005');
   });
 
   test('confirmed balance excludes same-block incoming credits', () {
@@ -37,22 +40,25 @@ void main() {
     );
   });
 
-  test('flat 0.00000005 PERC for any positive held balance', () {
+  test('proportional staking math on representative balances', () {
+    expect(PercStaking.rewardForBalance(PercAmount.zero).microUnits, 0);
+    expect(PercStaking.rewardForBalance(PercAmount.fromPerc(1)).microUnits, 5);
+    expect(PercStaking.rewardForBalance(PercAmount.fromPerc(2)).microUnits, 10);
     expect(
-      PercStaking.rewardForBalance(PercAmount.scenarioBaseReward).microUnits,
-      5,
+      PercStaking.rewardForBalance(PercAmount.fromPerc(0.5)).microUnits,
+      2,
     );
     expect(
       PercStaking.rewardForBalance(PercAmount.fromPerc(1)).microUnits,
-      5,
+      isNot(
+        equals(
+          PercStaking.rewardForBalance(PercAmount.fromPerc(100)).microUnits,
+        ),
+      ),
     );
     expect(
       PercStaking.rewardForBalance(PercAmount.fromPerc(100)).microUnits,
-      5,
-    );
-    expect(
-      PercStaking.rewardForBalance(PercAmount.zero).microUnits,
-      0,
+      500,
     );
   });
 
@@ -66,14 +72,17 @@ void main() {
 
     ledger.creditScenario(username: 'bob', percentChance: 10);
     final staker = ledger.account('staker')!;
-    expect(staker.cumulativeStakingEarned.microUnits, 5);
+    expect(
+      staker.cumulativeStakingEarned,
+      PercStaking.rewardForBalance(PercAmount.fromPerc(1)),
+    );
     expect(
       staker.transactions.where((t) => t.kind == PercTxKind.stakingReward).length,
       1,
     );
   });
 
-  test('staking pays flat amount to all holders on block', () {
+  test('staking pays proportional amount to all holders on block', () {
     final ledger = PercLedger.empty();
     _seed(ledger);
     ledger.register('bob', 'password123');
@@ -84,19 +93,131 @@ void main() {
 
     final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
     final treasuryBefore = treasury.balance;
+    final stakerReward = PercStaking.rewardForBalance(PercAmount.fromPerc(2));
+    final bobReward = PercStaking.rewardForBalance(PercAmount.fromPerc(1));
 
     ledger.creditScenario(username: 'bob', percentChance: 20);
 
     final staker = ledger.account('staker')!;
     final bob = ledger.account('bob')!;
 
-    expect(staker.cumulativeStakingEarned.microUnits, 5);
-    expect(bob.cumulativeStakingEarned.microUnits, 5);
+    expect(staker.cumulativeStakingEarned, stakerReward);
+    expect(bob.cumulativeStakingEarned, bobReward);
     expect(
       treasury.balance.microUnits,
       treasuryBefore.microUnits -
-          PercStaking.rewardPerBlock.microUnits * 2 -
+          stakerReward.microUnits -
+          bobReward.microUnits -
           PercFaucet.computeScenarioReward(percentChance: 20).total.microUnits,
+    );
+  });
+
+  test('treasury never accrues staking but funds all holder rewards', () {
+    final ledger = PercLedger.empty();
+    _seed(ledger);
+    ledger.register('bob', 'password123');
+
+    ledger.creditScenario(username: 'staker', percentChance: 50);
+    ledger.account('staker')!.balance = PercAmount.fromPerc(2);
+    ledger.account('bob')!.balance = PercAmount.fromPerc(1);
+
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    final treasuryBefore = treasury.balance;
+    final treasuryStakingBefore = treasury.cumulativeStakingEarned;
+
+    ledger.creditScenario(username: 'bob', percentChance: 20);
+
+    final stakerReward = PercStaking.rewardForBalance(PercAmount.fromPerc(2));
+    final bobReward = PercStaking.rewardForBalance(PercAmount.fromPerc(1));
+    final scenarioReward =
+        PercFaucet.computeScenarioReward(percentChance: 20).total;
+
+    expect(treasury.cumulativeStakingEarned, treasuryStakingBefore);
+    expect(
+      treasury.transactions.where(
+        (t) =>
+            t.kind == PercTxKind.stakingReward &&
+            t.toUsername == PercChainConstants.treasuryUsername,
+      ),
+      isEmpty,
+    );
+    expect(
+      treasury.balance,
+      treasuryBefore - stakerReward - bobReward - scenarioReward,
+    );
+  });
+
+  test('offline holder receives proportional staking after ledger import', () {
+    final network = PercLedger.empty();
+    _seed(network);
+    network.register('bob', 'password123');
+
+    network.creditScenario(username: 'staker', percentChance: 50);
+    network.account('staker')!.balance = PercAmount.fromPerc(1.5);
+
+    final offline = PercLedger.fromJson(network.toJson());
+    offline.logout();
+
+    final treasuryBefore =
+        network.account(PercChainConstants.treasuryUsername)!.balance;
+    network.creditScenario(username: 'bob', percentChance: 30);
+
+    final networkStaker = network.account('staker')!;
+    final expectedReward =
+        PercStaking.rewardForBalance(PercAmount.fromPerc(1.5));
+    expect(networkStaker.cumulativeStakingEarned, expectedReward);
+    expect(
+      network.account(PercChainConstants.treasuryUsername)!.balance,
+      lessThan(treasuryBefore),
+    );
+
+    offline.importPeerLedger(
+      network,
+      expectedTipHash: PercChainTip.hash(network),
+    );
+    offline.login('staker', 'password123');
+
+    final offlineStaker = offline.account('staker')!;
+    expect(offlineStaker.balance, networkStaker.balance);
+    expect(offlineStaker.cumulativeStakingEarned, expectedReward);
+    expect(
+      offlineStaker.transactions.where((t) => t.kind == PercTxKind.stakingReward),
+      isNotEmpty,
+    );
+  });
+
+  test('login full sync reconciles staking via hub import', () async {
+    PercLedgerHub.resetForTest();
+    final store = PercWalletStoreMemory();
+    await PercLedgerHub.instance.initialize(store);
+    final hub = PercLedgerHub.instance;
+    _seed(hub.ledger);
+    hub.ledger.register('bob', 'password123');
+
+    hub.ledger.creditScenario(username: 'staker', percentChance: 40);
+    hub.ledger.account('staker')!.balance = PercAmount.fromPerc(1);
+
+    final remote = PercLedger.fromJson(hub.ledger.toJson());
+    remote.creditScenario(username: 'bob', percentChance: 25);
+
+    final expectedReward = PercStaking.rewardForBalance(PercAmount.fromPerc(1));
+    expect(
+      remote.account('staker')!.cumulativeStakingEarned,
+      expectedReward,
+    );
+
+    hub.importPeerLedger(remote, expectedTipHash: PercChainTip.hash(remote));
+    hub.ledger.login('staker', 'password123');
+
+    expect(
+      hub.ledger.sessionAccount!.cumulativeStakingEarned,
+      expectedReward,
+    );
+    expect(
+      hub.ledger.sessionAccount!.transactions.any(
+        (t) => t.kind == PercTxKind.stakingReward,
+      ),
+      isTrue,
     );
   });
 
@@ -105,6 +226,7 @@ void main() {
     _seed(ledger);
     ledger.register('bob', 'password123');
     ledger.creditScenario(username: 'staker', percentChance: 10);
+    ledger.account('staker')!.balance = PercAmount.fromPerc(1);
     ledger.creditScenario(username: 'bob', percentChance: 10);
 
     final reward = ledger

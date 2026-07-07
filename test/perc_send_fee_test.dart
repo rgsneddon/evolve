@@ -52,17 +52,13 @@ void main() {
       ledger.account('alice')!.transactions.firstWhere((t) => t.id == tx.id).isConfirmed,
       isTrue,
     );
-    expect(
-      ledger.account('alice')!.balance.microUnits,
-      aliceBefore.microUnits -
-          amount.microUnits -
-          fee.microUnits +
-          PercStaking.rewardPerBlock.microUnits,
-    );
+    final postDebit = aliceBefore - amount - fee;
+    final stakingReward = PercStaking.rewardForBalance(postDebit);
+    expect(ledger.account('alice')!.balance, postDebit + stakingReward);
     expect(ledger.sessionBalance, ledger.account('alice')!.balance);
     expect(
-      ledger.account(PercChainConstants.treasuryUsername)!.balance.microUnits,
-      treasuryBefore.microUnits - PercStaking.rewardPerBlock.microUnits,
+      ledger.account(PercChainConstants.treasuryUsername)!.balance,
+      treasuryBefore - stakingReward,
     );
     expect(ledger.cumulativeBurnedPerc, fee);
     expect(ledger.pendingInboundFor('bob'), isEmpty);
@@ -139,7 +135,13 @@ void main() {
     );
 
     expect(ledger.cumulativeBurnedPerc, burnedAfterSend);
-    expect(ledger.account('alice')!.balance, aliceAfterSend + PercStaking.rewardPerBlock);
+    final stakingOnRevert = PercStaking.rewardForBalance(
+      PercStaking.confirmedBalanceForStaking(
+        walletBalance: aliceAfterSend,
+        sameBlockIncoming: PercAmount.smallestUnit,
+      ),
+    );
+    expect(ledger.account('alice')!.balance, aliceAfterSend + stakingOnRevert);
     expect(ledger.pendingInboundFor('bob'), isEmpty);
   });
 

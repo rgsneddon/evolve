@@ -471,13 +471,12 @@ class PercLedger {
       remote.passwordHash = local.passwordHash;
       remote.salt = local.salt;
       remote.passwordSet = true;
-      remote.balance = local.balance;
-      remote.lastFaucetDrawAt = local.lastFaucetDrawAt;
-      remote.cumulativeStakingEarned = local.cumulativeStakingEarned;
-      remote.scenarioBlockHeight = local.scenarioBlockHeight;
-      remote.transactions
-        ..clear()
-        ..addAll(local.transactions);
+      final localDraw = local.lastFaucetDrawAt;
+      final remoteDraw = remote.lastFaucetDrawAt;
+      if (localDraw != null &&
+          (remoteDraw == null || localDraw.isAfter(remoteDraw))) {
+        remote.lastFaucetDrawAt = localDraw;
+      }
     }
   }
 
@@ -1670,7 +1669,7 @@ class PercLedger {
         fromUsername: PercChainConstants.treasuryUsername,
         toUsername: entry.key,
         memo:
-            'Cumulative staking (${PercStaking.rewardPerBlock.centDisplay} per block)',
+            'Cumulative staking (${PercStaking.rewardPerPercHeld.displayFixed8} PERC per 1 PERC held)',
         blockIndex: blockIndex,
         confirmations: _txConfirmations,
       );

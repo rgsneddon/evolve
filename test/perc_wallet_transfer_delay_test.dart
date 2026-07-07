@@ -77,7 +77,13 @@ void main() {
 
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(ledger.account('bob')!.balance, PercAmount.zero);
-    expect(ledger.account('alice')!.balance, aliceBefore + PercStaking.rewardPerBlock);
+    final stakingOnRevert = PercStaking.rewardForBalance(
+      PercStaking.confirmedBalanceForStaking(
+        walletBalance: aliceBefore,
+        sameBlockIncoming: PercAmount.fromPerc(0.00000005),
+      ),
+    );
+    expect(ledger.account('alice')!.balance, aliceBefore + stakingOnRevert);
     expect(
       ledger.account('alice')!.transactions.any(
             (t) => t.kind == PercTxKind.transferRevert,

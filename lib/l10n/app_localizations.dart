@@ -502,7 +502,7 @@ final _en = {
   'wallet_balance_label': 'Available balance',
   'wallet_staking_title': 'Cumulative staking',
   'wallet_staking_note':
-      'Confirmed held PERC earns 5 cent each block (10% of the 50 cent base) after 1 block confirmation. 1 PERC = 100,000,000 cent (0.00000001 PERC each).',
+      'Confirmed held PERC earns 0.00000005 PERC per 1 PERC held each scenario block after 1 block confirmation. Treasury funds all holder rewards network-wide.',
   'wallet_staking_earned': 'Total staking earned: {amount} PERC',
   'wallet_burned_title': 'Burned PERC',
   'wallet_burned_note':
@@ -1468,7 +1468,7 @@ final _es = {
   'wallet_balance_label': 'Saldo disponible',
   'wallet_staking_title': 'Staking acumulativo',
   'wallet_staking_note':
-      'El PERC confirmado en cartera gana 5 cent por bloque (10% de la base de 50 cent) tras 1 confirmación de bloque. 1 PERC = 100.000.000 cent (0,00000001 PERC cada uno).',
+      'El PERC confirmado en cartera gana 0,00000005 PERC por 1 PERC mantenido en cada bloque de escenario tras 1 confirmación. El tesoro financia todas las recompensas de la red.',
   'wallet_staking_earned': 'Staking total ganado: {amount} PERC',
   'wallet_burned_title': 'PERC quemado',
   'wallet_burned_note':

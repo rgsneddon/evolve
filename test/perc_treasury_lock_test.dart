@@ -300,9 +300,14 @@ void main() {
     ledger.register('runner', 'password123');
     ledger.creditScenario(username: 'staker', percentChance: 10);
 
+    final stakerBefore = ledger.account('staker')!.balance;
+    const fee = PercChainConstants.sendTransactionFee;
+    final postDebit = stakerBefore - PercAmount(1) - fee;
+    final maxStaking = PercStaking.rewardForBalance(postDebit);
+
     final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
-    treasury.balance = PercChainConstants.minimumTreasuryReserve +
-        PercStaking.rewardPerBlock;
+    treasury.balance =
+        PercChainConstants.minimumTreasuryReserve + maxStaking;
 
     ledger.send(
       fromUsername: 'staker',

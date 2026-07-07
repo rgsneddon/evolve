@@ -179,7 +179,7 @@ class PercChainConstants {
   static Duration get walletInboundRevertWindowEffective =>
       walletInboundRevertWindowOverride ?? walletInboundRevertWindow;
 
-  /// Cumulative staking: flat 10% of 0.00000050 PERC (0.00000005) per block per holder.
+  /// Cumulative staking: 0.00000005 PERC per 1 PERC held per scenario block.
   static const int stakingYieldPercent = 10;
 
   /// Legacy cap reference — superseded by infinite continuum (display only).
