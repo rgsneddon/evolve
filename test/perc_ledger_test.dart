@@ -39,8 +39,10 @@ void main() {
       PercChainConstants.treasuryLaunchAllocation,
     );
     expect(ledger.blocks.length, 1);
-    // Launch seeds treasury off-ledger; scenario block debits reward only.
-    expect(ledger.blocks.first.treasuryEmitted, PercAmount.zero);
+    expect(
+      ledger.blocks.first.treasuryEmitted,
+      PercChainConstants.treasuryLaunchAllocation,
+    );
     expect(
       ledger.treasuryBalance,
       PercChainConstants.treasuryLaunchAllocation - result.reward!.total,

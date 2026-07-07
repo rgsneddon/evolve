@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
+import 'package:evolve/perc/models/perc_pending_inbound_transfer.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_dynamic_emission.dart';
@@ -101,6 +102,67 @@ void main() {
     expect(result.status, PercFaucetCreditStatus.treasuryEmpty);
     expect(treasury.balance, treasuryBefore);
     expect(alice.balance, PercAmount.zero);
+  });
+
+  test('users cannot send PERC to evolve_treasury manually', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+    ledger.creditScenario(username: 'alice', percentChance: 10);
+
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    final before = treasury.balance;
+
+    expect(
+      () => ledger.send(
+        fromUsername: 'alice',
+        toAddress: _addr(ledger, PercChainConstants.treasuryUsername),
+        amount: PercAmount.fromPerc(0.00000010),
+      ),
+      throwsA(isA<StateError>()),
+    );
+    expect(treasury.balance, before);
+    expect(ledger.pendingInboundFor(PercChainConstants.treasuryUsername), isEmpty);
+  });
+
+  test('gossip ingest does not fund evolve_treasury', () {
+    final local = PercLedger.empty();
+    _seedLedger(local);
+    local.register('alice', 'password123');
+    local.creditScenario(username: 'alice', percentChance: 10);
+
+    final remote = PercLedger.empty();
+    _seedLedger(remote);
+    remote.register('carol', 'password123');
+    remote.creditScenario(username: 'carol', percentChance: 10);
+
+    final amount = PercAmount.fromPerc(0.00000010);
+    final sentAt = DateTime.now().toUtc();
+    remote.pendingInboundTransfers.add(
+      PercPendingInboundTransfer(
+        id: 'malicious-treasury-fund',
+        fromUsername: 'carol',
+        toUsername: PercChainConstants.treasuryUsername,
+        amount: amount,
+        fee: PercChainConstants.sendTransactionFee,
+        sentAt: sentAt,
+      ),
+    );
+
+    final treasuryBefore =
+        local.account(PercChainConstants.treasuryUsername)!.balance;
+
+    local.mergePendingInboundFromPeer(remote);
+    local.settlePendingInboundOnActivity(
+      PercChainConstants.treasuryUsername,
+      now: sentAt,
+    );
+
+    expect(local.pendingInboundFor(PercChainConstants.treasuryUsername), isEmpty);
+    expect(
+      local.account(PercChainConstants.treasuryUsername)!.balance,
+      treasuryBefore,
+    );
   });
 
   test('treasury evolve_treasury cannot send manually after blockchain launch', () {

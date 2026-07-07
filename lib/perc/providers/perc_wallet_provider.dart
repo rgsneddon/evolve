@@ -126,8 +126,9 @@ class PercWalletProvider extends ChangeNotifier {
   bool get canSendFromSession =>
       isLoggedIn && !(isTreasuryAccount && isTreasurySendLocked);
 
-  /// Every registered user can receive PERC (including locked treasury).
-  bool get canReceiveFromSession => isLoggedIn;
+  /// Treasury has no manual receive address after blockchain launch.
+  bool get canReceiveFromSession =>
+      isLoggedIn && !(isTreasuryAccount && isTreasurySendLocked);
 
   PercSideChainState get sideChain => PercSideChainState.fromLedger(_ledger);
   List<PercMicroblockLogEntry> get microblockLog =>
@@ -612,6 +613,11 @@ class PercWalletProvider extends ChangeNotifier {
         return;
       }
       final recipient = resolved.username;
+      if (recipient == PercChainConstants.treasuryUsername) {
+        _setError('wallet_err_treasury_no_manual_funding');
+        notifyListeners();
+        return;
+      }
       final recipientLocal = _ledger.account(recipient);
       final deliveryPlan = InboundTransferDeliveryPlan.planSend(
         isLocalSettleableRecipient:

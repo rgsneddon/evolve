@@ -44,9 +44,9 @@ void main() {
     );
   });
 
-  test('bootstrap and accrual never precede debit in plan order', () {
+  test('genesis bootstrap mint precedes first payout when treasury is empty', () {
     final ops = TreasuryScenarioSettlement.plan(
-      preDrawBalance: PercAmount.fromPerc(1),
+      preDrawBalance: PercAmount.zero,
       minimumReserve: reserve,
       reward: reward,
       treasuryGenesisDone: false,
@@ -56,9 +56,11 @@ void main() {
     );
 
     final debitIdx = TreasuryScenarioSettlement.indexOfDebitReward(ops);
-    final mintIdx = TreasuryScenarioSettlement.indexOfFirstMint(ops);
+    final bootstrapIdx = ops.indexWhere(
+      (o) => o.kind == TreasuryScenarioOpKind.mintBootstrap,
+    );
     expect(debitIdx, greaterThanOrEqualTo(0));
-    expect(mintIdx, greaterThan(debitIdx));
+    expect(bootstrapIdx, lessThan(debitIdx));
     expect(
       ops.where((o) => o.kind == TreasuryScenarioOpKind.mintBootstrap).length,
       1,

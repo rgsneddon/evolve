@@ -64,7 +64,7 @@ void main() {
     expect(ledger.account('bob')!.balance, oneCent);
   });
 
-  test('treasury wallet receives smallest unit 0.00000001 PERC', () {
+  test('treasury wallet rejects manual inbound transfers', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -76,34 +76,27 @@ void main() {
     final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
     final before = treasury.balance;
 
-    final tx = ledger.send(
-      fromUsername: 'alice',
-      toAddress: _addr(ledger, PercChainConstants.treasuryUsername),
-      amount: oneCent,
-      deliverInstantly: false,
+    expect(
+      () => ledger.send(
+        fromUsername: 'alice',
+        toAddress: _addr(ledger, PercChainConstants.treasuryUsername),
+        amount: oneCent,
+        deliverInstantly: false,
+      ),
+      throwsA(isA<StateError>()),
     );
 
-    expect(tx.kind, PercTxKind.transfer);
-    expect(tx.amount, oneCent);
-    expect(tx.toUsername, PercChainConstants.treasuryUsername);
     expect(ledger.pendingInboundFor(PercChainConstants.treasuryUsername), isEmpty);
     expect(
       treasury.transactions.any(
         (t) =>
             t.kind == PercTxKind.transfer &&
             t.amount == oneCent &&
-            t.fromUsername == 'alice' &&
-            t.isConfirmed,
+            t.fromUsername == 'alice',
       ),
-      isTrue,
+      isFalse,
     );
-    final stakingPaid = treasury.transactions
-        .where((t) => t.kind == PercTxKind.stakingReward)
-        .fold<PercAmount>(
-          PercAmount.zero,
-          (sum, t) => sum + t.amount,
-        );
-    expect(treasury.balance, before + oneCent - stakingPaid);
+    expect(treasury.balance, before);
   });
 
   test('ledger rejects amounts below 1 cent', () {

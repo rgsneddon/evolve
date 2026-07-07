@@ -525,6 +525,8 @@ final _en = {
       'Treasury at 1 cent reserve — aligned emission accrues on next scenario',
   'wallet_treasury_send_locked':
       'Manual sends from evolve_treasury are disabled. Emission and faucet payouts continue.',
+  'wallet_err_treasury_no_manual_funding':
+      'evolve_treasury cannot receive manual transfers — treasury PERC is emitted only when a user runs a scenario.',
   'wallet_treasury_manual_send_note':
       'Treasury is active — faucet-aligned emission (~0.14285714 PERC/min) and scenario payouts continue. Manual sends from evolve_treasury are disabled.',
   'wallet_treasury_offline_note':

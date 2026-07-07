@@ -766,6 +766,7 @@ class PercLedger {
       if (seen.contains(pending.id)) continue;
       final recipient = _localWalletForRemoteParty(pending.toUsername, remote);
       if (recipient == null) continue;
+      if (_isTreasuryManualFundingForbidden(recipient.username)) continue;
       if (!pending.switchCommitmentValid) continue;
       final localPending = PercPendingInboundTransfer(
         id: pending.id,
@@ -806,6 +807,7 @@ class PercLedger {
         if (toUser == null || toUser.isEmpty) continue;
         final recipient = _localWalletForRemoteParty(toUser, remote);
         if (recipient == null) continue;
+        if (_isTreasuryManualFundingForbidden(recipient.username)) continue;
         final localPending = PercPendingInboundTransfer(
           id: tx.id,
           fromUsername: tx.fromUsername ?? '',
@@ -1065,9 +1067,6 @@ class PercLedger {
     _migrateLegacyTransferFeesToBurn();
     _reconcileCumulativeBurnedPerc();
     _backfillScenarioBlockHeights();
-    if (blockchainLaunched) {
-      _seedTreasuryAtLaunchIfNeeded();
-    }
   }
 
   /// Advances the user's numerically progressive scenario block (1 per conclusion, max 100M).
@@ -1497,6 +1496,17 @@ class PercLedger {
     }
   }
 
+  bool _isTreasuryManualFundingForbidden(String toUsername) =>
+      toUsername == PercChainConstants.treasuryUsername;
+
+  void _assertTreasuryManualFundingForbidden(String toUsername) {
+    if (_isTreasuryManualFundingForbidden(toUsername)) {
+      throw StateError(
+        'Manual treasury funding forbidden — ${PercChainConstants.treasuryUsername} receives PERC only from scenario emission',
+      );
+    }
+  }
+
   bool _treasuryCanDebit(PercAmount amount) {
     final treasury = _ensureTreasury();
     final after = treasury.balance - amount;
@@ -1700,26 +1710,7 @@ class PercLedger {
   List<PercTransaction> _treasuryEmissionTxs(DateTime now) {
     if (treasuryCapped) return [];
     final regenTxs = _regenerateTreasuryIfNeeded(now);
-    final genesisEmission = PercChainConstants.treasuryLaunchAllocation;
-    if (!treasuryGenesisDone) {
-      treasuryGenesisDone = true;
-      cumulativeTreasuryMinted = cumulativeTreasuryMinted + genesisEmission;
-      final treasury = _ensureTreasury();
-      _credit(treasury, genesisEmission);
-      return [
-        ...regenTxs,
-        PercTransaction(
-          id: _newTxId(),
-          kind: PercTxKind.treasuryEmission,
-          amount: genesisEmission,
-          timestamp: now,
-          toUsername: PercChainConstants.treasuryUsername,
-          blockIndex: blocks.length,
-          confirmations: _txConfirmations,
-        ),
-      ];
-    }
-    if (lastScenarioAt == null) return regenTxs;
+    if (!treasuryGenesisDone || lastScenarioAt == null) return regenTxs;
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
     if (elapsed <= 0) return [];
     var emission =
@@ -1907,18 +1898,6 @@ class PercLedger {
     if (blockchainLaunched) return;
     blockchainLaunched = true;
     _blockchainLaunchEventPending = true;
-    _seedTreasuryAtLaunchIfNeeded();
-  }
-
-  /// Credits launch allocation so scenario payouts draw existing treasury coins.
-  void _seedTreasuryAtLaunchIfNeeded() {
-    if (treasuryGenesisDone) return;
-    final allocation = PercChainConstants.treasuryLaunchAllocation;
-    treasuryGenesisDone = true;
-    if (!allocation.isPositive) return;
-    final treasury = _ensureTreasury();
-    cumulativeTreasuryMinted = cumulativeTreasuryMinted + allocation;
-    _credit(treasury, allocation);
   }
 
   PercAccount login(String username, String password, {DateTime? now}) {
@@ -2339,6 +2318,10 @@ class PercLedger {
       }
 
       if (ops.any((o) => o.kind == InboundSettlementOpKind.creditReceiver)) {
+        if (_isTreasuryManualFundingForbidden(receiver.username)) {
+          pendingInboundTransfers.remove(pending);
+          continue;
+        }
         if (isTransferAlreadySettledForReceiver(pending.id, receiver)) {
           pendingInboundTransfers.remove(pending);
           continue;
@@ -2452,6 +2435,7 @@ class PercLedger {
       throw StateError('Cannot send to yourself');
     }
     _assertTreasuryCanSend(from);
+    _assertTreasuryManualFundingForbidden(to);
     final fee = PercChainConstants.sendTransactionFee;
     final totalDebit = amount + fee;
     if (_spendableBalance(sender) < totalDebit) {

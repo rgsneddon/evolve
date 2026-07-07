@@ -39,6 +39,9 @@ class WalletMessageLocalization {
     if (raw.contains('Cannot send to yourself')) {
       return 'wallet_err_send_to_yourself';
     }
+    if (raw.contains('Manual treasury funding forbidden')) {
+      return 'wallet_err_treasury_no_manual_funding';
+    }
     if (raw.contains('syncing')) return 'wallet_sync_partial';
     if (raw.contains('No seed recovery envelope found')) {
       return 'wallet_err_seed_recovery_not_found';

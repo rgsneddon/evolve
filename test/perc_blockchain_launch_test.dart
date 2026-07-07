@@ -25,7 +25,7 @@ void main() {
     expect(ledger.consumeBlockchainLaunchEvent(), isFalse);
   });
 
-  test('launchBlockchain is a one-time seed treasury action', () {
+  test('launchBlockchain is a one-time blockchain flag', () {
     final ledger = PercLedger.empty();
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password12345');

@@ -15,7 +15,8 @@ class TreasuryScenarioOp {
   final PercAmount? amount;
 }
 
-/// Pure planner: reward debits pre-draw balance first; mints follow payout.
+/// Pure planner: genesis bootstrap mints before the first payout; later draws
+/// debit pre-draw balance first and accrue emission after payout.
 class TreasuryScenarioSettlement {
   const TreasuryScenarioSettlement._();
 
@@ -40,25 +41,42 @@ class TreasuryScenarioSettlement {
     required bool skipPayout,
   }) {
     final ops = <TreasuryScenarioOp>[];
-
-    if (!skipPayout &&
+    final needsBootstrap =
+        !treasuryGenesisDone && bootstrapAmount.isPositive;
+    final payoutBalance = needsBootstrap
+        ? preDrawBalance + bootstrapAmount
+        : preDrawBalance;
+    final canPayout = !skipPayout &&
         reward.isPositive &&
         canDebitFromBalance(
-          balance: preDrawBalance,
+          balance: payoutBalance,
           debit: reward,
           minimumReserve: minimumReserve,
-        )) {
+        );
+
+    if (needsBootstrap && canPayout) {
+      ops.add(
+        TreasuryScenarioOp(
+          TreasuryScenarioOpKind.mintBootstrap,
+          bootstrapAmount,
+        ),
+      );
+    }
+
+    if (canPayout) {
       ops.add(TreasuryScenarioOp(TreasuryScenarioOpKind.debitReward, reward));
     }
 
     if (!treasuryGenesisDone) {
       if (bootstrapAmount.isPositive) {
-        ops.add(
-          TreasuryScenarioOp(
-            TreasuryScenarioOpKind.mintBootstrap,
-            bootstrapAmount,
-          ),
-        );
+        if (!ops.any((o) => o.kind == TreasuryScenarioOpKind.mintBootstrap)) {
+          ops.add(
+            TreasuryScenarioOp(
+              TreasuryScenarioOpKind.mintBootstrap,
+              bootstrapAmount,
+            ),
+          );
+        }
       } else {
         ops.add(const TreasuryScenarioOp(TreasuryScenarioOpKind.markGenesisDone));
       }
