@@ -86,18 +86,14 @@ void main() {
     );
   });
 
-  test('production inbound revert window is not 12 months', () {
-    expect(
-      PercChainConstants.walletInboundRevertWindow.inDays,
-      lessThan(365),
-    );
+  test('production inbound revert window is 24 hours for undelivered relay', () {
     expect(
       PercChainConstants.walletInboundRevertWindow,
       const Duration(hours: 24),
     );
     expect(
       PercChainConstants.walletInboundRevertWindow.inDays,
-      isNot(365),
+      lessThan(365),
     );
   });
 }

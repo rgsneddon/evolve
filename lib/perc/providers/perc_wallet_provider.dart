@@ -19,6 +19,7 @@ import '../models/perc_transaction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/wallet_message_localization.dart';
 import '../perc_chain_constants.dart';
+import '../services/inbound_transfer_delivery.dart';
 import '../services/perc_auth.dart';
 import '../services/perc_faucet.dart';
 import '../services/perc_faucet_cooldown.dart';
@@ -517,6 +518,11 @@ class PercWalletProvider extends ChangeNotifier {
         return;
       }
       final recipient = resolved.username;
+      final recipientLocal = _ledger.account(recipient);
+      final deliveryPlan = InboundTransferDeliveryPlan.planSend(
+        isLocalSettleableRecipient:
+            recipientLocal != null && recipientLocal.passwordSet,
+      );
       final tx = _ledger.send(
         fromUsername: _ledger.sessionUsername!,
         toAddress: normalizedAddress,
@@ -528,21 +534,21 @@ class PercWalletProvider extends ChangeNotifier {
       );
       _captureGenesisRenewalEvent();
       final dest = PercBeamPrivacy.shieldAddress(normalizedAddress);
-      final queued = _ledger.pendingInboundTransfers.any((p) => p.id == tx.id);
       if (_pendingGenesisRenewalNotice) {
         _setGenesisRenewalStatus();
       } else {
         final statusKey = tx.confirmations > 0
-            ? 'wallet_status_sent_instant'
-            : queued
-                ? 'wallet_status_sent_queued'
-                : 'wallet_status_sent_pending';
+            ? deliveryPlan.walletStatusKey
+            : deliveryPlan.addToPendingQueue
+                ? deliveryPlan.walletStatusKey
+                : InboundTransferDeliveryPlan.relay.walletStatusKey;
         final statusArgs = {
           'amount': amount.displayFixed8,
           'symbol': PercChainConstants.currencySymbol,
           'dest': dest,
           'fee': fee.displayFixed8,
-          if (queued) 'delayKey': _inboundRevertWindowKey(),
+          if (deliveryPlan.addToPendingQueue)
+            'delayKey': _inboundRevertWindowKey(),
         };
         _setEphemeralStatus(statusKey, statusArgs);
       }

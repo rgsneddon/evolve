@@ -31,6 +31,8 @@ import 'perc_staking.dart';
 import 'perc_treasury.dart';
 import 'perc_transfer_relay_ack.dart';
 import 'perc_settlement_witness.dart';
+import 'inbound_transfer_delivery.dart';
+import 'treasury_scenario_settlement.dart';
 
 /// Resolves a live sender ledger for cross-device scenario attestation.
 typedef PercSenderPeerResolver = PercLedger? Function(String fromUsername);
@@ -946,6 +948,9 @@ class PercLedger {
     _migrateLegacyTransferFeesToBurn();
     _reconcileCumulativeBurnedPerc();
     _backfillScenarioBlockHeights();
+    if (blockchainLaunched) {
+      _seedTreasuryAtLaunchIfNeeded();
+    }
   }
 
   /// Advances the user's numerically progressive scenario block (1 per conclusion, max 100M).
@@ -1787,6 +1792,18 @@ class PercLedger {
     if (blockchainLaunched) return;
     blockchainLaunched = true;
     _blockchainLaunchEventPending = true;
+    _seedTreasuryAtLaunchIfNeeded();
+  }
+
+  /// Credits launch allocation so scenario payouts draw existing treasury coins.
+  void _seedTreasuryAtLaunchIfNeeded() {
+    if (treasuryGenesisDone) return;
+    final allocation = PercChainConstants.treasuryLaunchAllocation;
+    treasuryGenesisDone = true;
+    if (!allocation.isPositive) return;
+    final treasury = _ensureTreasury();
+    cumulativeTreasuryMinted = cumulativeTreasuryMinted + allocation;
+    _credit(treasury, allocation);
   }
 
   PercAccount login(String username, String password, {DateTime? now}) {
@@ -2314,7 +2331,11 @@ class PercLedger {
           (deliverInstantly ?? isWalletOnlineOnNetwork(to)) ? now : null,
     );
 
-    if (_isLocalSettleableRecipient(to)) {
+    final delivery = InboundTransferDeliveryPlan.planSend(
+      isLocalSettleableRecipient: _isLocalSettleableRecipient(to),
+    );
+
+    if (delivery.mode == InboundDeliveryMode.instantLocal) {
       final blockTxs = <PercTransaction>[...renewalTxs];
       if (!_applySenderSettlement(pending, now, blockTxs: blockTxs)) {
         throw StateError(
@@ -2403,33 +2424,69 @@ class PercLedger {
       PercAmount.zero,
       (sum, tx) => sum + tx.amount,
     );
-    final bootstrapEmission = _treasuryBootstrapEmission();
-    if (bootstrapEmission.isPositive) {
-      emitted = emitted + bootstrapEmission;
-      treasuryGenesisDone = true;
-      _appendTreasuryEmissionTx(
-        amount: bootstrapEmission,
-        now: now,
-        treasury: treasury,
-        blockTxs: blockTxs,
-      );
-    }
+    final preDrawBalance = treasury.balance;
     final reward = PercFaucet.computeScenarioReward(percentChance: percentChance);
     PercFaucetReward? credited;
+    final settlementOps = TreasuryScenarioSettlement.plan(
+      preDrawBalance: preDrawBalance,
+      minimumReserve: PercChainConstants.minimumTreasuryReserve,
+      reward: reward.total,
+      treasuryGenesisDone: treasuryGenesisDone,
+      bootstrapAmount: _treasuryBootstrapEmission(),
+      accrualAmount: _treasuryAccrualEmissionForScenario(now),
+      skipPayout: cooldownLeft != null,
+    );
+
+    for (final op in settlementOps) {
+      switch (op.kind) {
+        case TreasuryScenarioOpKind.debitReward:
+          final payout = op.amount!;
+          _debit(treasury, payout);
+          _credit(user, payout);
+          user.lastFaucetDrawAt = now;
+          final label = scenarioLabel?.trim().isNotEmpty == true
+              ? scenarioLabel!.trim()
+              : 'Scenario analysis reward';
+          final tx = PercTransaction(
+            id: _newTxId(),
+            kind: PercTxKind.scenarioReward,
+            amount: payout,
+            timestamp: now,
+            fromUsername: PercChainConstants.treasuryUsername,
+            toUsername: u,
+            scenarioLabel: label,
+            percentChance: reward.percentChance,
+            blockIndex: blocks.length,
+            confirmations: _txConfirmations,
+            continuumScs: continuumScs,
+            vortexScs: vortexScs,
+            shearScs: shearScs,
+            resistanceScs: resistanceScs,
+            flowScs: flowScs,
+          );
+          treasury.transactions.insert(0, tx);
+          user.transactions.insert(0, tx);
+          blockTxs.add(tx);
+          credited = reward;
+        case TreasuryScenarioOpKind.mintBootstrap:
+        case TreasuryScenarioOpKind.mintAccrual:
+          final mintAmount = op.amount!;
+          emitted = emitted + mintAmount;
+          if (op.kind == TreasuryScenarioOpKind.mintBootstrap) {
+            treasuryGenesisDone = true;
+          }
+          _appendTreasuryEmissionTx(
+            amount: mintAmount,
+            now: now,
+            treasury: treasury,
+            blockTxs: blockTxs,
+          );
+        case TreasuryScenarioOpKind.markGenesisDone:
+          treasuryGenesisDone = true;
+      }
+    }
 
     if (cooldownLeft != null) {
-      final accrualEmission = _treasuryAccrualEmissionForScenario(now);
-      if (accrualEmission.isPositive) {
-        emitted = emitted + accrualEmission;
-        _appendTreasuryEmissionTx(
-          amount: accrualEmission,
-          now: now,
-          treasury: treasury,
-          blockTxs: blockTxs,
-        );
-      } else if (!treasuryGenesisDone) {
-        treasuryGenesisDone = true;
-      }
       if (blockTxs.isNotEmpty) {
         _finalizeBlock(
           timestamp: now,
@@ -2452,49 +2509,6 @@ class PercLedger {
         blockIndex: blocks.isEmpty ? null : blocks.last.index,
         scenarioBlockHeight: scenarioBlock,
       );
-    }
-
-    if (_treasuryCanDebit(reward.total)) {
-      _debit(treasury, reward.total);
-      _credit(user, reward.total);
-      user.lastFaucetDrawAt = now;
-      final label = scenarioLabel?.trim().isNotEmpty == true
-          ? scenarioLabel!.trim()
-          : 'Scenario analysis reward';
-      final tx = PercTransaction(
-        id: _newTxId(),
-        kind: PercTxKind.scenarioReward,
-        amount: reward.total,
-        timestamp: now,
-        fromUsername: PercChainConstants.treasuryUsername,
-        toUsername: u,
-        scenarioLabel: label,
-        percentChance: reward.percentChance,
-        blockIndex: blocks.length,
-        confirmations: _txConfirmations,
-        continuumScs: continuumScs,
-        vortexScs: vortexScs,
-        shearScs: shearScs,
-        resistanceScs: resistanceScs,
-        flowScs: flowScs,
-      );
-      treasury.transactions.insert(0, tx);
-      user.transactions.insert(0, tx);
-      blockTxs.add(tx);
-      credited = reward;
-    }
-
-    final accrualEmission = _treasuryAccrualEmissionForScenario(now);
-    if (accrualEmission.isPositive) {
-      emitted = emitted + accrualEmission;
-      _appendTreasuryEmissionTx(
-        amount: accrualEmission,
-        now: now,
-        treasury: treasury,
-        blockTxs: blockTxs,
-      );
-    } else if (!treasuryGenesisDone) {
-      treasuryGenesisDone = true;
     }
 
     if (blockTxs.isNotEmpty) {
