@@ -1,7 +1,6 @@
-import 'package:file_selector/file_selector.dart';
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -10,15 +9,24 @@ import '../providers/perc_wallet_provider.dart';
 import '../services/security_backup_files.dart';
 import '../services/security_recovery_service.dart';
 
+typedef BackupFileExporter = Future<bool> Function({
+  required String suggestedName,
+  required Uint8List bytes,
+});
+
 /// Backup export, file restore, and optional seed-phrase recovery.
 class SecurityScreen extends StatefulWidget {
   const SecurityScreen({
     super.key,
     this.recoveryService,
+    this.exportBackupFile,
   });
 
-  /// Optional injected ports (widget tests supply a [BackupBytesResolver]).
+  /// Optional injected ports (widget tests supply fakes).
   final SecurityRecoveryService? recoveryService;
+
+  /// Platform save/download port (defaults to [exportBackupToDevice]).
+  final BackupFileExporter? exportBackupFile;
 
   @override
   State<SecurityScreen> createState() => _SecurityScreenState();
@@ -32,6 +40,9 @@ class _SecurityScreenState extends State<SecurityScreen> {
 
   SecurityRecoveryService get _recovery =>
       widget.recoveryService ?? SecurityRecoveryService.production();
+
+  BackupFileExporter get _saveBackupFile =>
+      widget.exportBackupFile ?? exportBackupToDevice;
 
   @override
   void dispose() {
@@ -77,7 +88,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
           const SizedBox(height: 8),
           FilledButton.icon(
             key: const Key('security_export_button'),
-            onPressed: wallet.isLoggedIn ? () => _exportBackup(wallet) : null,
+            onPressed: wallet.isLoggedIn ? () => _onExportBackup(wallet) : null,
             icon: const Icon(Icons.download_outlined),
             label: Text(strings.t('security_export_action')),
           ),
@@ -142,36 +153,22 @@ class _SecurityScreenState extends State<SecurityScreen> {
         ),
       );
 
-  Future<void> _exportBackup(PercWalletProvider wallet) async {
+  Future<void> _onExportBackup(PercWalletProvider wallet) async {
     try {
       final bytes = wallet.exportEncryptedBackup(_exportPassCtrl.text);
-      final name =
-          'perccent-wallet-backup-${DateTime.now().toUtc().toIso8601String().replaceAll(':', '-').split('.').first}.percbackup';
-      if (kIsWeb) {
-        await Clipboard.setData(
-          ClipboardData(
-            text: SecurityRecoveryService.encodeBackupForClipboard(bytes),
-          ),
-        );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Backup copied — paste when restoring or save as .percbackup',
-              ),
-            ),
-          );
-        }
-        return;
-      }
-      final location = await getSaveLocation(
-        suggestedName: name,
-        acceptedTypeGroups: const [
-          XTypeGroup(label: 'PERC Backup', extensions: ['percbackup', 'json']),
-        ],
+      final saved = await _saveBackupFile(
+        suggestedName: defaultBackupExportFilename(),
+        bytes: bytes,
       );
-      if (location == null) return;
-      await writeBackupFile(location.path, bytes);
+      if (!saved || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context.read<LocaleProvider>().config)
+                .t('wallet_status_backup_exported'),
+          ),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -188,5 +185,4 @@ class _SecurityScreenState extends State<SecurityScreen> {
       await wallet.restoreFromEncryptedBackup(bytes, _restorePassCtrl.text);
     } catch (_) {}
   }
-
 }

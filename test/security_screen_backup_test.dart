@@ -42,6 +42,7 @@ void main() {
     WidgetTester tester,
     PercWalletProvider wallet, {
     SecurityRecoveryService? recoveryService,
+    BackupFileExporter? exportBackupFile,
   }) async {
     final locale = await createTestLocaleProvider();
     await tester.pumpWidget(
@@ -51,26 +52,34 @@ void main() {
           ChangeNotifierProvider.value(value: locale),
         ],
         child: MaterialApp(
-          home: SecurityScreen(recoveryService: recoveryService),
+          home: SecurityScreen(
+            recoveryService: recoveryService,
+            exportBackupFile: exportBackupFile,
+          ),
         ),
       ),
     );
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Security tab export button captures encrypted backup bytes', (
+  testWidgets('Security tab export invokes save/download port with encrypted bytes', (
     tester,
   ) async {
-    Uint8List? captured;
-    final recovery = SecurityRecoveryService(
-      ports: SecurityRecoveryPorts(
-        resolveBackupBytes: () async => null,
-        fetchSeedEnvelope: (_) async => null,
-        isNetworkConfigured: () async => false,
-      ),
-    );
+    String? capturedName;
+    Uint8List? capturedBytes;
     final wallet = await bootWallet();
-    await pumpSecurity(tester, wallet, recoveryService: recovery);
+    await pumpSecurity(
+      tester,
+      wallet,
+      exportBackupFile: ({
+        required String suggestedName,
+        required Uint8List bytes,
+      }) async {
+        capturedName = suggestedName;
+        capturedBytes = bytes;
+        return true;
+      },
+    );
 
     await tester.enterText(
       find.byKey(const Key('security_export_pass_field')),
@@ -80,12 +89,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    captured = wallet.exportEncryptedBackup('backup-passphrase');
-    expect(captured, isNotNull);
-    expect(captured!.isNotEmpty, isTrue);
+    expect(capturedBytes, isNotNull);
+    expect(capturedBytes!.isNotEmpty, isTrue);
+    expect(capturedName, endsWith('.txt'));
+    final roundTrip = wallet.exportEncryptedBackup('backup-passphrase');
+    expect(roundTrip.isNotEmpty, isTrue);
   });
 
-  testWidgets('Security tab restore button round-trips backup on blank store', (
+  testWidgets('Security tab import invokes file resolver and restores wallet', (
     tester,
   ) async {
     final wallet = await bootWallet();
@@ -93,6 +104,7 @@ void main() {
     final balanceBefore = ledger.account('secuser')!.balance.microUnits;
     final scenarioBefore = ledger.account('secuser')!.scenarioBlockHeight;
     final exported = wallet.exportEncryptedBackup('backup-passphrase');
+    var resolverCalled = false;
 
     PercLedgerHub.resetForTest();
     final blank = PercWalletProvider(store: PercWalletStoreMemory());
@@ -100,7 +112,10 @@ void main() {
 
     final recovery = SecurityRecoveryService(
       ports: SecurityRecoveryPorts(
-        resolveBackupBytes: () async => exported,
+        resolveBackupBytes: () async {
+          resolverCalled = true;
+          return exported;
+        },
         fetchSeedEnvelope: (_) async => null,
         isNetworkConfigured: () async => false,
       ),
@@ -115,6 +130,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
+    expect(resolverCalled, isTrue);
     final restoredLedger = PercLedgerHub.instance.ledger;
     expect(restoredLedger.sessionUsername, 'secuser');
     expect(

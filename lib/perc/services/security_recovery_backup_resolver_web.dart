@@ -5,17 +5,20 @@ import 'package:flutter/services.dart';
 
 import 'perc_wallet_backup_clipboard.dart';
 
-/// Web: clipboard `PERCBACKUP1:` paste first, then file picker fallback.
+/// Web: file picker first; clipboard paste is optional fallback only.
 Future<Uint8List?> resolveBackupBytesFromPlatform() async {
-  final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
-  final fromClipboard = PercWalletBackupClipboard.decode(clipboard?.text ?? '');
-  if (fromClipboard != null) return fromClipboard;
-
   final file = await openFile(
     acceptedTypeGroups: const [
-      XTypeGroup(label: 'PERC Backup', extensions: ['percbackup', 'json']),
+      XTypeGroup(
+        label: 'PERC Backup',
+        extensions: ['txt', 'percbackup', 'json'],
+      ),
     ],
   );
-  if (file == null) return null;
-  return file.readAsBytes();
+  if (file != null) {
+    return file.readAsBytes();
+  }
+
+  final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+  return PercWalletBackupClipboard.decode(clipboard?.text ?? '');
 }

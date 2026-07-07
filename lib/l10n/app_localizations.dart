@@ -322,11 +322,11 @@ final _en = {
       'Export an encrypted backup file or restore your Perccent ledger from a backup on this device. Optional 12-word recovery is offered once at registration on the splash screen.',
   'security_export_title': 'Encrypted backup',
   'security_export_note':
-      'Creates a portable .percbackup file with your full Perccent ledger (balances, scenarios, stash).',
+      'Downloads a portable encrypted .txt backup with your full Perccent ledger (balances, scenarios, stash). On desktop, choose where to save the file.',
   'security_export_action': 'Export backup file',
   'security_restore_title': 'Restore from file',
   'security_restore_note':
-      'Select a .percbackup file and enter the passphrase you used when exporting.',
+      'Choose a previously exported .txt or .percbackup file and enter the passphrase you used when exporting.',
   'security_restore_action': 'Import backup file',
   'security_seed_title': 'Seed phrase recovery',
   'security_seed_note':
@@ -852,6 +852,7 @@ final _en = {
   'wallet_status_account_created': 'Account created',
   'wallet_status_account_created_seed':
       'Account created — save your 12-word seed when prompted',
+  'wallet_status_backup_exported': 'Backup file saved to your device',
   'wallet_status_backup_restored': 'Wallet restored from backup file',
   'wallet_status_seed_restored': 'Wallet restored from seed phrase',
   'wallet_status_signed_in': 'Signed in as {user}',
