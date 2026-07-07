@@ -27,7 +27,6 @@ class SecurityScreen extends StatefulWidget {
 class _SecurityScreenState extends State<SecurityScreen> {
   final _exportPassCtrl = TextEditingController();
   final _restorePassCtrl = TextEditingController();
-  final _seedCtrl = TextEditingController();
   bool _obscureExport = true;
   bool _obscureRestore = true;
 
@@ -38,7 +37,6 @@ class _SecurityScreenState extends State<SecurityScreen> {
   void dispose() {
     _exportPassCtrl.dispose();
     _restorePassCtrl.dispose();
-    _seedCtrl.dispose();
     super.dispose();
   }
 
@@ -108,27 +106,6 @@ class _SecurityScreenState extends State<SecurityScreen> {
             onPressed: () => _restoreBackup(wallet),
             icon: const Icon(Icons.upload_file_outlined),
             label: Text(strings.t('security_restore_action')),
-          ),
-          const SizedBox(height: 24),
-          _sectionTitle(strings.t('security_seed_title')),
-          Text(strings.t('security_seed_note'),
-              style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8))),
-          const SizedBox(height: 8),
-          TextField(
-            key: const Key('security_seed_field'),
-            controller: _seedCtrl,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: strings.t('security_seed_phrase_label'),
-              hintText: strings.t('security_seed_phrase_hint'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            key: const Key('security_seed_recover_button'),
-            onPressed: () => _recoverSeed(wallet),
-            icon: const Icon(Icons.key_outlined),
-            label: Text(strings.t('security_seed_recover_action')),
           ),
           if (wallet.localizedStatusMessage(
                   AppLocalizations.of(context.read<LocaleProvider>().config)) !=
@@ -212,15 +189,4 @@ class _SecurityScreenState extends State<SecurityScreen> {
     } catch (_) {}
   }
 
-  Future<void> _recoverSeed(PercWalletProvider wallet) async {
-    final words = _seedCtrl.text
-        .trim()
-        .toLowerCase()
-        .split(RegExp(r'\s+'))
-        .where((w) => w.isNotEmpty)
-        .toList();
-    try {
-      await wallet.recoverFromSeedPhrase(words);
-    } catch (_) {}
-  }
 }

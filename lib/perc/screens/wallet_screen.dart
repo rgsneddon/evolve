@@ -427,9 +427,9 @@ class _WalletScreenState extends State<WalletScreen> {
                         ],
                         const SizedBox(height: 16),
                         FilledButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (_registerMode) {
-                              wallet.register(
+                              await wallet.register(
                                 _usernameCtrl.text,
                                 _passwordCtrl.text,
                               );

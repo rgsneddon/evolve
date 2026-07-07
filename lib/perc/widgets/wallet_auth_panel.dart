@@ -32,7 +32,6 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
   final _credentialErrorKey = GlobalKey<WalletCredentialErrorBannerState>();
   bool _registerMode = false;
   bool _registerDefaultSet = false;
-  bool _enableSeedRecovery = false;
 
   void dismissCredentialError() {
     _credentialErrorKey.currentState?.dismiss();
@@ -168,20 +167,6 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
             textAlign: TextAlign.center,
           ),
         ],
-        if (_registerMode) ...[
-          const SizedBox(height: 8),
-          Material(
-            type: MaterialType.transparency,
-            child: CheckboxListTile(
-              value: _enableSeedRecovery,
-              onChanged: (v) =>
-                  setState(() => _enableSeedRecovery = v ?? false),
-              title: Text(strings.t('wallet_seed_opt_in')),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        ],
         const SizedBox(height: 14),
         FilledButton(
           onPressed: () => _submit(wallet, strings),
@@ -210,44 +195,7 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
     AppLocalizations strings,
   ) async {
     if (_registerMode) {
-      final mnemonic = await wallet.register(
-        _usernameCtrl.text,
-        _passwordCtrl.text,
-        enableSeedRecovery: _enableSeedRecovery,
-      );
-      if (!mounted || mnemonic == null) return;
-      if (mnemonic.isNotEmpty) {
-        await showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            title: Text(strings.t('wallet_seed_dialog_title')),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(strings.t('wallet_seed_dialog_body')),
-                  const SizedBox(height: 12),
-                  SelectableText(
-                    mnemonic.join(' '),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(strings.t('wallet_seed_dialog_ok')),
-              ),
-            ],
-          ),
-        );
-      }
+      await wallet.register(_usernameCtrl.text, _passwordCtrl.text);
     } else {
       wallet.login(_usernameCtrl.text, _passwordCtrl.text);
     }

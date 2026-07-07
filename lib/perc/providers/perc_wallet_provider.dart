@@ -70,6 +70,8 @@ class PercWalletProvider extends ChangeNotifier {
   bool _pendingGenesisRenewalNotice = false;
   bool _syncingWallet = false;
   bool _postLoginSyncing = false;
+  bool _pendingSeedSetup = false;
+  List<String>? _pendingRegistrationMnemonic;
   bool _sessionTimedOut = false;
   bool _extendingSessionForConnection = false;
   Timer? _microblockCommitDebounce;
@@ -79,7 +81,9 @@ class PercWalletProvider extends ChangeNotifier {
   bool get isReady => _ready;
   bool get isSyncingWallet => _syncingWallet;
   bool get isPostLoginSyncing => _postLoginSyncing;
-  bool get isWalletConnectComplete => hasAppAccess && !_postLoginSyncing;
+  bool get pendingSeedSetup => _pendingSeedSetup;
+  bool get isWalletConnectComplete =>
+      hasAppAccess && !_postLoginSyncing && !_pendingSeedSetup;
   bool get sessionTimedOut => _sessionTimedOut;
   bool get isBlockchainLaunched => _ledger.isBlockchainLaunched;
   bool get isLoggedIn => _ledger.isLoggedIn;
@@ -346,38 +350,73 @@ class PercWalletProvider extends ChangeNotifier {
     }
   }
 
-  Future<List<String>?> register(
-    String username,
-    String password, {
-    bool enableSeedRecovery = false,
-  }) async {
+  Future<void> register(String username, String password) async {
     _clearMessages();
     try {
       _ledger.register(username, password);
       _ledger.login(username, password);
-      List<String>? mnemonic;
-      if (enableSeedRecovery) {
-        mnemonic = PercSeedRecovery.generateMnemonic();
+      _pendingRegistrationMnemonic = null;
+      _pendingSeedSetup = true;
+      clearSessionTimedOut();
+      notifyListeners();
+      if (!sessionTimeoutEnabled) {
+        await completeRegistrationSeedSetup(enableSeed: false);
+      }
+    } catch (e) {
+      _pendingSeedSetup = false;
+      _pendingRegistrationMnemonic = null;
+      _setError(WalletMessageLocalization.errorKeyFromException(e));
+      notifyListeners();
+    }
+  }
+
+  /// Generates a 12-word phrase for the one-time registration offer (not yet saved).
+  Future<List<String>> generateRegistrationSeed() async {
+    if (!_pendingSeedSetup) {
+      throw StateError('Seed setup is not pending');
+    }
+    final mnemonic = PercSeedRecovery.generateMnemonic();
+    _pendingRegistrationMnemonic = mnemonic;
+    notifyListeners();
+    return mnemonic;
+  }
+
+  /// Finalizes registration after the user accepts or skips the seed offer.
+  Future<void> completeRegistrationSeedSetup({required bool enableSeed}) async {
+    if (!_pendingSeedSetup) return;
+    _clearMessages();
+    final username = _ledger.sessionUsername;
+    if (username == null) {
+      _pendingSeedSetup = false;
+      _pendingRegistrationMnemonic = null;
+      notifyListeners();
+      return;
+    }
+    try {
+      if (enableSeed) {
+        final mnemonic = _pendingRegistrationMnemonic;
+        if (mnemonic == null || mnemonic.isEmpty) {
+          throw StateError('Generate a seed phrase before continuing');
+        }
         _ledger.attachSeedRecoveryEnvelope(
           username: PercAuth.normalizeUsername(username),
           mnemonic: mnemonic,
         );
       }
-      clearSessionTimedOut();
+      _pendingSeedSetup = false;
+      _pendingRegistrationMnemonic = null;
       _armSessionTimeout();
       notifyListeners();
       await _completeWalletSessionStart(
         username,
-        statusKey: enableSeedRecovery
+        statusKey: enableSeed
             ? 'wallet_status_account_created_seed'
             : 'wallet_status_account_created',
       );
-      return mnemonic;
     } catch (e) {
-      _postLoginSyncing = false;
       _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
-      return null;
+      rethrow;
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../perc/providers/perc_wallet_provider.dart';
 import '../providers/locale_provider.dart';
+import '../perc/widgets/registration_seed_setup_dialog.dart';
 import 'evolve_loading_screen.dart';
 import 'evolve_shell_screen.dart';
 
@@ -60,7 +61,9 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
   @override
   Widget build(BuildContext context) {
     if (_ready) {
-      return const EvolveShellScreen(openRegistrationOnLaunch: false);
+      return const RegistrationSeedSetupDialogHost(
+        child: EvolveShellScreen(openRegistrationOnLaunch: false),
+      );
     }
 
     if (_bootError != null) {
@@ -98,10 +101,12 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
       );
     }
 
-    return EvolveLoadingScreen(
-      walletReady: _walletReady,
-      onAuthenticated: _enterApp,
-      onEnterApp: _enterApp,
+    return RegistrationSeedSetupDialogHost(
+      child: EvolveLoadingScreen(
+        walletReady: _walletReady,
+        onAuthenticated: _enterApp,
+        onEnterApp: _enterApp,
+      ),
     );
   }
 }

@@ -319,7 +319,7 @@ final _en = {
   'nav_voting': 'Voting',
   'nav_credit': 'Credit',
   'security_intro':
-      'Export an encrypted backup, restore on a new device, or recover with your optional 12-word seed phrase.',
+      'Export an encrypted backup file or restore your Perccent ledger from a backup on this device.',
   'security_export_title': 'Encrypted backup',
   'security_export_note':
       'Creates a portable .percbackup file with your full Perccent ledger (balances, scenarios, stash).',
@@ -341,11 +341,17 @@ final _en = {
       'Seed recovery needs an internet connection to the Perccent rendezvous',
   'wallet_err_backup_passphrase_short':
       'Backup passphrase must be at least 8 characters',
-  'wallet_seed_opt_in': 'Create optional 12-word recovery seed',
-  'wallet_seed_dialog_title': 'Save your recovery seed',
-  'wallet_seed_dialog_body':
-      'Write these 12 words down and store them safely. They can restore your wallet if you lose this device.',
-  'wallet_seed_dialog_ok': 'I have saved my seed',
+  'registration_seed_title': 'Optional 12-word recovery seed',
+  'registration_seed_one_chance_notice':
+      'You will only have one opportunity to set a 12-word seed phrase for this account.',
+  'registration_seed_intro':
+      'You may generate a recovery seed now, or continue without one. Twelve-word recovery is offered only at registration.',
+  'registration_seed_write_down_note':
+      'Write these 12 words on paper. Copy and paste are disabled — store them somewhere safe before continuing.',
+  'registration_seed_box_placeholder': '—',
+  'registration_seed_generate_action': 'Generate 12 phrase seed',
+  'registration_seed_confirm_saved_action': 'I have written down my seed',
+  'registration_seed_skip_action': 'Register without 12 phrase seed',
   'fcg_title': 'Parish council voting',
   'fcg_subtitle':
       'Full Community Governance (FCG) ward voting for {region} — social cohesion narratives from your prior scenario runs.',

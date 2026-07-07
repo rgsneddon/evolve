@@ -28,7 +28,7 @@ void main() {
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
     await wallet.initialize();
     await wallet.setupTreasuryPassword('treasury-pass-phrase');
-    await wallet.register('secuser', 'password12345', enableSeedRecovery: true);
+    await wallet.register('secuser', 'password12345');
     final ledger = PercLedgerHub.instance.ledger;
     ledger.creditScenario(username: 'secuser', percentChance: 42);
     ledger.recordMicroblock(
