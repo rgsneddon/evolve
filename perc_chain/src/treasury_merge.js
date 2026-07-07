@@ -13,6 +13,14 @@ function cloneBlock(block) {
     : JSON.parse(JSON.stringify(block));
 }
 
+function microUnits(amount) {
+  return amount?.microUnits ?? 0;
+}
+
+function addMicro(balance, delta) {
+  return { microUnits: microUnits(balance) + delta };
+}
+
 function blockHasTreasuryPayout(block) {
   return (block?.transactions ?? []).some((tx) => TREASURY_PAYOUT_KINDS.has(tx?.kind));
 }
@@ -27,18 +35,59 @@ export function collectTreasuryPayoutTxIds(ledger) {
   return ids;
 }
 
-function payoutRecipientsForIds(remote, payoutIds) {
-  const recipients = new Set();
-  const wanted = new Set(payoutIds);
+function findPayoutTx(remote, payoutId) {
   for (const block of remote?.blocks ?? []) {
     for (const tx of block?.transactions ?? []) {
-      if (!wanted.has(tx?.id)) continue;
-      if (!TREASURY_PAYOUT_KINDS.has(tx?.kind)) continue;
-      const to = tx.toUsername ?? tx.to;
-      if (to && to !== TREASURY_USERNAME) recipients.add(to);
+      if (tx?.id === payoutId && TREASURY_PAYOUT_KINDS.has(tx?.kind)) return tx;
     }
   }
-  return recipients;
+  return null;
+}
+
+function ensureTreasuryAccount(canonical, remote, treasuryUsername = TREASURY_USERNAME) {
+  canonical.accounts = canonical.accounts ?? {};
+  if (canonical.accounts[treasuryUsername]) return;
+
+  const remoteTreasury = remote?.accounts?.[treasuryUsername];
+  canonical.accounts[treasuryUsername] = remoteTreasury
+    ? {
+        ...remoteTreasury,
+        balance: cloneBlock(remoteTreasury.balance ?? { microUnits: 0 }),
+        cumulativeStakingEarned: cloneBlock(
+          remoteTreasury.cumulativeStakingEarned ?? { microUnits: 0 },
+        ),
+      }
+    : {
+        username: treasuryUsername,
+        balance: { microUnits: 0 },
+        cumulativeStakingEarned: { microUnits: 0 },
+        transactions: [],
+      };
+}
+
+function stubRecipientFromRemote(remoteAcc, username) {
+  if (remoteAcc) {
+    return {
+      username,
+      passwordHash: remoteAcc.passwordHash ?? '',
+      salt: remoteAcc.salt ?? '',
+      address: remoteAcc.address ?? '',
+      passwordSet: remoteAcc.passwordSet ?? false,
+      balance: { microUnits: 0 },
+      cumulativeStakingEarned: { microUnits: 0 },
+      transactions: [],
+    };
+  }
+  return {
+    username,
+    passwordHash: '',
+    salt: '',
+    address: '',
+    passwordSet: false,
+    balance: { microUnits: 0 },
+    cumulativeStakingEarned: { microUnits: 0 },
+    transactions: [],
+  };
 }
 
 /**
@@ -72,113 +121,92 @@ export function mergeTreasuryPayoutBlocksFromPeer(canonical, remote) {
 }
 
 /**
- * Merge wallet accounts that received treasury-funded payouts on the peer ledger.
+ * Apply treasury debits and recipient credits from newly merged payout txs only.
+ * Preserves canonical pre-merge balances — never wholesale-replaces peer totals.
  */
-export function mergePayoutRecipientAccountsFromPeer(canonical, remote, payoutIds) {
-  if (!canonical || !remote || !payoutIds?.length) return 0;
-
-  const recipients = payoutRecipientsForIds(remote, payoutIds);
-  if (recipients.size === 0) return 0;
-
-  canonical.accounts = canonical.accounts ?? {};
-  let merged = 0;
-
-  for (const username of recipients) {
-    const remoteAcc = remote.accounts?.[username];
-    if (!remoteAcc?.balance) continue;
-
-    const local = canonical.accounts[username] ?? {
-      username,
-      passwordHash: remoteAcc.passwordHash ?? '',
-      salt: remoteAcc.salt ?? '',
-      address: remoteAcc.address ?? '',
-      passwordSet: remoteAcc.passwordSet ?? false,
-      balance: { microUnits: 0 },
-      cumulativeStakingEarned: { microUnits: 0 },
-      transactions: [],
-    };
-
-    canonical.accounts[username] = {
-      ...local,
-      ...remoteAcc,
-      username,
-      balance: cloneBlock(remoteAcc.balance),
-      cumulativeStakingEarned: remoteAcc.cumulativeStakingEarned
-        ? cloneBlock(remoteAcc.cumulativeStakingEarned)
-        : local.cumulativeStakingEarned,
-    };
-    merged += 1;
-  }
-
-  return merged;
-}
-
-function isRemoteScenarioNewer(canonical, remote) {
-  const remoteAt = remote?.lastScenarioAt;
-  const localAt = canonical?.lastScenarioAt;
-  if (!remoteAt) return false;
-  if (!localAt) return true;
-  return new Date(remoteAt).getTime() > new Date(localAt).getTime();
-}
-
-/**
- * Sync evolve_treasury balance and cumulative counters from a peer gossip ledger.
- */
-export function mergeTreasuryAccountFromPeer(
+export function applyTreasuryPayoutDeltasFromPeer(
   canonical,
   remote,
+  payoutIds,
   treasuryUsername = TREASURY_USERNAME,
 ) {
-  const remoteTreasury = remote?.accounts?.[treasuryUsername];
-  if (!remoteTreasury?.balance) return false;
+  if (!canonical || !remote || !payoutIds?.length) {
+    return { treasuryDebited: 0, recipientsCredited: 0, totalDebitedMicro: 0 };
+  }
 
+  ensureTreasuryAccount(canonical, remote, treasuryUsername);
   canonical.accounts = canonical.accounts ?? {};
-  const local = canonical.accounts[treasuryUsername] ?? {
-    username: treasuryUsername,
-    balance: { microUnits: 0 },
-  };
 
-  canonical.accounts[treasuryUsername] = {
-    ...local,
-    ...remoteTreasury,
-    balance: cloneBlock(remoteTreasury.balance),
-    cumulativeStakingEarned:
-      remoteTreasury.cumulativeStakingEarned ?? local.cumulativeStakingEarned,
-  };
+  let treasuryDebited = 0;
+  let recipientsCredited = 0;
+  let totalDebitedMicro = 0;
 
-  if (remote.cumulativeTreasuryMinted) {
-    canonical.cumulativeTreasuryMinted = cloneBlock(remote.cumulativeTreasuryMinted);
-  }
-  if (remote.cumulativeBurnedPerc) {
-    canonical.cumulativeBurnedPerc = cloneBlock(remote.cumulativeBurnedPerc);
-  }
-  if (remote.lastScenarioAt) {
-    canonical.lastScenarioAt = remote.lastScenarioAt;
+  for (const payoutId of payoutIds) {
+    const tx = findPayoutTx(remote, payoutId);
+    if (!tx) continue;
+
+    const amountMicro = microUnits(tx.amount);
+    if (amountMicro <= 0) continue;
+
+    const to = tx.toUsername ?? tx.to;
+    if (!to || to === treasuryUsername) continue;
+
+    const treasury = canonical.accounts[treasuryUsername];
+    treasury.balance = addMicro(treasury.balance, -amountMicro);
+    treasuryDebited += 1;
+    totalDebitedMicro += amountMicro;
+
+    const remoteAcc = remote.accounts?.[to];
+    const local =
+      canonical.accounts[to] ?? stubRecipientFromRemote(remoteAcc, to);
+    local.balance = addMicro(local.balance, amountMicro);
+    if (tx.kind === 'stakingReward') {
+      local.cumulativeStakingEarned = addMicro(
+        local.cumulativeStakingEarned,
+        amountMicro,
+      );
+    }
+    if (remoteAcc?.address && !local.address) local.address = remoteAcc.address;
+    if (remoteAcc?.passwordSet && !local.passwordSet) {
+      local.passwordSet = remoteAcc.passwordSet;
+    }
+    canonical.accounts[to] = local;
+    recipientsCredited += 1;
   }
 
-  return true;
+  return { treasuryDebited, recipientsCredited, totalDebitedMicro };
+}
+
+/** Sum tracked wallet balances on a ledger (treasury + all other accounts). */
+export function sumAccountBalancesMicro(ledger, treasuryUsername = TREASURY_USERNAME) {
+  let total = 0;
+  for (const [name, acc] of Object.entries(ledger?.accounts ?? {})) {
+    if (!acc) continue;
+    total += microUnits(acc.balance);
+  }
+  return total;
 }
 
 /**
- * Merge treasury payout blocks, recipient credits, and treasury account truth.
+ * Merge treasury payout blocks and apply conserved deltas on canonical accounts.
  */
 export function mergeTreasuryStateFromPeer(canonical, remote) {
   const payout = mergeTreasuryPayoutBlocksFromPeer(canonical, remote);
-  const recipientsMerged =
+  const deltas =
     payout.payoutIds.length > 0
-      ? mergePayoutRecipientAccountsFromPeer(canonical, remote, payout.payoutIds)
-      : 0;
-  const shouldSyncTreasury =
-    payout.merged > 0 || isRemoteScenarioNewer(canonical, remote);
-  const accountSynced = shouldSyncTreasury
-    ? mergeTreasuryAccountFromPeer(canonical, remote)
-    : false;
+      ? applyTreasuryPayoutDeltasFromPeer(canonical, remote, payout.payoutIds)
+      : { treasuryDebited: 0, recipientsCredited: 0, totalDebitedMicro: 0 };
+
+  if (payout.merged > 0 && remote?.lastScenarioAt) {
+    canonical.lastScenarioAt = remote.lastScenarioAt;
+  }
 
   return {
     payoutBlocksMerged: payout.merged,
     payoutIds: payout.payoutIds,
-    recipientsMerged,
-    accountSynced,
-    merged: payout.merged > 0 || accountSynced || recipientsMerged > 0,
+    recipientsCredited: deltas.recipientsCredited,
+    treasuryDebitedMicro: deltas.totalDebitedMicro,
+    accountSynced: deltas.treasuryDebited > 0,
+    merged: payout.merged > 0,
   };
 }
