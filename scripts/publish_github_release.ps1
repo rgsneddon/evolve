@@ -7,6 +7,7 @@ param(
     [switch]$SkipBuild,
     [switch]$SkipTests,
     [switch]$SkipPages,
+    [switch]$RecreateRelease,
     [switch]$DryRun,
     [string]$EvidenceDir = ''
 )
@@ -168,15 +169,29 @@ if ($missing) {
     throw "Missing release assets: $($missing -join ', ')"
 }
 
-$defaultNotes = @"
-Evolve Chronoflux $tag
+$buildLabel = ''
+$versionJsonPath = Join-Path $Root 'version.json'
+if (Test-Path $versionJsonPath) {
+    try {
+        $vj = Get-Content $versionJsonPath -Raw | ConvertFrom-Json
+        if ($vj.build_number) { $buildLabel = " (build $($vj.build_number))" }
+    } catch { }
+}
 
-- Downloads (installer packages): https://$owner.github.io/$RepoName/downloads/
-- Web (GitHub Pages): https://$owner.github.io/$RepoName/
-- Windows: ``evolve-$tag-windows-x64-setup.exe`` (or zip fallback)
-- Android: ``evolve-$tag-android-setup.apk`` (when included)
-- Pages bundle: ``$RepoName-github-pages.zip`` for manual deploy
-- Verify downloads with attached ``.sha256`` / ``.sha512`` checksum files (minimum SHA-256)
+$defaultNotes = @"
+Evolve Chronoflux $tag$buildLabel
+
+- Security tab: encrypted backup, file restore, optional 12-word seed recovery
+- Treasury evolve_treasury: scenario-only PERC emission; no manual receive or inbound funding
+- PERC wallet hardening: switch commitments, settlement guards
+
+Downloads: https://$owner.github.io/$RepoName/downloads/
+Web: https://$owner.github.io/$RepoName/
+
+Windows: ``evolve-$tag-windows-x64-setup.exe`` (or zip fallback)
+Android: ``evolve-$tag-android-setup.apk`` (when included)
+Pages bundle: ``$RepoName-github-pages.zip`` for manual deploy
+Verify downloads with attached ``.sha256`` / ``.sha512`` checksum files (minimum SHA-256)
 "@
 $notes = if ($ReleaseNotes.Trim()) { $ReleaseNotes.Trim() } else { $defaultNotes }
 
@@ -192,8 +207,18 @@ $releaseExists = $false
 gh release view $tag --repo "$owner/$RepoName" 2>$null | Out-Null
 if ($LASTEXITCODE -eq 0) { $releaseExists = $true }
 
+$publishMode = 'create'
+if ($releaseExists -and $RecreateRelease) {
+    Write-Host "Deleting release $tag for clean recreate (tag preserved)." -ForegroundColor Yellow
+    & gh release delete $tag --repo "$owner/$RepoName" --yes --cleanup-tag=false
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $releaseExists = $false
+    $publishMode = 'recreate'
+}
+
 if ($releaseExists) {
     Write-Host "Release $tag exists; uploading refreshed assets (--clobber)." -ForegroundColor Yellow
+    $publishMode = 'clobber'
     & gh release upload $tag --repo "$owner/$RepoName" --clobber @assets
 } else {
     & gh release create $tag `
@@ -211,14 +236,21 @@ Write-Host "Release published: https://github.com/$owner/$RepoName/releases/tag/
 if ($EvidenceDir) {
     New-Item -ItemType Directory -Path $EvidenceDir -Force | Out-Null
     $logPath = Join-Path $EvidenceDir 'publish.log'
+    $head = (git -C $Root rev-parse HEAD).Trim()
     @(
         "tag=$tag"
         "version=$versionNoV"
         "owner=$owner"
         "repo=$RepoName"
+        "git_head=$head"
         "deploy_dir=$DeployDir"
         "release_dir=$releaseDir"
         "asset_count=$($assets.Count)"
+        "publish_mode=$publishMode"
+        "recreate_release=$RecreateRelease"
+        "skip_build=$SkipBuild"
+        "skip_tests=$SkipTests"
+        "skip_pages=$SkipPages"
         "pages_url=https://$owner.github.io/$RepoName/"
         "downloads_url=https://$owner.github.io/$RepoName/downloads/"
         "published_utc=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')"
