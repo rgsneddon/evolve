@@ -274,7 +274,13 @@ if ($EvidenceDir) {
         "publish_mode=$publishMode"
         "recreate_release=$RecreateRelease"
         "skip_build=$SkipBuild"
-        "skip_build_reason=$(if ($SkipBuild) { 'build_all+installers completed in finalize_release step (c)' } else { 'none' })"
+        "skip_build_reason=$(if ($SkipBuild) {
+            if ($EvidenceDir -and (Test-Path (Join-Path $EvidenceDir 'build_all.log'))) {
+                'verification plan step 4 complete; artifacts in build_all.log'
+            } else {
+                'prior build artifacts present'
+            }
+        } else { 'none' })"
         "skip_tests=$SkipTests"
         "skip_pages=$SkipPages"
         "release_pinned=$env:EVOLVE_RELEASE_PINNED"
