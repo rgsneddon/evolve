@@ -26,10 +26,8 @@ void main() {
 
     final aliceBefore = devices.sender.account('alice')!.balance;
 
-    devices.receiver.advanceScenarioBlock(
-      'bob',
-      senderPeerResolver: (from) => from == 'alice' ? devices.sender : null,
-    );
+    expect(devices.receiver.settlementWitnesses, hasLength(1));
+    devices.receiver.advanceScenarioBlock('bob');
     expect(devices.receiver.settlementWitnesses, hasLength(1));
 
     final store = PercWalletStoreMemory();

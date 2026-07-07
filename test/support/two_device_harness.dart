@@ -92,14 +92,14 @@ class TwoDeviceHarness {
 
   void mergeSenderFromReceiver() => propagateWitnessToSender();
 
-  /// Cross-device scenario requires live [sender] peer attestation.
+  /// Advances scenario block height only — does not settle transfers.
   void receiverScenario() {
-    receiver.advanceScenarioBlock(receiverUser, senderPeer: sender);
+    receiver.advanceScenarioBlock(receiverUser);
   }
 
-  /// Scenario credit + witness on receiver, then sender debit at confirm.
+  /// Relay credit + witness propagate debits sender (no scenario settlement).
   void crossDeviceScenarioAndSettle() {
-    receiverScenario();
+    pushSendToReceiver();
     propagateWitnessToSender();
   }
 }

@@ -32,6 +32,7 @@ import 'perc_treasury.dart';
 import 'perc_transfer_relay_ack.dart';
 import 'perc_settlement_witness.dart';
 import 'inbound_transfer_delivery.dart';
+import 'inbound_transfer_settlement.dart';
 import 'treasury_scenario_settlement.dart';
 
 /// Resolves a live sender ledger for cross-device scenario attestation.
@@ -965,11 +966,6 @@ class PercLedger {
       return acc.scenarioBlockHeight;
     }
     acc.scenarioBlockHeight++;
-    settlePendingInboundOnActivity(
-      username,
-      senderPeer: senderPeer,
-      senderPeerResolver: senderPeerResolver,
-    );
     return acc.scenarioBlockHeight;
   }
 
@@ -2142,9 +2138,25 @@ class PercLedger {
         confirmations: _txConfirmations,
       );
 
-  /// Credits inbound PERC when send/relay/scenario activity can settle them.
+  /// Credits inbound PERC on relay ingest only (not scenario block advance).
   void settlePendingInboundOnActivity(
     String username, {
+    PercLedger? senderPeer,
+    PercSenderPeerResolver? senderPeerResolver,
+    DateTime? now,
+  }) {
+    _settlePendingForTrigger(
+      SettlementTrigger.relay,
+      username: username,
+      senderPeer: senderPeer,
+      senderPeerResolver: senderPeerResolver,
+      now: now,
+    );
+  }
+
+  void _settlePendingForTrigger(
+    SettlementTrigger trigger, {
+    required String username,
     PercLedger? senderPeer,
     PercSenderPeerResolver? senderPeerResolver,
     DateTime? now,
@@ -2176,30 +2188,32 @@ class PercLedger {
           : resolvedPeer != null &&
               _attestSenderCanDebitOnPeer(resolvedPeer, pending);
 
-      final plan = planSettlement(
-        phase: SettlementPhase.transferCredit,
+      final ops = InboundTransferSettlement.plan(
+        trigger: trigger,
         senderIsLocalWallet: senderIsLocal,
         senderCanDebit: senderCanDebit,
         senderPeerProvided: senderIsLocal || resolvedPeer != null,
+        withinRevertWindow: true,
+        isExpired: false,
         remoteWitnessPresent: false,
         remoteSettledWithoutPending: false,
       );
-      if (!plan.shouldApply) continue;
+      if (ops.isEmpty) continue;
 
       final confirmedTx = _confirmedTransferTx(pending, t);
       final blockTxs = <PercTransaction>[confirmedTx];
 
-      if (plan.debitSender &&
+      if (ops.any((o) => o.kind == InboundSettlementOpKind.debitSender) &&
           !_applySenderSettlement(pending, t, blockTxs: blockTxs)) {
         continue;
       }
 
-      if (plan.creditReceiver) {
+      if (ops.any((o) => o.kind == InboundSettlementOpKind.creditReceiver)) {
         _credit(receiver, pending.amount);
         _replaceOrInsertTx(receiver, confirmedTx);
       }
 
-      if (plan.emitWitness) {
+      if (ops.any((o) => o.kind == InboundSettlementOpKind.emitWitness)) {
         settlementWitnesses.add(
           PercSettlementWitness(
             transferId: pending.id,
@@ -2210,7 +2224,7 @@ class PercLedger {
         );
       }
 
-      if (plan.removePending) {
+      if (ops.any((o) => o.kind == InboundSettlementOpKind.removePending)) {
         pendingInboundTransfers.remove(pending);
       }
 
