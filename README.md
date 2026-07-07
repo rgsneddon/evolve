@@ -14,11 +14,11 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ## Quick start
 
-**Latest release:** v3.4.8 (build 135) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
+**Latest release:** v4.0.0 (build 136) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
 
 ### Windows (easiest)
 
-Download **evolve-v3.4.8-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
+Download **evolve-v4.0.0-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
 
 ### Web
 
@@ -26,7 +26,7 @@ Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evol
 
 ### Android
 
-Download **evolve-v3.4.8-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases**. Verify SHA-256 before installing. The in-app updater checks GitHub Releases, then gh-pages, when a newer build is published.
+Download **evolve-v4.0.0-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases**. Verify SHA-256 before installing. The in-app updater checks GitHub Releases, then gh-pages, when a newer build is published.
 
 ---
 
@@ -154,7 +154,7 @@ Evolve embeds an optional **Perccent** wallet (`PERC` / **Perccent**) on the **C
 | **Evolutionary chain** | `evolve-chronoflux-principia-chain-1` — all app versions connect here |
 | **Main chain** | `perc-main-evolve-1` — blocks, transfers, treasury, scenario rewards, microblock seals |
 | **Side chain** | `perc-chronoflux-side-1` — fair-usage microblock height and pending seal progress |
-| **Treasury** | `evolve_treasury` — emits PERC; manual sends disabled after blockchain launch |
+| **Treasury** | `evolve_treasury` — emits PERC only when users run scenarios; no manual receive address or inbound funding after launch; outbound manual sends disabled |
 | **Seed** | `evolve_seed_node` — rendezvous, ledger relay, public explorer |
 
 Each wallet keeps a **local JSON ledger**. When online, wallets gossip blocks and transfers through the rendezvous host (default port **9478**); wallet nodes may serve on port **9477**.
@@ -290,6 +290,7 @@ The chain is designed to grow with user activity without unbounded local storage
 | Treasury floor | 1 cent |
 | Microblock seal | Every 100M fair-usage microblocks |
 | Manual treasury sends | Disabled after launch |
+| Manual treasury funding | Blocked — no receive address; PERC emitted on scenario only |
 
 ---
 
@@ -382,9 +383,9 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/build_all.ps1
 powershell -ExecutionPolicy Bypass -File scripts/build_installers.ps1 -SkipCodeSign
-powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.8
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.0.0
 # Optional: capture release/Pages evidence for CI or audit
-powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.8 -SkipBuild -EvidenceDir .\build\release-evidence
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.0.0 -SkipBuild -EvidenceDir .\build\release-evidence
 ```
 
 If the Windows INSTALL step fails with `C:\Program Files\evolve`, delete `build\windows` and rebuild (stale CMake cache).
