@@ -103,6 +103,10 @@ class PercLedgerHub extends ChangeNotifier {
   Future<PercRegistrationSeedAdoption> adoptPendingRegistrationChain() =>
       network.adoptPendingRegistrationChain();
 
+  /// Publishes rendezvous session once pending registration is seed-aligned.
+  Future<bool> completePendingRegistrationIfReady() =>
+      network.completePendingRegistrationIfReady();
+
   Future<void> onWalletSessionEnded([String? username]) async {
     await network.onSessionEnded(username);
   }

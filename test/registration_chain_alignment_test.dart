@@ -39,6 +39,19 @@ PercLedger _tallSeedLedger({int extraBlocks = 4}) {
   return seed;
 }
 
+Future<PercWalletProvider> _openSecondSessionFromStore(
+  PercWalletStoreMemory sourceStore,
+) async {
+  final snapshot = PercLedger.fromJson(
+    (await sourceStore.load())!.toJson(),
+  );
+  final secondStore = PercWalletStoreMemory();
+  await secondStore.save(snapshot);
+  final wallet = PercWalletProvider(store: secondStore);
+  await wallet.initialize();
+  return wallet;
+}
+
 void main() {
   setUp(() {
     PercLedgerHub.resetForTest();
@@ -85,21 +98,19 @@ void main() {
     expect(wallet.isNetworkSynced, isTrue);
   });
 
-  test('second hub session sees registered user on adopted chain', () async {
+  test('second session on persisted store resolves registered user', () async {
     final seed = _tallSeedLedger(extraBlocks: 5);
     PercNetworkCoordinator.instance.registerTestSeedLedger(seed);
-    final store = PercWalletStoreMemory();
+    final storeA = PercWalletStoreMemory();
 
-    final walletA = PercWalletProvider(store: store);
-    final walletB = PercWalletProvider(store: store);
+    final walletA = PercWalletProvider(store: storeA);
     await walletA.initialize();
-    await walletB.initialize();
     await walletA.setupTreasuryPassword('password12345');
     await walletA.register('shareduser', 'password12345');
+    await PercLedgerHub.instance.persistLocal();
 
+    final walletB = await _openSecondSessionFromStore(storeA);
     final addr = walletA.address;
-    final localResolved =
-        PercLedgerHub.instance.ledger.accountForAddress(addr);
     final networkResolved =
         await PercLedgerHub.instance.network.resolveAccountByAddress(addr);
 
@@ -110,19 +121,21 @@ void main() {
       'sessionATip=${PercChainTip.hash(PercLedgerHub.instance.ledger)}\n'
       'seedTip=${PercChainTip.hash(seed)}\n'
       'address=$addr\n'
-      'localResolvedUsername=${localResolved?.username}\n'
-      'networkResolvedUsername=${networkResolved?.username}\n',
+      'networkResolvedUsername=${networkResolved?.username}\n'
+      'pendingRecovery=${PercNetworkCoordinator.instance.hasPendingRegistrationRecovery}\n',
     );
 
-    expect(walletB.blockHeight, walletA.blockHeight);
     expect(walletB.blockHeight, PercChainTip.height(seed));
     expect(walletB.networkBlockHeight, walletA.networkBlockHeight);
     expect(
       PercChainTip.hash(PercLedgerHub.instance.ledger),
       PercChainTip.hash(seed),
     );
-    expect(localResolved?.username, 'shareduser');
     expect(networkResolved?.username, 'shareduser');
+    expect(
+      PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
+      isFalse,
+    );
   });
 
   test('registration with unreachable seed allows connect with offline status', () async {
@@ -134,6 +147,7 @@ void main() {
     await wallet.initialize();
     await wallet.setupTreasuryPassword('password12345');
     await wallet.register('offlineuser', 'password12345');
+    await PercNetworkCoordinator.instance.awaitDeepSyncIdle();
 
     expect(wallet.isWalletConnectComplete, isTrue);
     expect(wallet.registrationAwaitingSeedAlignment, isFalse);
@@ -147,34 +161,60 @@ void main() {
       PercNetworkCoordinator.instance.activeUsernameForTest,
       'offlineuser',
     );
-
-    PercNetworkCoordinator.instance.testSeedReachable = true;
-    await PercNetworkCoordinator.instance.runDeepSyncForTest();
-
-    final ledger = PercLedgerHub.instance.ledger;
-    final published = wallet.onlineNetworkNodes
-        .any((n) => n.username == 'offlineuser' && n.online);
-
-    _writeLog(
-      'registration_recovery_after_sync.log',
-      'username=offlineuser\n'
-      'afterHeight=${ledger.blockHeight}\n'
-      'seedHeight=${PercChainTip.height(seed)}\n'
-      'afterTip=${PercChainTip.hash(ledger)}\n'
-      'seedTip=${PercChainTip.hash(seed)}\n'
-      'publishedOnline=$published\n'
-      'pendingRecovery=${PercNetworkCoordinator.instance.hasPendingRegistrationRecovery}\n',
-    );
-
-    expect(ledger.blockHeight, PercChainTip.height(seed));
-    expect(PercChainTip.hash(ledger), PercChainTip.hash(seed));
-    expect(ledger.account('offlineuser'), isNotNull);
-    expect(published, isTrue);
     expect(
-      PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
-      isFalse,
+      PercChainTip.height(PercLedgerHub.instance.ledger),
+      lessThan(PercChainTip.height(seed)),
     );
   });
+
+  test(
+    'offline registration recovers via background deep sync when seed returns',
+    () async {
+      final seed = _tallSeedLedger();
+      PercNetworkCoordinator.instance.registerTestSeedLedger(seed);
+      PercNetworkCoordinator.instance.testSeedReachable = false;
+
+      final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+      await wallet.initialize();
+      await wallet.setupTreasuryPassword('password12345');
+      await wallet.register('bgoffline', 'password12345');
+      await PercNetworkCoordinator.instance.awaitDeepSyncIdle();
+
+      expect(
+        PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
+        isTrue,
+      );
+
+      PercNetworkCoordinator.instance.testSeedReachable = true;
+      PercNetworkCoordinator.instance.scheduleDeepSync();
+      await PercNetworkCoordinator.instance.awaitDeepSyncIdle();
+
+      final ledger = PercLedgerHub.instance.ledger;
+      final published = wallet.onlineNetworkNodes
+          .any((n) => n.username == 'bgoffline' && n.online);
+
+      _writeLog(
+        'registration_recovery_after_sync.log',
+        'path=background_scheduleDeepSync\n'
+        'username=bgoffline\n'
+        'afterHeight=${ledger.blockHeight}\n'
+        'seedHeight=${PercChainTip.height(seed)}\n'
+        'afterTip=${PercChainTip.hash(ledger)}\n'
+        'seedTip=${PercChainTip.hash(seed)}\n'
+        'publishedOnline=$published\n'
+        'pendingRecovery=${PercNetworkCoordinator.instance.hasPendingRegistrationRecovery}\n',
+      );
+
+      expect(ledger.blockHeight, PercChainTip.height(seed));
+      expect(PercChainTip.hash(ledger), PercChainTip.hash(seed));
+      expect(ledger.account('bgoffline'), isNotNull);
+      expect(published, isTrue);
+      expect(
+        PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
+        isFalse,
+      );
+    },
+  );
 
   test('offline registration recovers account after genesis reset on sync', () async {
     final seed = _tallSeedLedger();

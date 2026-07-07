@@ -72,9 +72,9 @@ class PercWalletProvider extends ChangeNotifier {
   bool _syncingWallet = false;
   bool _postLoginSyncing = false;
   bool _pendingSeedSetup = false;
-  String? _pendingRegistrationPassword;
+  String? _seedSetupPassword;
   bool _registrationAwaitingSeedAlignment = false;
-  List<String>? _pendingRegistrationMnemonic;
+  List<String>? _seedSetupMnemonic;
   bool _sessionTimedOut = false;
   bool _extendingSessionForConnection = false;
   Timer? _microblockCommitDebounce;
@@ -368,8 +368,8 @@ class PercWalletProvider extends ChangeNotifier {
     try {
       _ledger.register(username, password);
       _ledger.login(username, password);
-      _pendingRegistrationMnemonic = null;
-      _pendingRegistrationPassword = password;
+      _seedSetupMnemonic = null;
+      _seedSetupPassword = password;
       _registrationAwaitingSeedAlignment = false;
       _pendingSeedSetup = true;
       clearSessionTimedOut();
@@ -379,8 +379,8 @@ class PercWalletProvider extends ChangeNotifier {
       }
     } catch (e) {
       _pendingSeedSetup = false;
-      _pendingRegistrationMnemonic = null;
-      _pendingRegistrationPassword = null;
+      _seedSetupMnemonic = null;
+      _seedSetupPassword = null;
       _registrationAwaitingSeedAlignment = false;
       _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
@@ -393,7 +393,7 @@ class PercWalletProvider extends ChangeNotifier {
       throw StateError('Seed setup is not pending');
     }
     final mnemonic = PercSeedRecovery.generateMnemonic();
-    _pendingRegistrationMnemonic = mnemonic;
+    _seedSetupMnemonic = mnemonic;
     notifyListeners();
     return mnemonic;
   }
@@ -403,22 +403,22 @@ class PercWalletProvider extends ChangeNotifier {
     if (!_pendingSeedSetup) return;
     _clearMessages();
     final username = _ledger.sessionUsername;
-    final password = _pendingRegistrationPassword;
+    final password = _seedSetupPassword;
     if (username == null || password == null) {
       _pendingSeedSetup = false;
-      _pendingRegistrationMnemonic = null;
-      _pendingRegistrationPassword = null;
+      _seedSetupMnemonic = null;
+      _seedSetupPassword = null;
       notifyListeners();
       return;
     }
     try {
-      final mnemonic = enableSeed ? _pendingRegistrationMnemonic : null;
+      final mnemonic = enableSeed ? _seedSetupMnemonic : null;
       if (enableSeed && (mnemonic == null || mnemonic.isEmpty)) {
         throw StateError('Generate a seed phrase before continuing');
       }
       _pendingSeedSetup = false;
-      _pendingRegistrationMnemonic = null;
-      _pendingRegistrationPassword = null;
+      _seedSetupMnemonic = null;
+      _seedSetupPassword = null;
       _armSessionTimeout();
       notifyListeners();
       await _completeRegistrationSessionStart(
@@ -593,23 +593,17 @@ class PercWalletProvider extends ChangeNotifier {
   }
 
   Future<bool> _publishRegistrationIfRecovered({String? statusKey}) async {
-    final hub = PercLedgerHub.instance;
-    final network = hub.network;
-    if (!network.hasPendingRegistrationRecovery) return false;
-    if (!network.isSyncedToNetwork) return false;
-    if (!network.isPendingRegistrationAligned(hub)) return false;
+    if (!_ready || !hasAppAccess) return false;
 
-    final username =
-        _ledger.sessionUsername ?? network.pendingRegistrationUsernameForTest;
-    if (username == null || !hasAppAccess) return false;
+    final published =
+        await PercLedgerHub.instance.completePendingRegistrationIfReady();
+    if (!published) return false;
 
-    await hub.onWalletSessionStarted(username);
-    await hub.commitAfterForceSync();
-    network.clearPendingRegistrationRecovery();
     _registrationAwaitingSeedAlignment = false;
     if (statusKey != null) {
       _setStatus(statusKey);
     }
+    notifyListeners();
     return true;
   }
 

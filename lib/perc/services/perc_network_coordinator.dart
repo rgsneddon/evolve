@@ -47,6 +47,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   String? _publicEndpoint;
   bool _seedConnected = false;
   Timer? _receivePollTimer;
+  Timer? _pendingRegistrationRetryTimer;
   bool _appInBackground = false;
   final Map<String, PercLedger> _senderPeerCache = {};
 
@@ -175,6 +176,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
   }
 
   bool isPendingRegistrationAligned(PercLedgerHub hub) {
+    if (!hasPendingRegistrationRecovery) return false;
+    if (!_seedConnected) return false;
+
     final username =
         _pendingRegistrationUsername ?? hub.ledger.sessionUsername;
     if (username == null) return false;
@@ -218,13 +222,63 @@ class PercNetworkCoordinator extends ChangeNotifier {
     );
   }
 
+  /// Publishes a pending registration once the local ledger matches the seed.
+  Future<bool> completePendingRegistrationIfReady() async {
+    final hub = _hub;
+    if (hub == null) return false;
+    if (!hasPendingRegistrationRecovery) return false;
+    if (!isSyncedToNetwork) return false;
+    if (!isPendingRegistrationAligned(hub)) return false;
+
+    final username = _pendingRegistrationUsername;
+    if (username == null || hub.ledger.account(username) == null) {
+      return false;
+    }
+
+    await onSessionStarted(username);
+    await hub.commitAfterForceSync();
+    clearPendingRegistrationRecovery();
+    notifyListeners();
+    return true;
+  }
+
   Future<void> _maybeNotifyPendingRegistrationRecovery(
     PercLedgerHub hub,
   ) async {
     if (!hasPendingRegistrationRecovery) return;
     if (!isPendingRegistrationAligned(hub)) return;
     if (!isSyncedToNetwork) return;
-    await onPendingRegistrationRecoveryReady?.call();
+
+    final handled = await onPendingRegistrationRecoveryReady?.call() ?? false;
+    if (!handled) {
+      await completePendingRegistrationIfReady();
+    }
+  }
+
+  void _schedulePendingRegistrationDeepSyncRetry() {
+    if (!hasPendingRegistrationRecovery) return;
+    if (disableLiveNodesForTests) return;
+
+    _pendingRegistrationRetryTimer?.cancel();
+    _pendingRegistrationRetryTimer = Timer(const Duration(seconds: 3), () {
+      _pendingRegistrationRetryTimer = null;
+      if (hasPendingRegistrationRecovery) {
+        scheduleDeepSync();
+      }
+    });
+  }
+
+  @visibleForTesting
+  Future<void> awaitDeepSyncIdle({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (_deepSyncRunning) {
+      if (DateTime.now().isAfter(deadline)) {
+        throw StateError('Timed out waiting for deep sync');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
   }
 
   void _applyTestSeedForPendingRegistration(PercLedgerHub hub) {
@@ -258,6 +312,8 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
   void _detach() {
     _stopReceivePolling();
+    _pendingRegistrationRetryTimer?.cancel();
+    _pendingRegistrationRetryTimer = null;
     _hub?.removeListener(_onHubChanged);
     _hub = null;
     _syncState = PercNetworkSyncState.idle;
@@ -335,6 +391,8 @@ class PercNetworkCoordinator extends ChangeNotifier {
     hub.ledger.refreshPendingInboundTransfers();
     if (!disableLiveNodesForTests) {
       _startReceivePolling();
+    }
+    if (hasPendingRegistrationRecovery) {
       scheduleDeepSync();
     }
     notifyListeners();
@@ -387,6 +445,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
     await hub.persistLocal();
     await _maybeNotifyPendingRegistrationRecovery(hub);
+    if (hasPendingRegistrationRecovery && !isPendingRegistrationAligned(hub)) {
+      _schedulePendingRegistrationDeepSyncRetry();
+    }
   }
 
   Future<void> onSessionEnded([String? username]) async {
