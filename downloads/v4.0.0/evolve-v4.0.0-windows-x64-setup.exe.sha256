@@ -1,7 +1,7 @@
-﻿32a41046f17707c26cb69b32393ccc880084986245a3158b6c8999998823807b  evolve-v4.0.0-windows-x64-setup.exe
+﻿a301d3db4ef3a009ffd39a2f8bca52ac68ef3550eb2a5a604b84fccb24fcda89  evolve-v4.0.0-windows-x64-setup.exe
 algorithm=SHA256
 algorithm_secondary=SHA512
-sha512=a12580337c153b7dee32a9bf87fd18a4a201510d12d2d8fd60d1c95299bf183db3a09091078b1e55448edb221fc595474edf848072ef746ea596962eb3fe0acc
+sha512=64ff77dfa503ad433b1239097a8da09cb965eb9bceabf45bf94f90266ab64efaa5508637f30dbc998bc88f73661b295fc887c3936981a93eeb4b1f53aefba9d2
 version=4.0.0
 platform=windows
 url=https://rgsneddon.github.io/evolve/downloads/v4.0.0/evolve-v4.0.0-windows-x64-setup.exe

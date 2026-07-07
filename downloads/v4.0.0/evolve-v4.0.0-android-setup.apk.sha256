@@ -1,7 +1,7 @@
-﻿aab63909e5ebaaad5efe2b7195c6103cdbabceb91137e3700aa98563c0f1e996  evolve-v4.0.0-android-setup.apk
+﻿5c68b998b66a7ca5436385984162d2999883fb3431cfe133db85b83c061e8848  evolve-v4.0.0-android-setup.apk
 algorithm=SHA256
 algorithm_secondary=SHA512
-sha512=86782c863fd3e6f4d8dfb0ef3cc95b79d3d14b6901c33e4aae026f18234eba0ba3672d261f240ff3c8efbbf51e87d72cdda3832fc2a78f39774239c8870677be
+sha512=8329cb85dbbd718f9141b174ea36c09271f0d1ddad8e13f62ded4230ef34e46f419b74301182240e65060831cf8e8d6c013eeb918c686731f206c2db593c9502
 version=4.0.0
 platform=android
 url=https://rgsneddon.github.io/evolve/downloads/v4.0.0/evolve-v4.0.0-android-setup.apk

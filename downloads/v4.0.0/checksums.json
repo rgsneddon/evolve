@@ -1,19 +1,19 @@
 ﻿{
     "minimumAlgorithm":  "SHA256",
-    "generatedAt":  "2026-07-07T14:07:14.1273825Z",
+    "generatedAt":  "2026-07-07T19:49:40.2446723Z",
     "packages":  [
                      {
                          "file":  "evolve-v4.0.0-android-setup.apk",
-                         "bytes":  78403713,
-                         "sha256":  "aab63909e5ebaaad5efe2b7195c6103cdbabceb91137e3700aa98563c0f1e996",
-                         "sha512":  "86782c863fd3e6f4d8dfb0ef3cc95b79d3d14b6901c33e4aae026f18234eba0ba3672d261f240ff3c8efbbf51e87d72cdda3832fc2a78f39774239c8870677be",
+                         "bytes":  78649397,
+                         "sha256":  "5c68b998b66a7ca5436385984162d2999883fb3431cfe133db85b83c061e8848",
+                         "sha512":  "8329cb85dbbd718f9141b174ea36c09271f0d1ddad8e13f62ded4230ef34e46f419b74301182240e65060831cf8e8d6c013eeb918c686731f206c2db593c9502",
                          "url":  "https://rgsneddon.github.io/evolve/downloads/v4.0.0/evolve-v4.0.0-android-setup.apk"
                      },
                      {
                          "file":  "evolve-v4.0.0-windows-x64-setup.exe",
-                         "bytes":  12540936,
-                         "sha256":  "32a41046f17707c26cb69b32393ccc880084986245a3158b6c8999998823807b",
-                         "sha512":  "a12580337c153b7dee32a9bf87fd18a4a201510d12d2d8fd60d1c95299bf183db3a09091078b1e55448edb221fc595474edf848072ef746ea596962eb3fe0acc",
+                         "bytes":  12553144,
+                         "sha256":  "a301d3db4ef3a009ffd39a2f8bca52ac68ef3550eb2a5a604b84fccb24fcda89",
+                         "sha512":  "64ff77dfa503ad433b1239097a8da09cb965eb9bceabf45bf94f90266ab64efaa5508637f30dbc998bc88f73661b295fc887c3936981a93eeb4b1f53aefba9d2",
                          "url":  "https://rgsneddon.github.io/evolve/downloads/v4.0.0/evolve-v4.0.0-windows-x64-setup.exe"
                      }
                  ],
