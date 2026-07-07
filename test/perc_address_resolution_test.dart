@@ -129,6 +129,22 @@ void main() {
     expect(local.account('receiver')?.passwordSet, isFalse);
   });
 
+  test('resolveAccountByAddress blocks evolve_treasury after launch', () async {
+    final store = PercWalletStoreMemory();
+    final wallet = PercWalletProvider(store: store);
+    await wallet.initialize();
+    await wallet.setupTreasuryPassword('password12345');
+    PercLedgerHub.instance.ledger.launchBlockchain();
+    PercLedgerHub.instance.ledger.consumeBlockchainLaunchEvent();
+
+    final treasuryAddr = PercLedgerHub.instance.ledger
+        .account(PercChainConstants.treasuryUsername)!
+        .address;
+    final resolved = await PercLedgerHub.instance.network
+        .resolveAccountByAddress(treasuryAddr);
+    expect(resolved, isNull);
+  });
+
   test('wallet send resolves remote stub before ledger transfer', () async {
     final store = PercWalletStoreMemory();
     final wallet = PercWalletProvider(store: store);
