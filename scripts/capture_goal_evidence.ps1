@@ -21,10 +21,10 @@ function Append-Utf8NoBom([string]$Path, [string[]]$Lines) {
 
 function Invoke-Step($label, [scriptblock]$Command) {
   $stepLog = Join-Path $ScratchDir (($label -replace '[^a-zA-Z0-9]', '_') + ".log")
-  $output = & $Command 2>&1 | ForEach-Object { $_.ToString() }
-  Write-Utf8NoBom $stepLog $output
-  Append-Utf8NoBom $testLog @("`n--- $label ---") + $output
-  if ($LASTEXITCODE -ne 0) { throw "$label failed with exit $LASTEXITCODE" }
+  & $Command *>&1 | ForEach-Object { $_.ToString() } | Set-Content -Path $stepLog -Encoding utf8
+  $exit = $LASTEXITCODE
+  Append-Utf8NoBom $testLog @("`n--- $label ---") + [System.IO.File]::ReadAllLines($stepLog)
+  if ($exit -ne 0) { throw "$label failed with exit $exit" }
 }
 
 $testLog = Join-Path $ScratchDir "test_results.log"
