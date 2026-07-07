@@ -48,6 +48,7 @@ void main() {
   late PercLedger mockSeedLedger;
   var rendezvousRegisterCount = 0;
   var serveSeedLedger = true;
+  var serveSeedStatus = true;
   String? base;
 
   setUp(() async {
@@ -56,6 +57,7 @@ void main() {
     PercWalletProvider.sessionTimeoutEnabled = false;
     rendezvousRegisterCount = 0;
     serveSeedLedger = true;
+    serveSeedStatus = true;
     mockSeedLedger = _tallSeedLedger();
 
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -94,6 +96,12 @@ void main() {
       }
 
       if (request.method == 'GET' && path == '/perc/status') {
+        if (!serveSeedStatus) {
+          request.response
+            ..statusCode = 404
+            ..close();
+          return;
+        }
         request.response
           ..statusCode = 200
           ..headers.contentType = ContentType.json
@@ -286,5 +294,57 @@ void main() {
     );
     expect(wallet.isWalletConnectComplete, isTrue);
     expect(wallet.hasAppAccess, isTrue);
+  });
+
+  test('live offline registration recovers after genesis reset on sync', () async {
+    serveSeedStatus = false;
+    serveSeedLedger = false;
+    PercNetworkCoordinator.disableLiveNodesForTests = false;
+
+    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    await wallet.initialize();
+    await wallet.setupTreasuryPassword('password12345');
+    expect(PercLedgerHub.instance.ledger.networkGenesisRevision, 1);
+
+    rendezvousRegisterCount = 0;
+    await wallet.register('liveoffline', 'password12345');
+
+    expect(wallet.statusMessage, 'wallet_sync_seed_offline');
+    expect(wallet.isWalletConnectComplete, isTrue);
+    expect(
+      PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
+      isTrue,
+    );
+    expect(rendezvousRegisterCount, 0);
+
+    serveSeedStatus = true;
+    serveSeedLedger = true;
+    await wallet.syncWalletToSeed();
+
+    final ledger = PercLedgerHub.instance.ledger;
+
+    _writeLog(
+      'registration_offline_genesis_recovery.log',
+      'path=live_http\n'
+      'username=liveoffline\n'
+      'localGenesisAfter=${ledger.networkGenesisRevision}\n'
+      'afterHeight=${ledger.blockHeight}\n'
+      'seedHeight=${PercChainTip.height(mockSeedLedger)}\n'
+      'afterTip=${PercChainTip.hash(ledger)}\n'
+      'seedTip=${PercChainTip.hash(mockSeedLedger)}\n'
+      'accountPresent=${ledger.account('liveoffline') != null}\n'
+      'rendezvousRegisterCount=$rendezvousRegisterCount\n',
+    );
+
+    expect(ledger.networkGenesisRevision, 2);
+    expect(ledger.account('liveoffline'), isNotNull);
+    expect(ledger.blockHeight, PercChainTip.height(mockSeedLedger));
+    expect(
+      PercChainTip.hash(ledger),
+      PercChainTip.hash(mockSeedLedger),
+    );
+    expect(wallet.isWalletConnectComplete, isTrue);
+    expect(wallet.hasAppAccess, isTrue);
+    expect(rendezvousRegisterCount, greaterThan(0));
   });
 }

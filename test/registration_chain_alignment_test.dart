@@ -132,8 +132,59 @@ void main() {
     expect(wallet.isConnectedToSeed, isFalse);
     expect(wallet.statusMessage, 'wallet_sync_seed_offline');
     expect(
+      PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
+      isTrue,
+    );
+    expect(
       PercNetworkCoordinator.instance.activeUsernameForTest,
       'offlineuser',
+    );
+  });
+
+  test('offline registration recovers account after genesis reset on sync', () async {
+    final seed = _tallSeedLedger();
+    seed.networkGenesisRevision = 2;
+    PercNetworkCoordinator.instance.registerTestSeedLedger(seed);
+    PercNetworkCoordinator.instance.testSeedReachable = false;
+
+    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    await wallet.initialize();
+    await wallet.setupTreasuryPassword('password12345');
+    expect(PercLedgerHub.instance.ledger.networkGenesisRevision, 1);
+
+    await wallet.register('offlinegen', 'password12345');
+
+    expect(wallet.statusMessage, 'wallet_sync_seed_offline');
+    expect(wallet.isWalletConnectComplete, isTrue);
+    expect(
+      PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
+      isTrue,
+    );
+
+    PercNetworkCoordinator.instance.testSeedReachable = true;
+    await wallet.syncWalletToSeed();
+
+    final ledger = PercLedgerHub.instance.ledger;
+
+    _writeLog(
+      'registration_offline_genesis_recovery.log',
+      'username=offlinegen\n'
+      'localGenesisAfter=${ledger.networkGenesisRevision}\n'
+      'afterHeight=${ledger.blockHeight}\n'
+      'seedHeight=${PercChainTip.height(seed)}\n'
+      'afterTip=${PercChainTip.hash(ledger)}\n'
+      'seedTip=${PercChainTip.hash(seed)}\n'
+      'accountPresent=${ledger.account('offlinegen') != null}\n',
+    );
+
+    expect(ledger.networkGenesisRevision, 2);
+    expect(ledger.account('offlinegen'), isNotNull);
+    expect(ledger.blockHeight, PercChainTip.height(seed));
+    expect(PercChainTip.hash(ledger), PercChainTip.hash(seed));
+    expect(wallet.hasAppAccess, isTrue);
+    expect(
+      PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
+      isFalse,
     );
   });
 

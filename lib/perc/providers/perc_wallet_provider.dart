@@ -29,6 +29,7 @@ import '../services/perc_ledger.dart';
 import '../models/perc_peer_node.dart';
 import '../services/perc_ledger_hub.dart';
 import '../services/perc_network_protocol.dart';
+import '../services/perc_registration_completion.dart';
 import '../services/perc_seed_block.dart';
 import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
@@ -555,32 +556,33 @@ class PercWalletProvider extends ChangeNotifier {
     _registrationAwaitingSeedAlignment = false;
     notifyListeners();
     try {
+      _storeDeferredRegistration(
+        username: username,
+        password: password,
+        seedMnemonic: seedMnemonic,
+      );
+      PercLedgerHub.instance.network.setPendingRegistrationRecovery(
+        username: username,
+        password: password,
+        seedMnemonic: seedMnemonic,
+      );
+
       final adoption =
           await PercLedgerHub.instance.adoptSeedChainForRegistration(
         username: username,
         password: password,
         seedMnemonic: seedMnemonic,
       );
+      final action = PercRegistrationCompletion.decide(adoption);
+      _registrationAwaitingSeedAlignment = action.markAwaiting;
 
-      if (!adoption.seedReachable) {
-        _registrationAwaitingSeedAlignment = false;
-        _clearDeferredRegistration();
-        PercLedgerHub.instance.network.clearPendingRegistrationRecovery();
+      if (action.offlineHonest) {
         await PercLedgerHub.instance.attachOfflineRegistrationSession(username);
         await PercLedgerHub.instance.persistLocal();
         _setStatus('wallet_sync_seed_offline');
-      } else if (!adoption.isAligned) {
-        _registrationAwaitingSeedAlignment = true;
-        _storeDeferredRegistration(
-          username: username,
-          password: password,
-          seedMnemonic: seedMnemonic,
-        );
-        PercLedgerHub.instance.network.setPendingRegistrationRecovery(
-          username: username,
-          password: password,
-          seedMnemonic: seedMnemonic,
-        );
+      } else if (action.publishNow) {
+        await _publishRegistrationIfRecovered(statusKey: statusKey);
+      } else {
         await PercLedgerHub.instance.persistLocal();
         _setStatus(
           'wallet_sync_partial',
@@ -589,18 +591,35 @@ class PercWalletProvider extends ChangeNotifier {
             'network': '${adoption.seedHeight}',
           },
         );
-      } else {
-        _registrationAwaitingSeedAlignment = false;
-        _clearDeferredRegistration();
-        PercLedgerHub.instance.network.clearPendingRegistrationRecovery();
-        await PercLedgerHub.instance.onWalletSessionStarted(username);
-        await PercLedgerHub.instance.commitAfterForceSync();
-        _setStatus(statusKey);
       }
     } finally {
       _postLoginSyncing = false;
       notifyListeners();
     }
+  }
+
+  Future<bool> _publishRegistrationIfRecovered({String? statusKey}) async {
+    final hub = PercLedgerHub.instance;
+    final network = hub.network;
+    if (_deferredRegistrationUsername == null &&
+        !network.hasPendingRegistrationRecovery) {
+      return false;
+    }
+    if (!network.isSyncedToNetwork) return false;
+    if (!network.isPendingRegistrationAligned(hub)) return false;
+
+    final username = _ledger.sessionUsername ?? _deferredRegistrationUsername;
+    if (username == null || !hasAppAccess) return false;
+
+    await hub.onWalletSessionStarted(username);
+    await hub.commitAfterForceSync();
+    network.clearPendingRegistrationRecovery();
+    _registrationAwaitingSeedAlignment = false;
+    _clearDeferredRegistration();
+    if (statusKey != null) {
+      _setStatus(statusKey);
+    }
+    return true;
   }
 
   void _storeDeferredRegistration({
@@ -626,72 +645,56 @@ class PercWalletProvider extends ChangeNotifier {
     _syncingWallet = true;
     notifyListeners();
     try {
-      if (_registrationAwaitingSeedAlignment &&
-          _deferredRegistrationUsername != null &&
-          _deferredRegistrationPassword != null) {
-        final adoption =
-            await PercLedgerHub.instance.adoptSeedChainForRegistration(
-          username: _deferredRegistrationUsername!,
-          password: _deferredRegistrationPassword!,
+      final hub = PercLedgerHub.instance;
+      final network = hub.network;
+
+      if (network.hasPendingRegistrationRecovery) {
+        final username = _deferredRegistrationUsername ??
+            network.pendingRegistrationUsernameForTest!;
+        final password = _deferredRegistrationPassword ??
+            network.pendingRegistrationPasswordForTest!;
+        final adoption = await hub.adoptSeedChainForRegistration(
+          username: username,
+          password: password,
           seedMnemonic: _deferredRegistrationMnemonic,
         );
         _ledger.refreshPendingInboundTransfers();
-        if (!adoption.seedReachable) {
-          _setError('wallet_sync_seed_offline');
-        } else if (adoption.isAligned) {
-          final username =
-              _ledger.sessionUsername ?? _deferredRegistrationUsername!;
-          _registrationAwaitingSeedAlignment = false;
-          _clearDeferredRegistration();
-          PercLedgerHub.instance.network.clearPendingRegistrationRecovery();
-          await PercLedgerHub.instance.onWalletSessionStarted(username);
-          await PercLedgerHub.instance.commitAfterForceSync();
-          _setStatus(
-            'wallet_sync_success',
-            {'height': '${adoption.seedHeight}'},
-          );
-        } else {
-          _setStatus(
-            'wallet_sync_partial',
-            {
-              'local': '$blockHeight',
-              'network': '${adoption.seedHeight}',
-            },
-          );
-        }
+        _registrationAwaitingSeedAlignment =
+            PercRegistrationCompletion.decide(adoption).markAwaiting;
       } else {
-        await PercLedgerHub.instance.network.forceSyncWalletToSeed();
+        await network.forceSyncWalletToSeed();
         _ledger.refreshPendingInboundTransfers();
-        await PercLedgerHub.instance.commitAfterForceSync();
+        await hub.commitAfterForceSync();
+      }
 
-        final network = PercLedgerHub.instance.network;
-        if (!network.isConnectedToSeed) {
-          _setError('wallet_sync_seed_offline');
-        } else if (network.isSyncedToNetwork) {
-          if (_registrationAwaitingSeedAlignment) {
-            _registrationAwaitingSeedAlignment = false;
-            _clearDeferredRegistration();
-            network.clearPendingRegistrationRecovery();
-            if (isLoggedIn && loggedInUsername != null) {
-              await PercLedgerHub.instance.onWalletSessionStarted(
-                loggedInUsername!,
-              );
-              await PercLedgerHub.instance.commitAfterForceSync();
-            }
-          }
-          _setStatus(
-            'wallet_sync_success',
-            {'height': '$networkBlockHeight'},
-          );
-        } else {
-          _setStatus(
-            'wallet_sync_partial',
-            {
-              'local': '$blockHeight',
-              'network': '$networkBlockHeight',
-            },
-          );
-        }
+      if (await _publishRegistrationIfRecovered()) {
+        _setStatus(
+          'wallet_sync_success',
+          {'height': '$networkBlockHeight'},
+        );
+      } else if (!network.isConnectedToSeed) {
+        _setError('wallet_sync_seed_offline');
+      } else if (_registrationAwaitingSeedAlignment) {
+        _setStatus(
+          'wallet_sync_partial',
+          {
+            'local': '$blockHeight',
+            'network': '$networkBlockHeight',
+          },
+        );
+      } else if (network.isSyncedToNetwork) {
+        _setStatus(
+          'wallet_sync_success',
+          {'height': '$networkBlockHeight'},
+        );
+      } else {
+        _setStatus(
+          'wallet_sync_partial',
+          {
+            'local': '$blockHeight',
+            'network': '$networkBlockHeight',
+          },
+        );
       }
     } catch (e) {
       _setError(WalletMessageLocalization.errorKeyFromException(e));

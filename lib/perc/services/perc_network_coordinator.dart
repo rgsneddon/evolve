@@ -124,9 +124,22 @@ class PercNetworkCoordinator extends ChangeNotifier {
   String? _pendingRegistrationUsername;
   String? _pendingRegistrationPassword;
   List<String>? _pendingRegistrationMnemonic;
+  int _pendingSeedHeight = 0;
+  String _pendingSeedTipHash = '';
+  String _pendingSeedChainId = '';
 
   @visibleForTesting
   String? get activeUsernameForTest => _activeUsername;
+
+  @visibleForTesting
+  String? get pendingRegistrationUsernameForTest => _pendingRegistrationUsername;
+
+  @visibleForTesting
+  String? get pendingRegistrationPasswordForTest => _pendingRegistrationPassword;
+
+  bool get hasPendingRegistrationRecovery =>
+      _pendingRegistrationUsername != null &&
+      _pendingRegistrationPassword != null;
 
   void setPendingRegistrationRecovery({
     required String username,
@@ -142,6 +155,49 @@ class PercNetworkCoordinator extends ChangeNotifier {
     _pendingRegistrationUsername = null;
     _pendingRegistrationPassword = null;
     _pendingRegistrationMnemonic = null;
+    _pendingSeedHeight = 0;
+    _pendingSeedTipHash = '';
+    _pendingSeedChainId = '';
+  }
+
+  void _rememberPendingSeedTarget({
+    required int seedHeight,
+    required String seedTipHash,
+    required String seedChainId,
+  }) {
+    _pendingSeedHeight = seedHeight;
+    _pendingSeedTipHash = seedTipHash;
+    _pendingSeedChainId = seedChainId;
+  }
+
+  bool isPendingRegistrationAligned(PercLedgerHub hub) {
+    final username =
+        _pendingRegistrationUsername ?? hub.ledger.sessionUsername;
+    if (username == null) return false;
+    if (hub.ledger.account(username) == null) return false;
+
+    final seedHeight =
+        _networkBlockHeight > 0 ? _networkBlockHeight : _pendingSeedHeight;
+    final seedTip = hub.ledger
+            .networkNodes[PercChainConstants.seedUsername]
+            ?.tipHash ??
+        _pendingSeedTipHash;
+    final chainId = _pendingSeedChainId.isNotEmpty
+        ? _pendingSeedChainId
+        : PercChainAlignment.effectiveChainId(hub.ledger);
+
+    return PercChainAlignment.isAlignedWithSeed(
+      local: hub.ledger,
+      seedChainId: chainId,
+      seedHeight: seedHeight,
+      seedTipHash: seedTip,
+    );
+  }
+
+  bool clearPendingRegistrationRecoveryIfAligned(PercLedgerHub hub) {
+    if (!isPendingRegistrationAligned(hub)) return false;
+    clearPendingRegistrationRecovery();
+    return true;
   }
 
   static final PercNetworkCoordinator instance = PercNetworkCoordinator();
@@ -391,6 +447,11 @@ class PercNetworkCoordinator extends ChangeNotifier {
     } else {
       _syncState = PercNetworkSyncState.syncing;
     }
+    _rememberPendingSeedTarget(
+      seedHeight: seedHeight,
+      seedTipHash: seedTip,
+      seedChainId: chainId,
+    );
     notifyListeners();
 
     return PercRegistrationSeedAdoption(
@@ -521,6 +582,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
       }
     }
     _reapplyPendingRegistrationIfNeeded(hub);
+    clearPendingRegistrationRecoveryIfAligned(hub);
   }
 
   /// Manual sync — pull from seed, merge peers, re-publish wallet, gossip chain.
