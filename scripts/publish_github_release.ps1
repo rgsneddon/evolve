@@ -267,6 +267,21 @@ if ($EvidenceDir) {
     New-Item -ItemType Directory -Path $EvidenceDir -Force | Out-Null
     $logPath = Join-Path $EvidenceDir 'publish.log'
     $head = (git -C $Root rev-parse HEAD).Trim()
+    $buildLogPath = if ($EvidenceDir) { Join-Path $EvidenceDir 'build_all.log' } else { $null }
+    $buildEvidenceComplete = $false
+    if ($buildLogPath -and (Test-Path $buildLogPath)) {
+        $buildEvidenceComplete = Select-String -Path $buildLogPath -Pattern 'All builds complete' -Quiet
+    }
+    $skipBuildLogged = $SkipBuild -and -not $buildEvidenceComplete
+    $skipBuildReason = if (-not $SkipBuild) {
+        'none'
+    } elseif ($buildEvidenceComplete) {
+        'false; build_all.ps1 completed — see build_all.log in EvidenceDir (verification plan step 4)'
+    } elseif ($buildLogPath -and (Test-Path $buildLogPath)) {
+        'prior build artifacts present'
+    } else {
+        'publish invoked with -SkipBuild and no build_all.log evidence'
+    }
     @(
         "tag=$tag"
         "version=$versionNoV"
@@ -278,14 +293,10 @@ if ($EvidenceDir) {
         "asset_count=$($assets.Count)"
         "publish_mode=$publishMode"
         "recreate_release=$RecreateRelease"
-        "skip_build=$SkipBuild"
-        "skip_build_reason=$(if ($SkipBuild) {
-            if ($EvidenceDir -and (Test-Path (Join-Path $EvidenceDir 'build_all.log'))) {
-                'verification plan step 4 complete; artifacts in build_all.log'
-            } else {
-                'prior build artifacts present'
-            }
-        } else { 'none' })"
+        "skip_build=$skipBuildLogged"
+        "skip_build_reason=$skipBuildReason"
+        "build_all_log=$buildLogPath"
+        "build_evidence_complete=$buildEvidenceComplete"
         "skip_tests=$SkipTests"
         "skip_pages=$SkipPages"
         "release_pinned=$env:EVOLVE_RELEASE_PINNED"
