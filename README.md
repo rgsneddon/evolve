@@ -14,11 +14,11 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ## Quick start
 
-**Latest release:** v3.4.6 (build 113) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
+**Latest release:** v3.4.8 (build 131) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
 
 ### Windows (easiest)
 
-Download **evolve-v3.4.6-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
+Download **evolve-v3.4.8-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
 
 ### Web
 
@@ -26,7 +26,7 @@ Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evol
 
 ### Android
 
-Download **evolve-v3.4.6-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases**. Verify SHA-256 before installing. The in-app updater checks GitHub Releases, then gh-pages, when a newer build is published.
+Download **evolve-v3.4.8-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases**. Verify SHA-256 before installing. The in-app updater checks GitHub Releases, then gh-pages, when a newer build is published.
 
 ---
 
@@ -270,7 +270,7 @@ The chain is designed to grow with user activity without unbounded local storage
 | **Per-ward log pruning** | Fair-usage log never exceeds 10,000 entries per ward on device |
 | **Seed ledger compaction** | Hosted seed drops `microblockLog` when compacting — anchor blocks and balances persist |
 | **Peer mesh gossip** | Wallets sync taller chains and pending transfers without a central custodian |
-| **Offline receive window** | Inbound transfers queue for **12 months** before reverting to sender |
+| **Offline receive window** | Unreceived inbound transfers revert to sender after **7 days**; delivered transfers credit near-instantly on send/relay |
 | **Scenario block height** | Per-wallet progressive scenario counter (cap 100M) for explorer progress |
 | **Seed anchor blocks** | Seed block height advances on cumulative treasury emission thresholds (100M PERC steps) |
 
@@ -306,6 +306,8 @@ The chain is designed to grow with user activity without unbounded local storage
 | **Android Grok** | Release APK includes `INTERNET` permission and loopback cleartext for the embedded proxy; Grok construal connects as `@evolve_mock` (or `@evolve_android` heuristic fallback) |
 | **Static splash** | Launch uses a static poster (no MP4 splash animation) for faster cold start on all platforms |
 | **Cross-version PERC** | Wallets on different app builds merge launch flags, pending inbound transfers, and transfer blocks from peers with shorter or divergent chains |
+| **PERC Security tab** | Between Wallet and Credit: export encrypted `.percbackup` files, restore from backup or clipboard, and optional 12-word seed recovery at registration |
+| **Switch commitments** | Epoch-tagged quantum-hardening commitments on login, pending transfers, and settlement witnesses |
 | **In-app updates** | Windows and Android check published gh-pages `version.json` first, then GitHub Releases / gh-pages APK fallbacks |
 
 ---
@@ -380,9 +382,9 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/build_all.ps1
 powershell -ExecutionPolicy Bypass -File scripts/build_installers.ps1 -SkipCodeSign
-powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.6
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.8
 # Optional: capture release/Pages evidence for CI or audit
-powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.6 -SkipBuild -EvidenceDir .\build\release-evidence
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 3.4.8 -SkipBuild -EvidenceDir .\build\release-evidence
 ```
 
 If the Windows INSTALL step fails with `C:\Program Files\evolve`, delete `build\windows` and rebuild (stale CMake cache).
