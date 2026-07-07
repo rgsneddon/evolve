@@ -6,6 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path $PSScriptRoot -Parent
+. "$PSScriptRoot\lib\github.ps1"
 Set-Location $Root
 
 New-Item -ItemType Directory -Path $ScratchDir -Force | Out-Null
@@ -84,17 +85,27 @@ if ($ahead -and [int]$ahead -gt 0) {
 }
 
 $tag = "v$Version"
+$head = (git rev-parse HEAD).Trim()
 git show-ref --verify --quiet "refs/tags/$tag"
 if ($LASTEXITCODE -eq 0) {
   $localTag = (git rev-parse "${tag}^{commit}").Trim()
-  $remoteTag = (git ls-remote --tags origin "refs/tags/$tag" 2>$null) -replace ".*refs/tags/$tag", ""
-  if ($remoteTag) { $remoteTag = $remoteTag.Trim() }
-  if ($localTag -ne $remoteTag) {
-    Write-Host "Tag $tag exists locally at $localTag; remote at $remoteTag - skipping tag push (no force)." -ForegroundColor Yellow
+  if ($localTag -ne $head) {
+    Write-Host "Moving tag $tag from $localTag to HEAD $head" -ForegroundColor Yellow
+    git tag -f $tag $head
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    git push origin $tag --force
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $env:GH_TOKEN = (Get-GitHubToken)
+    gh release edit $tag --repo "$(Get-GitHubOwner -Root $Root)/evolve" --target $head 2>&1 | Out-Null
   } else {
     git push origin $tag
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   }
+} else {
+  git tag -a $tag -m "Evolve Chronoflux $tag"
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  git push origin $tag
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
 $goalDir = 'C:\Users\rgsne\goal'
