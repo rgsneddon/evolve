@@ -17,7 +17,8 @@ $launchScript = Join-Path $ScratchDir "launch_network_probe.js"
 
 function Invoke-Step($label, $command) {
   "`n--- $label ---" | Add-Content $testLog
-  Invoke-Expression $command 2>&1 | Tee-Object -FilePath (Join-Path $ScratchDir ($label -replace '[^a-zA-Z0-9]','_') + ".log") | Add-Content $testLog
+  $stepLog = Join-Path $ScratchDir (($label -replace '[^a-zA-Z0-9]', '_') + ".log")
+  Invoke-Expression $command 2>&1 | Tee-Object -FilePath $stepLog | Add-Content $testLog
   if ($LASTEXITCODE -ne 0) { throw "$label failed with exit $LASTEXITCODE" }
 }
 
