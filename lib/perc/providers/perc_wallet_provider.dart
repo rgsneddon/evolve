@@ -608,12 +608,19 @@ class PercWalletProvider extends ChangeNotifier {
         normalizedAddress,
       );
       if (resolved == null) {
-        _setError('wallet_err_recipient_not_found');
+        final treasury = _ledger.account(PercChainConstants.treasuryUsername);
+        if (treasury != null &&
+            treasury.address == normalizedAddress &&
+            _ledger.isManualReceiveBlocked(PercChainConstants.treasuryUsername)) {
+          _setError('wallet_err_treasury_no_manual_funding');
+        } else {
+          _setError('wallet_err_recipient_not_found');
+        }
         notifyListeners();
         return;
       }
       final recipient = resolved.username;
-      if (recipient == PercChainConstants.treasuryUsername) {
+      if (_ledger.isManualReceiveBlocked(recipient)) {
         _setError('wallet_err_treasury_no_manual_funding');
         notifyListeners();
         return;

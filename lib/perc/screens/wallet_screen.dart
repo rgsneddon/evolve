@@ -508,7 +508,10 @@ class _WalletScreenState extends State<WalletScreen> {
         const SizedBox(height: 12),
         _faucetCard(wallet, strings),
         const SizedBox(height: 12),
-        _addressCard(context, wallet, strings),
+        if (wallet.canReceiveFromSession)
+          _addressCard(context, wallet, strings)
+        else if (wallet.isTreasuryAccount && wallet.isTreasurySendLocked)
+          _treasuryNoReceiveCard(strings),
         const SizedBox(height: 12),
         _explorerLink(context, wallet, strings),
         const SizedBox(height: 12),
@@ -563,7 +566,10 @@ class _WalletScreenState extends State<WalletScreen> {
                   const SizedBox(height: 12),
                   _faucetCard(wallet, strings),
                   const SizedBox(height: 12),
-                  _addressCard(context, wallet, strings),
+                  if (wallet.canReceiveFromSession)
+                    _addressCard(context, wallet, strings)
+                  else if (wallet.isTreasuryAccount && wallet.isTreasurySendLocked)
+                    _treasuryNoReceiveCard(strings),
                   const SizedBox(height: 12),
                   _explorerLink(context, wallet, strings),
                   const SizedBox(height: 12),
@@ -1358,6 +1364,18 @@ class _WalletScreenState extends State<WalletScreen> {
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF00D9C0)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _treasuryNoReceiveCard(AppLocalizations strings) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          strings.t('wallet_treasury_no_receive_address'),
+          style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7)),
+        ),
       ),
     );
   }

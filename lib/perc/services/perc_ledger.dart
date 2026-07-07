@@ -1067,7 +1067,33 @@ class PercLedger {
     _migrateLegacyTransferFeesToBurn();
     _reconcileCumulativeBurnedPerc();
     _backfillScenarioBlockHeights();
+    _purgeForbiddenTreasuryPendingInbound();
   }
+
+  /// Drops legacy/manual inbound transfers targeting evolve_treasury.
+  void _purgeForbiddenTreasuryPendingInbound() {
+    if (!blockchainLaunched) return;
+    final removed = pendingInboundTransfers
+        .where((p) => _isTreasuryManualFundingForbidden(p.toUsername))
+        .map((p) => p.id)
+        .toSet();
+    if (removed.isEmpty) return;
+    pendingInboundTransfers
+        .removeWhere((p) => _isTreasuryManualFundingForbidden(p.toUsername));
+    final treasury = account(PercChainConstants.treasuryUsername);
+    if (treasury != null) {
+      treasury.transactions.removeWhere(
+        (tx) =>
+            tx.kind == PercTxKind.transfer &&
+            !tx.isConfirmed &&
+            removed.contains(tx.id),
+      );
+    }
+  }
+
+  /// Whether this username must not appear as a manual send recipient.
+  bool isManualReceiveBlocked(String username) =>
+      _isTreasuryManualFundingForbidden(username) && isTreasurySendLocked;
 
   /// Advances the user's numerically progressive scenario block (1 per conclusion, max 100M).
   int advanceScenarioBlock(
@@ -1707,36 +1733,6 @@ class PercLedger {
     microblockCount = 0;
   }
 
-  List<PercTransaction> _treasuryEmissionTxs(DateTime now) {
-    if (treasuryCapped) return [];
-    final regenTxs = _regenerateTreasuryIfNeeded(now);
-    if (!treasuryGenesisDone || lastScenarioAt == null) return regenTxs;
-    final elapsed = now.difference(lastScenarioAt!).inSeconds;
-    if (elapsed <= 0) return [];
-    var emission =
-        PercDynamicEmission.emissionForElapsedSeconds(elapsed, emissionContext);
-    if (!PercChainConstants.infiniteContinuumSupply &&
-        emission > treasuryRemaining) {
-      emission = treasuryRemaining;
-    }
-    if (!emission.isPositive) return regenTxs;
-
-    cumulativeTreasuryMinted = cumulativeTreasuryMinted + emission;
-    final treasury = _ensureTreasury();
-    _credit(treasury, emission);
-    final tx = PercTransaction(
-      id: _newTxId(),
-      kind: PercTxKind.treasuryEmission,
-      amount: emission,
-      timestamp: now,
-      toUsername: PercChainConstants.treasuryUsername,
-      blockIndex: blocks.length,
-      confirmations: _txConfirmations,
-    );
-    treasury.transactions.insert(0, tx);
-    return [...regenTxs, tx];
-  }
-
   void _appendMicroblockLog(PercMicroblockLogEntry entry) {
     microblockLog.add(entry);
     final cap = microblocksPerWard;
@@ -1810,14 +1806,8 @@ class PercLedger {
     }
 
     final sealedAt = (now ?? DateTime.now()).toUtc();
-    final renewalTxs = _renewTreasuryPoolIfNeeded(sealedAt);
-    final blockTxs = <PercTransaction>[
-      ...renewalTxs,
-      ..._treasuryEmissionTxs(sealedAt),
-    ];
-    final emitted = blockTxs
-        .where((t) => t.kind == PercTxKind.treasuryEmission)
-        .fold<PercAmount>(PercAmount.zero, (a, t) => a + t.amount);
+    const emitted = PercAmount.zero;
+    final blockTxs = <PercTransaction>[];
 
     final sealedCount = microblocksPerBlock;
     blockTxs.add(
@@ -1841,12 +1831,10 @@ class PercLedger {
       treasuryEmitted: emitted,
       scenarioLabel: 'Chronoflux microblock seal',
       triggerUsername: sessionUsername,
-      isGenesisRenewal: renewalTxs.isNotEmpty,
       microblockSeal: true,
       chronofluxFingerprint: verification.fingerprint,
       microblocksSealed: sealedCount,
     );
-    lastScenarioAt = sealedAt;
     _clearMicroblockLogForNextWard();
 
     return PercMicroblockRecordResult(

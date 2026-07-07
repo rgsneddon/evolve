@@ -711,7 +711,13 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
   }
 
+  bool _isResolvableManualRecipient(PercAccount? account, PercLedger ledger) {
+    if (account == null) return false;
+    return !ledger.isManualReceiveBlocked(account.username);
+  }
+
   /// Resolves a PERC address to an account — local first, then network rendezvous.
+  /// evolve_treasury is omitted after launch (no manual receive address).
   Future<PercAccount?> resolveAccountByAddress(String address) async {
     final hub = _hub;
     if (hub == null) return null;
@@ -719,7 +725,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (PercAuth.validateAddress(normalized) != null) return null;
 
     var local = hub.ledger.accountForAddress(normalized);
-    if (local != null) return local;
+    if (_isResolvableManualRecipient(local, hub.ledger)) return local!;
 
     await syncToNetworkHeight();
     final seedLedger = await _fetchSeedLedgerForDiscovery();
@@ -727,10 +733,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
       hub.ledger.mergeNetworkStateFromPeer(seedLedger);
     }
     local = hub.ledger.accountForAddress(normalized);
-    if (local != null) return local;
+    if (_isResolvableManualRecipient(local, hub.ledger)) return local!;
 
     local = await _discoverAccountOnNetwork(normalized);
-    if (local != null) return local;
+    if (_isResolvableManualRecipient(local, hub.ledger)) return local!;
 
     return null;
   }

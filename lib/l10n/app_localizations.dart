@@ -527,6 +527,8 @@ final _en = {
       'Manual sends from evolve_treasury are disabled. Emission and faucet payouts continue.',
   'wallet_err_treasury_no_manual_funding':
       'evolve_treasury cannot receive manual transfers — treasury PERC is emitted only when a user runs a scenario.',
+  'wallet_treasury_no_receive_address':
+      'Treasury has no manual receive address — PERC is emitted only when users run scenarios.',
   'wallet_treasury_manual_send_note':
       'Treasury is active — faucet-aligned emission (~0.14285714 PERC/min) and scenario payouts continue. Manual sends from evolve_treasury are disabled.',
   'wallet_treasury_offline_note':
