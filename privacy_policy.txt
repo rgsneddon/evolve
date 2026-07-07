@@ -2,7 +2,7 @@ EVOLVE CHRONOFLUX — PRIVACY POLICY
 ===================================
 
 Effective date: 3 July 2026
-Last updated: 7 July 2026 (v4.0.0 build 136; Security tab backup/seed recovery; treasury scenario-only emission with no manual receive or inbound funding)
+Last updated: 7 July 2026 (v4.0.0 build 136; one-time registration seed on splash; Security tab backup/restore only; treasury scenario-only emission with no manual receive or inbound funding)
 
 This Privacy Policy describes how Evolve Chronoflux ("Evolve", "we", "us", or "our")
 collects, uses, stores, and shares information when you use the Evolve application
@@ -58,10 +58,13 @@ Privacy enquiries:
   Treasury emission statistics are shown publicly on the explorer (aligned with
   the analysis faucet — up to 1 PERC per 7-minute cooldown window, about
   0.14285714 PERC per minute); outbound treasury sends remain disabled.
-- The in-app Security tab (between Wallet and Credit) lets you export an
-  encrypted PERC wallet backup or restore from a backup file or optional 12-word
-  seed phrase. Backups stay on your device unless you choose to copy or save
-  them elsewhere.
+- New PERC wallet registration offers an optional 12-word recovery seed exactly
+  once on the splash screen immediately after account creation (before full
+  sign-in completes). You may generate and write down the phrase or skip; copy
+  and paste are not offered for the generated words.
+- The in-app Security tab (immediately right of Wallet) lets you export an
+  encrypted PERC wallet backup or restore from a backup file only. Backups stay
+  on your device unless you choose to copy or save them elsewhere.
 - Inside the Evolve app, you see your own username. Other users' names in your
   transaction history and wallet block explorer are shown as the same style of
   five-character alias unless you are viewing your own activity.

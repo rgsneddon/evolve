@@ -307,7 +307,8 @@ The chain is designed to grow with user activity without unbounded local storage
 | **Android Grok** | Release APK includes `INTERNET` permission and loopback cleartext for the embedded proxy; Grok construal connects as `@evolve_mock` (or `@evolve_android` heuristic fallback) |
 | **Static splash** | Launch uses a static poster (no MP4 splash animation) for faster cold start on all platforms |
 | **Cross-version PERC** | Wallets on different app builds merge launch flags, pending inbound transfers, and transfer blocks from peers with shorter or divergent chains |
-| **PERC Security tab** | Between Wallet and Credit: export encrypted `.percbackup` files, restore from backup or clipboard, and optional 12-word seed recovery at registration |
+| **Registration seed (one-time)** | After a new account is created on the splash screen, an optional 12-word recovery seed is offered once (generate and write down, or skip) before entering the app |
+| **PERC Security tab** | Immediately right of Wallet: export encrypted `.percbackup` files and restore from backup or clipboard only (no seed phrase setup) |
 | **Switch commitments** | Epoch-tagged quantum-hardening commitments on login, pending transfers, and settlement witnesses |
 | **In-app updates** | Windows and Android check published gh-pages `version.json` first, then GitHub Releases / gh-pages APK fallbacks |
 

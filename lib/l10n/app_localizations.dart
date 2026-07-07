@@ -319,7 +319,7 @@ final _en = {
   'nav_voting': 'Voting',
   'nav_credit': 'Credit',
   'security_intro':
-      'Export an encrypted backup file or restore your Perccent ledger from a backup on this device.',
+      'Export an encrypted backup file or restore your Perccent ledger from a backup on this device. Optional 12-word recovery is offered once at registration on the splash screen.',
   'security_export_title': 'Encrypted backup',
   'security_export_note':
       'Creates a portable .percbackup file with your full Perccent ledger (balances, scenarios, stash).',
