@@ -131,6 +131,10 @@ void main() {
     expect(wallet.registrationAwaitingSeedAlignment, isFalse);
     expect(wallet.isConnectedToSeed, isFalse);
     expect(wallet.statusMessage, 'wallet_sync_seed_offline');
+    expect(
+      PercNetworkCoordinator.instance.activeUsernameForTest,
+      'offlineuser',
+    );
   });
 
   test('aligned registration publishes only after adopt import completes', () async {

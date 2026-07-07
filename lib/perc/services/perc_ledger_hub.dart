@@ -83,6 +83,10 @@ class PercLedgerHub extends ChangeNotifier {
     await network.onSessionStarted(username);
   }
 
+  Future<void> attachOfflineRegistrationSession(String username) async {
+    await network.attachOfflineRegistrationSession(username);
+  }
+
   /// Pulls the canonical seed chain and re-applies the new account before publish.
   Future<PercRegistrationSeedAdoption> adoptSeedChainForRegistration({
     required String username,

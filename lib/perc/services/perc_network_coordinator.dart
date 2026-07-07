@@ -73,6 +73,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     instance._senderPeerCache.clear();
     instance.settlementPeerTargets.clear();
     instance.clearTestSeedLedger();
+    instance.clearPendingRegistrationRecovery();
     instance._detach();
   }
 
@@ -118,6 +119,29 @@ class PercNetworkCoordinator extends ChangeNotifier {
   void clearTestSeedLedger() {
     testSeedLedger = null;
     testSeedReachable = true;
+  }
+
+  String? _pendingRegistrationUsername;
+  String? _pendingRegistrationPassword;
+  List<String>? _pendingRegistrationMnemonic;
+
+  @visibleForTesting
+  String? get activeUsernameForTest => _activeUsername;
+
+  void setPendingRegistrationRecovery({
+    required String username,
+    required String password,
+    List<String>? seedMnemonic,
+  }) {
+    _pendingRegistrationUsername = PercAuth.normalizeUsername(username);
+    _pendingRegistrationPassword = password;
+    _pendingRegistrationMnemonic = seedMnemonic;
+  }
+
+  void clearPendingRegistrationRecovery() {
+    _pendingRegistrationUsername = null;
+    _pendingRegistrationPassword = null;
+    _pendingRegistrationMnemonic = null;
   }
 
   static final PercNetworkCoordinator instance = PercNetworkCoordinator();
@@ -192,6 +216,28 @@ class PercNetworkCoordinator extends ChangeNotifier {
     _startReceivePolling();
     notifyListeners();
     scheduleDeepSync();
+  }
+
+  /// Attaches a new registration locally and schedules retry when seed is offline.
+  Future<void> attachOfflineRegistrationSession(String username) async {
+    final hub = _hub;
+    if (hub == null) return;
+    _activeUsername = username;
+
+    _publicEndpoint = await _resolveAdvertisedEndpoint();
+    hub.ledger.setWalletOnline(
+      username,
+      endpoint: _publicEndpoint,
+      blockHeight: PercChainTip.height(hub.ledger),
+      tipHash: PercChainTip.hash(hub.ledger),
+    );
+
+    hub.ledger.refreshPendingInboundTransfers();
+    if (!disableLiveNodesForTests) {
+      _startReceivePolling();
+      scheduleDeepSync();
+    }
+    notifyListeners();
   }
 
   /// Tip-only sync — fast enough for splash/login (FlyClient).
@@ -375,6 +421,18 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
   }
 
+  void _reapplyPendingRegistrationIfNeeded(PercLedgerHub hub) {
+    final username = _pendingRegistrationUsername;
+    final password = _pendingRegistrationPassword;
+    if (username == null || password == null) return;
+    _reapplyRegistrationAccount(
+      hub,
+      username: username,
+      password: password,
+      seedMnemonic: _pendingRegistrationMnemonic,
+    );
+  }
+
   /// Fetches the internet seed status + ledger and imports/resets local state.
   Future<({
     bool reachable,
@@ -453,16 +511,16 @@ class PercNetworkCoordinator extends ChangeNotifier {
         remote,
         expectedTipHash: PercChainTip.hash(remote),
       );
-      return;
+    } else {
+      hub.ledger.mergeNetworkStateFromPeer(remote);
+      if (remoteHeight > localHeight) {
+        hub.importPeerLedger(
+          remote,
+          expectedTipHash: PercChainTip.hash(remote),
+        );
+      }
     }
-
-    hub.ledger.mergeNetworkStateFromPeer(remote);
-    if (remoteHeight > localHeight) {
-      hub.importPeerLedger(
-        remote,
-        expectedTipHash: PercChainTip.hash(remote),
-      );
-    }
+    _reapplyPendingRegistrationIfNeeded(hub);
   }
 
   /// Manual sync — pull from seed, merge peers, re-publish wallet, gossip chain.
@@ -475,9 +533,18 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
     if (!disableLiveNodesForTests) {
       await _connectToSeedNode(hub, deep: true);
+    } else if (testSeedReachable && testSeedLedger != null) {
+      final seed = PercLedger.fromJson(testSeedLedger!.toJson());
+      final status = PercNetworkStatus.fromLedger(
+        seed,
+        revision: 1,
+        endpoint: 'http://test-seed/perc',
+      );
+      _applySeedLedgerToHub(hub, seed, status);
     }
     hub.ledger.refreshPendingInboundTransfers();
     await deepSyncToNetworkHeight();
+    _reapplyPendingRegistrationIfNeeded(hub);
 
     final session = hub.ledger.sessionUsername;
     if (session != null) {
@@ -1186,25 +1253,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     remote ??= await _rendezvous.fetchRelayedLedger(username: seedUser);
     if (remote == null) return;
 
-    final localHeight = PercChainTip.height(hub.ledger);
-    final remoteHeight = PercChainTip.height(remote);
-    final seedGenesis = remote.networkGenesisRevision;
-    final mustResetGenesis =
-        seedGenesis > hub.ledger.networkGenesisRevision ||
-        (seedGenesis >= targetGenesis &&
-            localHeight > remoteHeight &&
-            remoteHeight == 0);
-
-    if (mustResetGenesis) {
-      hub.resetFromSeedLedger(remote, expectedTipHash: seedStatus.tipHash);
-      return;
-    }
-
-    hub.ledger.mergeNetworkStateFromPeer(remote);
-
-    if (remoteHeight > localHeight) {
-      hub.importPeerLedger(remote, expectedTipHash: seedStatus.tipHash);
-    }
+    _applySeedLedgerToHub(hub, remote, seedStatus);
   }
 
   Future<List<PercNetworkStatus>> _collectSeedPeerStatuses(

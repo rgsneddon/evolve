@@ -223,8 +223,68 @@ void main() {
     serveSeedLedger = true;
     await wallet.syncWalletToSeed();
 
+    final ledger = PercLedgerHub.instance.ledger;
+    final afterHeight = ledger.blockHeight;
+    final afterTip = PercChainTip.hash(ledger);
+
+    _writeLog(
+      'registration_recovery_after_sync.log',
+      'username=blockeduser\n'
+      'afterHeight=$afterHeight\n'
+      'seedHeight=${PercChainTip.height(mockSeedLedger)}\n'
+      'afterTip=$afterTip\n'
+      'seedTip=${PercChainTip.hash(mockSeedLedger)}\n'
+      'accountPresent=${ledger.account('blockeduser') != null}\n'
+      'rendezvousRegisterCount=$rendezvousRegisterCount\n',
+    );
+
+    expect(ledger.account('blockeduser'), isNotNull);
+    expect(afterHeight, PercChainTip.height(mockSeedLedger));
+    expect(afterTip, PercChainTip.hash(mockSeedLedger));
     expect(wallet.registrationAwaitingSeedAlignment, isFalse);
     expect(wallet.isWalletConnectComplete, isTrue);
+    expect(wallet.hasAppAccess, isTrue);
     expect(rendezvousRegisterCount, greaterThan(0));
+  });
+
+  test('live deferred sync survives genesis reset and keeps new account', () async {
+    serveSeedLedger = false;
+    PercNetworkCoordinator.disableLiveNodesForTests = false;
+
+    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    await wallet.initialize();
+    await wallet.setupTreasuryPassword('password12345');
+    // Leave local genesis at 1 — seed mock uses genesis 2 (reset path).
+    expect(PercLedgerHub.instance.ledger.networkGenesisRevision, 1);
+
+    await wallet.register('resetuser', 'password12345');
+    expect(wallet.registrationAwaitingSeedAlignment, isTrue);
+    expect(wallet.isWalletConnectComplete, isFalse);
+
+    serveSeedLedger = true;
+    await wallet.syncWalletToSeed();
+
+    final ledger = PercLedgerHub.instance.ledger;
+
+    _writeLog(
+      'registration_genesis_reset_recovery.log',
+      'username=resetuser\n'
+      'localGenesisAfter=${ledger.networkGenesisRevision}\n'
+      'afterHeight=${ledger.blockHeight}\n'
+      'seedHeight=${PercChainTip.height(mockSeedLedger)}\n'
+      'afterTip=${PercChainTip.hash(ledger)}\n'
+      'seedTip=${PercChainTip.hash(mockSeedLedger)}\n'
+      'accountPresent=${ledger.account('resetuser') != null}\n',
+    );
+
+    expect(ledger.networkGenesisRevision, 2);
+    expect(ledger.account('resetuser'), isNotNull);
+    expect(ledger.blockHeight, PercChainTip.height(mockSeedLedger));
+    expect(
+      PercChainTip.hash(ledger),
+      PercChainTip.hash(mockSeedLedger),
+    );
+    expect(wallet.isWalletConnectComplete, isTrue);
+    expect(wallet.hasAppAccess, isTrue);
   });
 }
