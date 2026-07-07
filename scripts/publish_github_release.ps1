@@ -277,7 +277,7 @@ if ($EvidenceDir) {
     $skipBuildReason = if (-not $SkipBuild) {
         'none'
     } elseif ($buildEvidenceComplete) {
-        'false; build_all.ps1 completed — see build_all.log in EvidenceDir (verification plan step 4)'
+        'false; build_all.ps1 completed - see build_all.log in EvidenceDir (verification plan step 4)'
     } elseif ($buildLogPath -and (Test-Path $buildLogPath)) {
         'prior build artifacts present'
     } else {
