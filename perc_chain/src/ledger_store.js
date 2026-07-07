@@ -144,7 +144,7 @@ export class LedgerStore {
     }
     if (!this.ledger) return false;
     const ack = mergeNetworkStateFromPeer(this.ledger, remote);
-    if (!ack.ok && ack.pendingMerged === 0) return false;
+    if (!ack.ok && ack.pendingMerged === 0 && !ack.treasuryMerged) return false;
     this.ledger = compactLedgerForSeed(this.ledger);
     this.revision += 1;
     this.save();

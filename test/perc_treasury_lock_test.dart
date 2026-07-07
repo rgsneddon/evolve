@@ -1,6 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
+import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
+import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
+import 'package:evolve/perc/services/perc_dynamic_emission.dart';
+import 'package:evolve/perc/services/perc_faucet.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_staking.dart';
 
@@ -37,6 +41,66 @@ void main() {
       ledger.account('alice')!.balance.isPositive,
       isTrue,
     );
+  });
+
+  test('scenario credit depletes treasury by credited reward amount', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+    ledger.register('bob', 'password123');
+
+    ledger.creditScenario(username: 'alice', percentChance: 10);
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    final treasuryAfterAlice = treasury.balance;
+    ledger.account('alice')!.balance = PercAmount.zero;
+
+    final result = ledger.creditScenario(username: 'bob', percentChance: 33);
+    expect(result.status, PercFaucetCreditStatus.credited);
+    final reward = result.reward!.total;
+
+    expect(
+      treasury.balance.microUnits,
+      treasuryAfterAlice.microUnits - reward.microUnits,
+    );
+    expect(ledger.account('bob')!.balance, reward);
+    expect(
+      treasury.transactions.any(
+        (tx) =>
+            tx.kind == PercTxKind.scenarioReward &&
+            tx.toUsername == 'bob' &&
+            tx.amount == reward,
+      ),
+      isTrue,
+    );
+  });
+
+  test('treasury reserve blocks scenario payout without wallet credit', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+    ledger.register('bob', 'password123');
+    ledger.creditScenario(username: 'bob', percentChance: 10);
+
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    final alice = ledger.account('alice')!;
+    final reward = PercFaucet.computeScenarioReward(percentChance: 50).total;
+    final regenFloor = PercDynamicEmission.regenerationThreshold(
+      ledger.emissionContext,
+    );
+    final maxPayable = reward + PercChainConstants.minimumTreasuryReserve;
+    final shortfall = maxPayable - PercAmount(1);
+    treasury.balance = shortfall.microUnits > regenFloor.microUnits
+        ? shortfall
+        : regenFloor + PercAmount(1);
+    expect(treasury.balance < maxPayable, isTrue);
+
+    final treasuryBefore = treasury.balance;
+    alice.balance = PercAmount.zero;
+
+    final result = ledger.creditScenario(username: 'alice', percentChance: 50);
+    expect(result.status, PercFaucetCreditStatus.treasuryEmpty);
+    expect(treasury.balance, treasuryBefore);
+    expect(alice.balance, PercAmount.zero);
   });
 
   test('treasury evolve_treasury cannot send manually after blockchain launch', () {

@@ -1,4 +1,5 @@
 import { acknowledgeRelayTransfers, collectTransferTxIds } from './transfer_relay_ack.js';
+import { mergeTreasuryStateFromPeer } from './treasury_merge.js';
 
 const CONFIRMATIONS_REQUIRED = 1;
 
@@ -101,8 +102,17 @@ export function mergeNetworkStateFromPeer(canonical, remote) {
 
   const pendingMerged = mergePendingInboundFromPeer(canonical, remote);
   const witnessesMerged = mergeSettlementWitnessesFromPeer(canonical, remote);
+  const treasury = mergeTreasuryStateFromPeer(canonical, remote);
   const ack = acknowledgeRelayTransfers(canonical, remote);
-  return { pendingMerged, witnessesMerged, ...ack };
+  return {
+    pendingMerged,
+    witnessesMerged,
+    treasuryMerged: treasury.merged,
+    treasuryPayoutBlocksMerged: treasury.payoutBlocksMerged,
+    treasuryAccountSynced: treasury.accountSynced,
+    ...ack,
+    ok: ack.ok || treasury.merged || pendingMerged > 0 || witnessesMerged > 0,
+  };
 }
 
 export function seedObservesTransferInitiation(canonical, relay) {

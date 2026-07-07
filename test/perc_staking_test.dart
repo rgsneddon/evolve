@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
+import 'package:evolve/perc/services/perc_faucet.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_staking.dart';
 
@@ -81,6 +82,9 @@ void main() {
     ledger.account('staker')!.balance = PercAmount.fromPerc(2);
     ledger.account('bob')!.balance = PercAmount.fromPerc(1);
 
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    final treasuryBefore = treasury.balance;
+
     ledger.creditScenario(username: 'bob', percentChance: 20);
 
     final staker = ledger.account('staker')!;
@@ -88,6 +92,12 @@ void main() {
 
     expect(staker.cumulativeStakingEarned.microUnits, 5);
     expect(bob.cumulativeStakingEarned.microUnits, 5);
+    expect(
+      treasury.balance.microUnits,
+      treasuryBefore.microUnits -
+          PercStaking.rewardPerBlock.microUnits * 2 -
+          PercFaucet.computeScenarioReward(percentChance: 20).total.microUnits,
+    );
   });
 
   test('staking rewards confirm in one block', () {
