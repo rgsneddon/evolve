@@ -425,12 +425,17 @@ class PercWalletProvider extends ChangeNotifier {
       var restored = _ledger.tryRecoverFromSeedEnvelope(mnemonic: words);
       if (restored == null) {
         final fp = PercSeedRecovery.fingerprint(words);
-        final remoteEnvelope =
-            await PercNetworkRendezvous().fetchSeedRecoveryEnvelope(
+        final rendezvous = PercNetworkRendezvous();
+        final hasNetwork = (await rendezvous.baseUrl()) != null;
+        final remoteEnvelope = await rendezvous.fetchSeedRecoveryEnvelope(
           fingerprint: fp,
         );
         if (remoteEnvelope == null) {
-          throw StateError('No seed recovery envelope found for this phrase');
+          throw StateError(
+            hasNetwork
+                ? 'No seed recovery envelope found for this phrase'
+                : 'Seed recovery requires network rendezvous',
+          );
         }
         restored = PercSeedRecovery.decryptLedgerEnvelope(
           envelope: base64Decode(remoteEnvelope),

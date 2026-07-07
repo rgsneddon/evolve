@@ -40,6 +40,15 @@ class WalletMessageLocalization {
       return 'wallet_err_send_to_yourself';
     }
     if (raw.contains('syncing')) return 'wallet_sync_partial';
+    if (raw.contains('No seed recovery envelope found')) {
+      return 'wallet_err_seed_recovery_not_found';
+    }
+    if (raw.contains('Seed recovery requires network rendezvous')) {
+      return 'wallet_err_seed_recovery_offline';
+    }
+    if (raw.contains('Backup passphrase must be at least')) {
+      return 'wallet_err_backup_passphrase_short';
+    }
     return 'wallet_err_generic';
   }
 

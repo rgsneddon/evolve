@@ -335,6 +335,12 @@ final _en = {
   'security_seed_phrase_hint': 'word1 word2 … word12',
   'security_seed_recover_action': 'Recover from seed phrase',
   'security_backup_passphrase': 'Backup passphrase',
+  'wallet_err_seed_recovery_not_found':
+      'No recovery envelope found for this seed — register seed backup on your original device or use a backup file',
+  'wallet_err_seed_recovery_offline':
+      'Seed recovery needs an internet connection to the Perccent rendezvous',
+  'wallet_err_backup_passphrase_short':
+      'Backup passphrase must be at least 8 characters',
   'wallet_seed_opt_in': 'Create optional 12-word recovery seed',
   'wallet_seed_dialog_title': 'Save your recovery seed',
   'wallet_seed_dialog_body':

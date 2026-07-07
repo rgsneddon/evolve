@@ -7,7 +7,7 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/screens/security_screen.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_network_coordinator.dart';
-import 'package:evolve/perc/services/perc_wallet_backup.dart';
+import 'package:evolve/perc/services/security_backup_test_hooks.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'test_locale_provider.dart';
 
@@ -16,11 +16,30 @@ void main() {
     PercLedgerHub.resetForTest();
     PercNetworkCoordinator.disableLiveNodesForTests = true;
     PercWalletProvider.sessionTimeoutEnabled = false;
+    SecurityBackupTestHooks.reset();
   });
 
   tearDown(() {
     PercWalletProvider.sessionTimeoutEnabled = true;
+    SecurityBackupTestHooks.reset();
   });
+
+  Future<void> pumpSecurity(
+    WidgetTester tester,
+    PercWalletProvider wallet,
+  ) async {
+    final locale = await createTestLocaleProvider();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: wallet),
+          ChangeNotifierProvider.value(value: locale),
+        ],
+        child: const MaterialApp(home: SecurityScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
 
   Future<PercWalletProvider> bootWallet() async {
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
@@ -36,7 +55,25 @@ void main() {
     return wallet;
   }
 
-  testWidgets('Security screen restores encrypted backup on blank store', (
+  testWidgets('Security tab export button captures encrypted backup bytes', (
+    tester,
+  ) async {
+    final wallet = await bootWallet();
+    await pumpSecurity(tester, wallet);
+
+    await tester.enterText(
+      find.byKey(const Key('security_export_pass_field')),
+      'backup-passphrase',
+    );
+    await tester.tap(find.byKey(const Key('security_export_button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(SecurityBackupTestHooks.lastExportedBytes, isNotNull);
+    expect(SecurityBackupTestHooks.lastExportedBytes!.isNotEmpty, isTrue);
+  });
+
+  testWidgets('Security tab restore button round-trips backup on blank store', (
     tester,
   ) async {
     final wallet = await bootWallet();
@@ -44,29 +81,32 @@ void main() {
     final balanceBefore = ledger.account('secuser')!.balance.microUnits;
     final scenarioBefore = ledger.account('secuser')!.scenarioBlockHeight;
 
-    final bytes = PercWalletBackup.exportEncrypted(
-      ledger: ledger.snapshotForBackup(),
-      passphrase: 'backup-passphrase',
+    await pumpSecurity(tester, wallet);
+    await tester.enterText(
+      find.byKey(const Key('security_export_pass_field')),
+      'backup-passphrase',
     );
+    await tester.tap(find.byKey(const Key('security_export_button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    final exported = SecurityBackupTestHooks.lastExportedBytes;
+    expect(exported, isNotNull);
 
     PercLedgerHub.resetForTest();
+    SecurityBackupTestHooks.reset();
     final blank = PercWalletProvider(store: PercWalletStoreMemory());
     await blank.initialize();
-    final locale = await createTestLocaleProvider();
 
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: blank),
-          ChangeNotifierProvider.value(value: locale),
-        ],
-        child: const MaterialApp(home: SecurityScreen()),
-      ),
+    SecurityBackupTestHooks.backupBytesPicker = () async => exported;
+    await pumpSecurity(tester, blank);
+
+    await tester.enterText(
+      find.byKey(const Key('security_restore_pass_field')),
+      'backup-passphrase',
     );
-    await tester.pumpAndSettle();
-
-    await blank.restoreFromEncryptedBackup(bytes, 'backup-passphrase');
+    await tester.tap(find.byKey(const Key('security_restore_button')));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     final restoredLedger = PercLedgerHub.instance.ledger;
     expect(restoredLedger.sessionUsername, 'secuser');
@@ -79,5 +119,6 @@ void main() {
       scenarioBefore,
     );
     expect(blank.isLoggedIn, isTrue);
+    expect(blank.statusMessage, 'wallet_status_backup_restored');
   });
 }

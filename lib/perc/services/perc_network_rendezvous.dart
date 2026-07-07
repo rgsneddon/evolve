@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../perc_chain_constants.dart';
@@ -174,9 +175,18 @@ class PercNetworkRendezvous {
     );
   }
 
+  /// Injected fetch for widget/integration tests (blank-device network recovery).
+  @visibleForTesting
+  static Future<String?> Function(String fingerprint)?
+      fetchSeedRecoveryOverride;
+
   Future<String?> fetchSeedRecoveryEnvelope({
     required String fingerprint,
   }) async {
+    final override = fetchSeedRecoveryOverride;
+    if (override != null) {
+      return override(fingerprint);
+    }
     final base = await baseUrl();
     if (base == null) return null;
     final uri = Uri.parse(

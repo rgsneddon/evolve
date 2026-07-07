@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
@@ -10,7 +9,9 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../providers/perc_wallet_provider.dart';
+import '../services/perc_wallet_backup_clipboard.dart';
 import '../services/security_backup_files.dart';
+import '../services/security_backup_test_hooks.dart';
 
 /// Backup export, file restore, and optional seed-phrase recovery.
 class SecurityScreen extends StatefulWidget {
@@ -55,6 +56,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
               style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8))),
           const SizedBox(height: 8),
           TextField(
+            key: const Key('security_export_pass_field'),
             controller: _exportPassCtrl,
             obscureText: _obscureExport,
             decoration: InputDecoration(
@@ -70,6 +72,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
           ),
           const SizedBox(height: 8),
           FilledButton.icon(
+            key: const Key('security_export_button'),
             onPressed: wallet.isLoggedIn ? () => _exportBackup(wallet) : null,
             icon: const Icon(Icons.download_outlined),
             label: Text(strings.t('security_export_action')),
@@ -80,6 +83,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
               style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8))),
           const SizedBox(height: 8),
           TextField(
+            key: const Key('security_restore_pass_field'),
             controller: _restorePassCtrl,
             obscureText: _obscureRestore,
             decoration: InputDecoration(
@@ -94,6 +98,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
           ),
           const SizedBox(height: 8),
           FilledButton.icon(
+            key: const Key('security_restore_button'),
             onPressed: () => _restoreBackup(wallet),
             icon: const Icon(Icons.upload_file_outlined),
             label: Text(strings.t('security_restore_action')),
@@ -157,18 +162,18 @@ class _SecurityScreenState extends State<SecurityScreen> {
   Future<void> _exportBackup(PercWalletProvider wallet) async {
     try {
       final bytes = wallet.exportEncryptedBackup(_exportPassCtrl.text);
+      SecurityBackupTestHooks.lastExportedBytes = bytes;
       final name =
           'perccent-wallet-backup-${DateTime.now().toUtc().toIso8601String().replaceAll(':', '-').split('.').first}.percbackup';
       if (kIsWeb) {
-        final encoded = base64Encode(bytes);
         await Clipboard.setData(
-          ClipboardData(text: 'PERCBACKUP1:$encoded'),
+          ClipboardData(text: PercWalletBackupClipboard.encodeForClipboard(bytes)),
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'Backup copied (base64) — paste into a .percbackup file',
+                'Backup copied — paste when restoring or save as .percbackup',
               ),
             ),
           );
@@ -194,26 +199,41 @@ class _SecurityScreenState extends State<SecurityScreen> {
 
   Future<void> _restoreBackup(PercWalletProvider wallet) async {
     try {
-      Uint8List? bytes;
-      if (kIsWeb) {
-        final group = const XTypeGroup(
-          label: 'PERC Backup',
-          extensions: ['percbackup', 'json'],
-        );
-        final file = await openFile(acceptedTypeGroups: [group]);
-        if (file == null) return;
-        bytes = await file.readAsBytes();
-      } else {
-        final file = await openFile(
-          acceptedTypeGroups: const [
-            XTypeGroup(label: 'PERC Backup', extensions: ['percbackup', 'json']),
-          ],
-        );
-        if (file == null) return;
-        bytes = await file.readAsBytes();
-      }
+      final bytes = await _resolveBackupBytes();
+      if (bytes == null) return;
       await wallet.restoreFromEncryptedBackup(bytes, _restorePassCtrl.text);
     } catch (_) {}
+  }
+
+  Future<Uint8List?> _resolveBackupBytes() async {
+    final testPicker = SecurityBackupTestHooks.backupBytesPicker;
+    if (testPicker != null) {
+      return testPicker();
+    }
+
+    if (kIsWeb) {
+      final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+      final fromClipboard = PercWalletBackupClipboard.decode(
+        clipboard?.text ?? '',
+      );
+      if (fromClipboard != null) return fromClipboard;
+
+      final group = const XTypeGroup(
+        label: 'PERC Backup',
+        extensions: ['percbackup', 'json'],
+      );
+      final file = await openFile(acceptedTypeGroups: [group]);
+      if (file == null) return null;
+      return file.readAsBytes();
+    }
+
+    final file = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'PERC Backup', extensions: ['percbackup', 'json']),
+      ],
+    );
+    if (file == null) return null;
+    return file.readAsBytes();
   }
 
   Future<void> _recoverSeed(PercWalletProvider wallet) async {
