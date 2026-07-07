@@ -4,45 +4,67 @@ import 'package:evolve/perc/services/perc_transfer_settlement.dart';
 void main() {
   group('PercTransferSettlementDecision', () {
     test('recipientScenario defers when sender cannot debit (local)', () {
-      final d = PercTransferSettlementDecision.evaluate(
+      final effects = PercTransferSettlementDecision.evaluate(
         phase: PercTransferSettlementPhase.recipientScenario,
         senderIsLocalWallet: true,
         senderCanDebit: false,
       );
-      expect(d.shouldSettle, isFalse);
-      expect(d.creditReceiver, isFalse);
+      expect(effects.shouldSettle, isFalse);
+      expect(effects.creditReceiver, isFalse);
     });
 
     test('recipientScenario defers when sender cannot debit (cross-device)', () {
-      final d = PercTransferSettlementDecision.evaluate(
+      final effects = PercTransferSettlementDecision.evaluate(
         phase: PercTransferSettlementPhase.recipientScenario,
         senderIsLocalWallet: false,
         senderCanDebit: false,
       );
-      expect(d.shouldSettle, isFalse);
-      expect(d.creditReceiver, isFalse);
+      expect(effects.shouldSettle, isFalse);
+      expect(effects.creditReceiver, isFalse);
     });
 
-    test('recipientScenario credits cross-device only with peer attestation', () {
-      final d = PercTransferSettlementDecision.evaluate(
+    test('recipientScenario marks cross-device credit provisional', () {
+      final effects = PercTransferSettlementDecision.evaluate(
         phase: PercTransferSettlementPhase.recipientScenario,
         senderIsLocalWallet: false,
         senderCanDebit: true,
       );
-      expect(d.shouldSettle, isTrue);
-      expect(d.creditReceiver, isTrue);
-      expect(d.debitSender, isFalse);
-      expect(d.removePending, isTrue);
+      expect(effects.shouldSettle, isTrue);
+      expect(effects.creditReceiver, isTrue);
+      expect(effects.debitSender, isFalse);
+      expect(effects.provisionalReceiverCredit, isTrue);
     });
 
     test('senderPeerReconcile defers when sender cannot debit', () {
-      final d = PercTransferSettlementDecision.evaluate(
+      final effects = PercTransferSettlementDecision.evaluate(
         phase: PercTransferSettlementPhase.senderPeerReconcile,
         senderIsLocalWallet: true,
         senderCanDebit: false,
       );
-      expect(d.shouldSettle, isFalse);
-      expect(d.removePending, isFalse);
+      expect(effects.shouldSettle, isFalse);
+      expect(effects.removePending, isFalse);
+    });
+
+    test('applyTransferSettlement skips credit when debit fails', () {
+      var debited = false;
+      var credited = false;
+      final ok = PercTransferSettlementDecision.applyTransferSettlement(
+        effects: const PercTransferSettlementEffects(
+          shouldSettle: true,
+          debitSender: true,
+          creditReceiver: true,
+          removePending: true,
+        ),
+        debitSender: () => false,
+        creditReceiver: () {
+          credited = true;
+          return true;
+        },
+        removePending: () => debited = true,
+      );
+      expect(ok, isFalse);
+      expect(credited, isFalse);
+      expect(debited, isFalse);
     });
   });
 }

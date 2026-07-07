@@ -68,9 +68,12 @@ class TwoDeviceHarness {
     );
   }
 
-  void relayInitiationToReceiver() {
+  /// Simulates commitAfterSend push delivery to recipient rendezvous slot.
+  void pushSendToReceiver() {
     receiver.ingestInboundTransferInitiation(sender);
   }
+
+  void relayInitiationToReceiver() => pushSendToReceiver();
 
   /// Simulates rendezvous poll / mergeRelay (no explicit ingest call).
   void pollRelayToReceiver() {
@@ -85,7 +88,18 @@ class TwoDeviceHarness {
     sender.mergeNetworkStateFromPeer(receiver);
   }
 
+  /// Receiver scenario with fresh sender peer attestation (not stale cache).
   void receiverScenario() {
-    receiver.advanceScenarioBlock(receiverUser);
+    receiver.advanceScenarioBlock(
+      receiverUser,
+      senderPeerAtSettlement: sender,
+    );
+  }
+
+  /// Full cross-device settlement: scenario → sender debit → confirm on receiver.
+  void crossDeviceScenarioAndSettle() {
+    receiverScenario();
+    mergeSenderFromReceiver();
+    receiver.mergeNetworkStateFromPeer(sender);
   }
 }

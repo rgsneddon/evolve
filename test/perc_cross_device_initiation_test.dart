@@ -62,6 +62,30 @@ void main() {
     );
   });
 
+  test('receiver sees pending on push delivery after send (commitAfterSend path)', () {
+    final devices = TwoDeviceHarness.create();
+    devices.linkDevices();
+    devices.fundSender();
+    devices.loginSender();
+
+    final amount = PercAmount.fromPerc(0.00000008);
+    devices.send(amount, deliverInstantly: false);
+
+    devices.loginReceiver();
+    devices.pushSendToReceiver();
+
+    expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
+    expect(
+      devices.receiver.account('bob')!.transactions.any(
+            (tx) =>
+                tx.kind == PercTxKind.transfer &&
+                tx.amount == amount &&
+                !tx.isConfirmed,
+          ),
+      isTrue,
+    );
+  });
+
   test('receiver sees pending on poll merge path without explicit ingest', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
@@ -97,11 +121,11 @@ void main() {
     final amount = PercAmount.fromPerc(0.00000005);
     devices.send(amount, deliverInstantly: false);
 
-    devices.relayInitiationToReceiver();
+    devices.pushSendToReceiver();
     devices.loginReceiver();
 
     expect(devices.receiver.account('bob')!.balance, PercAmount.zero);
-    devices.receiverScenario();
+    devices.crossDeviceScenarioAndSettle();
     expect(devices.receiver.account('bob')!.balance, amount);
     expect(
       devices.receiver.account('bob')!.transactions.any((tx) => tx.isConfirmed),

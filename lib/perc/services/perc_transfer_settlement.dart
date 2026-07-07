@@ -9,14 +9,14 @@ enum PercTransferSettlementPhase {
   senderPeerReconcile,
 }
 
-/// Pure settlement policy — receiver credit and pending removal only when
-/// sender funds are attested (local balance or peer relay snapshot).
-class PercTransferSettlementDecision {
-  const PercTransferSettlementDecision._({
+/// Effects to apply atomically on the local ledger.
+class PercTransferSettlementEffects {
+  const PercTransferSettlementEffects({
     required this.shouldSettle,
     this.debitSender = false,
     this.creditReceiver = false,
     this.removePending = false,
+    this.provisionalReceiverCredit = false,
   });
 
   final bool shouldSettle;
@@ -24,35 +24,45 @@ class PercTransferSettlementDecision {
   final bool creditReceiver;
   final bool removePending;
 
-  static const none = PercTransferSettlementDecision._(shouldSettle: false);
+  /// Cross-device receiver credit pending sender debit confirmation.
+  final bool provisionalReceiverCredit;
 
-  static PercTransferSettlementDecision evaluate({
+  static const none = PercTransferSettlementEffects(shouldSettle: false);
+}
+
+/// Pure settlement policy — receiver credit and pending removal only when
+/// sender funds are attested (local balance or fresh peer relay).
+class PercTransferSettlementDecision {
+  static PercTransferSettlementEffects evaluate({
     required PercTransferSettlementPhase phase,
     required bool senderIsLocalWallet,
     required bool senderCanDebit,
   }) {
     switch (phase) {
       case PercTransferSettlementPhase.senderPeerReconcile:
-        if (!senderIsLocalWallet || !senderCanDebit) return none;
-        return const PercTransferSettlementDecision._(
+        if (!senderIsLocalWallet || !senderCanDebit) {
+          return PercTransferSettlementEffects.none;
+        }
+        return const PercTransferSettlementEffects(
           shouldSettle: true,
           debitSender: true,
           removePending: true,
         );
       case PercTransferSettlementPhase.recipientScenario:
-        if (!senderCanDebit) return none;
+        if (!senderCanDebit) return PercTransferSettlementEffects.none;
         if (senderIsLocalWallet) {
-          return const PercTransferSettlementDecision._(
+          return const PercTransferSettlementEffects(
             shouldSettle: true,
             debitSender: true,
             creditReceiver: true,
             removePending: true,
           );
         }
-        return const PercTransferSettlementDecision._(
+        return const PercTransferSettlementEffects(
           shouldSettle: true,
           creditReceiver: true,
           removePending: true,
+          provisionalReceiverCredit: true,
         );
     }
   }
@@ -63,4 +73,28 @@ class PercTransferSettlementDecision {
     required bool Function(String username) senderIsLocalWallet,
   }) =>
       senderIsLocalWallet(pending.fromUsername);
+
+  /// Applies [effects] via callbacks — all credit/debit paths share one gate.
+  static bool applyTransferSettlement({
+    required PercTransferSettlementEffects effects,
+    required bool Function() debitSender,
+    required bool Function() creditReceiver,
+    required void Function() removePending,
+    void Function()? markProvisional,
+  }) {
+    if (!effects.shouldSettle) return false;
+
+    if (effects.debitSender && !debitSender()) return false;
+
+    if (effects.creditReceiver && !creditReceiver()) return false;
+
+    if (effects.provisionalReceiverCredit) {
+      markProvisional?.call();
+    }
+
+    if (effects.removePending) {
+      removePending();
+    }
+    return true;
+  }
 }

@@ -136,7 +136,7 @@ void main() {
     expect(devices.sender.pendingInboundTransfers, isNotEmpty);
   });
 
-  test('cross-device reconcile defers sender debit when funds insufficient at merge', () {
+  test('cross-device reverts provisional credit when sender cannot debit at merge', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -149,14 +149,17 @@ void main() {
     devices.receiverScenario();
 
     expect(devices.receiver.account('bob')!.balance, amount);
+    expect(devices.receiver.provisionalSettlementCount, 1);
 
     devices.sender.account('alice')!.balance = PercAmount.zero;
-    final aliceBeforeFailedReconcile = devices.sender.account('alice')!.balance;
-    devices.mergeSenderFromReceiver();
+    devices.receiver.mergeNetworkStateFromPeer(devices.sender);
 
+    expect(devices.receiver.account('bob')!.balance, PercAmount.zero);
+    expect(devices.receiver.provisionalSettlementCount, 0);
+    expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
     expect(
-      devices.sender.account('alice')!.balance,
-      aliceBeforeFailedReconcile,
+      devices.receiver.account('bob')!.transactions.any((tx) => tx.isConfirmed),
+      isFalse,
     );
     expect(devices.sender.pendingInboundTransfers, isNotEmpty);
   });
@@ -175,11 +178,10 @@ void main() {
 
     devices.relayInitiationToReceiver();
     devices.loginReceiver();
-    devices.receiverScenario();
+    devices.crossDeviceScenarioAndSettle();
     expect(devices.receiver.account('bob')!.balance, amount);
     expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
-
-    devices.mergeSenderFromReceiver();
+    expect(devices.receiver.provisionalSettlementCount, 0);
 
     expect(devices.sender.pendingInboundFor('bob'), isEmpty);
     expect(

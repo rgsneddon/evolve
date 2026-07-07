@@ -117,7 +117,7 @@ void main() {
     expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
     expect(devices.receiver.account('bob')!.balance, PercAmount.zero);
 
-    devices.receiverScenario();
+    devices.crossDeviceScenarioAndSettle();
     expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
     expect(
       devices.receiver.account('bob')!.balance,

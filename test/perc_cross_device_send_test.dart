@@ -27,7 +27,7 @@ void main() {
     expect(devices.receiver.pendingInboundFor('windows_user'), hasLength(1));
     expect(devices.receiver.account('windows_user')!.balance, PercAmount.zero);
 
-    devices.receiverScenario();
+    devices.crossDeviceScenarioAndSettle();
     expect(devices.receiver.pendingInboundFor('windows_user'), isEmpty);
     expect(devices.receiver.account('windows_user')!.balance, amount);
     expect(
