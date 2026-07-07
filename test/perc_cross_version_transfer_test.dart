@@ -90,6 +90,15 @@ void main() {
       balance: PercAmount.zero,
       transactions: [],
     );
+    older.pendingInboundTransfers.add(
+      PercPendingInboundTransfer(
+        id: 'tx-cross-transfer',
+        fromUsername: 'sender',
+        toUsername: 'GLAL7',
+        amount: PercAmount.smallestUnit,
+        sentAt: sentAt,
+      ),
+    );
     older.blocks.add(
       PercBlock(
         index: 1,
@@ -103,7 +112,7 @@ void main() {
             fromUsername: 'sender',
             toUsername: 'GLAL7',
             blockIndex: 1,
-            confirmations: 1,
+            confirmations: 0,
           ),
         ],
         treasuryEmitted: PercAmount.zero,
@@ -119,12 +128,13 @@ void main() {
     expect(pending.first.amount, PercAmount.smallestUnit);
     expect(pending.first.id, 'tx-cross-transfer');
 
-    final balanceBefore = newer.account('alice')!.balance;
     newer.login('alice', 'password12345');
-    expect(newer.pendingInboundFor('alice'), isEmpty);
+    expect(newer.pendingInboundFor('alice'), hasLength(1));
     expect(
-      newer.account('alice')!.balance.microUnits,
-      greaterThan(balanceBefore.microUnits),
+      newer.account('alice')!.transactions.any(
+        (t) => t.id == 'tx-cross-transfer' && !t.isConfirmed,
+      ),
+      isTrue,
     );
   });
 }

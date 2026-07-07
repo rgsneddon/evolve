@@ -121,10 +121,8 @@ void main() {
     expect(seal.blockSealed, isTrue);
     expect(seal.wardAdvanced, isTrue);
     expect(ledger.microblockLog, isEmpty);
-    expect(
-      ledger.treasuryBalance,
-      before + PercChainConstants.treasuryLaunchAllocation,
-    );
+    // Launch allocation is credited at blockchain launch, not on microblock seal.
+    expect(ledger.treasuryBalance, before);
   });
 
   test('microblocks skipped before blockchain launch', () {

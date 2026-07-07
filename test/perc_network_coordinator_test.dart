@@ -101,10 +101,11 @@ void main() {
     );
 
     final ledger = PercLedgerHub.instance.ledger;
-    expect(
-      ledger.pendingInboundFor('receiver'),
-      isNotEmpty,
-    );
+    // Same-hub recipient settles instantly even when logged out on the network mesh.
+    expect(ledger.pendingInboundFor('receiver'), isEmpty);
+    await wallet.logout();
+    await wallet.login('receiver', 'password12345');
+    expect(wallet.balance.microUnits, greaterThanOrEqualTo(1));
   });
 
   test('stores internet endpoint on network node when advertised', () async {

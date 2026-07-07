@@ -28,6 +28,10 @@ void main() {
 
     expect(ledger.lastInflationEpoch, isNull);
 
+    // Launch seeds treasury off-ledger; regen block records inflation epoch.
+    final treasury = ledger.account(PercChainConstants.treasuryUsername)!;
+    treasury.balance = PercAmount.zero;
+
     ledger.creditScenario(username: 'alice', percentChance: 10);
     expect(ledger.lastInflationEpoch, isNotNull);
     expect(ledger.blocks.last.treasuryEmitted.isPositive, isTrue);

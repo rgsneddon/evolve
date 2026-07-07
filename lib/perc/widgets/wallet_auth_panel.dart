@@ -150,7 +150,7 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
             filled: true,
             fillColor: const Color(0xFF1A2030),
           ),
-          onSubmitted: (_) => _submit(wallet),
+          onSubmitted: (_) => _submit(wallet, strings),
         ),
         if (WalletMessageLocalization.isCredentialError(wallet.errorMessage)) ...[
           const SizedBox(height: 8),
@@ -170,13 +170,16 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
         ],
         if (_registerMode) ...[
           const SizedBox(height: 8),
-          CheckboxListTile(
-            value: _enableSeedRecovery,
-            onChanged: (v) =>
-                setState(() => _enableSeedRecovery = v ?? false),
-            title: Text(strings.t('wallet_seed_opt_in')),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
+          Material(
+            type: MaterialType.transparency,
+            child: CheckboxListTile(
+              value: _enableSeedRecovery,
+              onChanged: (v) =>
+                  setState(() => _enableSeedRecovery = v ?? false),
+              title: Text(strings.t('wallet_seed_opt_in')),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            ),
           ),
         ],
         const SizedBox(height: 14),

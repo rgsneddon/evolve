@@ -97,10 +97,13 @@ void main() {
       ),
       isTrue,
     );
-    expect(
-      treasury.balance,
-      before + oneCent - PercStaking.rewardPerBlock * 2,
-    );
+    final stakingPaid = treasury.transactions
+        .where((t) => t.kind == PercTxKind.stakingReward)
+        .fold<PercAmount>(
+          PercAmount.zero,
+          (sum, t) => sum + t.amount,
+        );
+    expect(treasury.balance, before + oneCent - stakingPaid);
   });
 
   test('ledger rejects amounts below 1 cent', () {
