@@ -168,17 +168,16 @@ class PercChainConstants {
   static Duration get walletSessionIdleTimeoutEffective =>
       walletSessionIdleTimeoutOverride ?? walletSessionIdleTimeout;
 
-  /// Safety window before unreceived inbound transfers revert to the sender.
-  /// Transfers credit near-instantly on send/relay; this is not a user-facing
-  /// receive wait.
-  static const Duration walletOnlineReceiveDelay = Duration(days: 7);
+  /// Safety window before undelivered inbound transfers revert to the sender.
+  /// Transfers credit near-instantly on send/relay — not a user receive wait.
+  static const Duration walletInboundRevertWindow = Duration(days: 7);
 
   /// Override for tests — never set in production code.
   @visibleForTesting
-  static Duration? walletOnlineReceiveDelayOverride;
+  static Duration? walletInboundRevertWindowOverride;
 
-  static Duration get walletOnlineReceiveDelayEffective =>
-      walletOnlineReceiveDelayOverride ?? walletOnlineReceiveDelay;
+  static Duration get walletInboundRevertWindowEffective =>
+      walletInboundRevertWindowOverride ?? walletInboundRevertWindow;
 
   /// Cumulative staking: flat 10% of 0.00000050 PERC (0.00000005) per block per holder.
   static const int stakingYieldPercent = 10;

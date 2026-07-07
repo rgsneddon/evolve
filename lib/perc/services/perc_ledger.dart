@@ -1794,7 +1794,7 @@ class PercLedger {
   }
 
   void _revertExpiredPendingInbound(DateTime now) {
-    final window = PercChainConstants.walletOnlineReceiveDelayEffective;
+    final window = PercChainConstants.walletInboundRevertWindowEffective;
     final expired = pendingInboundTransfers
         .where((p) => !now.isBefore(p.sentAt.add(window)))
         .toList();
@@ -2108,7 +2108,7 @@ class PercLedger {
   }) {
     final t = (now ?? DateTime.now()).toUtc();
     _revertExpiredPendingInbound(t);
-    final window = PercChainConstants.walletOnlineReceiveDelayEffective;
+    final window = PercChainConstants.walletInboundRevertWindowEffective;
     final toSettle = pendingInboundTransfers
         .where((p) => _pendingTargetsUser(p, username))
         .where((p) => !t.isBefore(p.sentAt))
@@ -2134,7 +2134,7 @@ class PercLedger {
               _attestSenderCanDebitOnPeer(resolvedPeer, pending);
 
       final plan = planSettlement(
-        phase: SettlementPhase.recipientScenario,
+        phase: SettlementPhase.transferCredit,
         senderIsLocalWallet: senderIsLocal,
         senderCanDebit: senderCanDebit,
         senderPeerProvided: senderIsLocal || resolvedPeer != null,
@@ -2276,6 +2276,44 @@ class PercLedger {
     final confirmBlockIndex = _seedConfirmationBlockIndex(
       seedConfirmationBlockHeight: seedConfirmationBlockHeight,
     );
+    final pending = PercPendingInboundTransfer(
+      id: txId,
+      fromUsername: from,
+      toUsername: to,
+      amount: amount,
+      fee: fee,
+      sentAt: now,
+      memo: memo,
+      recipientBroughtOnlineAt:
+          (deliverInstantly ?? isWalletOnlineOnNetwork(to)) ? now : null,
+    );
+
+    if (_isLocalSettleableRecipient(to)) {
+      final blockTxs = <PercTransaction>[...renewalTxs];
+      if (!_applySenderSettlement(pending, now, blockTxs: blockTxs)) {
+        throw StateError(
+          'Insufficient balance — need ${totalDebit.displayFixed8} ${PercChainConstants.currencySymbol} '
+          '(${amount.displayFixed8} + ${fee.displayFixed8} network fee)',
+        );
+      }
+      final confirmedTx = _confirmedTransferTx(
+        pending,
+        now,
+        blockIndex: confirmBlockIndex,
+      );
+      blockTxs.add(confirmedTx);
+      _credit(receiver, amount);
+      _replaceOrInsertTx(receiver, confirmedTx);
+      _finalizeBlock(
+        timestamp: now,
+        blockTxs: blockTxs,
+        treasuryEmitted: PercAmount.zero,
+        triggerUsername: from,
+        isGenesisRenewal: renewalTxs.isNotEmpty,
+      );
+      return confirmedTx;
+    }
+
     final tx = PercTransaction(
       id: txId,
       kind: PercTxKind.transfer,
@@ -2288,18 +2326,6 @@ class PercLedger {
       confirmations: 0,
     );
     sender.transactions.insert(0, tx);
-
-    final pending = PercPendingInboundTransfer(
-      id: txId,
-      fromUsername: from,
-      toUsername: to,
-      amount: amount,
-      fee: fee,
-      sentAt: now,
-      memo: memo,
-      recipientBroughtOnlineAt:
-          (deliverInstantly ?? isWalletOnlineOnNetwork(to)) ? now : null,
-    );
     pendingInboundTransfers.add(pending);
     _ensurePendingInboundTxListed(receiver, pending);
     _ensurePendingOutboundTxListed(from, pending);
@@ -2312,9 +2338,6 @@ class PercLedger {
       triggerUsername: from,
       isGenesisRenewal: renewalTxs.isNotEmpty,
     );
-    if (_isLocalSettleableRecipient(to)) {
-      _trySettleEligiblePending(forUsername: to, now: now);
-    }
     return tx;
   }
 

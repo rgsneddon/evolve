@@ -840,10 +840,9 @@ final _en = {
   'wallet_err_address_empty': 'Enter a recipient PERC address',
   'wallet_err_address_confidential': 'Enter a valid confidential PERC address',
   'wallet_err_address_invalid': 'Enter a valid PERC address',
-  'wallet_receive_delay_12_months': '7 days',
-  'wallet_receive_delay_months': '7 days',
-  'wallet_receive_delay_hours': 'several hours',
-  'wallet_receive_delay_seconds': 'a short time',
+  'wallet_inbound_revert_days': '7 days',
+  'wallet_inbound_revert_hours': 'several hours',
+  'wallet_inbound_revert_seconds': 'a short time',
   'license_panel_title': 'License & Chronoflux attribution',
   'license_dialog_title': 'Evolve License',
   'license_chronoflux_attribution':

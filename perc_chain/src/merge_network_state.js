@@ -131,7 +131,7 @@ export function seedObservesTransferInitiation(canonical, relay) {
   };
 }
 
-export function seedObservesScenarioSettlement(canonical) {
+export function seedObservesTransferSettlement(canonical) {
   const pending = listObservedPendingTransfers(canonical);
   const settled = listSettledTransferIds(canonical);
   return {

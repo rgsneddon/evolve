@@ -18,7 +18,7 @@ void _seedLedger(PercLedger ledger) {
 
 void main() {
   tearDown(() {
-    PercChainConstants.walletOnlineReceiveDelayOverride = null;
+    PercChainConstants.walletInboundRevertWindowOverride = null;
   });
 
   test('recipient receives PERC near-instantly on same-device send', () {
@@ -41,7 +41,7 @@ void main() {
   });
 
   test('expired unsettled inbound reverts PERC to sender', () {
-    PercChainConstants.walletOnlineReceiveDelayOverride =
+    PercChainConstants.walletInboundRevertWindowOverride =
         const Duration(seconds: 2);
 
     final ledger = PercLedger.empty();
@@ -88,12 +88,16 @@ void main() {
 
   test('production inbound revert window is not 12 months', () {
     expect(
-      PercChainConstants.walletOnlineReceiveDelay.inDays,
+      PercChainConstants.walletInboundRevertWindow.inDays,
       lessThan(365),
     );
     expect(
-      PercChainConstants.walletOnlineReceiveDelay,
+      PercChainConstants.walletInboundRevertWindow,
       const Duration(days: 7),
+    );
+    expect(
+      PercChainConstants.walletInboundRevertWindow.inDays,
+      isNot(365),
     );
   });
 }

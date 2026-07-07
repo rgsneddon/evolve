@@ -57,12 +57,12 @@ void main() {
       aliceBefore.microUnits -
           amount.microUnits -
           fee.microUnits +
-          PercStaking.rewardPerBlock.microUnits * 2,
+          PercStaking.rewardPerBlock.microUnits,
     );
     expect(ledger.sessionBalance, ledger.account('alice')!.balance);
     expect(
       ledger.account(PercChainConstants.treasuryUsername)!.balance.microUnits,
-      treasuryBefore.microUnits - PercStaking.rewardPerBlock.microUnits * 2,
+      treasuryBefore.microUnits - PercStaking.rewardPerBlock.microUnits,
     );
     expect(ledger.cumulativeBurnedPerc, fee);
     expect(ledger.pendingInboundFor('bob'), isEmpty);
@@ -104,7 +104,7 @@ void main() {
   });
 
   test('reverted transfer returns amount only — burned fee is not refunded', () {
-    PercChainConstants.walletOnlineReceiveDelayOverride =
+    PercChainConstants.walletInboundRevertWindowOverride =
         const Duration(seconds: 2);
 
     final ledger = PercLedger.empty();

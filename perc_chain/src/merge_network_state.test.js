@@ -6,7 +6,7 @@ import {
   listObservedPendingTransfers,
   listSettlementWitnessIds,
   seedObservesTransferInitiation,
-  seedObservesScenarioSettlement,
+  seedObservesTransferSettlement,
 } from './merge_network_state.js';
 
 describe('mergeNetworkStateFromPeer', () => {
@@ -61,7 +61,7 @@ describe('mergeNetworkStateFromPeer', () => {
     assert.equal(pending[0].confirmations, 0);
   });
 
-  it('seed observes spendable settlement after scenario confirm', () => {
+  it('seed observes spendable settlement after transfer confirm', () => {
     const canonical = {
       networkGenesisRevision: 2,
       pendingInboundTransfers: [],
@@ -83,7 +83,7 @@ describe('mergeNetworkStateFromPeer', () => {
       ],
     };
 
-    const settlement = seedObservesScenarioSettlement(canonical);
+    const settlement = seedObservesTransferSettlement(canonical);
     assert.equal(settlement.pendingCount, 0);
     assert.deepEqual(settlement.settledIds, ['tx-settled-1']);
     assert.equal(settlement.spendableSettled, true);
@@ -169,7 +169,7 @@ describe('mergeNetworkStateFromPeer', () => {
       }
     }
     seed.pendingInboundTransfers = [];
-    const settlement = seedObservesScenarioSettlement(seed);
+    const settlement = seedObservesTransferSettlement(seed);
     assert.equal(settlement.pendingCount, 0);
     assert.deepEqual(settlement.settledIds, ['tx-flow-1']);
     assert.equal(settlement.spendableSettled, true);

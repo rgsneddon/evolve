@@ -1,6 +1,6 @@
 import '../models/perc_pending_inbound_transfer.dart';
 
-/// Gossip-mergeable witness that a receiver scenario confirmed a transfer.
+/// Gossip-mergeable witness that a receiver wallet credited an inbound transfer.
 class PercSettlementWitness {
   PercSettlementWitness({
     required this.transferId,
@@ -31,7 +31,8 @@ class PercSettlementWitness {
 }
 
 enum SettlementPhase {
-  recipientScenario,
+  /// Receiver credits inbound PERC (same-device or cross-device relay).
+  transferCredit,
   senderPeerReconcile,
 }
 
@@ -65,7 +66,7 @@ SettlementPlan planSettlement({
   required bool remoteSettledWithoutPending,
 }) {
   switch (phase) {
-    case SettlementPhase.recipientScenario:
+    case SettlementPhase.transferCredit:
       if (senderIsLocalWallet) {
         if (!senderCanDebit) return SettlementPlan.deferredPlan;
         return const SettlementPlan(

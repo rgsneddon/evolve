@@ -5,7 +5,7 @@ void main() {
   group('planSettlement', () {
     test('local happy path debits sender and credits receiver', () {
       final plan = planSettlement(
-        phase: SettlementPhase.recipientScenario,
+        phase: SettlementPhase.transferCredit,
         senderIsLocalWallet: true,
         senderCanDebit: true,
         senderPeerProvided: true,
@@ -21,7 +21,7 @@ void main() {
 
     test('cross-device with fresh peer emits witness without local debit', () {
       final plan = planSettlement(
-        phase: SettlementPhase.recipientScenario,
+        phase: SettlementPhase.transferCredit,
         senderIsLocalWallet: false,
         senderCanDebit: true,
         senderPeerProvided: true,
@@ -35,7 +35,7 @@ void main() {
 
     test('cross-device without peer is deferred', () {
       final plan = planSettlement(
-        phase: SettlementPhase.recipientScenario,
+        phase: SettlementPhase.transferCredit,
         senderIsLocalWallet: false,
         senderCanDebit: false,
         senderPeerProvided: false,
@@ -48,7 +48,7 @@ void main() {
 
     test('insufficient funds at scenario is deferred', () {
       final plan = planSettlement(
-        phase: SettlementPhase.recipientScenario,
+        phase: SettlementPhase.transferCredit,
         senderIsLocalWallet: true,
         senderCanDebit: false,
         senderPeerProvided: true,

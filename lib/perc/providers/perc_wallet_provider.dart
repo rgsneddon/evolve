@@ -763,14 +763,11 @@ class PercWalletProvider extends ChangeNotifier {
     );
   }
 
-  String _receiveDelayKey() {
-    const delay = PercChainConstants.walletOnlineReceiveDelay;
-    if (delay.inDays >= 7) return 'wallet_receive_delay_12_months';
-    if (delay.inDays >= 2) {
-      return 'wallet_receive_delay_months';
-    }
-    if (delay.inHours >= 1) return 'wallet_receive_delay_hours';
-    return 'wallet_receive_delay_seconds';
+  String _inboundRevertWindowKey() {
+    final delay = PercChainConstants.walletInboundRevertWindow;
+    if (delay.inDays >= 1) return 'wallet_inbound_revert_days';
+    if (delay.inHours >= 1) return 'wallet_inbound_revert_hours';
+    return 'wallet_inbound_revert_seconds';
   }
 
   void _clearMessages() {

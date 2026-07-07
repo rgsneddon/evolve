@@ -16,7 +16,7 @@ void _seed(PercLedger ledger) {
 }
 
 void main() {
-  test('receiver sees pending inbound tx immediately on relay ingestion', () {
+  test('same-device send credits recipient without pending hold', () {
     final sender = PercLedger.empty();
     _seed(sender);
     sender.register('alice', 'password123');
@@ -31,61 +31,17 @@ void main() {
       deliverInstantly: false,
     );
 
-    expect(sender.account('bob')!.transactions, isNotEmpty);
+    expect(sender.pendingInboundFor('bob'), isEmpty);
+    expect(sender.account('bob')!.balance, amount);
     expect(
       sender.account('alice')!.transactions.any(
-            (tx) => tx.kind == PercTxKind.transfer && !tx.isConfirmed,
-          ),
-      isTrue,
-    );
-
-    final receiver = PercLedger.empty();
-    _seed(receiver);
-    receiver.register('bob', 'password123');
-    receiver.login('bob', 'password123');
-
-    expect(receiver.account('bob')!.transactions, isEmpty);
-    expect(receiver.pendingInboundFor('bob'), isEmpty);
-
-    receiver.ingestInboundTransferInitiation(sender);
-
-    expect(receiver.pendingInboundFor('bob'), hasLength(1));
-    expect(receiver.account('bob')!.balance, PercAmount.zero);
-    expect(
-      receiver.account('bob')!.transactions.any(
-            (tx) =>
-                tx.kind == PercTxKind.transfer &&
-                tx.amount == amount &&
-                !tx.isConfirmed,
+            (tx) => tx.kind == PercTxKind.transfer && tx.isConfirmed,
           ),
       isTrue,
     );
   });
 
-  test('receiver sees pending on push delivery after send (commitAfterSend path)', () {
-    final devices = TwoDeviceHarness.create();
-    devices.linkDevices();
-    devices.fundSender();
-    devices.loginSender();
-
-    final amount = PercAmount.fromPerc(0.00000008);
-    devices.sendAndRelay(amount, deliverInstantly: false);
-
-    devices.loginReceiver();
-
-    expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
-    expect(
-      devices.receiver.account('bob')!.transactions.any(
-            (tx) =>
-                tx.kind == PercTxKind.transfer &&
-                tx.amount == amount &&
-                !tx.isConfirmed,
-          ),
-      isTrue,
-    );
-  });
-
-  test('receiver sees pending on poll merge path without explicit ingest', () {
+  test('receiver credits spendable balance on relay ingestion', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -93,38 +49,85 @@ void main() {
 
     final amount = PercAmount.fromPerc(0.00000010);
     devices.send(amount, deliverInstantly: false);
-
     devices.loginReceiver();
+
     expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
-    expect(devices.receiver.account('bob')!.transactions, isEmpty);
+    expect(devices.receiver.account('bob')!.balance, PercAmount.zero);
 
-    devices.pollRelayToReceiver();
+    devices.receiver.ingestInboundTransferInitiation(devices.sender);
 
-    expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
+    expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
+    expect(devices.receiver.account('bob')!.balance, amount);
     expect(
       devices.receiver.account('bob')!.transactions.any(
             (tx) =>
                 tx.kind == PercTxKind.transfer &&
                 tx.amount == amount &&
-                !tx.isConfirmed,
+                tx.isConfirmed,
           ),
       isTrue,
     );
   });
 
-  test('initiation ingestion does not credit spendable balance before scenario', () {
+  test('receiver credits on push delivery after send (commitAfterSend path)', () {
+    final devices = TwoDeviceHarness.create();
+    devices.linkDevices();
+    devices.fundSender();
+    devices.loginSender();
+
+    final amount = PercAmount.fromPerc(0.00000008);
+    devices.sendAndRelay(amount, deliverInstantly: false);
+    devices.loginReceiver();
+
+    expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
+    expect(devices.receiver.account('bob')!.balance, amount);
+    expect(
+      devices.receiver.account('bob')!.transactions.any(
+            (tx) =>
+                tx.kind == PercTxKind.transfer &&
+                tx.amount == amount &&
+                tx.isConfirmed,
+          ),
+      isTrue,
+    );
+  });
+
+  test('receiver credits on poll merge path without explicit ingest', () {
+    final devices = TwoDeviceHarness.create();
+    devices.linkDevices();
+    devices.fundSender();
+    devices.loginSender();
+
+    final amount = PercAmount.fromPerc(0.00000010);
+    devices.send(amount, deliverInstantly: false);
+    devices.loginReceiver();
+
+    expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
+    devices.pollRelayToReceiver();
+
+    expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
+    expect(devices.receiver.account('bob')!.balance, amount);
+    expect(
+      devices.receiver.account('bob')!.transactions.any(
+            (tx) =>
+                tx.kind == PercTxKind.transfer &&
+                tx.amount == amount &&
+                tx.isConfirmed,
+          ),
+      isTrue,
+    );
+  });
+
+  test('relay credits spendable balance without scenario', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
 
     final amount = PercAmount.fromPerc(0.00000005);
     devices.send(amount, deliverInstantly: false);
-
     devices.pushSendToReceiver();
     devices.loginReceiver();
 
-    expect(devices.receiver.account('bob')!.balance, PercAmount.zero);
-    devices.crossDeviceScenarioAndSettle();
     expect(devices.receiver.account('bob')!.balance, amount);
     expect(
       devices.receiver.account('bob')!.transactions.any((tx) => tx.isConfirmed),
