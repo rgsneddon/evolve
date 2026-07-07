@@ -55,17 +55,21 @@ flutter test test/downloads_landing_page_test.dart --reporter expanded 2>&1 |
   Set-Content (Join-Path $ScratchDir "landing_page_test.log") -Encoding utf8
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# (c) Full build + installers + publish (build included in publish; logs to scratch)
+# (c) Full build + installers + publish (build included; idempotent clobber upload)
 Write-StepLog "publish" {
   $env:EVOLVE_RELEASE_PINNED = "$Version+136"
   powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\publish_github_release.ps1" `
-    -Version $Version -SkipTests -RecreateRelease -EvidenceDir $ScratchDir
+    -Version $Version -SkipTests -EvidenceDir $ScratchDir
 }
 
-# (d) Mirror evidence + materialize session goal deliverables
+# (d) API/asset probe (authoritative publish proof)
+& "$PSScriptRoot\verify_github_release.ps1" -Version $Version -ScratchDir $ScratchDir
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+# (e) Mirror evidence + materialize session goal deliverables
 & "$PSScriptRoot\capture_release_evidence.ps1" -ScratchDir $ScratchDir -BaseRef $BaseRef -Version $Version
 
-# (e) Push main and tag once when ahead (no force unless tag drifted)
+# (f) Push main and tag once when ahead (no force unless tag drifted)
 $ahead = git rev-list --count origin/main..HEAD 2>$null
 if ($ahead -and [int]$ahead -gt 0) {
   git push origin main

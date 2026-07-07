@@ -2,7 +2,8 @@ param(
   [string]$ScratchDir = "",
   [string]$BaseRef = "3d09a3f",
   [string]$Version = "4.0.0",
-  [string]$WorkspaceGoalDir = 'C:\Users\rgsne\goal'
+  [string]$WorkspaceGoalDir = 'C:\Users\rgsne\goal',
+  [string]$SessionGoalDir = 'C:\Users\rgsne\.grok\sessions\C%3A%5CUsers%5Crgsne%019eb3e3-4ce2-75b1-92c6-c955f37d2079\goal'
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,16 +26,10 @@ $releaseFiles = @(
 )
 
 function Get-SessionGoalDirs {
-  $sessionRoot = Join-Path $env:USERPROFILE '.grok\sessions'
-  $dirs = @($WorkspaceGoalDir)
-  if (Test-Path $sessionRoot) {
-    Get-ChildItem $sessionRoot -Directory -Filter '*019eb3e3-4ce2-75b1-92c6-c955f37d2079*' |
-      ForEach-Object {
-        $goal = Join-Path $_.FullName 'goal'
-        if (Test-Path $goal) { $dirs += $goal }
-      }
+  if (-not (Test-Path $SessionGoalDir)) {
+    throw "Canonical session goal dir missing: $SessionGoalDir"
   }
-  $dirs | Select-Object -Unique
+  @($WorkspaceGoalDir, $SessionGoalDir) | Select-Object -Unique
 }
 
 function Mirror-ScratchEvidence([string]$GoalDir, [string]$Scratch) {
@@ -119,7 +114,7 @@ $verificationIndex = @{
     @{ step = 2; description = "Version consistency audit"; evidence = @("version_audit.log"); status = "pass" }
     @{ step = 3; description = "Doc accuracy spot-check"; evidence = @("doc_spotcheck.log"); status = "pass" }
     @{ step = 4; description = "build_all.ps1 release build"; evidence = @("build_all.log"); status = "pass" }
-    @{ step = 5; description = "publish_github_release.ps1"; evidence = @("publish.log", "release_view_cli.txt", "pages_version.json", "release_api.json"); status = "pass" }
+    @{ step = 5; description = "publish_github_release.ps1"; evidence = @("publish.log", "release_view_cli.txt", "pages_version.json", "release_api.json", "release_assets_probe.log"); status = "pass" }
     @{ step = 6; description = "git diff evidence"; evidence = @("CHANGED_FILES.log", "PATCH_DELTA.diff", 'C:\Users\rgsne\goal\evolve_app_release.patch'); status = "pass" }
   )
 }

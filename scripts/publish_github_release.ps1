@@ -241,15 +241,20 @@ if ($releaseExists -and $RecreateRelease) {
     $publishMode = 'recreate'
 }
 
+$notesFile = Join-Path $env:TEMP "evolve-release-notes-$tag.md"
+[System.IO.File]::WriteAllText($notesFile, $notes, (New-Object System.Text.UTF8Encoding $false))
+
 if ($releaseExists) {
     Write-Host "Release $tag exists; uploading refreshed assets (--clobber)." -ForegroundColor Yellow
     $publishMode = 'clobber'
+    & gh release edit $tag --repo "$owner/$RepoName" --notes-file $notesFile
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     & gh release upload $tag --repo "$owner/$RepoName" --clobber @assets
 } else {
     & gh release create $tag `
         --repo "$owner/$RepoName" `
         --title "Evolve Chronoflux $tag" `
-        --notes $notes `
+        --notes-file $notesFile `
         @assets
 }
 
