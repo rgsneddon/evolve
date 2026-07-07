@@ -147,7 +147,7 @@ void main() {
 
     await wallet.send(toAddress: bobAddr, amountText: '0.00000001');
     expect(wallet.errorMessage, isNull);
-    expect(wallet.statusMessage, 'wallet_status_sent_pending');
+    expect(wallet.statusMessage, 'wallet_status_sent_queued');
     expect(
       PercLedgerHub.instance.ledger.pendingInboundTransfers
           .any((p) => p.toUsername == 'bob'),

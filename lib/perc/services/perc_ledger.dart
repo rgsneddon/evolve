@@ -1386,11 +1386,15 @@ class PercLedger {
         PercChainConstants.minimumTreasuryReserve.microUnits;
   }
 
-  PercAmount _treasuryEmissionForScenario(DateTime now) {
-    if (treasuryCapped) return PercAmount.zero;
-    if (!treasuryGenesisDone) {
-      return PercChainConstants.treasuryLaunchAllocation;
-    }
+  /// One-time launch allocation — credited before scenario payouts in a draw.
+  PercAmount _treasuryBootstrapEmission() {
+    if (treasuryGenesisDone || treasuryCapped) return PercAmount.zero;
+    return PercChainConstants.treasuryLaunchAllocation;
+  }
+
+  /// Elapsed-time treasury accrual — applied after scenario payouts in a draw.
+  PercAmount _treasuryAccrualEmissionForScenario(DateTime now) {
+    if (treasuryCapped || !treasuryGenesisDone) return PercAmount.zero;
     if (lastScenarioAt == null) return PercAmount.zero;
     final elapsed = now.difference(lastScenarioAt!).inSeconds;
     if (elapsed <= 0) return PercAmount.zero;
@@ -1401,6 +1405,28 @@ class PercLedger {
       emission = treasuryRemaining;
     }
     return emission;
+  }
+
+  void _appendTreasuryEmissionTx({
+    required PercAmount amount,
+    required DateTime now,
+    required PercAccount treasury,
+    required List<PercTransaction> blockTxs,
+  }) {
+    if (!amount.isPositive) return;
+    cumulativeTreasuryMinted = cumulativeTreasuryMinted + amount;
+    _credit(treasury, amount);
+    final tx = PercTransaction(
+      id: _newTxId(),
+      kind: PercTxKind.treasuryEmission,
+      amount: amount,
+      timestamp: now,
+      toUsername: PercChainConstants.treasuryUsername,
+      blockIndex: blocks.length,
+      confirmations: _txConfirmations,
+    );
+    treasury.transactions.insert(0, tx);
+    blockTxs.add(tx);
   }
 
   void _credit(PercAccount acc, PercAmount amount) {
@@ -2377,32 +2403,33 @@ class PercLedger {
       PercAmount.zero,
       (sum, tx) => sum + tx.amount,
     );
-    final scenarioEmission = _treasuryEmissionForScenario(now);
-
-    if (scenarioEmission.isPositive) {
-      emitted = emitted + scenarioEmission;
+    final bootstrapEmission = _treasuryBootstrapEmission();
+    if (bootstrapEmission.isPositive) {
+      emitted = emitted + bootstrapEmission;
       treasuryGenesisDone = true;
-      cumulativeTreasuryMinted = cumulativeTreasuryMinted + scenarioEmission;
-      _credit(treasury, scenarioEmission);
-      final tx = PercTransaction(
-        id: _newTxId(),
-        kind: PercTxKind.treasuryEmission,
-        amount: scenarioEmission,
-        timestamp: now,
-        toUsername: PercChainConstants.treasuryUsername,
-        blockIndex: blocks.length,
-        confirmations: _txConfirmations,
+      _appendTreasuryEmissionTx(
+        amount: bootstrapEmission,
+        now: now,
+        treasury: treasury,
+        blockTxs: blockTxs,
       );
-      treasury.transactions.insert(0, tx);
-      blockTxs.add(tx);
-    } else if (!treasuryGenesisDone) {
-      treasuryGenesisDone = true;
     }
-
     final reward = PercFaucet.computeScenarioReward(percentChance: percentChance);
     PercFaucetReward? credited;
 
     if (cooldownLeft != null) {
+      final accrualEmission = _treasuryAccrualEmissionForScenario(now);
+      if (accrualEmission.isPositive) {
+        emitted = emitted + accrualEmission;
+        _appendTreasuryEmissionTx(
+          amount: accrualEmission,
+          now: now,
+          treasury: treasury,
+          blockTxs: blockTxs,
+        );
+      } else if (!treasuryGenesisDone) {
+        treasuryGenesisDone = true;
+      }
       if (blockTxs.isNotEmpty) {
         _finalizeBlock(
           timestamp: now,
@@ -2455,6 +2482,19 @@ class PercLedger {
       user.transactions.insert(0, tx);
       blockTxs.add(tx);
       credited = reward;
+    }
+
+    final accrualEmission = _treasuryAccrualEmissionForScenario(now);
+    if (accrualEmission.isPositive) {
+      emitted = emitted + accrualEmission;
+      _appendTreasuryEmissionTx(
+        amount: accrualEmission,
+        now: now,
+        treasury: treasury,
+        blockTxs: blockTxs,
+      );
+    } else if (!treasuryGenesisDone) {
+      treasuryGenesisDone = true;
     }
 
     if (blockTxs.isNotEmpty) {

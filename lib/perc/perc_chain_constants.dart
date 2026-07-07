@@ -170,7 +170,7 @@ class PercChainConstants {
 
   /// Safety window before undelivered inbound transfers revert to the sender.
   /// Transfers credit near-instantly on send/relay — not a user receive wait.
-  static const Duration walletInboundRevertWindow = Duration(days: 7);
+  static const Duration walletInboundRevertWindow = Duration(hours: 24);
 
   /// Override for tests — never set in production code.
   @visibleForTesting

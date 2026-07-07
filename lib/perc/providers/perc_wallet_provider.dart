@@ -517,7 +517,7 @@ class PercWalletProvider extends ChangeNotifier {
         return;
       }
       final recipient = resolved.username;
-      _ledger.send(
+      final tx = _ledger.send(
         fromUsername: _ledger.sessionUsername!,
         toAddress: normalizedAddress,
         amount: amount,
@@ -528,18 +528,23 @@ class PercWalletProvider extends ChangeNotifier {
       );
       _captureGenesisRenewalEvent();
       final dest = PercBeamPrivacy.shieldAddress(normalizedAddress);
+      final queued = _ledger.pendingInboundTransfers.any((p) => p.id == tx.id);
       if (_pendingGenesisRenewalNotice) {
         _setGenesisRenewalStatus();
       } else {
-        _setEphemeralStatus(
-          'wallet_status_sent_pending',
-          {
-            'amount': amount.displayFixed8,
-            'symbol': PercChainConstants.currencySymbol,
-            'dest': dest,
-            'fee': fee.displayFixed8,
-          },
-        );
+        final statusKey = tx.confirmations > 0
+            ? 'wallet_status_sent_instant'
+            : queued
+                ? 'wallet_status_sent_queued'
+                : 'wallet_status_sent_pending';
+        final statusArgs = {
+          'amount': amount.displayFixed8,
+          'symbol': PercChainConstants.currencySymbol,
+          'dest': dest,
+          'fee': fee.displayFixed8,
+          if (queued) 'delayKey': _inboundRevertWindowKey(),
+        };
+        _setEphemeralStatus(statusKey, statusArgs);
       }
       notifyListeners();
       await _commitSendAndGossip(

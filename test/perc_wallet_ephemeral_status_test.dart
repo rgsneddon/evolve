@@ -32,10 +32,10 @@ void main() {
         final bobAddr = PercLedgerHub.instance.ledger.account('bob')!.address;
 
         await wallet.send(toAddress: bobAddr, amountText: '0.00000001');
-        expect(wallet.statusMessage, 'wallet_status_sent_pending');
+        expect(wallet.statusMessage, 'wallet_status_sent_instant');
 
         async.elapse(const Duration(seconds: 14));
-        expect(wallet.statusMessage, 'wallet_status_sent_pending');
+        expect(wallet.statusMessage, 'wallet_status_sent_instant');
 
         async.elapse(const Duration(seconds: 1));
         expect(wallet.statusMessage, isNull);

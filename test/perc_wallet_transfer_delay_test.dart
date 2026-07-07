@@ -93,7 +93,7 @@ void main() {
     );
     expect(
       PercChainConstants.walletInboundRevertWindow,
-      const Duration(days: 7),
+      const Duration(hours: 24),
     );
     expect(
       PercChainConstants.walletInboundRevertWindow.inDays,

@@ -1,9 +1,10 @@
 import '../perc_chain_constants.dart';
 import 'perc_amount.dart';
 
-/// PERC held in escrow until the recipient runs a scenario within
-/// [PercChainConstants.walletInboundRevertWindow] after [sentAt], then reverts
-/// to [fromUsername] if unconfirmed.
+/// Cross-device transfer record while relay settles on the network.
+/// Delivered transfers credit the recipient near-instantly on send/relay;
+/// undelivered entries revert to [fromUsername] after
+/// [PercChainConstants.walletInboundRevertWindow] from [sentAt].
 class PercPendingInboundTransfer {
   PercPendingInboundTransfer({
     required this.id,
