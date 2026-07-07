@@ -26,7 +26,7 @@ $releaseFiles = @(
 $changed = @(
   "=== CHANGED FILES (evolve_app git diff $BaseRef..HEAD) ==="
   "repository=$RepoRoot"
-  "note=harness workspace C:\Users\rgsne tracks .grok only; canonical list in $WorkspaceGoalDir and $ScratchDir"
+  "note=harness workspace tracks .grok only; canonical list in $WorkspaceGoalDir and $ScratchDir"
 )
 $changed += git log --oneline "$BaseRef..HEAD"
 $changed += ""
