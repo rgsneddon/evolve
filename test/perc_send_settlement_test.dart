@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
+import 'package:evolve/perc/models/perc_pending_inbound_transfer.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
@@ -19,7 +20,7 @@ void _seedLedger(PercLedger ledger) {
 }
 
 void main() {
-  test('sender with exact funds debits on recipient scenario (no 2x hold)', () {
+  test('sender with exact funds debits on near-instant same-device settlement', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -39,12 +40,6 @@ void main() {
       deliverInstantly: false,
     );
 
-    ledger.login('alice', 'password123');
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
-    expect(ledger.sessionBalance, alice.balance - amount - fee);
-
-    ledger.advanceScenarioBlock('bob');
-
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(ledger.account('bob')!.balance.microUnits, amount.microUnits);
     expect(
@@ -56,7 +51,7 @@ void main() {
     expect(alice.balance.microUnits, lessThan((amount + fee).microUnits));
   });
 
-  test('receiver not credited when local sender lacks funds at scenario', () {
+  test('receiver not credited when local sender lacks funds at settlement', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -64,15 +59,20 @@ void main() {
     ledger.creditScenario(username: 'alice', percentChance: 50);
 
     final amount = PercAmount.fromPerc(0.00000010);
-    ledger.send(
-      fromUsername: 'alice',
-      toAddress: _addr(ledger, 'bob'),
-      amount: amount,
-      deliverInstantly: false,
+    final sentAt = DateTime.now().toUtc();
+    ledger.pendingInboundTransfers.add(
+      PercPendingInboundTransfer(
+        id: 'tx-defer-local',
+        fromUsername: 'alice',
+        toUsername: 'bob',
+        amount: amount,
+        fee: PercChainConstants.sendTransactionFee,
+        sentAt: sentAt,
+      ),
     );
-
     ledger.account('alice')!.balance = PercAmount.zero;
-    ledger.advanceScenarioBlock('bob');
+
+    ledger.settlePendingInboundOnActivity('bob', now: sentAt);
 
     expect(ledger.pendingInboundFor('bob'), hasLength(1));
     expect(ledger.account('bob')!.balance.microUnits, 0);
@@ -82,29 +82,23 @@ void main() {
     );
   });
 
-  test('outbound hold blocks spending reserved PERC before settlement', () {
-    final ledger = PercLedger.empty();
-    _seedLedger(ledger);
-    ledger.register('alice', 'password123');
-    ledger.register('bob', 'password123');
-    ledger.creditScenario(username: 'alice', percentChance: 50);
-    ledger.login('alice', 'password123');
+  test('outbound hold blocks spending reserved PERC before cross-device settlement', () {
+    final devices = TwoDeviceHarness.create();
+    devices.linkDevices();
+    devices.fundSender();
+    devices.loginSender();
 
     final amount = PercAmount.fromPerc(0.00000010);
-    ledger.send(
-      fromUsername: 'alice',
-      toAddress: _addr(ledger, 'bob'),
-      amount: amount,
-      deliverInstantly: false,
-    );
+    devices.send(amount, deliverInstantly: false);
 
-    final spendable = ledger.sessionBalance;
+    final spendable = devices.sender.sessionBalance;
     expect(spendable.isPositive, isTrue);
+    expect(devices.sender.pendingInboundFor('bob'), hasLength(1));
 
     expect(
-      () => ledger.send(
+      () => devices.sender.send(
         fromUsername: 'alice',
-        toAddress: _addr(ledger, 'bob'),
+        toAddress: devices.receiverAddress,
         amount: spendable,
         deliverInstantly: false,
       ),
@@ -112,7 +106,7 @@ void main() {
     );
   });
 
-  test('cross-device defers when sender peer lacks funds at scenario', () {
+  test('cross-device defers when sender peer lacks funds at relay settlement', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -120,11 +114,9 @@ void main() {
 
     final amount = PercAmount.fromPerc(0.00000010);
     devices.send(amount, deliverInstantly: false);
-    devices.pushSendToReceiver();
-
     devices.sender.account('alice')!.balance = PercAmount.zero;
+    devices.pushSendToReceiver();
     devices.loginReceiver();
-    devices.receiverScenario();
 
     expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
     expect(devices.receiver.account('bob')!.balance.microUnits, 0);
@@ -132,7 +124,7 @@ void main() {
     expect(devices.sender.pendingInboundTransfers, isNotEmpty);
   });
 
-  test('cross-device defers scenario without live sender peer', () {
+  test('cross-device stays pending until relay arrives', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -140,17 +132,14 @@ void main() {
 
     final amount = PercAmount.fromPerc(0.00000005);
     devices.send(amount, deliverInstantly: false);
-    devices.pushSendToReceiver();
     devices.loginReceiver();
 
-    devices.receiver.advanceScenarioBlock('bob');
-
-    expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
+    expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
     expect(devices.receiver.account('bob')!.balance.microUnits, 0);
     expect(devices.receiver.settlementWitnesses, isEmpty);
   });
 
-  test('cross-device scenario credits receiver then sender debits on witness propagate', () {
+  test('cross-device relay credits receiver then sender debits on witness propagate', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -161,11 +150,6 @@ void main() {
     devices.loginReceiver();
 
     final aliceBefore = devices.sender.account('alice')!.balance;
-
-    devices.receiver.advanceScenarioBlock(
-      'bob',
-      senderPeerResolver: (from) => from == 'alice' ? devices.sender : null,
-    );
 
     expect(devices.receiver.account('bob')!.balance.microUnits, amount.microUnits);
     expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
@@ -189,7 +173,7 @@ void main() {
     );
   });
 
-  test('cross-device sender debits after witness scenario merge', () {
+  test('cross-device sender debits after witness propagate without scenario', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -203,7 +187,7 @@ void main() {
 
     devices.pushSendToReceiver();
     devices.loginReceiver();
-    devices.crossDeviceScenarioAndSettle();
+    devices.propagateWitnessToSender();
 
     expect(devices.receiver.account('bob')!.balance.microUnits, amount.microUnits);
     expect(devices.receiver.pendingInboundFor('bob'), isEmpty);

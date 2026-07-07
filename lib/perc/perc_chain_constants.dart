@@ -168,10 +168,10 @@ class PercChainConstants {
   static Duration get walletSessionIdleTimeoutEffective =>
       walletSessionIdleTimeoutOverride ?? walletSessionIdleTimeout;
 
-  /// Offline inbound transfers must be collected by signing in within this
-  /// window after they were sent (12 calendar months); otherwise funds revert
-  /// to the sender.
-  static const Duration walletOnlineReceiveDelay = Duration(days: 365);
+  /// Safety window before unreceived inbound transfers revert to the sender.
+  /// Transfers credit near-instantly on send/relay; this is not a user-facing
+  /// receive wait.
+  static const Duration walletOnlineReceiveDelay = Duration(days: 7);
 
   /// Override for tests — never set in production code.
   @visibleForTesting

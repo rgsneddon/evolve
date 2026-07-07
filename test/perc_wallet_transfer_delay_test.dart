@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
+import 'package:evolve/perc/models/perc_pending_inbound_transfer.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_staking.dart';
-
 
 String _addr(PercLedger ledger, String username) =>
     ledger.account(username)!.address;
@@ -21,7 +21,7 @@ void main() {
     PercChainConstants.walletOnlineReceiveDelayOverride = null;
   });
 
-  test('offline recipient receives PERC after scenario activity within receive window', () {
+  test('recipient receives PERC near-instantly on same-device send', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -33,10 +33,6 @@ void main() {
       toAddress: _addr(ledger, 'bob'),
       amount: PercAmount.fromPerc(0.00000010),
     );
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
-
-    ledger.login('bob', 'password123');
     expect(
       ledger.account('bob')!.balance,
       PercAmount.fromPerc(0.00000010),
@@ -44,7 +40,7 @@ void main() {
     expect(ledger.pendingInboundFor('bob'), isEmpty);
   });
 
-  test('expired pending inbound reverts PERC to sender', () {
+  test('expired unsettled inbound reverts PERC to sender', () {
     PercChainConstants.walletOnlineReceiveDelayOverride =
         const Duration(seconds: 2);
 
@@ -60,19 +56,28 @@ void main() {
       toAddress: _addr(ledger, 'bob'),
       amount: transfer,
     );
-    final sentAt = ledger.pendingInboundFor('bob').single.sentAt;
-    final aliceAfterSend = ledger.account('alice')!.balance;
+    expect(ledger.account('bob')!.balance, transfer);
+
+    ledger.pendingInboundTransfers.add(
+      PercPendingInboundTransfer(
+        id: 'tx-stale-pending',
+        fromUsername: 'alice',
+        toUsername: 'bob',
+        amount: PercAmount.fromPerc(0.00000005),
+        fee: PercChainConstants.sendTransactionFee,
+        sentAt: DateTime.utc(2026, 1, 1),
+      ),
+    );
+    ledger.account('bob')!.balance = PercAmount.zero;
+    final aliceBefore = ledger.account('alice')!.balance;
 
     ledger.refreshPendingInboundTransfers(
-      now: sentAt.add(const Duration(seconds: 3)),
+      now: DateTime.utc(2026, 1, 1, 0, 0, 3),
     );
 
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(ledger.account('bob')!.balance, PercAmount.zero);
-    expect(
-      ledger.account('alice')!.balance,
-      aliceAfterSend + transfer + PercStaking.rewardPerBlock,
-    );
+    expect(ledger.account('alice')!.balance, aliceBefore + PercStaking.rewardPerBlock);
     expect(
       ledger.account('alice')!.transactions.any(
             (t) => t.kind == PercTxKind.transferRevert,
@@ -81,10 +86,14 @@ void main() {
     );
   });
 
-  test('production wallet online receive delay is 12 months', () {
+  test('production inbound revert window is not 12 months', () {
+    expect(
+      PercChainConstants.walletOnlineReceiveDelay.inDays,
+      lessThan(365),
+    );
     expect(
       PercChainConstants.walletOnlineReceiveDelay,
-      const Duration(days: 365),
+      const Duration(days: 7),
     );
   });
 }

@@ -826,7 +826,7 @@ class PercLedger {
       accounts[PercChainConstants.treasuryUsername]?.balance ?? PercAmount.zero;
 
   /// Spendable balance — excludes PERC reserved for outbound transfers awaiting
-  /// recipient scenario confirmation.
+  /// network settlement.
   PercAmount get sessionBalance {
     final acc = sessionAccount;
     if (acc == null) return PercAmount.zero;
@@ -1439,6 +1439,11 @@ class PercLedger {
     return acc != null && acc.passwordSet;
   }
 
+  bool _isLocalSettleableRecipient(String username) {
+    final acc = _accountFor(username);
+    return acc != null && acc.passwordSet;
+  }
+
   PercAmount _sameBlockIncomingFor(String username, List<PercTransaction> blockTxs) {
     var total = PercAmount.zero;
     for (final tx in blockTxs) {
@@ -1834,8 +1839,8 @@ class PercLedger {
   }
 
   String _receiveWindowLabel(Duration window) {
-    if (window.inDays >= 365) return '12 months';
-    if (window.inDays >= 30) return '${window.inDays ~/ 30} months';
+    if (window.inDays >= 7) return '${window.inDays} days';
+    if (window.inDays >= 2) return '${window.inDays} days';
     if (window.inHours >= 1) return '${window.inHours} hours';
     return '${window.inSeconds} seconds';
   }
@@ -1917,6 +1922,7 @@ class PercLedger {
     mergeInboundTransferTxsFromPeer(remote);
     PercTransferRelayAck.acknowledgeRelayTransfers(this, remote);
     _mergeSettlementWitnessesFromPeer(remote);
+    _trySettleEligiblePending(senderPeer: remote);
     final session = sessionUsername;
     if (session != null) {
       refreshPendingInboundTransfers();
@@ -2093,7 +2099,7 @@ class PercLedger {
         confirmations: _txConfirmations,
       );
 
-  /// Credits inbound PERC after the receiver advances their scenario block height.
+  /// Credits inbound PERC when send/relay/scenario activity can settle them.
   void settlePendingInboundOnActivity(
     String username, {
     PercLedger? senderPeer,
@@ -2170,6 +2176,30 @@ class PercLedger {
         blockTxs: blockTxs,
         treasuryEmitted: PercAmount.zero,
         triggerUsername: pending.toUsername,
+      );
+    }
+  }
+
+  void _trySettleEligiblePending({
+    String? forUsername,
+    PercLedger? senderPeer,
+    DateTime? now,
+  }) {
+    final t = (now ?? DateTime.now()).toUtc();
+    _revertExpiredPendingInbound(t);
+    final targets = forUsername != null
+        ? [forUsername]
+        : pendingInboundTransfers.map((p) => p.toUsername).toSet().toList();
+    final resolver = senderPeer != null
+        ? (String from) =>
+            senderPeer.account(from) != null ? senderPeer : null
+        : null;
+    for (final username in targets) {
+      settlePendingInboundOnActivity(
+        username,
+        senderPeer: senderPeer,
+        senderPeerResolver: resolver,
+        now: t,
       );
     }
   }
@@ -2282,6 +2312,9 @@ class PercLedger {
       triggerUsername: from,
       isGenesisRenewal: renewalTxs.isNotEmpty,
     );
+    if (_isLocalSettleableRecipient(to)) {
+      _trySettleEligiblePending(forUsername: to, now: now);
+    }
     return tx;
   }
 

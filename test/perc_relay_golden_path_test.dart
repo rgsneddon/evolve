@@ -15,10 +15,14 @@ void _seed(PercLedger ledger) {
 
 void main() {
   test('send → serialize → acknowledgeRelayTransfers credits receiver with same tx.id', () {
-    final built = SendRelayFixture.build();
+    final receiver = PercLedger.empty();
+    _seed(receiver);
+    receiver.register('windows_user', 'password12345');
+    final windowsAddress = receiver.account('windows_user')!.address;
+
+    final built = SendRelayFixture.build(windowsAddress: windowsAddress);
     final sender = built.ledger;
     final transferTxId = built.transferTxId;
-
 
     expect(
       sender.blocks.any((b) => b.transactions.any((t) => t.id == transferTxId)),
@@ -26,9 +30,6 @@ void main() {
     );
     expect(sender.account('android_user')!.transactions.any((t) => t.id == transferTxId), isTrue);
 
-    final receiver = PercLedger.empty();
-    _seed(receiver);
-    receiver.register('windows_user', 'password12345');
     for (var i = 0; receiver.blockHeight <= sender.blockHeight; i++) {
       receiver.blocks.add(
         PercBlock(
@@ -43,7 +44,7 @@ void main() {
     expect(receiver.blockHeight, greaterThan(sender.blockHeight));
 
     final relay = PercLedger.fromJson(sender.toJson());
-    receiver.mergeNetworkStateFromPeer(relay);
+    receiver.applyInboundRelayFromSender(relay);
 
     final promoted = receiver.blocks.lastWhere(PercBlockDisplayLabel.hasTransfer);
     final canonicalIndex = receiver.blocks.length - 1;
@@ -60,11 +61,7 @@ void main() {
 
     receiver.login('windows_user', 'password12345');
     receiver.refreshPendingInboundForSession();
-    expect(receiver.pendingInboundFor('windows_user'), hasLength(1));
-    expect(receiver.account('windows_user')!.balance, PercAmount.zero);
-
-    receiver.advanceScenarioBlock('windows_user', senderPeer: relay);
-    expect(receiver.account('windows_user')!.balance, PercAmount.fromPerc(0.00000005));
     expect(receiver.pendingInboundFor('windows_user'), isEmpty);
+    expect(receiver.account('windows_user')!.balance, PercAmount.fromPerc(0.00000005));
   });
 }

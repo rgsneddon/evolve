@@ -4,7 +4,7 @@ import 'package:evolve/perc/models/perc_amount.dart';
 import 'support/two_device_harness.dart';
 
 void main() {
-  test('receiver ledger merges pending inbound from sender relay state', () {
+  test('receiver ledger credits on relay without scenario', () {
     final devices = TwoDeviceHarness.create(
       senderUser: 'android_user',
       receiverUser: 'windows_user',
@@ -24,10 +24,6 @@ void main() {
     devices.relayInitiationToReceiver();
     devices.loginReceiver();
 
-    expect(devices.receiver.pendingInboundFor('windows_user'), hasLength(1));
-    expect(devices.receiver.account('windows_user')!.balance, PercAmount.zero);
-
-    devices.crossDeviceScenarioAndSettle();
     expect(devices.receiver.pendingInboundFor('windows_user'), isEmpty);
     expect(devices.receiver.account('windows_user')!.balance, amount);
     expect(

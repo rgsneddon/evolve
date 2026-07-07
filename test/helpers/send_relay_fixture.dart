@@ -1,7 +1,6 @@
 import 'package:evolve/perc/models/perc_amount.dart';
-
-
 import 'package:evolve/perc/models/perc_block.dart';
+import 'package:evolve/perc/services/perc_auth.dart';
 import 'package:evolve/perc/services/perc_block_display_label.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_transfer_relay_ack.dart';
@@ -16,17 +15,30 @@ class SendRelayFixture {
     ledger.consumeBlockchainLaunchEvent();
   }
 
-  static ({PercLedger ledger, String transferTxId, int transferBlockIndex}) build() {
+  static const _defaultWindowsSalt = 'relay-fixture-windows-salt-v1';
+
+  static String defaultWindowsAddress() => PercAuth.deriveAddress(
+        'windows_user',
+        _defaultWindowsSalt,
+      );
+
+  static ({PercLedger ledger, String transferTxId, int transferBlockIndex}) build({
+    String? windowsAddress,
+  }) {
+    final resolvedAddress = windowsAddress ?? defaultWindowsAddress();
     final ledger = PercLedger.empty();
     _seed(ledger);
     ledger.register('android_user', 'password12345');
-    ledger.register('windows_user', 'password12345');
+    ledger.ensureRemoteAccount(
+      username: 'windows_user',
+      address: resolvedAddress,
+    );
     ledger.creditScenario(username: 'android_user', percentChance: 80);
     ledger.login('android_user', 'password12345');
 
     final tx = ledger.send(
       fromUsername: 'android_user',
-      toAddress: ledger.account('windows_user')!.address,
+      toAddress: resolvedAddress,
       amount: PercAmount.fromPerc(0.00000005),
       deliverInstantly: true,
     );
@@ -39,7 +51,8 @@ class SendRelayFixture {
     );
   }
 
-  static Map<String, dynamic> ledgerJson() => build().ledger.toJson();
+  static Map<String, dynamic> ledgerJson({String? windowsAddress}) =>
+      build(windowsAddress: windowsAddress).ledger.toJson();
 
   /// Taller seed ledger after [PercTransferRelayAck] promotes a shorter sender relay.
   static ({
@@ -47,8 +60,8 @@ class SendRelayFixture {
     String transferTxId,
     int transferBlockIndex,
     int canonicalIndex,
-  }) buildTallerSeedWithRelayAck() {
-    final built = build();
+  }) buildTallerSeedWithRelayAck({String? windowsAddress}) {
+    final built = build(windowsAddress: windowsAddress);
     final seed = PercLedger.empty();
     _seed(seed);
     for (var i = 0; i < 3; i++) {

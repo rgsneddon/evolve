@@ -66,8 +66,9 @@ EXTRA_EN = {
     "wallet_err_address_empty": "Enter a recipient PERC address",
     "wallet_err_address_confidential": "Enter a valid confidential PERC address",
     "wallet_err_address_invalid": "Enter a valid PERC address",
-    "wallet_receive_delay_12_months": "12 months",
-    "wallet_receive_delay_months": "several months",
+    "wallet_receive_delay_12_months": "7 days",
+    "wallet_receive_delay_months": "7 days",
+    "wallet_tx_pending_hint": "Confirming transfer on the network.",
     "wallet_receive_delay_hours": "several hours",
     "wallet_receive_delay_seconds": "a short time",
 }

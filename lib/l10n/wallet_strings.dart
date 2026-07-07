@@ -1074,7 +1074,7 @@ const walletStringsPt = <String, String>{
   'wallet_tx_received': 'Received from {user}',
   'wallet_tx_pending': 'Pending',
   'wallet_tx_pending_hint':
-      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
+      'Confirming transfer on the network.',
   'wallet_tx_revert': 'Transferência devolvida',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -1432,7 +1432,7 @@ const walletStringsAr = <String, String>{
   'wallet_tx_received': 'Received from {user}',
   'wallet_tx_pending': 'Pending',
   'wallet_tx_pending_hint':
-      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
+      'Confirming transfer on the network.',
   'wallet_tx_revert': 'Returned transfer',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -1763,7 +1763,7 @@ const walletStringsZh = <String, String>{
   'wallet_tx_received': 'Received from {user}',
   'wallet_tx_pending': 'Pending',
   'wallet_tx_pending_hint':
-      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
+      'Confirming transfer on the network.',
   'wallet_tx_revert': 'Returned transfer',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -2122,7 +2122,7 @@ const walletStringsHi = <String, String>{
   'wallet_tx_received': 'Received from {user}',
   'wallet_tx_pending': 'Pending',
   'wallet_tx_pending_hint':
-      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
+      'Confirming transfer on the network.',
   'wallet_tx_revert': 'Returned transfer',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -2460,7 +2460,7 @@ const walletStringsJa = <String, String>{
   'wallet_tx_received': 'Received from {user}',
   'wallet_tx_pending': 'Pending',
   'wallet_tx_pending_hint':
-      'Run a scenario in the Analysis section to confirm this transfer and credit your balance.',
+      'Confirming transfer on the network.',
   'wallet_tx_revert': 'Returned transfer',
   'wallet_tx_reward': 'Analysis reward',
   'wallet_tx_sent': 'Sent to {user}',
@@ -2559,9 +2559,9 @@ const walletStringsProviderEn = <String, String>{
   'wallet_faucet_label_scs': 'Social cohesion score analysis',
   'wallet_login_language_label': 'Language',
   'wallet_password_mismatch': 'Passwords do not match',
-  'wallet_receive_delay_12_months': '12 months',
+  'wallet_receive_delay_12_months': '7 days',
   'wallet_receive_delay_hours': 'several hours',
-  'wallet_receive_delay_months': 'several months',
+  'wallet_receive_delay_months': '7 days',
   'wallet_receive_delay_seconds': 'a short time',
   'wallet_status_account_created': 'Account created',
   'wallet_status_faucet_credited': '+{amount} {symbol}',

@@ -42,7 +42,7 @@ void main() {
     expect(status.isFreshOnSeedPeer, isFalse);
   });
 
-  test('pending transfer credits receiver only after scenario block advance', () {
+  test('same-device transfer credits receiver immediately on send', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -56,18 +56,6 @@ void main() {
       deliverInstantly: false,
     );
 
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
-    expect(
-      ledger.account('bob')!.transactions.any((tx) => !tx.isConfirmed),
-      isTrue,
-    );
-
-    ledger.login('bob', 'password123');
-    expect(ledger.account('bob')!.balance, PercAmount.zero);
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
-
-    ledger.advanceScenarioBlock('bob');
     expect(ledger.account('bob')!.balance, PercAmount.fromPerc(0.00000010));
     expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(
@@ -76,7 +64,7 @@ void main() {
     );
   });
 
-  test('login alone does not credit queued inbound transfer', () {
+  test('login alone does not re-credit already settled inbound transfer', () {
     final ledger = PercLedger.empty();
     _seedLedger(ledger);
     ledger.register('alice', 'password123');
@@ -91,14 +79,14 @@ void main() {
     );
 
     ledger.refreshPendingInboundForSession();
-    expect(ledger.pendingInboundFor('bob'), hasLength(1));
+    expect(ledger.pendingInboundFor('bob'), isEmpty);
     expect(
       ledger.account('bob')!.balance,
-      PercAmount.zero,
+      PercAmount.fromPerc(0.00000005),
     );
   });
 
-  test('cross-device receiver confirms after scenario on synced ledger', () {
+  test('cross-device receiver credits on relay without scenario', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
     devices.fundSender();
@@ -114,10 +102,6 @@ void main() {
     devices.relayInitiationToReceiver();
     devices.loginReceiver();
 
-    expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
-    expect(devices.receiver.account('bob')!.balance, PercAmount.zero);
-
-    devices.crossDeviceScenarioAndSettle();
     expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
     expect(
       devices.receiver.account('bob')!.balance,

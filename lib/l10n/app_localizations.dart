@@ -803,7 +803,7 @@ final _en = {
   'wallet_tx_sent': 'Sent to {user}',
   'wallet_tx_received': 'Received from {user}',
   'wallet_tx_pending': 'Pending',
-  'wallet_tx_pending_hint': 'Run a scenario to confirm this tx.',
+  'wallet_tx_pending_hint': 'Confirming transfer on the network.',
   'wallet_login_language_label': 'Language',
   'wallet_password_mismatch': 'Passwords do not match',
   'wallet_endpoint_label': 'Endpoint: {endpoint}',
@@ -825,7 +825,7 @@ final _en = {
   'wallet_status_sent_instant':
       'Sent {amount} {symbol} to {dest} (network fee {fee} {symbol})',
   'wallet_status_sent_pending':
-      'Sent {amount} {symbol} to {dest} (network fee {fee} {symbol}) — awaiting recipient scenario confirmation',
+      'Sent {amount} {symbol} to {dest} (network fee {fee} {symbol}) — delivering on the network',
   'wallet_status_sent_queued':
       'Sent {amount} {symbol} to {dest} (network fee {fee} {symbol}) — queued until they sign in on the network within {delay}, otherwise returns to your wallet',
   'wallet_status_treasury_empty': 'Treasury empty — run another scenario later',
@@ -840,8 +840,8 @@ final _en = {
   'wallet_err_address_empty': 'Enter a recipient PERC address',
   'wallet_err_address_confidential': 'Enter a valid confidential PERC address',
   'wallet_err_address_invalid': 'Enter a valid PERC address',
-  'wallet_receive_delay_12_months': '12 months',
-  'wallet_receive_delay_months': 'several months',
+  'wallet_receive_delay_12_months': '7 days',
+  'wallet_receive_delay_months': '7 days',
   'wallet_receive_delay_hours': 'several hours',
   'wallet_receive_delay_seconds': 'a short time',
   'license_panel_title': 'License & Chronoflux attribution',
