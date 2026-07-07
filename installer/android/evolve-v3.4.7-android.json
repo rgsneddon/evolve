@@ -1,0 +1,17 @@
+﻿{
+    "url":  "https://rgsneddon.github.io/evolve/downloads/v3.4.7/evolve-v3.4.7-android-setup.apk",
+    "build":  "117",
+    "platform":  "android",
+    "version":  "3.4.7",
+    "sizeMb":  74.1,
+    "sha512":  "217a2ed96b94613a8d922973f4dd1d30e8eda23f23d693f71444303981ae016da88cb0b1795b5174549d778284f2a9457729a31742ca784c05137aa2d427b45e",
+    "name":  "evolve-v3.4.7-android-setup.apk",
+    "minSdk":  23,
+    "sha256":  "66c7335260f2ca5ed37448613dd2d4f7aba0ebfd632a8985c45dd50c6c00de29",
+    "abis":  [
+                 "arm64-v8a",
+                 "armeabi-v7a",
+                 "x86_64"
+             ],
+    "sizeBytes":  77731521
+}

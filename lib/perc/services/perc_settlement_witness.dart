@@ -1,4 +1,5 @@
 import '../models/perc_pending_inbound_transfer.dart';
+import 'perc_switch_commitment.dart';
 
 /// Gossip-mergeable witness that a receiver wallet credited an inbound transfer.
 class PercSettlementWitness {
@@ -7,26 +8,45 @@ class PercSettlementWitness {
     required this.receiverScenarioBlock,
     required this.senderCanDebit,
     required this.witnessedAt,
-  });
+    String? switchCommitment,
+  }) : switchCommitment = switchCommitment ??
+            PercSwitchCommitment.forWitnessPayload(
+              transferId: transferId,
+              receiverScenarioBlock: receiverScenarioBlock,
+              senderCanDebit: senderCanDebit,
+            );
 
   final String transferId;
   final int receiverScenarioBlock;
   final bool senderCanDebit;
   final DateTime witnessedAt;
+  final String switchCommitment;
 
   Map<String, dynamic> toJson() => {
         'transferId': transferId,
         'receiverScenarioBlock': receiverScenarioBlock,
         'senderCanDebit': senderCanDebit,
         'witnessedAt': witnessedAt.toIso8601String(),
+        'switchCommitment': switchCommitment,
       };
 
-  factory PercSettlementWitness.fromJson(Map<String, dynamic> json) =>
-      PercSettlementWitness(
-        transferId: json['transferId'] as String,
-        receiverScenarioBlock: json['receiverScenarioBlock'] as int? ?? 0,
-        senderCanDebit: json['senderCanDebit'] as bool? ?? false,
-        witnessedAt: DateTime.parse(json['witnessedAt'] as String),
+  factory PercSettlementWitness.fromJson(Map<String, dynamic> json) {
+    final transferId = json['transferId'] as String;
+    final receiverScenarioBlock = json['receiverScenarioBlock'] as int? ?? 0;
+    final senderCanDebit = json['senderCanDebit'] as bool? ?? false;
+    return PercSettlementWitness(
+      transferId: transferId,
+      receiverScenarioBlock: receiverScenarioBlock,
+      senderCanDebit: senderCanDebit,
+      witnessedAt: DateTime.parse(json['witnessedAt'] as String),
+      switchCommitment: json['switchCommitment'] as String?,
+    );
+  }
+
+  bool get switchCommitmentValid =>
+      PercSwitchCommitment.validates(
+        switchCommitment,
+        'witness:$transferId:$receiverScenarioBlock:${senderCanDebit ? 1 : 0}',
       );
 }
 

@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import '../../fcg/data/fcg_uk_ward_moderator_registry.dart';
 import '../perc_chain_constants.dart';
 import 'perc_beam_privacy.dart';
+import 'perc_switch_commitment.dart';
 
 class PercAuth {
   const PercAuth._();
@@ -18,6 +19,9 @@ class PercAuth {
 
   static String hashPassword(String password, String salt) =>
       sha256.convert(utf8.encode('$salt:$password')).toString();
+
+  static String passwordSwitchCommit(String passwordHash, String salt) =>
+      PercSwitchCommitment.forPasswordHash(passwordHash, salt);
 
   static String deriveAddress(String username, String salt) {
     if (PercChainConstants.beamPrivacyEnabled) {

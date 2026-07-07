@@ -13,6 +13,7 @@ import '../providers/locale_provider.dart';
 import '../fcg/screens/fcg_voting_screen.dart';
 import 'home_screen.dart';
 import '../perc/screens/credit_screen.dart';
+import '../perc/screens/security_screen.dart';
 import '../perc/screens/wallet_screen.dart';
 
 /// Root shell — Analysis + wallet after PERC address registration.
@@ -123,6 +124,11 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
               label: strings.t('nav_wallet'),
             ),
             NavigationDestination(
+              icon: const Icon(Icons.security_outlined),
+              selectedIcon: const Icon(Icons.security),
+              label: strings.t('nav_security'),
+            ),
+            NavigationDestination(
               icon: const Icon(Icons.how_to_vote_outlined),
               selectedIcon: const Icon(Icons.how_to_vote),
               label: strings.t('nav_voting'),
@@ -138,6 +144,11 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
               icon: const Icon(Icons.account_balance_wallet_outlined),
               selectedIcon: const Icon(Icons.account_balance_wallet),
               label: strings.t('nav_wallet'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.security_outlined),
+              selectedIcon: const Icon(Icons.security),
+              label: strings.t('nav_security'),
             ),
             NavigationDestination(
               icon: const Icon(Icons.info_outline),
@@ -166,6 +177,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
               children: [
                 const HomeScreen(),
                 showWallet ? const WalletScreen() : const SizedBox.shrink(),
+                const SecurityScreen(),
                 const FcgVotingScreen(),
                 const CreditScreen(),
               ],
@@ -174,6 +186,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
               index: navIndex,
               children: [
                 showWallet ? const WalletScreen() : const SizedBox.shrink(),
+                const SecurityScreen(),
                 const CreditScreen(),
               ],
             ),

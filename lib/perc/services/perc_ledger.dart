@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../models/locale_config.dart';
@@ -34,6 +36,8 @@ import 'perc_settlement_witness.dart';
 import 'inbound_transfer_delivery.dart';
 import 'inbound_transfer_settlement.dart';
 import 'treasury_scenario_settlement.dart';
+import 'perc_switch_commitment.dart';
+import 'perc_seed_recovery.dart';
 
 /// Resolves a live sender ledger for cross-device scenario attestation.
 typedef PercSenderPeerResolver = PercLedger? Function(String fromUsername);
@@ -644,6 +648,57 @@ class PercLedger {
       }
     }
     return false;
+  }
+
+  /// True when [receiver] already has a confirmed credit for [transferId].
+  bool isTransferAlreadySettledForReceiver(
+    String transferId,
+    PercAccount receiver,
+  ) =>
+      receiver.transactions.any(
+        (tx) =>
+            tx.id == transferId &&
+            tx.kind == PercTxKind.transfer &&
+            tx.isConfirmed,
+      );
+
+  PercLedger snapshotForBackup() => PercLedger.fromJson(toJson());
+
+  void attachSeedRecoveryEnvelope({
+    required String username,
+    required List<String> mnemonic,
+  }) {
+    final acc = _accountFor(username);
+    if (acc == null) throw StateError('Unknown account');
+    PercSeedRecovery.validateMnemonic(mnemonic);
+    final envelope = PercSeedRecovery.encryptLedgerEnvelope(
+      ledger: snapshotForBackup(),
+      words: mnemonic,
+    );
+    acc.seedFingerprint = PercSeedRecovery.fingerprint(mnemonic);
+    acc.seedRecoveryEnvelope = base64Encode(envelope);
+  }
+
+  PercLedger recoverFromSeedEnvelope({
+    required List<String> mnemonic,
+    String? expectedFingerprint,
+  }) {
+    PercSeedRecovery.validateMnemonic(mnemonic);
+    final fp = PercSeedRecovery.fingerprint(mnemonic);
+    if (expectedFingerprint != null && expectedFingerprint != fp) {
+      throw StateError('Seed phrase does not match this wallet');
+    }
+    for (final acc in accounts.values) {
+      final envelopeB64 = acc.seedRecoveryEnvelope;
+      if (envelopeB64 == null || envelopeB64.isEmpty) continue;
+      if (acc.seedFingerprint != null && acc.seedFingerprint != fp) continue;
+      final envelope = base64Decode(envelopeB64);
+      return PercSeedRecovery.decryptLedgerEnvelope(
+        envelope: envelope,
+        words: mnemonic,
+      );
+    }
+    throw StateError('No seed recovery envelope found for this phrase');
   }
 
   void mergePendingInboundFromPeer(PercLedger remote) {
@@ -1772,11 +1827,13 @@ class PercLedger {
     _assertValidPassword(password);
     if (accounts.containsKey(u)) throw StateError('Username already taken');
     final salt = PercAuth.generateSalt();
+    final passwordHash = PercAuth.hashPassword(password, salt);
     final acc = PercAccount(
       username: u,
-      passwordHash: PercAuth.hashPassword(password, salt),
+      passwordHash: passwordHash,
       salt: salt,
       address: PercAuth.deriveAddress(u, salt),
+      passwordSwitchCommit: PercAuth.passwordSwitchCommit(passwordHash, salt),
     );
     accounts[u] = acc;
     connectAllWalletsConcurrently();
@@ -1944,6 +2001,7 @@ class PercLedger {
     final seen = settlementWitnesses.map((w) => w.transferId).toSet();
     for (final witness in remote.settlementWitnesses) {
       if (seen.contains(witness.transferId)) continue;
+      if (!witness.switchCommitmentValid) continue;
       settlementWitnesses.add(witness);
       seen.add(witness.transferId);
     }
@@ -2209,6 +2267,10 @@ class PercLedger {
       }
 
       if (ops.any((o) => o.kind == InboundSettlementOpKind.creditReceiver)) {
+        if (isTransferAlreadySettledForReceiver(pending.id, receiver)) {
+          pendingInboundTransfers.remove(pending);
+          continue;
+        }
         _credit(receiver, pending.amount);
         _replaceOrInsertTx(receiver, confirmedTx);
       }
@@ -2363,8 +2425,10 @@ class PercLedger {
         blockIndex: confirmBlockIndex,
       );
       blockTxs.add(confirmedTx);
-      _credit(receiver, amount);
-      _replaceOrInsertTx(receiver, confirmedTx);
+      if (!isTransferAlreadySettledForReceiver(txId, receiver)) {
+        _credit(receiver, amount);
+        _replaceOrInsertTx(receiver, confirmedTx);
+      }
       _finalizeBlock(
         timestamp: now,
         blockTxs: blockTxs,

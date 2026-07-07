@@ -118,6 +118,18 @@ class PercLedgerHub extends ChangeNotifier {
   void requireSyncedForMutation() => network.requireSyncedForMutation();
 
   /// Persist ledger to local storage without network sync (safe during app boot).
+  Future<void> restoreFromBackup(PercLedger snapshot, {String? sessionUsername}) async {
+    final session = sessionUsername ?? _ledger.sessionUsername;
+    _ledger = PercLedger.fromJson(snapshot.toJson());
+    if (session != null && _ledger.accounts.containsKey(session)) {
+      _ledger.sessionUsername = session;
+      _ledger.refreshPendingInboundTransfers();
+    }
+    _revision++;
+    notifyListeners();
+    await persistLocal();
+  }
+
   Future<void> persistLocal() async {
     _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
     _revision++;

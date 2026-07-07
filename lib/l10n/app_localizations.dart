@@ -315,8 +315,31 @@ final _en = {
   'splash_tagline': 'Full Community Governance Suite',
   'nav_analysis': 'Analysis',
   'nav_wallet': 'Wallet',
+  'nav_security': 'Security',
   'nav_voting': 'Voting',
   'nav_credit': 'Credit',
+  'security_intro':
+      'Export an encrypted backup, restore on a new device, or recover with your optional 12-word seed phrase.',
+  'security_export_title': 'Encrypted backup',
+  'security_export_note':
+      'Creates a portable .percbackup file with your full Perccent ledger (balances, scenarios, stash).',
+  'security_export_action': 'Export backup file',
+  'security_restore_title': 'Restore from file',
+  'security_restore_note':
+      'Select a .percbackup file and enter the passphrase you used when exporting.',
+  'security_restore_action': 'Import backup file',
+  'security_seed_title': 'Seed phrase recovery',
+  'security_seed_note':
+      'Optional 12-word phrase from registration repopulates the same ledger scope as a file restore.',
+  'security_seed_phrase_label': '12-word seed phrase',
+  'security_seed_phrase_hint': 'word1 word2 … word12',
+  'security_seed_recover_action': 'Recover from seed phrase',
+  'security_backup_passphrase': 'Backup passphrase',
+  'wallet_seed_opt_in': 'Create optional 12-word recovery seed',
+  'wallet_seed_dialog_title': 'Save your recovery seed',
+  'wallet_seed_dialog_body':
+      'Write these 12 words down and store them safely. They can restore your wallet if you lose this device.',
+  'wallet_seed_dialog_ok': 'I have saved my seed',
   'fcg_title': 'Parish council voting',
   'fcg_subtitle':
       'Full Community Governance (FCG) ward voting for {region} — social cohesion narratives from your prior scenario runs.',
@@ -811,6 +834,10 @@ final _en = {
   'wallet_status_treasury_secured':
       'Treasury secured — awaiting seed treasury sign-in to launch chain',
   'wallet_status_account_created': 'Account created',
+  'wallet_status_account_created_seed':
+      'Account created — save your 12-word seed when prompted',
+  'wallet_status_backup_restored': 'Wallet restored from backup file',
+  'wallet_status_seed_restored': 'Wallet restored from seed phrase',
   'wallet_status_signed_in': 'Signed in as {user}',
   'wallet_err_sign_in_to_send': 'Sign in to send {name}',
   'wallet_err_invalid_amount':

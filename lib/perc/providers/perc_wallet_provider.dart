@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 
@@ -31,6 +32,8 @@ import '../services/perc_network_protocol.dart';
 import '../services/perc_seed_block.dart';
 import '../services/perc_wallet_store.dart';
 import '../services/perc_wallet_store_factory.dart';
+import '../services/perc_wallet_backup.dart';
+import '../services/perc_seed_recovery.dart';
 
 class PercWalletProvider extends ChangeNotifier {
   /// Disable auto-logout timers in widget/unit tests (see test setUp).
@@ -337,23 +340,118 @@ class PercWalletProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> register(String username, String password) async {
+  Future<List<String>?> register(
+    String username,
+    String password, {
+    bool enableSeedRecovery = false,
+  }) async {
     _clearMessages();
     try {
       _ledger.register(username, password);
       _ledger.login(username, password);
+      List<String>? mnemonic;
+      if (enableSeedRecovery) {
+        mnemonic = PercSeedRecovery.generateMnemonic();
+        _ledger.attachSeedRecoveryEnvelope(
+          username: PercAuth.normalizeUsername(username),
+          mnemonic: mnemonic,
+        );
+      }
       clearSessionTimedOut();
       _armSessionTimeout();
       notifyListeners();
       await _completeWalletSessionStart(
         username,
-        statusKey: 'wallet_status_account_created',
+        statusKey: enableSeedRecovery
+            ? 'wallet_status_account_created_seed'
+            : 'wallet_status_account_created',
       );
+      return mnemonic;
     } catch (e) {
       _postLoginSyncing = false;
       _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
+      return null;
     }
+  }
+
+  Uint8List exportEncryptedBackup(String passphrase) {
+    if (!isLoggedIn) throw StateError('Sign in to export a backup');
+    if (passphrase.length < 8) {
+      throw StateError('Backup passphrase must be at least 8 characters');
+    }
+    return PercWalletBackup.exportEncrypted(
+      ledger: _ledger.snapshotForBackup(),
+      passphrase: passphrase,
+    );
+  }
+
+  Future<void> restoreFromEncryptedBackup(
+    Uint8List bytes,
+    String passphrase,
+  ) async {
+    _clearMessages();
+    try {
+      final restored = PercWalletBackup.importEncrypted(
+        bytes: bytes,
+        passphrase: passphrase,
+      );
+      final session = restored.sessionUsername ??
+          restored.accounts.keys.firstWhere(
+            (k) => k != PercChainConstants.treasuryUsername,
+            orElse: () => '',
+          );
+      if (session.isEmpty) throw StateError('Backup contains no user wallet');
+      await PercLedgerHub.instance.restoreFromBackup(
+        restored,
+        sessionUsername: session,
+      );
+      clearSessionTimedOut();
+      _armSessionTimeout();
+      _setStatus('wallet_status_backup_restored');
+      notifyListeners();
+    } catch (e) {
+      _setError(WalletMessageLocalization.errorKeyFromException(e));
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> recoverFromSeedPhrase(List<String> words) async {
+    _clearMessages();
+    try {
+      final restored = _ledger.recoverFromSeedEnvelope(mnemonic: words);
+      final session = restored.sessionUsername ??
+          restored.accounts.keys.firstWhere(
+            (k) => k != PercChainConstants.treasuryUsername,
+            orElse: () => '',
+          );
+      if (session.isEmpty) {
+        throw StateError('Seed recovery envelope missing user wallet');
+      }
+      await PercLedgerHub.instance.restoreFromBackup(
+        restored,
+        sessionUsername: session,
+      );
+      clearSessionTimedOut();
+      _armSessionTimeout();
+      _setStatus('wallet_status_seed_restored');
+      notifyListeners();
+    } catch (e) {
+      _setError(WalletMessageLocalization.errorKeyFromException(e));
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> refreshSeedRecoveryEnvelope(List<String> mnemonic) async {
+    if (!isLoggedIn) return;
+    _ledger.attachSeedRecoveryEnvelope(
+      username: loggedInUsername!,
+      mnemonic: mnemonic,
+    );
+    await PercLedgerHub.instance.persistLocal();
+    notifyListeners();
   }
 
   Future<void> login(String username, String password) async {

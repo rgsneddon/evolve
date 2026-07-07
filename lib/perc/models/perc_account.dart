@@ -12,6 +12,9 @@ class PercAccount {
     this.lastFaucetDrawAt,
     this.cumulativeStakingEarned = PercAmount.zero,
     this.scenarioBlockHeight = 0,
+    this.passwordSwitchCommit,
+    this.seedFingerprint,
+    this.seedRecoveryEnvelope,
     List<PercTransaction>? transactions,
   }) : transactions = transactions ?? [];
 
@@ -24,6 +27,9 @@ class PercAccount {
   DateTime? lastFaucetDrawAt;
   PercAmount cumulativeStakingEarned;
   int scenarioBlockHeight;
+  String? passwordSwitchCommit;
+  String? seedFingerprint;
+  String? seedRecoveryEnvelope;
   final List<PercTransaction> transactions;
 
   Map<String, dynamic> toJson() => {
@@ -37,6 +43,11 @@ class PercAccount {
           'lastFaucetDrawAt': lastFaucetDrawAt!.toIso8601String(),
         'cumulativeStakingEarned': cumulativeStakingEarned.toJson(),
         if (scenarioBlockHeight > 0) 'scenarioBlockHeight': scenarioBlockHeight,
+        if (passwordSwitchCommit != null)
+          'passwordSwitchCommit': passwordSwitchCommit,
+        if (seedFingerprint != null) 'seedFingerprint': seedFingerprint,
+        if (seedRecoveryEnvelope != null)
+          'seedRecoveryEnvelope': seedRecoveryEnvelope,
         'transactions': transactions.map((t) => t.toJson()).toList(),
       };
 
@@ -57,6 +68,9 @@ class PercAccount {
                 json['cumulativeStakingEarned'] as Map<String, dynamic>)
             : PercAmount.zero,
         scenarioBlockHeight: json['scenarioBlockHeight'] as int? ?? 0,
+        passwordSwitchCommit: json['passwordSwitchCommit'] as String?,
+        seedFingerprint: json['seedFingerprint'] as String?,
+        seedRecoveryEnvelope: json['seedRecoveryEnvelope'] as String?,
         transactions: (json['transactions'] as List<dynamic>? ?? [])
             .map((t) =>
                 PercTransaction.fromJson(Map<String, dynamic>.from(t as Map)))
