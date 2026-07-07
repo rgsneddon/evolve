@@ -72,6 +72,15 @@ class TwoDeviceHarness {
     receiver.ingestInboundTransferInitiation(sender);
   }
 
+  /// Simulates rendezvous poll / mergeRelay (no explicit ingest call).
+  void pollRelayToReceiver() {
+    receiver.mergeNetworkStateFromPeer(sender);
+  }
+
+  void refreshSenderSnapshotOnReceiver() {
+    receiver.mergeNetworkStateFromPeer(sender);
+  }
+
   void mergeSenderFromReceiver() {
     sender.mergeNetworkStateFromPeer(receiver);
   }

@@ -10,7 +10,7 @@ enum PercTransferSettlementPhase {
 }
 
 /// Pure settlement policy — receiver credit and pending removal only when
-/// sender debit can succeed locally, or sender wallet lives on another device.
+/// sender funds are attested (local balance or peer relay snapshot).
 class PercTransferSettlementDecision {
   const PercTransferSettlementDecision._({
     required this.shouldSettle,
@@ -40,8 +40,8 @@ class PercTransferSettlementDecision {
           removePending: true,
         );
       case PercTransferSettlementPhase.recipientScenario:
+        if (!senderCanDebit) return none;
         if (senderIsLocalWallet) {
-          if (!senderCanDebit) return none;
           return const PercTransferSettlementDecision._(
             shouldSettle: true,
             debitSender: true,

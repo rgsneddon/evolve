@@ -62,6 +62,33 @@ void main() {
     );
   });
 
+  test('receiver sees pending on poll merge path without explicit ingest', () {
+    final devices = TwoDeviceHarness.create();
+    devices.linkDevices();
+    devices.fundSender();
+    devices.loginSender();
+
+    final amount = PercAmount.fromPerc(0.00000010);
+    devices.send(amount, deliverInstantly: false);
+
+    devices.loginReceiver();
+    expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
+    expect(devices.receiver.account('bob')!.transactions, isEmpty);
+
+    devices.pollRelayToReceiver();
+
+    expect(devices.receiver.pendingInboundFor('bob'), hasLength(1));
+    expect(
+      devices.receiver.account('bob')!.transactions.any(
+            (tx) =>
+                tx.kind == PercTxKind.transfer &&
+                tx.amount == amount &&
+                !tx.isConfirmed,
+          ),
+      isTrue,
+    );
+  });
+
   test('initiation ingestion does not credit spendable balance before scenario', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();

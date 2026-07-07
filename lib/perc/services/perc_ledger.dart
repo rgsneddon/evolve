@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../../models/locale_config.dart';
 import '../../models/scenario_input.dart';
 import '../models/perc_account.dart';
@@ -112,6 +114,9 @@ class PercLedger {
   final List<PercPendingInboundTransfer> pendingInboundTransfers;
   final List<PercMicroblockLogEntry> microblockLog;
   final PercChronofluxMicroVerifier _microVerifier;
+
+  /// Immutable sender relay snapshots keyed by sender username (cross-device).
+  final Map<String, PercLedger> _senderRelaySnapshots = {};
 
   List<PercPendingInboundTransfer> pendingInboundFor(String username) {
     final u = PercAuth.normalizeUsername(username);
@@ -611,6 +616,7 @@ class PercLedger {
 
   /// Merges launch flags, address book, and inbound transfers without replacing chain tip.
   void mergeNetworkStateFromPeer(PercLedger remote) {
+    _cacheSenderRelaySnapshotsFrom(remote);
     adoptNetworkLaunchState(remote);
     mergeDiscoverableAccounts(remote);
     mergePendingInboundFromPeer(remote);
@@ -1840,6 +1846,31 @@ class PercLedger {
   ) =>
       sender.balance >= pending.totalHold;
 
+  void _cacheSenderRelaySnapshotsFrom(PercLedger remote) {
+    for (final pending in remote.pendingInboundTransfers) {
+      final from = PercAuth.normalizeUsername(pending.fromUsername);
+      if (from.isEmpty || _senderIsLocalWallet(from)) continue;
+      _senderRelaySnapshots[from] = PercLedger.fromJson(remote.toJson());
+    }
+  }
+
+  bool _senderCanDebitOnPeer(PercPendingInboundTransfer pending) {
+    final from = PercAuth.normalizeUsername(pending.fromUsername);
+    final snapshot = _senderRelaySnapshots[from];
+    if (snapshot == null) return false;
+    final sender = snapshot.account(from);
+    if (sender == null || !sender.passwordSet) return false;
+    final holdActive = snapshot.pendingInboundTransfers.any(
+      (p) => p.id == pending.id && p.fromUsername == from,
+    );
+    if (!holdActive) return false;
+    return sender.balance >= pending.totalHold;
+  }
+
+  @visibleForTesting
+  bool senderCanDebitOnPeerForTest(PercPendingInboundTransfer pending) =>
+      _senderCanDebitOnPeer(pending);
+
   bool _senderTransferConfirmed(String transferId, String fromUsername) {
     final sender = _accountFor(fromUsername);
     if (sender == null) return false;
@@ -1913,6 +1944,7 @@ class PercLedger {
   /// Applies sender relay state so the recipient sees pending inbound txs
   /// immediately after a cross-device send is gossiped.
   void ingestInboundTransferInitiation(PercLedger remote) {
+    _cacheSenderRelaySnapshotsFrom(remote);
     mergePendingInboundFromPeer(remote);
     mergeInboundTransferTxsFromPeer(remote);
     PercTransferRelayAck.acknowledgeRelayTransfers(this, remote);
@@ -2023,11 +2055,13 @@ class PercLedger {
 
       final sender = _accountFor(pending.fromUsername);
       final senderIsLocal = _senderIsLocalWallet(pending.fromUsername);
+      final senderCanDebit = senderIsLocal
+          ? sender != null && _canDebitSenderForPending(sender, pending)
+          : _senderCanDebitOnPeer(pending);
       final decision = PercTransferSettlementDecision.evaluate(
         phase: PercTransferSettlementPhase.recipientScenario,
         senderIsLocalWallet: senderIsLocal,
-        senderCanDebit: sender != null &&
-            _canDebitSenderForPending(sender, pending),
+        senderCanDebit: senderCanDebit,
       );
       if (!decision.shouldSettle) continue;
 

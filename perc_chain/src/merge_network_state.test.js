@@ -87,6 +87,85 @@ describe('mergeNetworkStateFromPeer', () => {
     assert.equal(settlement.spendableSettled, true);
   });
 
+  it('initiation merge then settlement relay transitions pending to settled', () => {
+    const seed = {
+      networkGenesisRevision: 2,
+      blocks: [{ index: 0, transactions: [] }],
+      pendingInboundTransfers: [],
+    };
+    const senderAtInitiation = {
+      networkGenesisRevision: 2,
+      pendingInboundTransfers: [
+        {
+          id: 'tx-flow-1',
+          fromUsername: 'alice',
+          toUsername: 'bob',
+          amount: { microUnits: 10 },
+          fee: { microUnits: 1 },
+          sentAt: '2026-07-07T12:00:00.000Z',
+        },
+      ],
+      blocks: [
+        {
+          index: 1,
+          timestamp: '2026-07-07T12:00:00.000Z',
+          triggerUsername: 'alice',
+          transactions: [
+            {
+              id: 'tx-flow-1',
+              kind: 'transfer',
+              fromUsername: 'alice',
+              toUsername: 'bob',
+              amount: { microUnits: 10 },
+              confirmations: 0,
+              blockIndex: 1,
+              timestamp: '2026-07-07T12:00:00.000Z',
+            },
+          ],
+        },
+      ],
+    };
+
+    const initiation = seedObservesTransferInitiation(seed, senderAtInitiation);
+    assert.equal(initiation.observedAtInitiation, true);
+    assert.equal(seed.pendingInboundTransfers.length, 1);
+
+    const receiverAfterScenario = {
+      networkGenesisRevision: 2,
+      pendingInboundTransfers: [],
+      blocks: [
+        ...senderAtInitiation.blocks,
+        {
+          index: 2,
+          timestamp: '2026-07-07T12:05:00.000Z',
+          triggerUsername: 'bob',
+          transactions: [
+            {
+              id: 'tx-flow-1',
+              kind: 'transfer',
+              fromUsername: 'alice',
+              toUsername: 'bob',
+              amount: { microUnits: 10 },
+              confirmations: 1,
+              blockIndex: 2,
+              timestamp: '2026-07-07T12:05:00.000Z',
+            },
+          ],
+        },
+      ],
+    };
+
+    const settlementMerge = mergeNetworkStateFromPeer(seed, receiverAfterScenario);
+    assert.equal(settlementMerge.acknowledged, 1);
+    assert.equal(seed.pendingInboundTransfers.length, 1);
+
+    seed.pendingInboundTransfers = [];
+    const settlement = seedObservesScenarioSettlement(seed);
+    assert.equal(settlement.pendingCount, 0);
+    assert.deepEqual(settlement.settledIds, ['tx-flow-1']);
+    assert.equal(settlement.spendableSettled, true);
+  });
+
   it('merges pending without replacing taller canonical tip', () => {
     const canonical = {
       networkGenesisRevision: 2,
