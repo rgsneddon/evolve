@@ -32,6 +32,9 @@ import 'perc_treasury.dart';
 import 'perc_transfer_relay_ack.dart';
 import 'perc_settlement_witness.dart';
 
+/// Resolves a live sender ledger for cross-device scenario attestation.
+typedef PercSenderPeerResolver = PercLedger? Function(String fromUsername);
+
 /// Local Perccent ledger — blocks advance on scenarios, transfers, and Chronoflux microblock seals.
 class PercLedger {
   /// Pre-rename treasury usernames merged into [PercChainConstants.treasuryUsername].
@@ -944,6 +947,7 @@ class PercLedger {
   int advanceScenarioBlock(
     String username, {
     PercLedger? senderPeer,
+    PercSenderPeerResolver? senderPeerResolver,
   }) {
     final acc = _accountFor(PercAuth.normalizeUsername(username));
     if (acc == null) return 0;
@@ -951,8 +955,35 @@ class PercLedger {
       return acc.scenarioBlockHeight;
     }
     acc.scenarioBlockHeight++;
-    settlePendingInboundOnActivity(username, senderPeer: senderPeer);
+    settlePendingInboundOnActivity(
+      username,
+      senderPeer: senderPeer,
+      senderPeerResolver: senderPeerResolver,
+    );
     return acc.scenarioBlockHeight;
+  }
+
+  /// Sender username for a transfer id (blocks + account tx lists).
+  String? lookupTransferSender(String transferId) {
+    for (final block in blocks) {
+      for (final tx in block.transactions) {
+        if (tx.id == transferId &&
+            tx.kind == PercTxKind.transfer &&
+            tx.fromUsername != null) {
+          return tx.fromUsername;
+        }
+      }
+    }
+    for (final acc in accounts.values) {
+      for (final tx in acc.transactions) {
+        if (tx.id == transferId &&
+            tx.kind == PercTxKind.transfer &&
+            tx.fromUsername != null) {
+          return tx.fromUsername;
+        }
+      }
+    }
+    return null;
   }
 
   /// Block index used when a mutation is confirmed at seed/network height while
@@ -2061,6 +2092,7 @@ class PercLedger {
   void settlePendingInboundOnActivity(
     String username, {
     PercLedger? senderPeer,
+    PercSenderPeerResolver? senderPeerResolver,
     DateTime? now,
   }) {
     final t = (now ?? DateTime.now()).toUtc();
@@ -2082,16 +2114,19 @@ class PercLedger {
 
       final sender = _accountFor(pending.fromUsername);
       final senderIsLocal = _senderIsLocalWallet(pending.fromUsername);
+      final resolvedPeer = senderIsLocal
+          ? null
+          : (senderPeer ?? senderPeerResolver?.call(pending.fromUsername));
       final senderCanDebit = senderIsLocal
           ? sender != null && _canDebitSenderForPending(sender, pending)
-          : senderPeer != null &&
-              _attestSenderCanDebitOnPeer(senderPeer, pending);
+          : resolvedPeer != null &&
+              _attestSenderCanDebitOnPeer(resolvedPeer, pending);
 
       final plan = planSettlement(
         phase: SettlementPhase.recipientScenario,
         senderIsLocalWallet: senderIsLocal,
         senderCanDebit: senderCanDebit,
-        senderPeerProvided: senderIsLocal || senderPeer != null,
+        senderPeerProvided: senderIsLocal || resolvedPeer != null,
         remoteWitnessPresent: false,
         remoteSettledWithoutPending: false,
       );
@@ -2254,6 +2289,7 @@ class PercLedger {
     double? shearScs,
     double? resistanceScs,
     double? flowScs,
+    PercSenderPeerResolver? senderPeerResolver,
   }) {
     final u = PercAuth.normalizeUsername(username);
     final user = _accountFor(u);
@@ -2317,7 +2353,10 @@ class PercLedger {
         );
         lastScenarioAt = now;
       }
-      final scenarioBlock = advanceScenarioBlock(u);
+      final scenarioBlock = advanceScenarioBlock(
+        u,
+        senderPeerResolver: senderPeerResolver,
+      );
       return PercFaucetCreditResult(
         status: PercFaucetCreditStatus.onCooldown,
         cooldownRemaining: cooldownLeft,
@@ -2369,7 +2408,10 @@ class PercLedger {
     }
 
     lastScenarioAt = now;
-    final scenarioBlock = advanceScenarioBlock(u);
+    final scenarioBlock = advanceScenarioBlock(
+      u,
+      senderPeerResolver: senderPeerResolver,
+    );
 
     if (credited != null) {
       return PercFaucetCreditResult(

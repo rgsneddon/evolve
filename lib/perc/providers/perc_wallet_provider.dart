@@ -619,12 +619,16 @@ class PercWalletProvider extends ChangeNotifier {
     noteUserActivity();
     _clearMessages();
     try {
+      final session = _ledger.sessionUsername!;
+      await PercLedgerHub.instance.network.prefetchSenderPeersForPending(
+        session,
+      );
       final label = memo ??
           (analysisMode == AnalysisMode.cohesionScore
               ? 'wallet_faucet_label_scs'
               : 'wallet_faucet_label_percent');
       final result = _ledger.creditScenario(
-        username: _ledger.sessionUsername!,
+        username: session,
         percentChance: score,
         scenarioLabel: label,
         continuumScs: continuumScs ?? score,
@@ -632,6 +636,8 @@ class PercWalletProvider extends ChangeNotifier {
         shearScs: shearScs,
         resistanceScs: resistanceScs,
         flowScs: flowScs,
+        senderPeerResolver:
+            PercLedgerHub.instance.network.senderPeerResolver,
       );
 
       _captureGenesisRenewalEvent();
@@ -644,7 +650,7 @@ class PercWalletProvider extends ChangeNotifier {
           _setStatus(null);
         }
         notifyListeners();
-        await _commit();
+        await _commitAfterScenario();
         return result;
       }
 
@@ -663,7 +669,7 @@ class PercWalletProvider extends ChangeNotifier {
           );
         }
         notifyListeners();
-        await _commit();
+        await _commitAfterScenario();
         return result;
       }
 
@@ -677,7 +683,7 @@ class PercWalletProvider extends ChangeNotifier {
         }
       }
       notifyListeners();
-      await _commit();
+      await _commitAfterScenario();
       return result;
     } catch (e) {
       _setStatus('wallet_status_treasury_cap');
@@ -805,6 +811,10 @@ class PercWalletProvider extends ChangeNotifier {
   }
 
   Future<void> _commit() => PercLedgerHub.instance.commit();
+
+  Future<void> _commitAfterScenario() async {
+    await PercLedgerHub.instance.commitAfterScenario();
+  }
 
   @override
   void dispose() {

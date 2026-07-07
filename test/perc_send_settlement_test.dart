@@ -150,6 +150,28 @@ void main() {
     expect(devices.receiver.settlementWitnesses, isEmpty);
   });
 
+  test('cross-device credits receiver via senderPeerResolver without merge', () {
+    final devices = TwoDeviceHarness.create();
+    devices.linkDevices();
+    devices.fundSender();
+    devices.loginSender();
+
+    final amount = PercAmount.fromPerc(0.00000005);
+    devices.send(amount, deliverInstantly: false);
+    devices.pushSendToReceiver();
+    devices.loginReceiver();
+
+    devices.receiver.advanceScenarioBlock(
+      'bob',
+      senderPeerResolver: (from) => from == 'alice' ? devices.sender : null,
+    );
+
+    expect(devices.receiver.account('bob')!.balance.microUnits, amount.microUnits);
+    expect(devices.receiver.pendingInboundFor('bob'), isEmpty);
+    expect(devices.receiver.settlementWitnesses, hasLength(1));
+    expect(devices.sender.pendingInboundFor('bob'), hasLength(1));
+  });
+
   test('cross-device sender debits after witness scenario merge', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();

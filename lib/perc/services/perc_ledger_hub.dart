@@ -109,7 +109,7 @@ class PercLedgerHub extends ChangeNotifier {
     );
     if (session != null && _ledger.accounts.containsKey(session)) {
       _ledger.sessionUsername = session;
-      _ledger.settlePendingInboundOnActivity(session);
+      _ledger.refreshPendingInboundTransfers();
     }
     _revision++;
     notifyListeners();
@@ -161,6 +161,30 @@ class PercLedgerHub extends ChangeNotifier {
       ledger: _ledger,
     );
     await network.syncInboundState();
+    notifyListeners();
+  }
+
+  /// Persists after scenario, gossips witnesses, and notifies senders to reconcile.
+  Future<void> commitAfterScenario() async {
+    _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ledger.ensureNetworkNodes(
+      blockHeight: PercChainTip.height(_ledger),
+      tipHash: PercChainTip.hash(_ledger),
+    );
+    if (_ledger.sessionUsername != null) {
+      _ledger.setWalletOnline(
+        _ledger.sessionUsername!,
+        endpoint: network.nodeEndpoint,
+        blockHeight: PercChainTip.height(_ledger),
+        tipHash: PercChainTip.hash(_ledger),
+      );
+    }
+    _revision++;
+    notifyListeners();
+    await _store?.save(_ledger);
+    hub_sync.broadcastRevision();
+    await network.gossipToPeers();
+    await network.propagateSettlementWitnesses();
     notifyListeners();
   }
 

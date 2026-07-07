@@ -47,6 +47,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   bool _seedConnected = false;
   Timer? _receivePollTimer;
   bool _appInBackground = false;
+  final Map<String, PercLedger> _senderPeerCache = {};
 
   PercNetworkSyncState get syncState => _syncState;
   bool get isConnectedToSeed => _seedConnected;
@@ -63,8 +64,17 @@ class PercNetworkCoordinator extends ChangeNotifier {
   @visibleForTesting
   static void resetForTest() {
     disableLiveNodesForTests = true;
+    instance._senderPeerCache.clear();
     instance._detach();
   }
+
+  @visibleForTesting
+  void registerSenderPeerForTest(String username, PercLedger peer) {
+    _senderPeerCache[username] = peer;
+  }
+
+  PercSenderPeerResolver get senderPeerResolver =>
+      (fromUsername) => _senderPeerCache[fromUsername];
 
   @visibleForTesting
   void setNetworkBlockHeightForTest(int height) {
@@ -429,6 +439,72 @@ class PercNetworkCoordinator extends ChangeNotifier {
       throw StateError(
         'Wallet syncing to network block height $_networkBlockHeight — try again shortly',
       );
+    }
+  }
+
+  /// Fetches live sender ledgers for pending cross-device inbound transfers.
+  Future<void> prefetchSenderPeersForPending(String receiverUsername) async {
+    _senderPeerCache.clear();
+    final hub = _hub;
+    if (hub == null) return;
+
+    final pending = hub.ledger.pendingInboundFor(receiverUsername);
+    final remoteSenders = pending
+        .where((p) {
+          final acc = hub.ledger.account(p.fromUsername);
+          return acc == null || !acc.passwordSet;
+        })
+        .map((p) => p.fromUsername)
+        .toSet();
+
+    for (final from in remoteSenders) {
+      final peer = await _fetchSenderPeerLedger(from);
+      if (peer != null) {
+        _senderPeerCache[from] = peer;
+      }
+    }
+  }
+
+  Future<PercLedger?> _fetchSenderPeerLedger(String username) async {
+    if (_senderPeerCache.containsKey(username)) {
+      return _senderPeerCache[username];
+    }
+    final hub = _hub;
+    if (hub == null) return null;
+
+    final node = hub.ledger.networkNodes[username];
+    final endpoint = node?.endpoint;
+    if (endpoint != null &&
+        endpoint.isNotEmpty &&
+        PercPublicEndpoint.isInternetEndpoint(endpoint)) {
+      final remote = await _client.fetchLedger(endpoint);
+      if (remote != null) return remote;
+    }
+
+    final relayed = await _rendezvous.fetchRelayedLedger(username: username);
+    if (relayed != null) return relayed;
+
+    final acc = hub.ledger.account(username);
+    if (acc != null && acc.address.isNotEmpty) {
+      return _rendezvous.fetchRelayedLedger(address: acc.address);
+    }
+    return null;
+  }
+
+  /// Pushes settlement witnesses to sender rendezvous slots after receiver scenario.
+  Future<void> propagateSettlementWitnesses() async {
+    if (disableLiveNodesForTests) return;
+    final hub = _hub;
+    if (hub == null || hub.ledger.settlementWitnesses.isEmpty) return;
+
+    final senders = <String>{};
+    for (final witness in hub.ledger.settlementWitnesses) {
+      final from = hub.ledger.lookupTransferSender(witness.transferId);
+      if (from != null) senders.add(from);
+    }
+
+    for (final sender in senders) {
+      await pushLedgerToRecipient(username: sender, ledger: hub.ledger);
     }
   }
 
