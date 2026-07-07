@@ -22,6 +22,19 @@ if (-not $local) {
     throw 'Could not parse version from pubspec.yaml (expected x.y.z+build)'
 }
 
+$pinText = $env:EVOLVE_RELEASE_PINNED
+$pinFile = Join-Path $Root '.evolve-release-pin'
+if (-not $pinText -and (Test-Path $pinFile)) {
+    $pinText = (Get-Content $pinFile -Raw).Trim()
+}
+if ($pinText) {
+    $pinned = Parse-AppVersion $pinText
+    if ($pinned -and (Compare-AppVersion $local $pinned) -eq 0) {
+        Write-Host "Release pinned at $($local.Major).$($local.Minor).$($local.Patch)+$($local.Build); skipping bump" -ForegroundColor Yellow
+        exit 0
+    }
+}
+
 if ($EnsureConsecutive) {
     if (-not $BuildOnly -and -not $PatchOnly) {
         $BuildOnly = $true

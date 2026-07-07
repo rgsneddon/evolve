@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = "Stop"
 $Root = Split-Path $PSScriptRoot -Parent
 Set-Location $Root
+$env:EVOLVE_RELEASE_PINNED = "$Version+136"
 
 New-Item -ItemType Directory -Path $ScratchDir -Force | Out-Null
 
@@ -71,6 +72,7 @@ if ($dirtyAfter) {
 }
 
 Write-StepLog "publish" {
+  $env:EVOLVE_RELEASE_PINNED = "$Version+136"
   powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\publish_github_release.ps1" `
     -Version $Version -SkipBuild -EvidenceDir $ScratchDir
 }

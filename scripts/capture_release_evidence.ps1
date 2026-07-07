@@ -37,6 +37,15 @@ function Get-SessionGoalDirs {
   $dirs | Select-Object -Unique
 }
 
+function Mirror-ScratchEvidence([string]$GoalDir, [string]$Scratch) {
+  $implDir = Join-Path $GoalDir 'implementer'
+  New-Item -ItemType Directory -Path $implDir -Force | Out-Null
+  if (-not (Test-Path $Scratch)) { return }
+  Get-ChildItem $Scratch -File | ForEach-Object {
+    Copy-Item $_.FullName (Join-Path $implDir $_.Name) -Force
+  }
+}
+
 function Sync-PublishLogHead([string]$Dir, [string]$Head) {
   $logPath = Join-Path $Dir 'publish.log'
   if (-not (Test-Path $logPath)) { return }
@@ -132,6 +141,14 @@ $goalDirs = Get-SessionGoalDirs
 foreach ($goalDir in $goalDirs) {
   if (-not (Test-Path $goalDir)) { continue }
   Materialize-Deliverables -GoalDir $goalDir -RelPaths $relPaths
+  Mirror-ScratchEvidence -GoalDir $goalDir -Scratch $ScratchDir
+  @{
+    exported_utc = (Get-Date).ToUniversalTime().ToString('o')
+    release = $Version
+    build = $build
+    git_head = $gitHead
+    deliverable_count = $relPaths.Count
+  } | ConvertTo-Json -Compress | Set-Content (Join-Path $goalDir 'release_verification_stamp.json') -Encoding utf8 -NoNewline
   [System.IO.File]::WriteAllLines((Join-Path $goalDir "evolve_app_CHANGED_FILES.log"), $changed, $utf8)
   [System.IO.File]::WriteAllText((Join-Path $goalDir "evolve_app_release.patch"), $patch, $utf8)
   [System.IO.File]::WriteAllText((Join-Path $goalDir "RELEASE.patch"), $patch, $utf8)
