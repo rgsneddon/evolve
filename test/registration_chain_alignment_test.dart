@@ -194,7 +194,7 @@ void main() {
           .any((n) => n.username == 'bgoffline' && n.online);
 
       _writeLog(
-        'registration_recovery_after_sync.log',
+        'registration_background_deep_sync.log',
         'path=background_scheduleDeepSync\n'
         'username=bgoffline\n'
         'afterHeight=${ledger.blockHeight}\n'
