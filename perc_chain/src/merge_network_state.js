@@ -109,6 +109,7 @@ export function mergeNetworkStateFromPeer(canonical, remote) {
     witnessesMerged,
     treasuryMerged: treasury.merged,
     treasuryPayoutBlocksMerged: treasury.payoutBlocksMerged,
+    treasuryRecipientsMerged: treasury.recipientsMerged,
     treasuryAccountSynced: treasury.accountSynced,
     ...ack,
     ok: ack.ok || treasury.merged || pendingMerged > 0 || witnessesMerged > 0,

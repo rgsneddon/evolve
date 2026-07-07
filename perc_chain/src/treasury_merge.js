@@ -27,6 +27,20 @@ export function collectTreasuryPayoutTxIds(ledger) {
   return ids;
 }
 
+function payoutRecipientsForIds(remote, payoutIds) {
+  const recipients = new Set();
+  const wanted = new Set(payoutIds);
+  for (const block of remote?.blocks ?? []) {
+    for (const tx of block?.transactions ?? []) {
+      if (!wanted.has(tx?.id)) continue;
+      if (!TREASURY_PAYOUT_KINDS.has(tx?.kind)) continue;
+      const to = tx.toUsername ?? tx.to;
+      if (to && to !== TREASURY_USERNAME) recipients.add(to);
+    }
+  }
+  return recipients;
+}
+
 /**
  * Promote scenario/staking payout blocks from a peer onto the canonical seed ledger.
  */
@@ -55,6 +69,48 @@ export function mergeTreasuryPayoutBlocksFromPeer(canonical, remote) {
   }
 
   return { merged, payoutIds };
+}
+
+/**
+ * Merge wallet accounts that received treasury-funded payouts on the peer ledger.
+ */
+export function mergePayoutRecipientAccountsFromPeer(canonical, remote, payoutIds) {
+  if (!canonical || !remote || !payoutIds?.length) return 0;
+
+  const recipients = payoutRecipientsForIds(remote, payoutIds);
+  if (recipients.size === 0) return 0;
+
+  canonical.accounts = canonical.accounts ?? {};
+  let merged = 0;
+
+  for (const username of recipients) {
+    const remoteAcc = remote.accounts?.[username];
+    if (!remoteAcc?.balance) continue;
+
+    const local = canonical.accounts[username] ?? {
+      username,
+      passwordHash: remoteAcc.passwordHash ?? '',
+      salt: remoteAcc.salt ?? '',
+      address: remoteAcc.address ?? '',
+      passwordSet: remoteAcc.passwordSet ?? false,
+      balance: { microUnits: 0 },
+      cumulativeStakingEarned: { microUnits: 0 },
+      transactions: [],
+    };
+
+    canonical.accounts[username] = {
+      ...local,
+      ...remoteAcc,
+      username,
+      balance: cloneBlock(remoteAcc.balance),
+      cumulativeStakingEarned: remoteAcc.cumulativeStakingEarned
+        ? cloneBlock(remoteAcc.cumulativeStakingEarned)
+        : local.cumulativeStakingEarned,
+    };
+    merged += 1;
+  }
+
+  return merged;
 }
 
 function isRemoteScenarioNewer(canonical, remote) {
@@ -104,20 +160,25 @@ export function mergeTreasuryAccountFromPeer(
 }
 
 /**
- * Merge treasury payout blocks and account truth from peer wallet gossip.
+ * Merge treasury payout blocks, recipient credits, and treasury account truth.
  */
 export function mergeTreasuryStateFromPeer(canonical, remote) {
   const payout = mergeTreasuryPayoutBlocksFromPeer(canonical, remote);
-  const shouldSyncAccount =
+  const recipientsMerged =
+    payout.payoutIds.length > 0
+      ? mergePayoutRecipientAccountsFromPeer(canonical, remote, payout.payoutIds)
+      : 0;
+  const shouldSyncTreasury =
     payout.merged > 0 || isRemoteScenarioNewer(canonical, remote);
-  const accountSynced = shouldSyncAccount
+  const accountSynced = shouldSyncTreasury
     ? mergeTreasuryAccountFromPeer(canonical, remote)
     : false;
 
   return {
     payoutBlocksMerged: payout.merged,
     payoutIds: payout.payoutIds,
+    recipientsMerged,
     accountSynced,
-    merged: payout.merged > 0 || accountSynced,
+    merged: payout.merged > 0 || accountSynced || recipientsMerged > 0,
   };
 }

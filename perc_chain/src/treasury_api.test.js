@@ -192,7 +192,16 @@ describe('treasury_api and explorer treasury truth', () => {
     assert.equal(imported, true);
 
     const treasury = store.treasuryAccount(TREASURY);
-    assert.equal(treasury.balance.microUnits, 100_000_000_000 - 10_000_000);
+    const rewardMicro = 10 * 1_000_000;
+    assert.equal(treasury.balance.microUnits, 100_000_000_000 - rewardMicro);
+
+    const bob = store.ledger.accounts.bob;
+    assert.ok(bob, 'bob must exist on seed after payout merge');
+    assert.equal(bob.balance.microUnits, rewardMicro);
+    assert.equal(
+      bob.balance.microUnits + treasury.balance.microUnits,
+      100_000_000_000,
+    );
 
     const snapshot = buildNetworkSnapshot({
       peers: new Map(),
