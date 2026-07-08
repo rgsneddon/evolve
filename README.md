@@ -143,6 +143,16 @@ Scroll to the bottom of the app and expand **License & Chronoflux attribution** 
 
 ---
 
+## Standalone Perccent Wallet
+
+The full Perccent wallet (without Evolve analysis or FCG voting) is available as a separate open-source project:
+
+**[github.com/rgsneddon/perccent-wallet](https://github.com/rgsneddon/perccent-wallet)**
+
+That repository includes the Flutter wallet app, a self-hosted `perc_chain` seed-node build (`render.yaml`), and deployment docs. It syncs on the same chain (`evolve-chronoflux-principia-chain-1`) as the embedded wallet in this app.
+
+---
+
 ## Perccent blockchain — architecture, emission, and scalability
 
 Evolve embeds an optional **Perccent** wallet (`PERC` / **Perccent**) on the **Chronoflux Principia** chain. The ledger lives on your device; an internet **seed node** (`evolve_seed_node`) anchors consensus and serves a public explorer. Currency uses **8 decimal places**: **1 cent = 0.00000001 PERC**.
@@ -156,6 +166,8 @@ Evolve embeds an optional **Perccent** wallet (`PERC` / **Perccent**) on the **C
 | **Side chain** | `perc-chronoflux-side-1` — fair-usage microblock height and pending seal progress |
 | **Treasury** | `evolve_treasury` — emits PERC only when users run scenarios; no manual receive address or inbound funding after launch; outbound manual sends disabled |
 | **Seed** | `evolve_seed_node` — rendezvous, ledger relay, public explorer |
+
+**One internet seed node — not two.** Deploy a single Render service (`evolve-perc-internet` in `render.yaml`) hosting `evolve_seed_node`. The evolutionary id `evolve-chronoflux-principia-chain-1` is the canonical chain *name* (the `-1` suffix is not a second chain). There is no separate “chain 0” seed host. Every wallet adopts this seed’s chain id, block height, and tip hash at registration (or via background deep sync when the seed was temporarily offline) so cross-wallet Perccent send/receive stays on one ledger.
 
 Each wallet keeps a **local JSON ledger**. When online, wallets gossip blocks and transfers through the rendezvous host (default port **9478**); wallet nodes may serve on port **9477**.
 
@@ -308,7 +320,7 @@ The chain is designed to grow with user activity without unbounded local storage
 | **Static splash** | Launch uses a static poster (no MP4 splash animation) for faster cold start on all platforms |
 | **Cross-version PERC** | Wallets on different app builds merge launch flags, pending inbound transfers, and transfer blocks from peers with shorter or divergent chains |
 | **Registration seed (one-time)** | After a new account is created on the splash screen, an optional 12-word recovery seed is offered once (generate and write down, or skip) before entering the app |
-| **PERC Security tab** | Immediately right of Wallet: export encrypted `.percbackup` files and restore from backup or clipboard only (no seed phrase setup) |
+| **PERC Security tab** | Immediately right of Wallet: export encrypted `.percbackup` files and restore from backup file only (no seed phrase setup) |
 | **Switch commitments** | Epoch-tagged quantum-hardening commitments on login, pending transfers, and settlement witnesses |
 | **In-app updates** | Windows and Android check published gh-pages `version.json` first, then GitHub Releases / gh-pages APK fallbacks |
 
