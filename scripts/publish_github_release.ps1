@@ -66,7 +66,8 @@ if (-not $SkipBuild) {
 
 try {
     $deployArgs = @{ RepoName = $RepoName }
-    if ($SkipBuild) { $deployArgs.SkipBuild = $true }
+    $webBuilt = Test-Path (Join-Path $Root 'build\web\index.html')
+    if ($SkipBuild -or $webBuilt) { $deployArgs.SkipBuild = $true }
     & "$PSScriptRoot\deploy_web_github.ps1" @deployArgs
 } catch {
     Write-Error $_

@@ -34,7 +34,18 @@ if (-not $SkipBuild) {
     } else {
         Write-Host 'No GROK_PROXY_URL — web will use in-browser heuristic unless assets/config/grok_proxy.json is set.' -ForegroundColor Yellow
     }
-    & $flutter build web --release --base-href $baseHref @defineArgs
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & $flutter build web --release --base-href $baseHref @defineArgs 2>&1 | ForEach-Object {
+      if ($_ -is [System.Management.Automation.ErrorRecord]) {
+        $msg = $_.ToString()
+        if ($msg -match 'Warning:|Wasm dry run') { Write-Host $msg -ForegroundColor Yellow }
+        else { Write-Error $_ }
+      } else { $_ }
+    }
+    $webExit = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+    if ($webExit -ne 0) { exit $webExit }
 }
 
 $required = @(

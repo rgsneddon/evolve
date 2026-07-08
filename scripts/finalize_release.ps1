@@ -100,6 +100,8 @@ if ($RecreateRelease) { $publishArgs.RecreateRelease = $true }
 
 $buildLogPath = Join-Path $ScratchDir 'build_all.log'
 $buildReady = (Test-Path $buildLogPath) -and ((Get-Content $buildLogPath -Raw) -match 'All builds complete')
+$webReady = Test-Path (Join-Path $Root 'build\web\index.html')
+if ($webReady) { $buildReady = $true }
 Invoke-StepLog 'publish' {
   $publishParams = @{
     Version     = $Version
