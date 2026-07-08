@@ -2,6 +2,8 @@ param(
   [string]$Version = '',
   [string]$ScratchDir = 'C:\Users\rgsne\AppData\Local\Temp\grok-goal-5c94fa09228d\implementer',
   [string]$BaseRef = 'aacca1a',
+  [ValidateSet('all', 'build', 'publish')]
+  [string]$StartAt = 'all',
   [switch]$RecreateRelease
 )
 
@@ -64,13 +66,29 @@ $headAtStart = (git rev-parse HEAD).Trim()
 Write-Host "Finalize v$Version+$build at HEAD $headAtStart (base $BaseRef)" -ForegroundColor Cyan
 
 # (b) Full test suite — authoritative post-fix gate
-Invoke-StepLog 'evolve_test' {
-  flutter test --reporter expanded
+if ($StartAt -eq 'all') {
+  Invoke-StepLog 'evolve_test' {
+    flutter test --reporter expanded
+  }
+} else {
+  $testLog = Join-Path $ScratchDir 'evolve_test.log'
+  if (-not (Test-Path $testLog) -or -not ((Get-Content $testLog -Raw) -match 'All tests passed')) {
+    throw "evolve_test.log missing or incomplete; run with -StartAt all first ($testLog)"
+  }
+  Write-Host '=== evolve_test (skipped; prior log valid) ===' -ForegroundColor Yellow
 }
 
 # (c) Full build (web, windows, apk when JDK present)
-Invoke-StepLog 'build_all' {
-  & "$PSScriptRoot\build_all.ps1" -SkipTests
+if ($StartAt -in @('all', 'build')) {
+  Invoke-StepLog 'build_all' {
+    & "$PSScriptRoot\build_all.ps1" -SkipTests
+  }
+} else {
+  $buildLog = Join-Path $ScratchDir 'build_all.log'
+  if (-not (Test-Path $buildLog) -or -not ((Get-Content $buildLog -Raw) -match 'All builds complete')) {
+    throw "build_all.log missing or incomplete; run with -StartAt build first ($buildLog)"
+  }
+  Write-Host '=== build_all (skipped; prior log valid) ===' -ForegroundColor Yellow
 }
 
 # (d) Installers + publish with gh-pages enabled (no skip flags)
