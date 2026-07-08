@@ -142,7 +142,7 @@ if (-not $SkipPages) {
         Copy-Item $readmeSrc (Join-Path $DeployDir 'README.md') -Force
     }
 
-    foreach ($extra in @('download.html', 'privacy_policy.txt', 'fcg_white_paper.html', 'fcg_white_paper.txt')) {
+    foreach ($extra in @('download.html', 'privacy_policy.txt', 'fcg_white_paper.html', 'fcg_white_paper.txt', 'version.json')) {
         $src = Join-Path $Root $extra
         if (Test-Path $src) {
             Copy-Item $src (Join-Path $DeployDir $extra) -Force
@@ -178,8 +178,20 @@ if (-not $SkipPages) {
         if ($DryRun) {
             Write-Host "[dry-run] Would push Pages deploy to origin $pagesBranch" -ForegroundColor Yellow
         } else {
-            git push -u origin $pagesBranch --no-verify
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $pushEap = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            git push -u origin $pagesBranch --no-verify 2>&1 | ForEach-Object {
+              if ($_ -is [System.Management.Automation.ErrorRecord]) {
+                $msg = $_.ToString()
+                if ($msg -notmatch 'warning:') { Write-Error $_ }
+              } else {
+                $line = "$_"
+                if ($line) { Write-Host $line }
+              }
+            }
+            $pushExit = $LASTEXITCODE
+            $ErrorActionPreference = $pushEap
+            if ($pushExit -ne 0) { exit $pushExit }
             Write-Host "Pages deploy pushed: https://$owner.github.io/$RepoName/" -ForegroundColor Green
         }
     } else {

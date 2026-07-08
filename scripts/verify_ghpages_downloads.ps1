@@ -69,7 +69,7 @@ try {
 
 try {
   $versionResp = Invoke-WebRequest -Uri $versionUrl -TimeoutSec 60 -UseBasicParsing
-  $versionBody = $versionResp.Content
+  $versionBody = $versionResp.Content.Trim().TrimStart([char]0xFEFF)
   $versionPath = Join-Path $ScratchDir 'pages_version_live.json'
   [System.IO.File]::WriteAllText($versionPath, $versionBody, $utf8)
   $lines += "pages_version_status=$($versionResp.StatusCode)"
