@@ -1,20 +1,30 @@
 param(
-  [string]$Version = "4.0.0",
-  [string]$ScratchDir = "C:\Users\rgsne\AppData\Local\Temp\grok-goal-81e471764cf8\implementer",
-  [string]$BaseRef = "3d09a3f"
+  [string]$Version = '',
+  [string]$ScratchDir = 'C:\Users\rgsne\AppData\Local\Temp\grok-goal-5c94fa09228d\implementer',
+  [string]$BaseRef = 'aacca1a',
+  [switch]$RecreateRelease
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 Set-Location $Root
-$env:EVOLVE_RELEASE_PINNED = "$Version+136"
+
+$versionJsonPath = Join-Path $Root 'version.json'
+if (-not $Version) {
+  if (-not (Test-Path $versionJsonPath)) {
+    throw 'version.json missing and -Version not supplied'
+  }
+  $Version = (Get-Content $versionJsonPath -Raw | ConvertFrom-Json).version
+}
+$build = (Get-Content $versionJsonPath -Raw | ConvertFrom-Json).build_number
+$env:EVOLVE_RELEASE_PINNED = "$Version+$build"
 
 New-Item -ItemType Directory -Path $ScratchDir -Force | Out-Null
 
-function Write-StepLog([string]$Name, [scriptblock]$Block) {
+function Invoke-StepLog([string]$Name, [scriptblock]$Block) {
   Write-Host "=== $Name ===" -ForegroundColor Cyan
   $logPath = Join-Path $ScratchDir "$Name.log"
-  & $Block *>&1 | Tee-Object -FilePath $logPath
+  & $Block 2>&1 | Tee-Object -FilePath $logPath
   if ($LASTEXITCODE -ne 0) {
     throw "$Name failed with exit $LASTEXITCODE"
   }
@@ -30,52 +40,46 @@ $dirty
   exit 1
 }
 
-# (b) Tests and doc/version audits
-Write-StepLog "test_results" {
+$headAtStart = (git rev-parse HEAD).Trim()
+Write-Host "Finalize v$Version+$build at HEAD $headAtStart (base $BaseRef)" -ForegroundColor Cyan
+
+# (b) Full test suite — authoritative post-fix gate
+Invoke-StepLog 'evolve_test' {
   flutter test --reporter expanded
 }
 
-$auditFiles = @("pubspec.yaml", "lib/perc/perc_app_version.dart", "version.json", "download.html", "downloads/index.html", "README.md")
-$audit = @("=== version audit $(Get-Date -Format o) ===")
-foreach ($f in $auditFiles) {
-  $audit += "---- $f ----"
-  $audit += (Select-String -Path $f -Pattern '4\.0\.0|3\.4\.8|136|137' | ForEach-Object { $_.Line })
-}
-$audit | Set-Content (Join-Path $ScratchDir "version_audit.log") -Encoding utf8
-
-$doc = @("=== doc spotcheck $(Get-Date -Format o) ===")
-$doc += (Select-String -Path README.md -Pattern 'Security tab|treasury|scenario-only|v4\.0\.0|build 136' | ForEach-Object { $_.Line })
-$doc += "--- privacy_policy.txt ---"
-$doc += (Select-String -Path privacy_policy.txt -Pattern 'Last updated|Security tab|treasury|scenario-only|v4\.0\.0|build 136' | ForEach-Object { $_.Line })
-$doc += "--- LICENSE ---"
-$doc += (Select-String -Path LICENSE -Pattern 'Copyright|Chronoflux|dual' | Select-Object -First 5 | ForEach-Object { $_.Line })
-$doc | Set-Content (Join-Path $ScratchDir "doc_spotcheck.log") -Encoding utf8
-
-flutter test test/downloads_landing_page_test.dart --reporter expanded 2>&1 |
-  Set-Content (Join-Path $ScratchDir "landing_page_test.log") -Encoding utf8
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-# (c) Full build + installers + publish (build included; idempotent clobber upload)
-Write-StepLog "publish" {
-  $env:EVOLVE_RELEASE_PINNED = "$Version+136"
-  powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\publish_github_release.ps1" `
-    -Version $Version -SkipTests -EvidenceDir $ScratchDir
+# (c) Full build (web, windows, apk when JDK present)
+Invoke-StepLog 'build_all' {
+  powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\build_all.ps1"
 }
 
-# (d) API/asset probe (authoritative publish proof)
+# (d) Installers + publish with gh-pages enabled (no skip flags)
+$publishArgs = @{
+  Version     = $Version
+  EvidenceDir = $ScratchDir
+}
+if ($RecreateRelease) { $publishArgs.RecreateRelease = $true }
+
+Invoke-StepLog 'publish' {
+  $argList = @(
+    '-ExecutionPolicy', 'Bypass',
+    '-File', "$PSScriptRoot\publish_github_release.ps1",
+    '-Version', $Version,
+    '-EvidenceDir', $ScratchDir
+  )
+  if ($RecreateRelease) { $argList += '-RecreateRelease' }
+  & powershell @argList
+}
+
+# (e) GitHub release API/asset probe
 & "$PSScriptRoot\verify_github_release.ps1" -Version $Version -ScratchDir $ScratchDir
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# (e) Mirror evidence + materialize session goal deliverables
-& "$PSScriptRoot\capture_release_evidence.ps1" -ScratchDir $ScratchDir -BaseRef $BaseRef -Version $Version
+# (f) Live gh-pages downloads proof
+& "$PSScriptRoot\verify_ghpages_downloads.ps1" -Version $Version -Build $build -ScratchDir $ScratchDir
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# (f) Push main and tag once when ahead (no force unless tag drifted)
-$ahead = git rev-list --count origin/main..HEAD 2>$null
-if ($ahead -and [int]$ahead -gt 0) {
-  git push origin main
-  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-}
-
+# (g) Ensure tag v$Version points at HEAD (force-move when drifted)
 $tag = "v$Version"
 $head = (git rev-parse HEAD).Trim()
 git show-ref --verify --quiet "refs/tags/$tag"
@@ -87,20 +91,31 @@ if ($LASTEXITCODE -eq 0) {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     git push origin $tag --force
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  } else {
+  }
+  else {
     $remoteTagLine = git ls-remote --tags origin "refs/tags/$tag" 2>$null
     if (-not $remoteTagLine) {
       git push origin $tag
       if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    } elseif ($remoteTagLine -notmatch $head) {
+      git push origin $tag --force
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
   }
 } else {
-  git tag -a $tag -m "Evolve Chronoflux $tag"
+  git tag -a $tag -m "Evolve Chronoflux $tag (build $build)"
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   git push origin $tag
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
+# Re-probe after tag move
+& "$PSScriptRoot\verify_github_release.ps1" -Version $Version -ScratchDir $ScratchDir
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+# (h) Evidence bundle for session goal
 & "$PSScriptRoot\capture_release_evidence.ps1" -ScratchDir $ScratchDir -BaseRef $BaseRef -Version $Version
 
-Write-Host "Finalize complete. Evidence: $ScratchDir and C:\Users\rgsne\goal" -ForegroundColor Green
+Write-Host "Finalize complete. Evidence: $ScratchDir" -ForegroundColor Green
+Write-Host "Release: https://github.com/rgsneddon/evolve/releases/tag/$tag" -ForegroundColor Green
+Write-Host "Downloads: https://rgsneddon.github.io/evolve/downloads/" -ForegroundColor Green

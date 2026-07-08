@@ -158,7 +158,17 @@ if (-not $SkipPages) {
     }
     Sync-GhPagesDownloads -Root $Root -DeployDir $DeployDir -Version $versionNoV
 
-    git add -A
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    git add -A 2>&1 | ForEach-Object {
+      if ($_ -is [System.Management.Automation.ErrorRecord]) {
+        if ($_.ToString() -notmatch 'warning:') { throw $_ }
+      } else {
+        $line = "$_"
+        if ($line -and $line -notmatch 'warning:') { Write-Host $line }
+      }
+    }
+    $ErrorActionPreference = $prevEap
     $status = git status --porcelain
     if ($status) {
         git commit -m "Deploy web $tag"
