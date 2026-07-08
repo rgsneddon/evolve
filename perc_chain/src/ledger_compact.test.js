@@ -126,4 +126,40 @@ describe('blockTipPayload', () => {
     });
     assert.deepEqual(full, truncated);
   });
+
+  it('ignores username fields when building tip payload', () => {
+    const canonical = blockTipPayload({
+      index: 2,
+      timestamp: '2026-07-05T12:00:00.000Z',
+      treasuryEmitted: { microUnits: 1 },
+      triggerUsername: 'alice',
+      transactions: [
+        {
+          id: 'tx-2',
+          kind: 'transfer',
+          amount: { microUnits: 5 },
+          timestamp: '2026-07-05T12:00:00.000Z',
+          fromUsername: 'alice',
+          toUsername: 'bob',
+        },
+      ],
+    });
+    const aliased = blockTipPayload({
+      index: 2,
+      timestamp: '2026-07-05T12:00:00.000Z',
+      treasuryEmitted: { microUnits: 1 },
+      triggerUsername: 'ZZZZZ',
+      transactions: [
+        {
+          id: 'tx-2',
+          kind: 'transfer',
+          amount: { microUnits: 5 },
+          timestamp: '2026-07-05T12:00:00.000Z',
+          fromUsername: 'YYYYY',
+          toUsername: 'XXXXX',
+        },
+      ],
+    });
+    assert.deepEqual(canonical, aliased);
+  });
 });

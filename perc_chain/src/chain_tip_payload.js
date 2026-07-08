@@ -1,6 +1,7 @@
 /**
  * Canonical block tip payload for chain sync — excludes narrative fields
- * (scenarioLabel, memo) so seed compaction does not break tip alignment.
+ * (scenarioLabel, memo) and identity fields (usernames) so seed compaction
+ * and public ledger sanitization do not break tip alignment.
  */
 
 export function txTipPayload(tx) {
@@ -10,8 +11,6 @@ export function txTipPayload(tx) {
     kind: tx.kind,
     amount: tx.amount ?? null,
     timestamp: tx.timestamp ?? null,
-    fromUsername: tx.fromUsername ?? tx.from ?? null,
-    toUsername: tx.toUsername ?? tx.to ?? null,
     percentChance: tx.percentChance ?? null,
     blockIndex: tx.blockIndex ?? null,
     confirmations: tx.confirmations ?? null,
@@ -31,7 +30,6 @@ export function blockTipPayload(block) {
     index: block.index,
     timestamp: block.timestamp,
     treasuryEmitted: block.treasuryEmitted ?? null,
-    triggerUsername: block.triggerUsername ?? null,
     treasuryCycle: block.treasuryCycle ?? 1,
     isGenesisRenewal: block.isGenesisRenewal ?? false,
     confirmations: block.confirmations ?? null,

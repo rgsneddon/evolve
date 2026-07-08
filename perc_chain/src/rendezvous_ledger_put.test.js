@@ -9,6 +9,7 @@ import { LedgerStore } from './ledger_store.js';
 import { createGenesisLedger } from './genesis.js';
 import { applyRelayLedgerPut } from './rendezvous_ledger_put.js';
 import { getBlockDetail } from './explorer_api.js';
+import { collectTreasuryPayoutTxIds } from './treasury_merge.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
@@ -132,8 +133,17 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
       (b.transactions ?? []).some((tx) => tx.id === expectedTxId),
     );
     assert.ok(promoted);
+    const knownPayouts = collectTreasuryPayoutTxIds(tall);
+    const treasuryPromotions = (senderRelay.blocks ?? []).filter((block) =>
+      (block.transactions ?? []).some(
+        (tx) =>
+          (tx.kind === 'scenarioReward' || tx.kind === 'stakingReward') &&
+          tx.id &&
+          !knownPayouts.has(tx.id),
+      ),
+    ).length;
     const canonicalIndex = store.ledger.blocks.length - 1;
-    assert.equal(canonicalIndex, seedHeightBefore);
+    assert.equal(canonicalIndex, seedHeightBefore + treasuryPromotions);
     assert.equal(promoted.index, canonicalIndex);
     assert.equal(promoted.relaySourceBlockIndex, fixture.transferBlockIndex);
     assert.equal(promoted.transactions.find((tx) => tx.kind === 'transfer').blockIndex, canonicalIndex);
