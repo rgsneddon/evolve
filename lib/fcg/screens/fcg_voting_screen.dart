@@ -9,11 +9,13 @@ import '../../l10n/app_localizations.dart';
 import '../../models/locale_config.dart';
 import '../../perc/providers/perc_wallet_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../mishi/fcg_mishi_permission.dart';
 import '../models/fcg_models.dart';
 import '../providers/fcg_voting_provider.dart';
 import '../services/fcg_governance_paper.dart';
 import '../services/fcg_moderator.dart';
 import '../services/fcg_quorum_engine.dart';
+import '../widgets/fcg_mishi_moderator_gate.dart';
 
 /// Full Community Governance parish council voting — SSUCF cohesion narratives.
 class FcgVotingScreen extends StatefulWidget {
@@ -27,6 +29,26 @@ class _FcgVotingScreenState extends State<FcgVotingScreen> {
   final _policyController = TextEditingController();
   bool _runCohesion = true;
   bool _runPercent = true;
+  bool _accessChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshVotingAccess());
+  }
+
+  Future<void> _refreshVotingAccess() async {
+    final wallet = context.read<PercWalletProvider>();
+    final fcg = context.read<FcgVotingProvider>();
+    final locale = context.read<LocaleProvider>().config;
+    await fcg.refreshVotingAccess(
+      walletAddress: wallet.address,
+      walletUsername: wallet.loggedInUsername,
+      regionId: locale.regionId,
+      locale: locale,
+    );
+    if (mounted) setState(() => _accessChecked = true);
+  }
 
   @override
   void dispose() {
@@ -50,6 +72,43 @@ class _FcgVotingScreenState extends State<FcgVotingScreen> {
     final narratives = fcg.cohesionNarrativesForRegion(regionId);
     final userSlot = fcg.slotForWalletAddress(wallet.address);
     final canVote = fcg.canWalletVote(wallet.address);
+    final votingUnlocked = isModerator || fcg.votingAccessApproved;
+
+    if (!_accessChecked) {
+      return const SafeArea(
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!votingUnlocked) {
+      return SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: _votingAccessBlocked(
+                strings: strings,
+                modUsername: modUsername,
+                regionLabel: regionLabel,
+                status: fcg.votingAccessStatus,
+                onRequest: wallet.isLoggedIn && !fcg.busy
+                    ? () async {
+                        await fcg.requestVotingAccess(
+                          walletAddress: wallet.address,
+                          walletUsername: wallet.loggedInUsername ?? '',
+                          regionId: regionId,
+                        );
+                        await _refreshVotingAccess();
+                      }
+                    : null,
+                onRefresh: _refreshVotingAccess,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -211,6 +270,63 @@ class _FcgVotingScreenState extends State<FcgVotingScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _votingAccessBlocked({
+    required AppLocalizations strings,
+    required String modUsername,
+    required String regionLabel,
+    required FcgMishiPermissionStatus? status,
+    required Future<void> Function()? onRequest,
+    required Future<void> Function() onRefresh,
+  }) {
+    String statusKey = 'fcg_voting_access_blocked_body';
+    if (status == FcgMishiPermissionStatus.pending) {
+      statusKey = 'fcg_voting_access_pending';
+    } else if (status == FcgMishiPermissionStatus.rejected) {
+      statusKey = 'fcg_voting_access_rejected';
+    }
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Icon(Icons.lock_outline, size: 48, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 16),
+            Text(
+              strings.t('fcg_voting_access_blocked_title'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              strings
+                  .t(statusKey)
+                  .replaceAll('{mod}', modUsername)
+                  .replaceAll('{region}', regionLabel),
+              style: const TextStyle(fontSize: 14, height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            if (onRequest != null &&
+                status != FcgMishiPermissionStatus.pending)
+              FilledButton.icon(
+                onPressed: onRequest,
+                icon: const Icon(Icons.how_to_reg_outlined),
+                label: Text(strings.t('fcg_voting_access_request_button')),
+              ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: onRefresh,
+              icon: const Icon(Icons.refresh),
+              label: Text(strings.t('fcg_voting_access_refresh')),
+            ),
+            FcgMishiModeratorGate(strings: strings),
+          ],
+        ),
+      ),
     );
   }
 

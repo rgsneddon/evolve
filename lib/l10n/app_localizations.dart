@@ -322,11 +322,11 @@ final _en = {
       'Export an encrypted backup file or restore your Perccent ledger from a backup on this device. Optional 12-word recovery is offered once at registration on the splash screen.',
   'security_export_title': 'Encrypted backup',
   'security_export_note':
-      'Downloads a portable encrypted .txt backup with your full Perccent ledger (balances, scenarios, stash). On desktop, choose where to save the file.',
+      'Downloads a portable encrypted .percbackup file with your full Perccent ledger (balances, scenarios, stash). On desktop, choose where to save the file.',
   'security_export_action': 'Export backup file',
   'security_restore_title': 'Restore from file',
   'security_restore_note':
-      'Choose a previously exported .txt or .percbackup file and enter the passphrase you used when exporting.',
+      'Choose a previously exported .percbackup file and enter the passphrase you used when exporting.',
   'security_restore_action': 'Import backup file',
   'security_seed_title': 'Seed phrase recovery',
   'security_seed_note':
@@ -388,6 +388,29 @@ final _en = {
   'fcg_narrative_linked': 'Linked',
   'fcg_no_narratives':
       'No prior scenario runs for this region yet — complete analyses on the Analysis tab first.',
+  'fcg_voting_access_blocked_title': 'Voting access requires moderator approval',
+  'fcg_voting_access_blocked_body':
+      'Parish voting is gated for this forum month. Consult your ward moderator ({mod}) to attend the monthly forum and receive permission to vote or post proposals.',
+  'fcg_voting_access_request_button': 'Request voting access',
+  'fcg_voting_access_requested': 'Access request sent — consult your moderator',
+  'fcg_voting_access_pending': 'Your request is pending moderator approval',
+  'fcg_voting_access_rejected': 'Your moderator declined voting access — contact them to discuss',
+  'fcg_voting_access_refresh': 'Check again',
+  'fcg_mishi_gate_title': 'Ward moderator sign-in (private)',
+  'fcg_mishi_gate_hint':
+      'Moderators only: sign in with MOD_<Ward>, mod_* slug, or ONS code and your Evolve wallet password. Unlocks the private Mishi tool path — not published publicly.',
+  'fcg_mishi_gate_alias_label': 'Moderator id',
+  'fcg_mishi_gate_password_label': 'Evolve wallet password',
+  'fcg_mishi_gate_sign_in': 'Sign in as moderator',
+  'fcg_mishi_gate_unknown_moderator': 'Unknown moderator id — check your Ward Moderator Pack.',
+  'fcg_mishi_gate_login_failed': 'Login failed — register mod_* in Evolve wallet first.',
+  'fcg_mishi_gate_signed_in': 'Signed in as {mod} ({ward}).',
+  'fcg_mishi_gate_private_download':
+      'Install Mishi from your private moderator pack. Default location (place mishi.exe here after your private build):',
+  'fcg_mishi_gate_cli_hint': 'dart run mishi (private repo — not on public downloads)',
+  'fcg_mishi_gate_copy_path': 'Copy Mishi path',
+  'fcg_mishi_gate_copied': 'Path copied',
+  'fcg_session_amended': 'Policy question updated',
   'fcg_admin_panel_title': 'Moderator admin — enroll voters',
   'fcg_admin_panel_hint':
       'Add each parish voter\'s PERC address to slots 1–30. Once committed, that wallet may cast one ballot.',

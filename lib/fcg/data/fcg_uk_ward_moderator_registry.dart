@@ -36,4 +36,42 @@ abstract final class FcgUkWardModeratorRegistry {
     if (username == null || username.trim().isEmpty) return false;
     return usernames.contains(normalize(username));
   }
+
+  /// Resolves moderator login: `mod_*`, ONS code, or `MOD_<Ward Name>` label.
+  static String? resolveLoginAlias(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) return null;
+    final direct = normalize(trimmed);
+    if (contains(direct)) return direct;
+
+    if (trimmed.toUpperCase().startsWith('MOD_')) {
+      final label = trimmed.substring(4).trim();
+      for (final entry in wardNames.entries) {
+        if (entry.value.toLowerCase() == label.toLowerCase()) {
+          if (entry.key.startsWith('mod_')) return entry.key;
+        }
+      }
+    }
+    return null;
+  }
+
+  static String? onsCodeFor(String username) {
+    final key = normalize(username);
+    if (onsWardCodePattern.hasMatch(key)) return key;
+    for (final entry in wardNames.entries) {
+      if (entry.key == key && onsWardCodePattern.hasMatch(entry.key)) {
+        return entry.key;
+      }
+    }
+    for (final u in usernames) {
+      if (u.startsWith('mod_') && wardNames[u] == wardNames[key]) {
+        for (final alt in usernames) {
+          if (onsWardCodePattern.hasMatch(alt) && wardNames[alt] == wardNames[u]) {
+            return alt;
+          }
+        }
+      }
+    }
+    return null;
+  }
 }

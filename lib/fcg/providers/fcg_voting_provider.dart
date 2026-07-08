@@ -11,6 +11,9 @@ import '../services/fcg_moderator.dart';
 import '../services/fcg_policy_analyzer.dart';
 import '../services/fcg_quorum_engine.dart';
 import '../services/fcg_results_exporter.dart';
+import '../mishi/fcg_mishi_bridge_store.dart';
+import '../mishi/fcg_mishi_directive.dart';
+import '../mishi/fcg_mishi_permission.dart';
 import '../services/fcg_store.dart';
 import '../services/fcg_store_factory.dart';
 
@@ -20,10 +23,12 @@ class FcgVotingProvider extends ChangeNotifier {
     FcgPolicyAnalyzer? analyzer,
     FcgQuorumEngine? quorumEngine,
     FcgResultsExporter? exporter,
+    FcgMishiBridgeStore? mishiBridge,
   })  : _store = store ?? createFcgStore(),
         _analyzer = analyzer ?? const FcgPolicyAnalyzer(),
         _quorum = quorumEngine ?? const FcgQuorumEngine(),
-        _exporter = exporter ?? const FcgResultsExporter();
+        _exporter = exporter ?? const FcgResultsExporter(),
+        _mishiBridge = mishiBridge ?? FcgMishiBridgeStore();
 
   static const int scenarioRunCap = 200;
 
@@ -31,7 +36,11 @@ class FcgVotingProvider extends ChangeNotifier {
   final FcgPolicyAnalyzer _analyzer;
   final FcgQuorumEngine _quorum;
   final FcgResultsExporter _exporter;
+  final FcgMishiBridgeStore _mishiBridge;
   int _idSeq = 0;
+
+  bool _votingAccessApproved = false;
+  FcgMishiPermissionStatus? _votingAccessStatus;
 
   FcgWardDatabase _db = const FcgWardDatabase();
   bool _ready = false;
@@ -41,6 +50,8 @@ class FcgVotingProvider extends ChangeNotifier {
 
   bool get ready => _ready;
   bool get busy => _busy;
+  bool get votingAccessApproved => _votingAccessApproved;
+  FcgMishiPermissionStatus? get votingAccessStatus => _votingAccessStatus;
   String? get statusMessage => _statusMessage;
   String? get errorMessage => _errorMessage;
 
@@ -83,6 +94,60 @@ class FcgVotingProvider extends ChangeNotifier {
   FcgVoterSlot? slotForWalletAddress(String? address) {
     if (address == null || address.trim().isEmpty) return null;
     return activeSession?.slotForAddress(address);
+  }
+
+  /// Moderators always pass; voters need Mishi-approved permission this month.
+  Future<bool> refreshVotingAccess({
+    required String? walletAddress,
+    required String? walletUsername,
+    required String regionId,
+    LocaleConfig locale = LocaleConfig.defaults,
+  }) async {
+    if (isModerator(walletUsername)) {
+      await applyMishiDirectives(
+        moderatorUsername: walletUsername!,
+        regionId: regionId,
+        locale: locale,
+      );
+      _votingAccessApproved = true;
+      _votingAccessStatus = FcgMishiPermissionStatus.approved;
+      notifyListeners();
+      return true;
+    }
+    if (walletAddress == null || walletAddress.trim().isEmpty) {
+      _votingAccessApproved = false;
+      _votingAccessStatus = null;
+      notifyListeners();
+      return false;
+    }
+    final perm = await _mishiBridge.permissionForAddress(
+      percAddress: walletAddress,
+      forumMonth: fcgMishiForumMonth(),
+    );
+    _votingAccessStatus = perm?.status;
+    _votingAccessApproved = perm?.isApproved ?? false;
+    notifyListeners();
+    return _votingAccessApproved;
+  }
+
+  Future<FcgMishiPermissionStatus> requestVotingAccess({
+    required String walletAddress,
+    required String walletUsername,
+    required String regionId,
+  }) async {
+    final modUsername = moderatorUsernameForRegion(regionId);
+    final wardLabel = FcgModerator.regionLabel(regionId);
+    final permission = await _mishiBridge.requestVotingAccess(
+      percAddress: walletAddress,
+      walletUsername: walletUsername,
+      moderatorUsername: modUsername,
+      wardLabel: wardLabel,
+    );
+    _votingAccessStatus = permission.status;
+    _votingAccessApproved = permission.isApproved;
+    _statusMessage = 'fcg_voting_access_requested';
+    notifyListeners();
+    return permission.status;
   }
 
   bool canWalletVote(String? address) {
@@ -478,6 +543,75 @@ class FcgVotingProvider extends ChangeNotifier {
     _statusMessage = 'fcg_vote_recorded';
     notifyListeners();
     return true;
+  }
+
+  Future<void> amendActiveSession({
+    required String policyQuestion,
+    required String moderatorUsername,
+  }) async {
+    final session = activeSession;
+    if (session == null) return;
+    if (!isModerator(moderatorUsername)) return;
+    final question = policyQuestion.trim();
+    if (question.isEmpty) return;
+
+    var updated = session.copyWith(policyQuestion: question);
+    updated = _withAudit(
+      updated,
+      action: FcgAuditAction.sessionOpened,
+      actor: moderatorUsername.trim(),
+      detail: 'amended: $question',
+    );
+    await _replaceSession(updated);
+    _statusMessage = 'fcg_session_amended';
+    notifyListeners();
+  }
+
+  Future<void> applyMishiDirectives({
+    required String moderatorUsername,
+    required String regionId,
+    LocaleConfig locale = LocaleConfig.defaults,
+  }) async {
+    if (!isModerator(moderatorUsername)) return;
+    final directives = await _mishiBridge.takeDirectivesForModerator(
+      moderatorUsername,
+    );
+    for (final d in directives) {
+      if (d.regionId != regionId && d.regionId != 'global') continue;
+      switch (d.kind) {
+        case FcgMishiDirectiveKind.openVote:
+          await initiateSession(
+            moderatorUsername: moderatorUsername,
+            regionId: d.regionId,
+            policyQuestion: d.policyQuestion,
+            runCohesion: d.runCohesion,
+            runPercent: d.runPercent,
+            locale: locale.copyWith(regionId: d.regionId),
+          );
+        case FcgMishiDirectiveKind.closeVote:
+        case FcgMishiDirectiveKind.concludeDebate:
+          await closeActiveSession();
+        case FcgMishiDirectiveKind.amendVote:
+          await amendActiveSession(
+            policyQuestion: d.policyQuestion,
+            moderatorUsername: moderatorUsername,
+          );
+        case FcgMishiDirectiveKind.startDebate:
+          final session = activeSession;
+          if (session == null) {
+            await initiateSession(
+              moderatorUsername: moderatorUsername,
+              regionId: d.regionId,
+              policyQuestion: d.policyQuestion.isNotEmpty
+                  ? d.policyQuestion
+                  : 'Parish policy debate',
+              runCohesion: d.runCohesion,
+              runPercent: d.runPercent,
+              locale: locale.copyWith(regionId: d.regionId),
+            );
+          }
+      }
+    }
   }
 
   Future<void> closeActiveSession() async {
