@@ -52,7 +52,18 @@ switch ($Platform) {
         } else {
             Write-Host 'No grok_proxy.local.env — Android Grok will use mock X sign-in.' -ForegroundColor Yellow
         }
-        & $flutter build apk $mode @defineArgs
+        $prevEap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        & $flutter build apk $mode @defineArgs 2>&1 | ForEach-Object {
+          if ($_ -is [System.Management.Automation.ErrorRecord]) {
+            $msg = $_.ToString()
+            if ($msg -match 'Warning:') { Write-Host $msg -ForegroundColor Yellow }
+            else { Write-Error $_ }
+          } else { $_ }
+        }
+        $apkExit = $LASTEXITCODE
+        $ErrorActionPreference = $prevEap
+        if ($apkExit -ne 0) { exit $apkExit }
         Write-Host ''
         Write-Host 'Output: build\app\outputs\flutter-apk\app-release.apk' -ForegroundColor Green
     }
