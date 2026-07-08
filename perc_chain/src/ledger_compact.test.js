@@ -162,4 +162,41 @@ describe('blockTipPayload', () => {
     });
     assert.deepEqual(canonical, aliased);
   });
+
+  it('omits null and default fields to match wallet PercChainTip JSON', () => {
+    const payload = blockTipPayload({
+      index: 31,
+      timestamp: '2026-07-06T23:12:07.656777Z',
+      treasuryEmitted: { microUnits: 66666666 },
+      treasuryCycle: 1,
+      isGenesisRenewal: false,
+      microblockSeal: false,
+      transactions: [
+        {
+          id: 'tx-96',
+          kind: 'treasuryEmission',
+          amount: { microUnits: 66666666 },
+          timestamp: '2026-07-06T23:12:07.656777Z',
+          blockIndex: 31,
+          confirmations: 1,
+        },
+      ],
+    });
+    assert.deepEqual(payload, {
+      index: 31,
+      timestamp: '2026-07-06T23:12:07.656777Z',
+      treasuryEmitted: { microUnits: 66666666 },
+      transactions: [
+        {
+          id: 'tx-96',
+          kind: 'treasuryEmission',
+          amount: { microUnits: 66666666 },
+          timestamp: '2026-07-06T23:12:07.656777Z',
+          blockIndex: 31,
+          confirmations: 1,
+        },
+      ],
+    });
+    assert.equal(JSON.stringify(payload).includes('null'), false);
+  });
 });
