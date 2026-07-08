@@ -98,11 +98,14 @@ $publishArgs = @{
 }
 if ($RecreateRelease) { $publishArgs.RecreateRelease = $true }
 
+$buildLogPath = Join-Path $ScratchDir 'build_all.log'
+$buildReady = (Test-Path $buildLogPath) -and ((Get-Content $buildLogPath -Raw) -match 'All builds complete')
 Invoke-StepLog 'publish' {
   $publishParams = @{
     Version     = $Version
     EvidenceDir = $ScratchDir
     SkipTests   = $true
+    SkipBuild   = $buildReady
   }
   if ($RecreateRelease) { $publishParams.RecreateRelease = $true }
   & "$PSScriptRoot\publish_github_release.ps1" @publishParams
