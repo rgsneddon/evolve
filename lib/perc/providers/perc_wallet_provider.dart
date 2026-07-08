@@ -600,8 +600,14 @@ class PercWalletProvider extends ChangeNotifier {
         );
         _setStatus('wallet_sync_seed_offline');
       } else if (action.publishNow) {
-        final published =
+        final network = PercLedgerHub.instance.network;
+        network.refreshSeedPeerFromLocalLedger();
+        var published =
             await _publishRegistrationIfRecovered(statusKey: statusKey);
+        if (!published) {
+          network.refreshSeedPeerFromLocalLedger();
+          published = await _publishRegistrationIfRecovered(statusKey: statusKey);
+        }
         if (!published) {
           _registrationAwaitingSeedAlignment = true;
         }

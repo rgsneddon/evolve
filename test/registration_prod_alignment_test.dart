@@ -113,6 +113,10 @@ void main() {
       await wallet.register(username, password);
 
       final coordinator = hub.network;
+      if (coordinator.hasPendingRegistrationRecovery) {
+        coordinator.refreshSeedPeerFromLocalLedger();
+        await hub.completePendingRegistrationIfReady();
+      }
       final ledger = hub.ledger;
       final clientTip = PercChainTip.hash(ledger);
       final clientHeight = PercChainTip.height(ledger);
