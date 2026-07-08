@@ -24,9 +24,29 @@ New-Item -ItemType Directory -Path $ScratchDir -Force | Out-Null
 function Invoke-StepLog([string]$Name, [scriptblock]$Block) {
   Write-Host "=== $Name ===" -ForegroundColor Cyan
   $logPath = Join-Path $ScratchDir "$Name.log"
-  & $Block 2>&1 | Tee-Object -FilePath $logPath
-  if ($LASTEXITCODE -ne 0) {
-    throw "$Name failed with exit $LASTEXITCODE"
+  $prevEap = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  $exitCode = 0
+  try {
+    & $Block 2>&1 | ForEach-Object {
+      if ($_ -is [System.Management.Automation.ErrorRecord]) {
+        $msg = $_.ToString()
+        if ($msg -match 'Warning:') {
+          Write-Host $msg -ForegroundColor Yellow
+          $msg
+        } else {
+          Write-Error $_
+        }
+      } else {
+        $_
+      }
+    } | Tee-Object -FilePath $logPath
+    $exitCode = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $prevEap
+  }
+  if ($exitCode -ne 0) {
+    throw "$Name failed with exit $exitCode"
   }
 }
 
@@ -50,7 +70,7 @@ Invoke-StepLog 'evolve_test' {
 
 # (c) Full build (web, windows, apk when JDK present)
 Invoke-StepLog 'build_all' {
-  powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\build_all.ps1"
+  & "$PSScriptRoot\build_all.ps1" -SkipTests
 }
 
 # (d) Installers + publish with gh-pages enabled (no skip flags)
@@ -61,14 +81,13 @@ $publishArgs = @{
 if ($RecreateRelease) { $publishArgs.RecreateRelease = $true }
 
 Invoke-StepLog 'publish' {
-  $argList = @(
-    '-ExecutionPolicy', 'Bypass',
-    '-File', "$PSScriptRoot\publish_github_release.ps1",
-    '-Version', $Version,
-    '-EvidenceDir', $ScratchDir
-  )
-  if ($RecreateRelease) { $argList += '-RecreateRelease' }
-  & powershell @argList
+  $publishParams = @{
+    Version     = $Version
+    EvidenceDir = $ScratchDir
+    SkipTests   = $true
+  }
+  if ($RecreateRelease) { $publishParams.RecreateRelease = $true }
+  & "$PSScriptRoot\publish_github_release.ps1" @publishParams
 }
 
 # (e) GitHub release API/asset probe
