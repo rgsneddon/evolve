@@ -184,10 +184,10 @@ function Get-NextAppVersion {
         $build += 1
     } elseif ($PatchOnly) {
         $patch += 1
-        $build += 1
+        $build = 1
     } else {
         $patch += 1
-        $build += 1
+        $build = 1
     }
 
     return Format-AppVersion -Major $major -Minor $minor -Patch $patch -Build $build
