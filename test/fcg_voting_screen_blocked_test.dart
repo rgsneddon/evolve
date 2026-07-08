@@ -2,57 +2,106 @@ import 'dart:io';
 
 import 'package:evolve/fcg/mishi/fcg_mishi_bridge_store.dart';
 import 'package:evolve/fcg/providers/fcg_voting_provider.dart';
-import 'package:evolve/fcg/services/fcg_moderator.dart';
+import 'package:evolve/fcg/screens/fcg_voting_screen.dart';
 import 'package:evolve/fcg/services/fcg_store_memory.dart';
-import 'package:evolve/l10n/app_localizations.dart';
-import 'package:evolve/models/locale_config.dart';
+import 'package:evolve/perc/providers/perc_wallet_provider.dart';
+import 'package:evolve/perc/services/perc_ledger.dart';
+import 'package:evolve/perc/services/perc_ledger_hub.dart';
+import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
+import 'package:evolve/providers/locale_provider.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
-/// Mirrors [FcgVotingScreen] gating at lines 74–110: non-moderators without
-/// Mishi approval see the blocked title/body (moderator consult copy).
+import 'test_locale_provider.dart';
+
 void main() {
-  test(
-    'non-approved voter sees blocking page describing portal and moderator consult',
-    () async {
-      final tempDir = await Directory.systemTemp.createTemp('fcg-blocked-ui-');
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    PercLedgerHub.resetForTest();
+    PercWalletProvider.sessionTimeoutEnabled = false;
+  });
+
+  tearDown(() {
+    PercWalletProvider.sessionTimeoutEnabled = true;
+    PercLedgerHub.resetForTest();
+  });
+
+  testWidgets(
+    'FcgVotingScreen shows blocked card for non-approved voter with moderator consult copy',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      late Directory tempDir;
+      late PercWalletProvider wallet;
+      late FcgVotingProvider fcg;
+      late LocaleProvider locale;
+
+      await tester.runAsync(() async {
+        tempDir = await Directory.systemTemp.createTemp('fcg-blocked-ui-');
+        final store = PercWalletStoreMemory();
+        final ledger = PercLedger.empty();
+        ledger.ensureTreasuryAccount();
+        ledger.setupTreasuryPassword('password12345');
+        ledger.launchBlockchain();
+        ledger.consumeBlockchainLaunchEvent();
+        ledger.register('parishvoter', 'password12345');
+        ledger.login('parishvoter', 'password12345');
+        await store.save(ledger);
+        await PercLedgerHub.instance.loadStoreForTest(store);
+
+        wallet = PercWalletProvider(store: store);
+        final bridge = FcgMishiBridgeStore(
+          fileResolver: () => FcgMishiBridgeStore.fileForTest(tempDir.path),
+        );
+        fcg = FcgVotingProvider(
+          store: FcgStoreMemory(),
+          mishiBridge: bridge,
+        );
+        await fcg.initialize();
+        locale = await createTestLocaleProvider();
+
+        await fcg.refreshVotingAccess(
+          walletAddress: PercLedgerHub.instance.ledger.sessionAccount?.address,
+          walletUsername: 'parishvoter',
+          regionId: locale.config.regionId,
+          locale: locale.config,
+        );
+        expect(fcg.votingAccessApproved, isFalse);
+      });
+
       addTearDown(() async {
+        wallet.dispose();
         if (await tempDir.exists()) await tempDir.delete(recursive: true);
       });
 
-      final bridge = FcgMishiBridgeStore(
-        fileResolver: () => FcgMishiBridgeStore.fileForTest(tempDir.path),
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<LocaleProvider>.value(value: locale),
+            ChangeNotifierProvider<PercWalletProvider>.value(value: wallet),
+            ChangeNotifierProvider<FcgVotingProvider>.value(value: fcg),
+          ],
+          child: const MaterialApp(
+            home: FcgVotingScreen(skipInitialAccessRefresh: true),
+          ),
+        ),
       );
-      final fcg = FcgVotingProvider(
-        store: FcgStoreMemory(),
-        mishiBridge: bridge,
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(Card), findsWidgets);
+      expect(
+        find.text('Voting access requires moderator approval'),
+        findsOneWidget,
       );
-      await fcg.initialize();
-
-      const locale = LocaleConfig(regionId: 'uk_ireland', languageCode: 'en');
-      const addr = 'percpriv1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-      final approved = await fcg.refreshVotingAccess(
-        walletAddress: addr,
-        walletUsername: 'parishvoter',
-        regionId: locale.regionId,
-        locale: locale,
-      );
-      expect(approved, isFalse);
-      expect(fcg.votingAccessApproved, isFalse);
-
-      final strings = AppLocalizations.of(locale);
-      final modUsername = fcg.moderatorUsernameForRegion(locale.regionId);
-      final regionLabel = FcgModerator.regionLabel(locale.regionId);
-      final blockedTitle = strings.t('fcg_voting_access_blocked_title');
-      final blockedBody = strings
-          .t('fcg_voting_access_blocked_body')
-          .replaceAll('{mod}', modUsername)
-          .replaceAll('{region}', regionLabel);
-
-      expect(blockedTitle, contains('moderator approval'));
-      expect(blockedBody, contains('Parish voting is gated'));
-      expect(blockedBody, contains('Consult your ward moderator'));
-      expect(blockedBody, contains('monthly forum'));
-      expect(blockedBody, contains(modUsername));
+      expect(find.textContaining('Parish voting is gated'), findsOneWidget);
+      expect(find.textContaining('Consult your ward moderator'), findsOneWidget);
+      expect(find.textContaining('monthly forum'), findsOneWidget);
+      expect(find.text('Request voting access'), findsOneWidget);
+      expect(find.text('Check again'), findsOneWidget);
     },
   );
 }

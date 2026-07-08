@@ -42,6 +42,19 @@ class PercLedgerHub extends ChangeNotifier {
     PercNetworkCoordinator.disableLiveNodesForTests = true;
   }
 
+  /// Loads a memory store without binding network — for widget tests.
+  @visibleForTesting
+  Future<void> loadStoreForTest(PercWalletStore store) async {
+    _cancelSync?.call();
+    _store = store;
+    final loaded = await store.load();
+    _ledger = loaded ?? PercLedger.empty();
+    _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ready = true;
+    _revision++;
+    notifyListeners();
+  }
+
   Future<void> initialize(PercWalletStore store) async {
     if (_ready && identical(_store, store)) return;
     _cancelSync?.call();

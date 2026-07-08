@@ -12,8 +12,10 @@ import 'package:evolve/perc/services/perc_network_coordinator.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+@Tags(['serial'])
+
 final _scratch = Platform.environment['SCRATCH'] ??
-    r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-cb031749c6db\implementer';
+    r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-5c94fa09228d\implementer';
 
 void _writeLog(String filename, String body) {
   Directory(_scratch).createSync(recursive: true);
@@ -53,7 +55,9 @@ void main() {
 
   tearDown(() async {
     PercNetworkCoordinator.disableLiveNodesForTests = true;
-    await PercLedgerHub.instance.network.onSessionEnded();
+    try {
+      await PercLedgerHub.instance.network.onSessionEnded();
+    } catch (_) {}
     PercNetworkConfig.resetForTest();
     PercLedgerHub.resetForTest();
     PercWalletProvider.sessionTimeoutEnabled = true;

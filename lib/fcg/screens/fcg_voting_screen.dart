@@ -19,7 +19,14 @@ import '../widgets/fcg_mishi_moderator_gate.dart';
 
 /// Full Community Governance parish council voting — SSUCF cohesion narratives.
 class FcgVotingScreen extends StatefulWidget {
-  const FcgVotingScreen({super.key});
+  const FcgVotingScreen({
+    super.key,
+    @visibleForTesting this.skipInitialAccessRefresh = false,
+  });
+
+  /// When true, [initState] does not await Mishi permission I/O (widget tests).
+  @visibleForTesting
+  final bool skipInitialAccessRefresh;
 
   @override
   State<FcgVotingScreen> createState() => _FcgVotingScreenState();
@@ -34,7 +41,11 @@ class _FcgVotingScreenState extends State<FcgVotingScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshVotingAccess());
+    if (widget.skipInitialAccessRefresh) {
+      _accessChecked = true;
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _refreshVotingAccess());
+    }
   }
 
   Future<void> _refreshVotingAccess() async {
