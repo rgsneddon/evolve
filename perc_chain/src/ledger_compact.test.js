@@ -199,4 +199,31 @@ describe('blockTipPayload', () => {
     });
     assert.equal(JSON.stringify(payload).includes('null'), false);
   });
+
+  it('coerces missing treasuryEmitted and tx amount to zero microUnits', () => {
+    const payload = blockTipPayload({
+      index: 0,
+      timestamp: '2026-07-06T10:00:00.000Z',
+      transactions: [
+        {
+          id: 'tx-1',
+          kind: 'transfer',
+          timestamp: '2026-07-06T10:00:00.000Z',
+        },
+      ],
+    });
+    assert.deepEqual(payload.treasuryEmitted, { microUnits: 0 });
+    assert.deepEqual(payload.transactions[0].amount, { microUnits: 0 });
+    assert.equal(JSON.stringify(payload).includes('null'), false);
+  });
+
+  it('drops transactions missing required tip fields instead of emitting nulls', () => {
+    const payload = blockTipPayload({
+      index: 1,
+      timestamp: '2026-07-06T11:00:00.000Z',
+      treasuryEmitted: { microUnits: 1 },
+      transactions: [{ id: 'tx-bad', kind: 'transfer' }],
+    });
+    assert.deepEqual(payload.transactions, []);
+  });
 });
