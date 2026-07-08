@@ -6,10 +6,9 @@ import 'perc_ledger.dart';
 import 'perc_network_rendezvous.dart';
 import 'perc_seed_recovery.dart';
 import 'perc_wallet_backup.dart';
-import 'perc_wallet_backup_clipboard.dart';
 import 'security_recovery_backup_resolver.dart';
 
-/// Resolves encrypted backup bytes (clipboard, file picker, or test injection).
+/// Resolves encrypted backup bytes (file picker or test injection).
 typedef BackupBytesResolver = Future<Uint8List?> Function();
 
 /// Fetches a seed recovery envelope from the network rendezvous.
@@ -49,13 +48,6 @@ class SecurityRecoveryService {
 
   factory SecurityRecoveryService.production() =>
       SecurityRecoveryService(ports: SecurityRecoveryPorts.production());
-
-  /// Decodes pasted or file-read text into encrypted backup bytes.
-  static Uint8List? decodeBackupText(String text) =>
-      PercWalletBackupClipboard.decode(text);
-
-  static String encodeBackupForClipboard(Uint8List bytes) =>
-      PercWalletBackupClipboard.encodeForClipboard(bytes);
 
   Future<Uint8List?> resolveBackupBytes() => ports.resolveBackupBytes();
 

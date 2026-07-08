@@ -3,6 +3,25 @@ import 'perc_chain_tip.dart';
 import 'perc_ledger.dart';
 import 'perc_network_protocol.dart';
 
+/// Canonical chain coordinates taken from an imported seed ledger snapshot.
+class SeedAlignmentTarget {
+  const SeedAlignmentTarget({
+    required this.chainId,
+    required this.height,
+    required this.tipHash,
+  });
+
+  final String chainId;
+  final int height;
+  final String tipHash;
+
+  static SeedAlignmentTarget fromLedger(PercLedger ledger) => SeedAlignmentTarget(
+        chainId: PercChainAlignment.effectiveChainId(ledger),
+        height: PercChainTip.height(ledger),
+        tipHash: PercChainTip.hash(ledger),
+      );
+}
+
 /// Pure predicates for whether a local ledger matches the canonical seed chain.
 class PercChainAlignment {
   const PercChainAlignment._();

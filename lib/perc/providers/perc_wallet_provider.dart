@@ -17,6 +17,7 @@ import '../models/perc_faucet_credit_result.dart';
 import '../models/perc_pending_inbound_transfer.dart';
 import '../models/perc_transaction.dart';
 
+import '../../fcg/mishi/fcg_mishi_moderator_sync.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/wallet_message_localization.dart';
 import '../perc_chain_constants.dart';
@@ -72,6 +73,7 @@ class PercWalletProvider extends ChangeNotifier {
   bool _syncingWallet = false;
   bool _postLoginSyncing = false;
   bool _pendingSeedSetup = false;
+  String? _seedSetupUsername;
   String? _seedSetupPassword;
   bool _registrationAwaitingSeedAlignment = false;
   List<String>? _seedSetupMnemonic;
@@ -366,8 +368,20 @@ class PercWalletProvider extends ChangeNotifier {
   Future<void> register(String username, String password) async {
     _clearMessages();
     try {
-      _ledger.register(username, password);
-      _ledger.login(username, password);
+      final u = PercAuth.normalizeUsername(username);
+      final usernameErr = PercAuth.validateUsername(u);
+      if (usernameErr != null) throw StateError(usernameErr);
+      final passwordErr = PercAuth.validatePassword(password);
+      if (passwordErr != null) throw StateError(passwordErr);
+      if (_ledger.accounts.containsKey(u)) {
+        throw StateError('Username already taken');
+      }
+      if (_pendingSeedSetup) {
+        throw StateError('Registration already in progress');
+      }
+
+      // Defer ledger account creation until seed chain adoption completes.
+      _seedSetupUsername = u;
       _seedSetupMnemonic = null;
       _seedSetupPassword = password;
       _registrationAwaitingSeedAlignment = false;
@@ -379,6 +393,7 @@ class PercWalletProvider extends ChangeNotifier {
       }
     } catch (e) {
       _pendingSeedSetup = false;
+      _seedSetupUsername = null;
       _seedSetupMnemonic = null;
       _seedSetupPassword = null;
       _registrationAwaitingSeedAlignment = false;
@@ -402,10 +417,11 @@ class PercWalletProvider extends ChangeNotifier {
   Future<void> completeRegistrationSeedSetup({required bool enableSeed}) async {
     if (!_pendingSeedSetup) return;
     _clearMessages();
-    final username = _ledger.sessionUsername;
+    final username = _seedSetupUsername;
     final password = _seedSetupPassword;
     if (username == null || password == null) {
       _pendingSeedSetup = false;
+      _seedSetupUsername = null;
       _seedSetupMnemonic = null;
       _seedSetupPassword = null;
       notifyListeners();
@@ -417,6 +433,7 @@ class PercWalletProvider extends ChangeNotifier {
         throw StateError('Generate a seed phrase before continuing');
       }
       _pendingSeedSetup = false;
+      _seedSetupUsername = null;
       _seedSetupMnemonic = null;
       _seedSetupPassword = null;
       _armSessionTimeout();
@@ -539,6 +556,10 @@ class PercWalletProvider extends ChangeNotifier {
       if (captureLaunch) _captureTreasuryLaunchEvent();
       _setStatus(statusKey, statusArgs);
       await PercLedgerHub.instance.persistLocal();
+      await syncModeratorVerifierToMishiBridge(
+        ledger: _ledger,
+        username: username,
+      );
     } finally {
       _postLoginSyncing = false;
       notifyListeners();
@@ -573,9 +594,17 @@ class PercWalletProvider extends ChangeNotifier {
       if (action.offlineHonest) {
         await PercLedgerHub.instance.attachOfflineRegistrationSession(username);
         await PercLedgerHub.instance.persistLocal();
+        await syncModeratorVerifierToMishiBridge(
+          ledger: _ledger,
+          username: username,
+        );
         _setStatus('wallet_sync_seed_offline');
       } else if (action.publishNow) {
-        await _publishRegistrationIfRecovered(statusKey: statusKey);
+        final published =
+            await _publishRegistrationIfRecovered(statusKey: statusKey);
+        if (!published) {
+          _registrationAwaitingSeedAlignment = true;
+        }
       } else {
         await PercLedgerHub.instance.persistLocal();
         _setStatus(
@@ -600,6 +629,13 @@ class PercWalletProvider extends ChangeNotifier {
     if (!published) return false;
 
     _registrationAwaitingSeedAlignment = false;
+    final username = _ledger.sessionUsername;
+    if (username != null) {
+      await syncModeratorVerifierToMishiBridge(
+        ledger: _ledger,
+        username: username,
+      );
+    }
     if (statusKey != null) {
       _setStatus(statusKey);
     }

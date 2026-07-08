@@ -178,7 +178,7 @@ function Update-DownloadsIndexPage {
         "$($win.file) &middot; ~$winMb MB"
     $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-windows-x64-setup\.exe"',
         "href=`"$releaseBase/$($win.file)`""
-    $html = $html -replace '(?s)(<article class="card windows">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
+    $html = $html -replace '(?s)(<div class="grid">.*?<article class="card windows">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
         "`${1}$($win.sha256)`${2}"
     $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-windows-x64-setup\.exe\.sha256"',
         "href=`"$releaseBase/$($win.file).sha256`""
@@ -209,6 +209,96 @@ function Update-DownloadsIndexPage {
         Build = $Build
         Windows = $win.file
         Android = $apk.file
+    }
+}
+
+function Resolve-PerccentChecksumsManifest {
+    param(
+        [string]$Root = '',
+        [string]$ManifestPath = ''
+    )
+
+    if ($ManifestPath -and (Test-Path $ManifestPath)) {
+        return $ManifestPath
+    }
+
+    if (-not $Root) {
+        $Root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+    }
+
+    $walletRoot = Join-Path (Split-Path $Root -Parent) 'perccent_wallet'
+    $downloadsRoot = Join-Path $walletRoot 'build\downloads'
+    if (-not (Test-Path $downloadsRoot)) {
+        return $null
+    }
+
+    $latest = Get-ChildItem $downloadsRoot -Directory -Filter 'v*' |
+        Sort-Object { [version]($_.Name -replace '^v', '') } -Descending |
+        Select-Object -First 1
+    if (-not $latest) { return $null }
+
+    $candidate = Join-Path $latest.FullName 'checksums.json'
+    if (Test-Path $candidate) { return $candidate }
+    return $null
+}
+
+function Update-PerccentDownloadsIndexSection {
+    param(
+        [string]$ManifestPath = '',
+        [string]$DownloadsIndex = '',
+        [string]$Owner = 'rgsneddon',
+        [string]$RepoName = 'perccent-wallet'
+    )
+
+    $Root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+    if (-not $DownloadsIndex) {
+        $DownloadsIndex = Join-Path $Root 'downloads\index.html'
+    }
+    if (-not (Test-Path $DownloadsIndex)) {
+        throw "Missing downloads index: $DownloadsIndex"
+    }
+
+    $ManifestPath = Resolve-PerccentChecksumsManifest -Root $Root -ManifestPath $ManifestPath
+    if (-not $ManifestPath) {
+        Write-Host 'Perccent checksums manifest not found; skipping perccent-wallet section update.' -ForegroundColor Yellow
+        return $null
+    }
+
+    $manifest = Get-Content $ManifestPath -Raw | ConvertFrom-Json
+    $pkg = $manifest.packages | Where-Object { $_.file -match 'perccent-wallet.*windows' } | Select-Object -First 1
+    if (-not $pkg) {
+        throw "Perccent manifest missing windows package: $ManifestPath"
+    }
+
+    if ($pkg.file -notmatch 'perccent-wallet-v([0-9.]+)-') {
+        throw "Could not parse Perccent version from $($pkg.file)"
+    }
+    $version = $Matches[1]
+    $winMb = [math]::Round($pkg.bytes / 1MB, 1)
+    $releaseBase = "https://github.com/$Owner/$RepoName/releases/download/v$version"
+
+    $html = Get-Content $DownloadsIndex -Raw
+    if ($html -notmatch '<section class="perccent-wallet">') {
+        throw 'downloads/index.html missing <section class="perccent-wallet">'
+    }
+
+    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<p class="meta">)perccent-wallet-v[0-9.]+-windows-x64-setup\.exe(</p>)',
+        "`${1}$($pkg.file)`${2}"
+    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-windows-x64-setup\.exe(")',
+        "`${1}$releaseBase/$($pkg.file)`${2}"
+    $html = $html -replace '(<code id="perccent-sha256"[^>]*>)[a-f0-9]{64}(</code>)',
+        "`${1}$($pkg.sha256)`${2}"
+    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-windows-x64-setup\.exe\.sha256(")',
+        "`${1}$releaseBase/$($pkg.file).sha256`${2}"
+    $html = $html -replace '(<code id="perccent-setup-name">)perccent-wallet-v[0-9.]+-windows-x64-setup\.exe(</code>)',
+        "`${1}$($pkg.file)`${2}"
+
+    Set-Content -Path $DownloadsIndex -Value $html -NoNewline
+    return [PSCustomObject]@{
+        Version = $version
+        Windows = $pkg.file
+        Sha256 = $pkg.sha256
+        ManifestPath = $ManifestPath
     }
 }
 

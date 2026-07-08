@@ -36,6 +36,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   PercNodeServer? _serverOverride;
   PercNodeServer? _server;
   bool _deepSyncRunning = false;
+  int _networkGeneration = 0;
 
   PercNodeServer get _serverOrCreate =>
       _serverOverride ?? (_server ??= createPercNodeServer());
@@ -68,8 +69,12 @@ class PercNetworkCoordinator extends ChangeNotifier {
   bool get usesInternetEndpoint =>
       PercPublicEndpoint.isInternetEndpoint(nodeEndpoint);
 
+  bool _isNetworkGenerationCurrent(int generation) =>
+      generation == _networkGeneration;
+
   @visibleForTesting
   static void resetForTest() {
+    instance._networkGeneration++;
     disableLiveNodesForTests = true;
     instance._senderPeerCache.clear();
     instance.settlementPeerTargets.clear();
@@ -184,21 +189,95 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (username == null) return false;
     if (hub.ledger.account(username) == null) return false;
 
-    final seedHeight =
-        _networkBlockHeight > 0 ? _networkBlockHeight : _pendingSeedHeight;
-    final seedTip = hub.ledger
-            .networkNodes[PercChainConstants.seedUsername]
-            ?.tipHash ??
-        _pendingSeedTipHash;
-    final chainId = _pendingSeedChainId.isNotEmpty
-        ? _pendingSeedChainId
-        : PercChainAlignment.effectiveChainId(hub.ledger);
-
+    final target = _importedSeedTarget(hub);
+    if (target == null) return false;
     return PercChainAlignment.isAlignedWithSeed(
       local: hub.ledger,
-      seedChainId: chainId,
-      seedHeight: seedHeight,
-      seedTipHash: seedTip,
+      seedChainId: target.chainId,
+      seedHeight: target.height,
+      seedTipHash: target.tipHash,
+    );
+  }
+
+  /// Post-import seed snapshot — only valid after `_refreshSeedPeerFromLedger`.
+  SeedAlignmentTarget? _importedSeedTarget(PercLedgerHub hub) {
+    if (_pendingSeedTipHash.isEmpty || _pendingSeedHeight <= 0) return null;
+    return SeedAlignmentTarget(
+      chainId: _pendingSeedChainId.isNotEmpty
+          ? _pendingSeedChainId
+          : PercChainAlignment.effectiveChainId(hub.ledger),
+      height: _pendingSeedHeight,
+      tipHash: _pendingSeedTipHash,
+    );
+  }
+
+  PercNetworkStatus _statusWithImportedSeedTip(
+    PercNetworkStatus probe,
+    PercLedgerHub hub,
+  ) {
+    final imported = _importedSeedTarget(hub);
+    if (imported == null) {
+      final localHeight = PercChainTip.height(hub.ledger);
+      if (localHeight > 0 && localHeight >= probe.blockHeight) {
+        return PercNetworkStatus(
+          evolutionaryChainId: PercChainAlignment.effectiveChainId(hub.ledger),
+          blockHeight: localHeight,
+          tipHash: PercChainTip.hash(hub.ledger),
+          revision: probe.revision,
+          networkGenesisRevision: probe.networkGenesisRevision,
+          sessionUsername: probe.sessionUsername,
+          publicAlias: probe.publicAlias,
+          endpoint: probe.endpoint,
+          walletAddress: probe.walletAddress,
+          updatedAt: probe.updatedAt,
+        );
+      }
+      return probe;
+    }
+    return PercNetworkStatus(
+      evolutionaryChainId: imported.chainId,
+      blockHeight: imported.height,
+      tipHash: imported.tipHash,
+      revision: probe.revision,
+      networkGenesisRevision: probe.networkGenesisRevision,
+      sessionUsername: probe.sessionUsername,
+      publicAlias: probe.publicAlias,
+      endpoint: probe.endpoint,
+      walletAddress: probe.walletAddress,
+      updatedAt: probe.updatedAt,
+    );
+  }
+
+  /// Syncs seed peer coordinates from the local ledger after commits.
+  void refreshSeedPeerFromLocalLedger() {
+    final hub = _hub;
+    if (hub == null) return;
+    _refreshSeedPeerFromLedger(hub, hub.ledger);
+  }
+
+  void _refreshSeedPeerFromLedger(
+    PercLedgerHub hub,
+    PercLedger remote, {
+    PercNetworkStatus? seedStatus,
+  }) {
+    final target = SeedAlignmentTarget.fromLedger(hub.ledger);
+    _networkBlockHeight = target.height;
+    _rememberPendingSeedTarget(
+      seedHeight: target.height,
+      seedTipHash: target.tipHash,
+      seedChainId: target.chainId,
+    );
+
+    final seedUser = PercChainConstants.seedUsername;
+    final existing = hub.ledger.networkNodes[seedUser];
+    hub.ledger.networkNodes[seedUser] = PercPeerNode(
+      username: seedUser,
+      endpoint: seedStatus?.endpoint ?? existing?.endpoint,
+      blockHeight: target.height,
+      tipHash: target.tipHash,
+      online: seedStatus?.isFreshOnSeedPeer ?? existing?.online ?? _seedConnected,
+      lastSeen:
+          seedStatus?.updatedAt?.toUtc() ?? existing?.lastSeen ?? DateTime.now().toUtc(),
     );
   }
 
@@ -227,7 +306,6 @@ class PercNetworkCoordinator extends ChangeNotifier {
     final hub = _hub;
     if (hub == null) return false;
     if (!hasPendingRegistrationRecovery) return false;
-    if (!isSyncedToNetwork) return false;
     if (!isPendingRegistrationAligned(hub)) return false;
 
     final username = _pendingRegistrationUsername;
@@ -236,7 +314,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
 
     await onSessionStarted(username);
-    await hub.commitAfterForceSync();
+    await hub.commitAfterRegistrationPublish();
     clearPendingRegistrationRecovery();
     notifyListeners();
     return true;
@@ -247,7 +325,6 @@ class PercNetworkCoordinator extends ChangeNotifier {
   ) async {
     if (!hasPendingRegistrationRecovery) return;
     if (!isPendingRegistrationAligned(hub)) return;
-    if (!isSyncedToNetwork) return;
 
     final handled = await onPendingRegistrationRecoveryReady?.call() ?? false;
     if (!handled) {
@@ -311,6 +388,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   }
 
   void _detach() {
+    _networkGeneration++;
     _stopReceivePolling();
     _pendingRegistrationRetryTimer?.cancel();
     _pendingRegistrationRetryTimer = null;
@@ -367,6 +445,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
       }
       await _registerSessionOnSeed(hub, status);
     }
+    _refreshSeedPeerFromLedger(hub, hub.ledger);
     hub.ledger.refreshPendingInboundTransfers();
     await hub.persistLocal();
     _startReceivePolling();
@@ -536,51 +615,50 @@ class PercNetworkCoordinator extends ChangeNotifier {
       seedMnemonic: seedMnemonic,
     );
 
-    final chainId = seedStatus.evolutionaryChainId.isEmpty
-        ? PercChainConstants.evolutionaryChainId
-        : seedStatus.evolutionaryChainId;
-    final seedHeight = seedLedger != null
-        ? PercChainTip.height(seedLedger)
-        : seedStatus.blockHeight;
-    final seedTip = seedLedger != null
-        ? PercChainTip.hash(seedLedger)
-        : seedStatus.tipHash;
+    final imported = _importedSeedTarget(hub);
+    final target = imported ??
+        (seedReachable
+            ? SeedAlignmentTarget(
+                chainId: seedStatus.evolutionaryChainId.isEmpty
+                    ? PercChainConstants.evolutionaryChainId
+                    : seedStatus.evolutionaryChainId,
+                height: seedStatus.blockHeight,
+                tipHash: seedStatus.tipHash,
+              )
+            : SeedAlignmentTarget.fromLedger(hub.ledger));
 
+    // Alignment requires an imported ledger snapshot — status probes alone are not authoritative.
     final aligned = seedReachable &&
+        imported != null &&
         PercChainAlignment.isAlignedWithSeed(
           local: hub.ledger,
-          seedChainId: chainId,
-          seedHeight: seedHeight,
-          seedTipHash: seedTip,
+          seedChainId: imported.chainId,
+          seedHeight: imported.height,
+          seedTipHash: imported.tipHash,
         );
 
-    if (seedReachable) {
-      _networkBlockHeight = seedHeight;
+    if (seedReachable && imported != null) {
+      _networkBlockHeight = imported.height;
       _syncState = aligned
           ? PercNetworkSyncState.synced
           : PercChainAlignment.syncStateForSeed(
               local: hub.ledger,
-              seedHeight: seedHeight,
-              seedTipHash: seedTip,
+              seedHeight: imported.height,
+              seedTipHash: imported.tipHash,
             );
     } else if (disableLiveNodesForTests) {
       _syncState = PercNetworkSyncState.synced;
     } else {
       _syncState = PercNetworkSyncState.syncing;
     }
-    _rememberPendingSeedTarget(
-      seedHeight: seedHeight,
-      seedTipHash: seedTip,
-      seedChainId: chainId,
-    );
     notifyListeners();
 
     return PercRegistrationSeedAdoption(
       seedReachable: seedReachable,
       isAligned: aligned,
-      seedHeight: seedHeight,
-      seedTipHash: seedTip,
-      seedChainId: chainId,
+      seedHeight: target.height,
+      seedTipHash: target.tipHash,
+      seedChainId: target.chainId,
     );
   }
 
@@ -653,12 +731,16 @@ class PercNetworkCoordinator extends ChangeNotifier {
       baseEndpoint: base,
       targetGenesis: targetGenesis,
     );
-    hub.ledger.updatePeerFromStatus(seedStatus, online: true);
-    _seedConnected = true;
-    _networkBlockHeight = _flyClient.networkHeightAfterProbe(
-      local: hub.ledger,
-      seedStatus: seedStatus,
+    hub.ledger.updatePeerFromStatus(
+      _statusWithImportedSeedTip(seedStatus, hub),
+      online: true,
     );
+    _seedConnected = true;
+    _networkBlockHeight = _importedSeedTarget(hub)?.height ??
+        _flyClient.networkHeightAfterProbe(
+          local: hub.ledger,
+          seedStatus: seedStatus,
+        );
 
     var remote = await _client.fetchLedger(base);
     remote ??= await _rendezvous.fetchRelayedLedger(username: seedUser);
@@ -675,9 +757,11 @@ class PercNetworkCoordinator extends ChangeNotifier {
     PercLedger remote,
     PercNetworkStatus seedStatus,
   ) {
-    hub.ledger.updatePeerFromStatus(seedStatus, online: true);
+    hub.ledger.updatePeerFromStatus(
+      _statusWithImportedSeedTip(seedStatus, hub),
+      online: true,
+    );
     _seedConnected = true;
-    _networkBlockHeight = PercChainTip.height(remote);
 
     final localHeight = PercChainTip.height(hub.ledger);
     final remoteHeight = PercChainTip.height(remote);
@@ -703,13 +787,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
       }
     }
     _reapplyPendingRegistrationIfNeeded(hub);
-    if (hasPendingRegistrationRecovery) {
-      _rememberPendingSeedTarget(
-        seedHeight: PercChainTip.height(hub.ledger),
-        seedTipHash: PercChainTip.hash(hub.ledger),
-        seedChainId: PercChainAlignment.effectiveChainId(hub.ledger),
-      );
-    }
+    _refreshSeedPeerFromLedger(hub, remote, seedStatus: seedStatus);
   }
 
   /// Manual sync — pull from seed, merge peers, re-publish wallet, gossip chain.
@@ -778,16 +856,20 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
     await _connectToSeedNode(hub, deep: !quick);
 
+    final blockHeight = PercChainTip.height(hub.ledger);
+    final tipHash = PercChainTip.hash(hub.ledger);
     hub.ledger.ensureNetworkNodes(
-      blockHeight: PercChainTip.height(hub.ledger),
-      tipHash: PercChainTip.hash(hub.ledger),
+      blockHeight: blockHeight,
+      tipHash: tipHash,
     );
+    refreshSeedPeerFromLocalLedger();
 
     await _mergeRendezvousPeers(hub.ledger);
 
     final peerStatuses = quick
         ? await _collectSeedPeerStatuses(hub.ledger)
         : await _collectPeerStatuses(hub.ledger);
+    refreshSeedPeerFromLocalLedger();
     var targetHeight = PercChainTip.height(hub.ledger);
     String? targetTip;
     String? importEndpoint;
@@ -880,14 +962,16 @@ class PercNetworkCoordinator extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> gossipToPeers() async {
+  Future<void> gossipToPeers({bool deepSyncAfter = true}) async {
+    final generation = _networkGeneration;
     final hub = _hub;
     if (hub == null || disableLiveNodesForTests) return;
+    if (!_isNetworkGenerationCurrent(generation)) return;
     final ledger = hub.ledger;
     final localEndpoint = nodeEndpoint;
     final session = ledger.sessionUsername;
 
-    if (session != null) {
+    if (session != null && _isNetworkGenerationCurrent(generation)) {
       final status = PercNetworkStatus.fromLedger(
         ledger,
         revision: hub.revision,
@@ -902,8 +986,8 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
 
     final gossipTargets = ledger.networkNodes.values
-        .map((n) => n.endpoint)
-        .whereType<String>()
+        .where((n) => n.online && (n.endpoint ?? '').isNotEmpty)
+        .map((n) => n.endpoint!)
         .where((e) => e != localEndpoint)
         .toSet();
     final internetTargets =
@@ -911,7 +995,8 @@ class PercNetworkCoordinator extends ChangeNotifier {
     final targets =
         internetTargets.isNotEmpty ? internetTargets : gossipTargets.toList();
 
-    for (final endpoint in targets) {
+    for (final endpoint in targets.take(8)) {
+      if (!_isNetworkGenerationCurrent(generation)) return;
       final pushed = await _client.pushLedger(
         endpoint: endpoint,
         ledger: ledger,
@@ -929,7 +1014,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
         }
       }
     }
-    await syncToNetworkHeight();
+    if (deepSyncAfter && _isNetworkGenerationCurrent(generation)) {
+      await syncToNetworkHeight();
+    }
   }
 
   /// Blocks commits only when the local chain is strictly behind the network.
@@ -1415,12 +1502,16 @@ class PercNetworkCoordinator extends ChangeNotifier {
       baseEndpoint: base,
       targetGenesis: targetGenesis,
     );
-    hub.ledger.updatePeerFromStatus(seedStatus, online: true);
-    _seedConnected = true;
-    _networkBlockHeight = _flyClient.networkHeightAfterProbe(
-      local: hub.ledger,
-      seedStatus: seedStatus,
+    hub.ledger.updatePeerFromStatus(
+      _statusWithImportedSeedTip(seedStatus, hub),
+      online: true,
     );
+    _seedConnected = true;
+    _networkBlockHeight = _importedSeedTarget(hub)?.height ??
+        _flyClient.networkHeightAfterProbe(
+          local: hub.ledger,
+          seedStatus: seedStatus,
+        );
 
     if (!deep) {
       _syncState = _flyClient.syncStateAfterQuickProbe(
@@ -1453,8 +1544,13 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (seedEndpoint == null || seedEndpoint.isEmpty) return const [];
     final status = await _client.fetchStatus(seedEndpoint);
     if (status == null) return const [];
-    ledger.updatePeerFromStatus(status, online: true);
-    return [status];
+    final hub = _hub;
+    final corrected = hub != null
+        ? _statusWithImportedSeedTip(status, hub)
+        : status;
+    ledger.updatePeerFromStatus(corrected, online: true);
+    if (hub != null) refreshSeedPeerFromLocalLedger();
+    return [corrected];
   }
 
   Future<String?> _resolveAdvertisedEndpoint() async {

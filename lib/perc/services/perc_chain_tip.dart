@@ -28,8 +28,6 @@ class PercChainTip {
         'index': block.index,
         'timestamp': block.timestamp.toIso8601String(),
         'treasuryEmitted': block.treasuryEmitted.toJson(),
-        if (block.triggerUsername != null)
-          'triggerUsername': block.triggerUsername,
         if (block.treasuryCycle != 1) 'treasuryCycle': block.treasuryCycle,
         if (block.isGenesisRenewal) 'isGenesisRenewal': block.isGenesisRenewal,
         if (block.confirmations != PercChainConstants.confirmationsRequired)
@@ -48,8 +46,6 @@ class PercChainTip {
         'kind': tx.kind.wireName,
         'amount': tx.amount.toJson(),
         'timestamp': tx.timestamp.toIso8601String(),
-        if (tx.fromUsername != null) 'fromUsername': tx.fromUsername,
-        if (tx.toUsername != null) 'toUsername': tx.toUsername,
         if (tx.percentChance != null) 'percentChance': tx.percentChance,
         if (tx.blockIndex != null) 'blockIndex': tx.blockIndex,
         if (tx.confirmations != 0) 'confirmations': tx.confirmations,

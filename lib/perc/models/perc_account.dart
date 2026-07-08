@@ -55,12 +55,17 @@ class PercAccount {
         'transactions': transactions.map((t) => t.toJson()).toList(),
       };
 
-  factory PercAccount.fromJson(Map<String, dynamic> json) => PercAccount(
+  factory PercAccount.fromJson(Map<String, dynamic> json) {
+    final hasCredentials = json.containsKey('passwordHash') ||
+        json.containsKey('salt') ||
+        json.containsKey('passwordSet');
+    return PercAccount(
         username: json['username'] as String,
-        passwordHash: json['passwordHash'] as String,
-        salt: json['salt'] as String,
+        passwordHash: json['passwordHash'] as String? ?? '',
+        salt: json['salt'] as String? ?? '',
         address: json['address'] as String,
-        passwordSet: json['passwordSet'] as bool? ?? true,
+        passwordSet:
+            json['passwordSet'] as bool? ?? (hasCredentials ? true : false),
         balance: json['balance'] is Map
             ? PercAmount.fromJson(json['balance'] as Map<String, dynamic>)
             : PercAmount(json['balance'] as int? ?? 0),
@@ -81,4 +86,5 @@ class PercAccount {
                 PercTransaction.fromJson(Map<String, dynamic>.from(t as Map)))
             .toList(),
       );
+  }
 }

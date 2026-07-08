@@ -5,8 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:evolve/models/locale_config.dart';
 import 'package:evolve/models/scenario_input.dart';
+import 'package:evolve/perc/models/perc_amount.dart';
+import 'package:evolve/perc/models/perc_block.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/screens/security_screen.dart';
+import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_network_coordinator.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
@@ -22,9 +25,31 @@ void main() {
 
   tearDown(() {
     PercWalletProvider.sessionTimeoutEnabled = true;
+    PercLedgerHub.resetForTest();
   });
 
+  PercLedger _registrationSeedForTests() {
+    final seed = PercLedger.empty();
+    seed.ensureTreasuryAccount();
+    seed.setupTreasuryPassword('password12345');
+    seed.launchBlockchain();
+    seed.consumeBlockchainLaunchEvent();
+    seed.blocks.add(
+      PercBlock(
+        index: seed.blocks.length,
+        timestamp: DateTime.utc(2026, 3, 1),
+        transactions: const [],
+        treasuryEmitted: PercAmount.zero,
+        scenarioLabel: 'security backup test seed',
+      ),
+    );
+    return seed;
+  }
+
   Future<PercWalletProvider> bootWallet() async {
+    PercNetworkCoordinator.instance.registerTestSeedLedger(
+      _registrationSeedForTests(),
+    );
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
     await wallet.initialize();
     await wallet.setupTreasuryPassword('treasury-pass-phrase');
@@ -91,7 +116,7 @@ void main() {
 
     expect(capturedBytes, isNotNull);
     expect(capturedBytes!.isNotEmpty, isTrue);
-    expect(capturedName, endsWith('.txt'));
+    expect(capturedName, endsWith('.percbackup'));
     final roundTrip = wallet.exportEncryptedBackup('backup-passphrase');
     expect(roundTrip.isNotEmpty, isTrue);
   });

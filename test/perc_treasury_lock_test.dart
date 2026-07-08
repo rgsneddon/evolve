@@ -24,6 +24,14 @@ void _seedLedger(PercLedger ledger) {
 }
 
 void main() {
+  setUp(() {
+    PercWalletProvider.sessionTimeoutEnabled = false;
+  });
+
+  tearDown(() {
+    PercWalletProvider.sessionTimeoutEnabled = true;
+  });
+
   test('pool renewal allocation is 283 million PERC', () {
     expect(
       PercChainConstants.poolRenewalAllocation,

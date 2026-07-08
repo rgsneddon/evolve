@@ -186,6 +186,19 @@ class PercLedger {
   }) {
     final now = DateTime.now().toUtc();
     final updated = <String, PercPeerNode>{};
+    for (final systemUser in [
+      PercChainConstants.seedUsername,
+      PercChainConstants.treasuryUsername,
+    ]) {
+      final existing = networkNodes[systemUser];
+      if (existing != null) {
+        updated[systemUser] = existing.copyWith(
+          blockHeight: blockHeight,
+          tipHash: tipHash,
+          lastSeen: now,
+        );
+      }
+    }
     for (final username in accounts.keys) {
       final existing = networkNodes[username];
       updated[username] = existing?.copyWith(
@@ -201,6 +214,32 @@ class PercLedger {
           );
     }
     networkNodes = updated;
+    _ensureSystemNetworkNodeTips(
+      blockHeight: blockHeight,
+      tipHash: tipHash,
+      lastSeen: now,
+    );
+  }
+
+  void _ensureSystemNetworkNodeTips({
+    required int blockHeight,
+    required String tipHash,
+    required DateTime lastSeen,
+  }) {
+    for (final systemUser in [
+      PercChainConstants.seedUsername,
+      PercChainConstants.treasuryUsername,
+    ]) {
+      final existing = networkNodes[systemUser];
+      networkNodes[systemUser] = PercPeerNode(
+        username: systemUser,
+        endpoint: existing?.endpoint,
+        blockHeight: blockHeight,
+        tipHash: tipHash,
+        online: existing?.online ?? false,
+        lastSeen: lastSeen,
+      );
+    }
   }
 
   void setWalletOnline(
@@ -1099,6 +1138,7 @@ class PercLedger {
 
   /// One-shot repair when opening a newer app over a saved ledger (seamless upgrade).
   void repairForAppUpgrade() {
+    canonicalizeSanitizedSystemAccounts();
     migrateLegacyTreasuryAccounts();
     ensureTreasuryAccount();
     _sanitizeWalletPeers();
@@ -1318,6 +1358,60 @@ class PercLedger {
       sanitized[user] = peers;
     }
     walletPeers = sanitized;
+  }
+
+  /// Restores canonical keys for treasury/seed after importing a sanitized seed ledger.
+  void canonicalizeSanitizedSystemAccounts() {
+    const systemUsernames = [
+      PercChainConstants.treasuryUsername,
+      PercChainConstants.seedUsername,
+    ];
+    for (final canonical in systemUsernames) {
+      final alias = PercAccountPrivacy.obfuscateUsername(canonical);
+      if (alias.isEmpty || alias == canonical) continue;
+
+      if (accounts.containsKey(alias)) {
+        final acc = accounts.remove(alias)!;
+        final existing = accounts[canonical];
+        if (existing == null) {
+          accounts[canonical] = PercAccount(
+            username: canonical,
+            passwordHash: acc.passwordHash,
+            salt: acc.salt,
+            address: acc.address,
+            passwordSet: acc.passwordSet,
+            balance: acc.balance,
+            lastFaucetDrawAt: acc.lastFaucetDrawAt,
+            cumulativeStakingEarned: acc.cumulativeStakingEarned,
+            scenarioBlockHeight: acc.scenarioBlockHeight,
+            transactions: List<PercTransaction>.from(acc.transactions),
+          );
+        } else {
+          existing.balance = existing.balance + acc.balance;
+          existing.cumulativeStakingEarned =
+              existing.cumulativeStakingEarned + acc.cumulativeStakingEarned;
+          existing.transactions.insertAll(0, acc.transactions);
+          if (!existing.passwordSet && acc.passwordSet) {
+            existing.passwordHash = acc.passwordHash;
+            existing.salt = acc.salt;
+            existing.passwordSet = true;
+          }
+        }
+        _rewriteUsernameReferences(alias, canonical);
+      }
+
+      if (!networkNodes.containsKey(canonical) && networkNodes.containsKey(alias)) {
+        final node = networkNodes.remove(alias)!;
+        networkNodes[canonical] = PercPeerNode(
+          username: canonical,
+          endpoint: node.endpoint,
+          blockHeight: node.blockHeight,
+          tipHash: node.tipHash,
+          online: node.online,
+          lastSeen: node.lastSeen,
+        );
+      }
+    }
   }
 
   /// Merges legacy treasury keys (e.g. rgsneddon) into evolve_treasury after renames.

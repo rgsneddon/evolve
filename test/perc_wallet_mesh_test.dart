@@ -6,7 +6,14 @@ import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 
 void main() {
-  setUp(() => PercLedgerHub.resetForTest());
+  setUp(() {
+    PercLedgerHub.resetForTest();
+    PercWalletProvider.sessionTimeoutEnabled = false;
+  });
+
+  tearDown(() {
+    PercWalletProvider.sessionTimeoutEnabled = true;
+  });
 
   test('every wallet connects to every other wallet in full mesh', () {
     final ledger = PercLedger.empty();

@@ -11,8 +11,8 @@ import 'package:evolve/perc/services/perc_network_coordinator.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _scratch =
-    r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-cfe4cc6e1bad\implementer';
+final _scratch = Platform.environment['SCRATCH'] ??
+    r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-cb031749c6db\implementer';
 
 void _writeLog(String filename, String body) {
   Directory(_scratch).createSync(recursive: true);
@@ -61,6 +61,23 @@ void main() {
 
   tearDown(() {
     PercWalletProvider.sessionTimeoutEnabled = true;
+  });
+
+  test('register defers account creation until seed adoption', () async {
+    PercWalletProvider.sessionTimeoutEnabled = true;
+    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    await wallet.initialize();
+    await wallet.setupTreasuryPassword('password12345');
+    await wallet.register('deferreduser', 'password12345');
+
+    expect(wallet.pendingSeedSetup, isTrue);
+    expect(PercLedgerHub.instance.ledger.account('deferreduser'), isNull);
+
+    PercWalletProvider.sessionTimeoutEnabled = false;
+    await wallet.completeRegistrationSeedSetup(enableSeed: false);
+
+    expect(PercLedgerHub.instance.ledger.account('deferreduser'), isNotNull);
+    expect(wallet.isWalletConnectComplete, isTrue);
   });
 
   test('registration adopts seed chain height tip and chain id', () async {

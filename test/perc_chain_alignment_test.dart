@@ -1,6 +1,7 @@
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_block.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
+import 'package:evolve/perc/services/perc_account_privacy.dart';
 import 'package:evolve/perc/services/perc_chain_alignment.dart';
 import 'package:evolve/perc/services/perc_chain_tip.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
@@ -28,6 +29,17 @@ PercLedger _launchedLedger({int extraBlocks = 2}) {
 }
 
 void main() {
+  test('SeedAlignmentTarget.fromLedger matches sanitized seed tip', () {
+    final seed = _launchedLedger();
+    final sanitized = PercLedger.fromJson(
+      PercAccountPrivacy.sanitizeLedgerForPublic(seed.toJson()),
+    );
+    final target = SeedAlignmentTarget.fromLedger(sanitized);
+    expect(target.chainId, PercChainAlignment.effectiveChainId(seed));
+    expect(target.height, PercChainTip.height(seed));
+    expect(target.tipHash, PercChainTip.hash(seed));
+  });
+
   test('isAlignedWithSeed matches height tip and chain id', () {
     final seed = _launchedLedger();
     final local = PercLedger.fromJson(seed.toJson());

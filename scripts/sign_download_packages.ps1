@@ -54,10 +54,15 @@ $entries = Write-VersionChecksumManifest -VersionDir $SourceDir -BaseUrl $baseUr
 Test-VersionPackageChecksums -VersionDir $SourceDir -RequireSidecars | Out-Null
 
 $indexInfo = Update-DownloadsIndexPage -VersionDir $SourceDir -Version $Version
+$perccentInfo = Update-PerccentDownloadsIndexSection
 
 Write-Host ''
 Write-Host "Signed $($entries.Count) package(s) in $SourceDir" -ForegroundColor Green
 Write-Host "  downloads/index.html -> v$($indexInfo.Version) ($($indexInfo.Windows), $($indexInfo.Android))" -ForegroundColor Cyan
+if ($perccentInfo) {
+    Write-Host "  downloads/index.html perccent-wallet -> v$($perccentInfo.Version) ($($perccentInfo.Windows))" -ForegroundColor Cyan
+    Write-Host "    SHA-256: $($perccentInfo.Sha256)" -ForegroundColor Cyan
+}
 Write-Host "  CHECKSUMS.sha256"
 Write-Host "  CHECKSUMS.sha512"
 Write-Host "  checksums.json"

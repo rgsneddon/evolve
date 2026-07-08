@@ -7,7 +7,7 @@
     "chronofluxPrincipiaId": "chronoflux-principia-roy-d-herbert",
     "mainChainId": "perc-main-evolve-1",
     "sideChainId": "perc-chronoflux-side-1",
-    "connectedAppVersion": "4.0.0+136",
+    "connectedAppVersion": "4.0.1+137",
     "evolvedAppVersions": [],
     "evolutionSteps": [],
     "evolutionEpoch": 1,
@@ -15,9 +15,9 @@
     "accounts": {
       "evolve_treasury": {
         "username": "evolve_treasury",
-        "passwordHash": "afb02a6a2aca4f13d32908aa57ae5d4432e902edc850026f8e921619fd010ee3",
-        "salt": "XnUxRCvPCbeYP63txM5p9w==",
-        "address": "percpriv15863106aaadd97ff6494b46ee02ff9c3eedb7375",
+        "passwordHash": "f9a6411a0250bf3a6871aa02c66e501906bd6f0d50ebdb78b5fedfbc7ccddc8e",
+        "salt": "irqqG7iujCenR_aHaHch9A==",
+        "address": "percpriv1d6ae82879c6735b95f8059ad69bd216bd7d0b2a3",
         "passwordSet": true,
         "balance": {
           "microUnits": 20000000
@@ -32,7 +32,7 @@
             "amount": {
               "microUnits": 80000000
             },
-            "timestamp": "2026-07-07T20:55:51.100558Z",
+            "timestamp": "2026-07-08T13:13:40.764266Z",
             "fromUsername": "evolve_treasury",
             "toUsername": "android_user",
             "scenarioLabel": "Scenario analysis reward",
@@ -46,7 +46,7 @@
             "amount": {
               "microUnits": 100000000
             },
-            "timestamp": "2026-07-07T20:55:51.100558Z",
+            "timestamp": "2026-07-08T13:13:40.764266Z",
             "toUsername": "evolve_treasury",
             "blockIndex": 0,
             "confirmations": 1
@@ -55,19 +55,19 @@
       },
       "android_user": {
         "username": "android_user",
-        "passwordHash": "945096b6c05e1e50a73a29230deda5e278224e2c1fde40d985f2a0b288e7e398",
-        "salt": "Xfp3I4hLRSGVwTz8-xnk_Q==",
-        "address": "percpriv1a3bf14587b7f1416cd6d27a0aa6236ac406e7fe9",
+        "passwordHash": "85a61e80527cce6153841fcfeb5a8eafc899c21fefde4754a76c18b812dc2dca",
+        "salt": "ayXrQEct4iEKobMO11cqUg==",
+        "address": "percpriv14923be379b857e2091f863b2da1b895ff1422992",
         "passwordSet": true,
         "balance": {
           "microUnits": 80000000
         },
-        "lastFaucetDrawAt": "2026-07-07T20:55:51.100558Z",
+        "lastFaucetDrawAt": "2026-07-08T13:13:40.764266Z",
         "cumulativeStakingEarned": {
           "microUnits": 0
         },
         "scenarioBlockHeight": 1,
-        "passwordSwitchCommit": "swc1a427b2084042cc369bf7cdfbc8beb080",
+        "passwordSwitchCommit": "swc15a8a6c86aecae7a617b9ce1e0f5f4414",
         "transactions": [
           {
             "id": "tx-3",
@@ -75,7 +75,7 @@
             "amount": {
               "microUnits": 5
             },
-            "timestamp": "2026-07-07T20:55:51.115553Z",
+            "timestamp": "2026-07-08T13:13:40.782262Z",
             "fromUsername": "android_user",
             "toUsername": "windows_user",
             "blockIndex": 1
@@ -86,7 +86,7 @@
             "amount": {
               "microUnits": 80000000
             },
-            "timestamp": "2026-07-07T20:55:51.100558Z",
+            "timestamp": "2026-07-08T13:13:40.764266Z",
             "fromUsername": "evolve_treasury",
             "toUsername": "android_user",
             "scenarioLabel": "Scenario analysis reward",
@@ -115,7 +115,7 @@
             "amount": {
               "microUnits": 5
             },
-            "timestamp": "2026-07-07T20:55:51.115553Z",
+            "timestamp": "2026-07-08T13:13:40.782262Z",
             "fromUsername": "android_user",
             "toUsername": "windows_user",
             "blockIndex": 1
@@ -126,7 +126,7 @@
     "blocks": [
       {
         "index": 0,
-        "timestamp": "2026-07-07T20:55:51.100558Z",
+        "timestamp": "2026-07-08T13:13:40.764266Z",
         "transactions": [
           {
             "id": "tx-1",
@@ -134,7 +134,7 @@
             "amount": {
               "microUnits": 100000000
             },
-            "timestamp": "2026-07-07T20:55:51.100558Z",
+            "timestamp": "2026-07-08T13:13:40.764266Z",
             "toUsername": "evolve_treasury",
             "blockIndex": 0,
             "confirmations": 1
@@ -145,7 +145,7 @@
             "amount": {
               "microUnits": 80000000
             },
-            "timestamp": "2026-07-07T20:55:51.100558Z",
+            "timestamp": "2026-07-08T13:13:40.764266Z",
             "fromUsername": "evolve_treasury",
             "toUsername": "android_user",
             "scenarioLabel": "Scenario analysis reward",
@@ -161,7 +161,7 @@
       },
       {
         "index": 1,
-        "timestamp": "2026-07-07T20:55:51.115553Z",
+        "timestamp": "2026-07-08T13:13:40.782262Z",
         "transactions": [
           {
             "id": "tx-3",
@@ -169,7 +169,7 @@
             "amount": {
               "microUnits": 5
             },
-            "timestamp": "2026-07-07T20:55:51.115553Z",
+            "timestamp": "2026-07-08T13:13:40.782262Z",
             "fromUsername": "android_user",
             "toUsername": "windows_user",
             "blockIndex": 1
@@ -181,7 +181,7 @@
         "triggerUsername": "android_user"
       }
     ],
-    "lastScenarioAt": "2026-07-07T20:55:51.100558Z",
+    "lastScenarioAt": "2026-07-08T13:13:40.764266Z",
     "treasuryGenesisDone": true,
     "cumulativeTreasuryMinted": {
       "microUnits": 100000000
@@ -192,8 +192,8 @@
     "treasuryCycle": 1,
     "blockchainLaunched": true,
     "sessionUsername": "android_user",
-    "sessionStartedAt": "2026-07-07T20:55:51.111551Z",
-    "sessionLastActivityAt": "2026-07-07T20:55:51.111551Z",
+    "sessionStartedAt": "2026-07-08T13:13:40.778265Z",
+    "sessionLastActivityAt": "2026-07-08T13:13:40.778265Z",
     "nextTxId": 4,
     "microblockCount": 0,
     "totalMicroblocks": 0,
@@ -212,26 +212,33 @@
       ]
     },
     "networkNodes": {
+      "evolve_seed_node": {
+        "username": "evolve_seed_node",
+        "blockHeight": 0,
+        "tipHash": "d5f6c62ecae7c98c94fc657435b407a8cbb5f37e42fd4b1379a14f3d49fe8049",
+        "online": false,
+        "lastSeen": "2026-07-08T13:13:40.761262Z"
+      },
       "evolve_treasury": {
         "username": "evolve_treasury",
         "blockHeight": 0,
         "tipHash": "d5f6c62ecae7c98c94fc657435b407a8cbb5f37e42fd4b1379a14f3d49fe8049",
         "online": false,
-        "lastSeen": "2026-07-07T20:55:51.098553Z"
+        "lastSeen": "2026-07-08T13:13:40.761262Z"
       },
       "android_user": {
         "username": "android_user",
         "blockHeight": 0,
         "tipHash": "d5f6c62ecae7c98c94fc657435b407a8cbb5f37e42fd4b1379a14f3d49fe8049",
         "online": false,
-        "lastSeen": "2026-07-07T20:55:51.098553Z"
+        "lastSeen": "2026-07-08T13:13:40.761262Z"
       },
       "windows_user": {
         "username": "windows_user",
         "blockHeight": 0,
         "tipHash": "d5f6c62ecae7c98c94fc657435b407a8cbb5f37e42fd4b1379a14f3d49fe8049",
         "online": false,
-        "lastSeen": "2026-07-07T20:55:51.098553Z"
+        "lastSeen": "2026-07-08T13:13:40.761262Z"
       }
     },
     "wardProposals": [],
@@ -248,8 +255,8 @@
         "fee": {
           "microUnits": 1
         },
-        "sentAt": "2026-07-07T20:55:51.115553Z",
-        "recipientBroughtOnlineAt": "2026-07-07T20:55:51.115553Z",
+        "sentAt": "2026-07-08T13:13:40.782262Z",
+        "recipientBroughtOnlineAt": "2026-07-08T13:13:40.782262Z",
         "switchCommitment": "swc123624cf96c378b3373c6031152067f93"
       }
     ],

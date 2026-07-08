@@ -231,13 +231,46 @@ class PercLedgerHub extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Persists a newly registered wallet after rendezvous attach without blocking
+  /// on peer gossip or deep sync (those run in the background).
+  Future<void> commitAfterRegistrationPublish() async {
+    _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
+    _ledger.refreshSeedRecoveryEnvelopes();
+    final blockHeight = PercChainTip.height(_ledger);
+    final tipHash = PercChainTip.hash(_ledger);
+    _ledger.ensureNetworkNodes(
+      blockHeight: blockHeight,
+      tipHash: tipHash,
+    );
+    network.refreshSeedPeerFromLocalLedger();
+    final session = _ledger.sessionUsername;
+    if (session != null) {
+      _ledger.reconcileSessionStakingFromChain(session, applyCredits: true);
+      _ledger.setWalletOnline(
+        session,
+        endpoint: network.nodeEndpoint,
+        blockHeight: PercChainTip.height(_ledger),
+        tipHash: PercChainTip.hash(_ledger),
+      );
+    }
+    _revision++;
+    notifyListeners();
+    await _store?.save(_ledger);
+    hub_sync.broadcastRevision();
+    unawaited(network.gossipToPeers(deepSyncAfter: false));
+    unawaited(network.publishSeedRecoveryEnvelopes());
+  }
+
   Future<void> commitAfterForceSync() async {
     _evolution.evolveLedger(_ledger, appVersion: PercAppVersion.current);
     _ledger.refreshSeedRecoveryEnvelopes();
+    final blockHeight = PercChainTip.height(_ledger);
+    final tipHash = PercChainTip.hash(_ledger);
     _ledger.ensureNetworkNodes(
-      blockHeight: PercChainTip.height(_ledger),
-      tipHash: PercChainTip.hash(_ledger),
+      blockHeight: blockHeight,
+      tipHash: tipHash,
     );
+    network.refreshSeedPeerFromLocalLedger();
     final session = _ledger.sessionUsername;
     if (session != null) {
       _ledger.reconcileSessionStakingFromChain(session, applyCredits: true);

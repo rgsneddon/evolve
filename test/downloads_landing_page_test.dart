@@ -1,6 +1,33 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'test_paths.dart';
+
+File? _perccentChecksumsManifest() {
+  final walletRoot = Directory(
+    '${Directory(evolveRepoRoot()).parent.path}${Platform.pathSeparator}perccent_wallet',
+  );
+  if (!walletRoot.existsSync()) return null;
+  final downloads = Directory('${walletRoot.path}${Platform.pathSeparator}build${Platform.pathSeparator}downloads');
+  if (!downloads.existsSync()) return null;
+  final versions = downloads
+      .listSync()
+      .whereType<Directory>()
+      .where((d) => d.path.split(Platform.pathSeparator).last.startsWith('v'))
+      .toList();
+  if (versions.isEmpty) return null;
+  versions.sort((a, b) {
+    final av = a.path.split(Platform.pathSeparator).last.replaceFirst('v', '');
+    final bv = b.path.split(Platform.pathSeparator).last.replaceFirst('v', '');
+    return av.compareTo(bv);
+  });
+  final manifest = File(
+    '${versions.last.path}${Platform.pathSeparator}checksums.json',
+  );
+  return manifest.existsSync() ? manifest : null;
+}
 
 void main() {
   test('downloads index matches current release wording', () {
@@ -34,5 +61,42 @@ void main() {
         'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-android-setup.apk',
       ),
     );
+  });
+
+  test('perccent-wallet section uses perccent release checksum not evolve windows hash', () {
+    final index = evolveRepoFile('downloads/index.html');
+    final html = index.readAsStringSync();
+
+    expect(html, contains('<section class="perccent-wallet">'));
+
+    final manifestFile = _perccentChecksumsManifest();
+    expect(manifestFile, isNotNull, reason: 'perccent_wallet build/downloads checksums.json required');
+    final manifest = jsonDecode(manifestFile!.readAsStringSync()) as Map<String, dynamic>;
+    final packages = manifest['packages'] as List<dynamic>;
+    final windows = packages.cast<Map<String, dynamic>>().firstWhere(
+      (p) => (p['file'] as String).contains('perccent-wallet') && (p['file'] as String).contains('windows'),
+    );
+    final sha256 = windows['sha256'] as String;
+    final fileName = windows['file'] as String;
+    final versionMatch = RegExp(r'perccent-wallet-v([0-9.]+)-').firstMatch(fileName);
+    expect(versionMatch, isNotNull);
+    final perccentRelease = versionMatch!.group(1)!;
+
+    final sectionStart = html.indexOf('<section class="perccent-wallet">');
+    final sectionEnd = html.indexOf('</section>', sectionStart);
+    final section = html.substring(sectionStart, sectionEnd);
+
+    expect(section, contains('id="perccent-sha256"'));
+    expect(section, contains(sha256));
+    expect(section, contains(fileName));
+    expect(
+      section,
+      contains(
+        'github.com/rgsneddon/perccent-wallet/releases/download/v$perccentRelease/$fileName',
+      ),
+    );
+    expect(section, contains('id="perccent-setup-name"'));
+    expect(section, contains('<code id="perccent-setup-name">$fileName</code>'));
+    expect(section, isNot(contains('evolve-v')));
   });
 }

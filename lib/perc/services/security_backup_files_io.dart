@@ -17,7 +17,7 @@ Future<bool> exportBackupToDevice({
     acceptedTypeGroups: const [
       XTypeGroup(
         label: 'PERC Backup',
-        extensions: ['txt', 'percbackup', 'json'],
+        extensions: ['percbackup'],
       ),
     ],
   );

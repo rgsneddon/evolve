@@ -38,7 +38,7 @@ try {
     $RequiredPatterns = @(
         "recovers full ledger from seed via injected SeedEnvelopeFetcher on blank ledger",
         "throws offline error when fetcher returns null and network unavailable",
-        "decodes PERCBACKUP1 clipboard text and restores ledger equality",
+        "Security tab export invokes save/download port with encrypted bytes",
         "provider recoverFromSeedPhrase fetches envelope via rendezvous override",
         "Security tab export button captures encrypted backup bytes",
         "Security tab restore button round-trips backup on blank store",

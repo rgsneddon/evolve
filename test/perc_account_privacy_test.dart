@@ -71,6 +71,27 @@ void main() {
     expect(ballot['voterUsername'].toString().length, 5);
   });
 
+  test('sanitizeLedgerForPublic aliases treasury account key', () {
+    final sanitized = PercAccountPrivacy.sanitizeLedgerForPublic({
+      'accounts': {
+        'evolve_treasury': {
+          'username': 'evolve_treasury',
+          'passwordHash': 'secret',
+          'salt': 'secret',
+          'passwordSet': true,
+          'address': 'percpriv1treasury',
+          'balance': {'microUnits': 1},
+          'transactions': [],
+        },
+      },
+    });
+    final alias =
+        PercAccountPrivacy.obfuscateUsername('evolve_treasury');
+    expect((sanitized['accounts'] as Map).containsKey(alias), isTrue);
+    expect((sanitized['accounts'] as Map).containsKey('evolve_treasury'),
+        isFalse);
+  });
+
   test('publicDisplayName hides other users but keeps viewer name', () {
     expect(
       PercAccountPrivacy.publicDisplayName('alice', viewerUsername: 'alice'),

@@ -130,39 +130,6 @@ void main() {
     expect(ledger.microblockLog.length, source.microblockLog.length);
   });
 
-  test('decodes PERCBACKUP1 clipboard text and restores ledger equality', () async {
-    final source = _sourceLedger();
-    final passphrase = 'clipboard-passphrase';
-    final bytes = PercWalletBackup.exportEncrypted(
-      ledger: source.snapshotForBackup(),
-      passphrase: passphrase,
-    );
-    final clipboardText = SecurityRecoveryService.encodeBackupForClipboard(bytes);
-
-    final decoded = SecurityRecoveryService.decodeBackupText(clipboardText);
-    expect(decoded, isNotNull);
-
-    final service = SecurityRecoveryService(
-      ports: SecurityRecoveryPorts(
-        resolveBackupBytes: () async => decoded,
-        fetchSeedEnvelope: (_) async => null,
-        isNetworkConfigured: () async => false,
-      ),
-    );
-
-    final resolved = await service.resolveBackupBytes();
-    final restored = service.importEncryptedBackup(
-      bytes: resolved!,
-      passphrase: passphrase,
-    );
-
-    expect(restored.account('erin')!.balance.microUnits,
-        source.account('erin')!.balance.microUnits);
-    expect(restored.account('erin')!.scenarioBlockHeight,
-        source.account('erin')!.scenarioBlockHeight);
-    expect(restored.microblockLog.length, source.microblockLog.length);
-  });
-
   test('provider surfaces offline seed recovery error key', () async {
     final mnemonic = PercSeedRecovery.generateMnemonic();
     final recovery = SecurityRecoveryService(

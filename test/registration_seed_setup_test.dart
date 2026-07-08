@@ -24,6 +24,7 @@ void main() {
     await wallet.register('newuser', 'password12345');
     expect(wallet.pendingSeedSetup, isTrue);
     expect(wallet.isWalletConnectComplete, isFalse);
+    expect(PercLedgerHub.instance.ledger.account('newuser'), isNull);
     return wallet;
   }
 

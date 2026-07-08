@@ -8,7 +8,7 @@ Future<Uint8List?> resolveBackupBytesFromPlatform() async {
     acceptedTypeGroups: const [
       XTypeGroup(
         label: 'PERC Backup',
-        extensions: ['txt', 'percbackup', 'json'],
+        extensions: ['percbackup'],
       ),
     ],
   );

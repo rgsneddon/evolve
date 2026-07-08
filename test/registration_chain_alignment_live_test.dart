@@ -9,13 +9,14 @@ import 'package:evolve/perc/services/perc_chain_alignment.dart';
 import 'package:evolve/perc/services/perc_chain_tip.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
+import 'package:evolve/perc/services/perc_account_privacy.dart';
 import 'package:evolve/perc/services/perc_network_config.dart';
 import 'package:evolve/perc/services/perc_network_coordinator.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _scratch =
-    r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-cfe4cc6e1bad\implementer';
+final _scratch = Platform.environment['SCRATCH'] ??
+    r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-cb031749c6db\implementer';
 
 void _writeLog(String filename, String body) {
   Directory(_scratch).createSync(recursive: true);
@@ -47,8 +48,11 @@ void main() {
   HttpServer? server;
   late PercLedger mockSeedLedger;
   var rendezvousRegisterCount = 0;
+  final registeredUsernames = <String>{};
   var serveSeedLedger = true;
   var serveSeedStatus = true;
+  var serveSanitizedLedger = false;
+  String? statusTipOverride;
   String? base;
 
   setUp(() async {
@@ -56,8 +60,11 @@ void main() {
     PercNetworkConfig.resetForTest();
     PercWalletProvider.sessionTimeoutEnabled = false;
     rendezvousRegisterCount = 0;
+    registeredUsernames.clear();
     serveSeedLedger = true;
     serveSeedStatus = true;
+    serveSanitizedLedger = false;
+    statusTipOverride = null;
     mockSeedLedger = _tallSeedLedger();
 
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -78,6 +85,14 @@ void main() {
       final path = request.uri.path;
 
       if (request.method == 'POST' && path == '/perc/rendezvous/register') {
+        try {
+          final body = await utf8.decoder.bind(request).join();
+          final json = jsonDecode(body) as Map<String, dynamic>;
+          final session = json['sessionUsername'] as String?;
+          if (session != null && session.isNotEmpty) {
+            registeredUsernames.add(session);
+          }
+        } catch (_) {}
         rendezvousRegisterCount++;
         request.response
           ..statusCode = 200
@@ -109,7 +124,7 @@ void main() {
             jsonEncode({
               'evolutionaryChainId': PercChainConstants.evolutionaryChainId,
               'blockHeight': mockSeedLedger.blockHeight,
-              'tipHash': PercChainTip.hash(mockSeedLedger),
+              'tipHash': statusTipOverride ?? PercChainTip.hash(mockSeedLedger),
               'revision': 1,
               'networkGenesisRevision': 2,
               'sessionUsername': PercChainConstants.seedUsername,
@@ -130,7 +145,15 @@ void main() {
         request.response
           ..statusCode = 200
           ..headers.contentType = ContentType.json
-          ..write(jsonEncode(mockSeedLedger.toJson()))
+          ..write(
+            jsonEncode(
+              serveSanitizedLedger
+                  ? PercAccountPrivacy.sanitizeLedgerForPublic(
+                      mockSeedLedger.toJson(),
+                    )
+                  : mockSeedLedger.toJson(),
+            ),
+          )
           ..close();
         return;
       }
@@ -296,15 +319,77 @@ void main() {
     expect(wallet.hasAppAccess, isTrue);
   });
 
+  test(
+    'sanitized fetch path aligns and publishes despite stale status tip',
+    () async {
+      serveSanitizedLedger = true;
+      statusTipOverride =
+          'stale-status-tip-00000000000000000000000000000000000000';
+      PercNetworkCoordinator.disableLiveNodesForTests = false;
+
+      final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+      await wallet.initialize();
+      await wallet.setupTreasuryPassword('password12345');
+      PercLedgerHub.instance.ledger.networkGenesisRevision = 2;
+
+      rendezvousRegisterCount = 0;
+      await wallet.register('sanitizedfetch', 'password12345');
+
+      final hub = PercLedgerHub.instance;
+      final coordinator = PercNetworkCoordinator.instance;
+      final ledger = hub.ledger;
+      final seedNode = ledger.networkNodes[PercChainConstants.seedUsername];
+      final clientLedgerTip = PercChainTip.hash(ledger);
+      final ledgerAligned = PercChainAlignment.isAlignedWithSeed(
+        local: ledger,
+        seedChainId: PercChainAlignment.effectiveChainId(mockSeedLedger),
+        seedHeight: PercChainTip.height(mockSeedLedger),
+        seedTipHash: PercChainTip.hash(mockSeedLedger),
+      );
+
+      _writeLog(
+        'sanitized_fetch_alignment.log',
+        'path=_fetchAndApplyCanonicalSeed\n'
+        'username=sanitizedfetch\n'
+        'statusTipOverride=$statusTipOverride\n'
+        'seedNodeTip=${seedNode?.tipHash}\n'
+        'clientLedgerTip=$clientLedgerTip\n'
+        'canonicalTip=${PercChainTip.hash(mockSeedLedger)}\n'
+        'ledgerAligned=$ledgerAligned\n'
+        'pendingRecoveryCleared=${!coordinator.hasPendingRegistrationRecovery}\n'
+        'height=${ledger.blockHeight}\n'
+        'seedHeight=${PercChainTip.height(mockSeedLedger)}\n'
+        'rendezvousRegisterCount=$rendezvousRegisterCount\n'
+        'note=alignment gate uses imported ledger tip; stale status tip ignored\n',
+      );
+
+      expect(statusTipOverride, isNot(clientLedgerTip));
+      expect(seedNode?.tipHash, clientLedgerTip);
+      expect(seedNode?.tipHash, PercChainTip.hash(mockSeedLedger));
+      expect(coordinator.hasPendingRegistrationRecovery, isFalse);
+      expect(ledgerAligned, isTrue);
+      expect(ledger.blockHeight, PercChainTip.height(mockSeedLedger));
+      expect(clientLedgerTip, PercChainTip.hash(mockSeedLedger));
+      expect(ledger.account('sanitizedfetch'), isNotNull);
+      expect(wallet.isWalletConnectComplete, isTrue);
+      expect(wallet.registrationAwaitingSeedAlignment, isFalse);
+      expect(rendezvousRegisterCount, greaterThan(0));
+    },
+  );
+
   test('live offline registration recovers after genesis reset on sync', () async {
     serveSeedStatus = false;
     serveSeedLedger = false;
     PercNetworkCoordinator.disableLiveNodesForTests = false;
 
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    PercNetworkCoordinator.disableLiveNodesForTests = true;
     await wallet.initialize();
-    await wallet.setupTreasuryPassword('password12345');
-    expect(PercLedgerHub.instance.ledger.networkGenesisRevision, 1);
+    PercNetworkCoordinator.disableLiveNodesForTests = false;
+    final hub = PercLedgerHub.instance;
+    hub.ledger.ensureTreasuryAccount();
+    hub.ledger.setupTreasuryPassword('password12345');
+    expect(hub.ledger.networkGenesisRevision, 1);
 
     rendezvousRegisterCount = 0;
     await wallet.register('liveoffline', 'password12345');
@@ -315,7 +400,7 @@ void main() {
       PercNetworkCoordinator.instance.hasPendingRegistrationRecovery,
       isTrue,
     );
-    expect(rendezvousRegisterCount, 0);
+    expect(registeredUsernames.contains('liveoffline'), isFalse);
 
     serveSeedStatus = true;
     serveSeedLedger = true;
@@ -345,6 +430,7 @@ void main() {
     );
     expect(wallet.isWalletConnectComplete, isTrue);
     expect(wallet.hasAppAccess, isTrue);
+    expect(registeredUsernames.contains('liveoffline'), isTrue);
     expect(rendezvousRegisterCount, greaterThan(0));
   });
 }

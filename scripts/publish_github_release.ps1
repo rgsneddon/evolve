@@ -229,8 +229,11 @@ if ($DryRun) {
 }
 
 $releaseExists = $false
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = 'SilentlyContinue'
 gh release view $tag --repo "$owner/$RepoName" 2>$null | Out-Null
 if ($LASTEXITCODE -eq 0) { $releaseExists = $true }
+$ErrorActionPreference = $prevEap
 
 $publishMode = 'create'
 if ($releaseExists -and $RecreateRelease) {

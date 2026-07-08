@@ -8,6 +8,11 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 void main() {
   setUp(() {
     PercLedgerHub.resetForTest();
+    PercWalletProvider.sessionTimeoutEnabled = false;
+  });
+
+  tearDown(() {
+    PercWalletProvider.sessionTimeoutEnabled = true;
   });
 
   test('resolveAdvertisedEndpoint falls back when node server has no endpoint', () async {
