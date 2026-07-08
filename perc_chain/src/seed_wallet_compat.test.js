@@ -34,6 +34,8 @@ test('live seed is compatible with v3.1.1 wallet API', async (t) => {
   assert.equal(status.networkGenesisRevision, EXPECTED_GENESIS);
 
   const ledger = await getJson(base, '/perc/ledger');
+  assert.equal(status.blockHeight, ledger.blocks?.length ?? 0,
+    'status blockHeight must match exported ledger block count');
   assert.equal(ledger.networkGenesisRevision, EXPECTED_GENESIS);
   assert.equal(ledger.blockchainLaunched, true);
   assert.ok(Array.isArray(ledger.pendingInboundTransfers));

@@ -313,7 +313,7 @@ export function buildNetworkSnapshot({
     chainId,
     seedUsername,
     endpoint: maskEndpoint(endpoint),
-    blockHeight: seedBlockHeightFromLedger(ledger),
+    blockHeight: blockHeight(ledger),
     tipHash: tipHash(ledger),
     revision: store.revision,
     networkGenesisRevision: store.getGenesisRevision(),

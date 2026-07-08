@@ -4,7 +4,7 @@ import path from 'path';
 import { blockTipPayload } from './chain_tip_payload.js';
 import { compactLedgerForSeed } from './ledger_compact.js';
 import { createGenesisLedger } from './genesis.js';
-import { seedBlockHeightFromLedger } from './seed_block.js';
+
 import {
   archiveSeedLedger,
   bootstrapSeedEpoch,
@@ -110,7 +110,7 @@ export class LedgerStore {
     const ledger = this.ledger;
     return {
       evolutionaryChainId: ledger?.evolutionaryChainId || CHAIN_ID,
-      blockHeight: seedBlockHeightFromLedger(ledger),
+      blockHeight: blockHeight(ledger),
       tipHash: tipHash(ledger),
       revision: this.revision,
       networkGenesisRevision: this.genesisRevision,

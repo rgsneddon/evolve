@@ -1,9 +1,21 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:evolve/perc/perc_chain_constants.dart';
+import 'package:evolve/perc/services/perc_chain_tip.dart';
+import 'package:evolve/perc/services/perc_ledger.dart';
+
+final _scratch = Platform.environment['SCRATCH'] ??
+    r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-cb031749c6db\implementer';
+
+void _writeProbeLog(String body) {
+  Directory(_scratch).createSync(recursive: true);
+  File('$_scratch${Platform.pathSeparator}live_seed_probe_data.log')
+      .writeAsStringSync(body);
+}
 
 /// Probes the public seed node for wallet v3.1.1 API compatibility.
 void main() {
@@ -109,6 +121,45 @@ void main() {
     expect(seedPeer['publicAlias'], isA<String>());
     expect((seedPeer['publicAlias'] as String).length, 5);
     expect(seedPeer['updatedAt'], isNotNull);
+  });
+
+  test('live seed status tip vs client ledger tip probe', () async {
+    if (skipLive) {
+      _writeProbeLog('skipped: PERC_SKIP_LIVE_SEED=true\n');
+      return;
+    }
+    if (!await liveSeedSupportsAccountPrivacy()) {
+      _writeProbeLog('skipped: live seed ledger not privacy-sanitized yet\n');
+      return;
+    }
+
+    final status = await getJson('/perc/status');
+    final ledgerJson = await getJson('/perc/ledger');
+    final ledger = PercLedger.fromJson(ledgerJson);
+    final statusTip = status['tipHash'] as String? ?? '';
+    final clientTip = PercChainTip.hash(ledger);
+    final statusHeight = status['blockHeight'] as int? ?? 0;
+    final clientHeight = PercChainTip.height(ledger);
+
+    final tipsMatch = statusTip == clientTip;
+    final heightsMatch = statusHeight == clientHeight;
+    _writeProbeLog(
+      'base=$base\n'
+      'statusTip=$statusTip\n'
+      'clientLedgerTip=$clientTip\n'
+      'tipsMatch=$tipsMatch\n'
+      'statusHeight=$statusHeight\n'
+      'clientHeight=$clientHeight\n'
+      'heightsMatch=$heightsMatch\n'
+      'note=${tipsMatch && heightsMatch ? 'server and client agree' : 'mismatch'}\n',
+    );
+
+    expect(heightsMatch, isTrue,
+        reason: 'statusHeight=$statusHeight clientHeight=$clientHeight');
+    expect(tipsMatch, isTrue,
+        reason: 'statusTip=$statusTip clientTip=$clientTip');
+    expect(statusHeight, clientHeight);
+    expect(statusTip, clientTip);
   });
 
   test('live seed peer online window aligns with wallet (7 minutes)', () async {
