@@ -99,4 +99,39 @@ void main() {
     expect(section, contains('<code id="perccent-setup-name">$fileName</code>'));
     expect(section, isNot(contains('evolve-v')));
   });
+
+  test('perccent-wallet section includes android installer from manifest', () {
+    final index = evolveRepoFile('downloads/index.html');
+    final html = index.readAsStringSync();
+
+    final manifestFile = _perccentChecksumsManifest();
+    expect(manifestFile, isNotNull, reason: 'perccent_wallet build/downloads checksums.json required');
+    final manifest = jsonDecode(manifestFile!.readAsStringSync()) as Map<String, dynamic>;
+    final packages = manifest['packages'] as List<dynamic>;
+    final android = packages.cast<Map<String, dynamic>>().firstWhere(
+      (p) => (p['file'] as String).contains('perccent-wallet') && (p['file'] as String).contains('android'),
+    );
+    final sha256 = android['sha256'] as String;
+    final fileName = android['file'] as String;
+    final versionMatch = RegExp(r'perccent-wallet-v([0-9.]+)-').firstMatch(fileName);
+    expect(versionMatch, isNotNull);
+    final perccentRelease = versionMatch!.group(1)!;
+
+    final sectionStart = html.indexOf('<section class="perccent-wallet">');
+    final sectionEnd = html.indexOf('</section>', sectionStart);
+    final section = html.substring(sectionStart, sectionEnd);
+
+    expect(section, contains('id="perccent-apk-sha256"'));
+    expect(section, contains(sha256));
+    expect(section, contains(fileName));
+    expect(
+      section,
+      contains(
+        'github.com/rgsneddon/perccent-wallet/releases/download/v$perccentRelease/$fileName',
+      ),
+    );
+    expect(section, contains('id="perccent-apk-name"'));
+    expect(section, contains('<code id="perccent-apk-name">$fileName</code>'));
+    expect(section, contains('Download Android Installer'));
+  });
 }

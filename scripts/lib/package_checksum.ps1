@@ -265,16 +265,21 @@ function Update-PerccentDownloadsIndexSection {
     }
 
     $manifest = Get-Content $ManifestPath -Raw | ConvertFrom-Json
-    $pkg = $manifest.packages | Where-Object { $_.file -match 'perccent-wallet.*windows' } | Select-Object -First 1
-    if (-not $pkg) {
+    $win = $manifest.packages | Where-Object { $_.file -match 'perccent-wallet.*windows' } | Select-Object -First 1
+    if (-not $win) {
         throw "Perccent manifest missing windows package: $ManifestPath"
     }
+    $apk = $manifest.packages | Where-Object { $_.file -match 'perccent-wallet.*android|perccent-wallet.*apk' } | Select-Object -First 1
+    if (-not $apk) {
+        throw "Perccent manifest missing android package: $ManifestPath"
+    }
 
-    if ($pkg.file -notmatch 'perccent-wallet-v([0-9.]+)-') {
-        throw "Could not parse Perccent version from $($pkg.file)"
+    if ($win.file -notmatch 'perccent-wallet-v([0-9.]+)-') {
+        throw "Could not parse Perccent version from $($win.file)"
     }
     $version = $Matches[1]
-    $winMb = [math]::Round($pkg.bytes / 1MB, 1)
+    $winMb = [math]::Round($win.bytes / 1MB, 1)
+    $apkMb = [math]::Round($apk.bytes / 1MB, 1)
     $releaseBase = "https://github.com/$Owner/$RepoName/releases/download/v$version"
 
     $html = Get-Content $DownloadsIndex -Raw
@@ -282,22 +287,35 @@ function Update-PerccentDownloadsIndexSection {
         throw 'downloads/index.html missing <section class="perccent-wallet">'
     }
 
-    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<p class="meta">)perccent-wallet-v[0-9.]+-windows-x64-setup\.exe(</p>)',
-        "`${1}$($pkg.file)`${2}"
-    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-windows-x64-setup\.exe(")',
-        "`${1}$releaseBase/$($pkg.file)`${2}"
+    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card windows">.*?<p class="meta">)perccent-wallet-v[0-9.]+-windows-x64-setup\.exe &middot; ~[0-9.]+ MB(</p>)',
+        "`${1}$($win.file) &middot; ~$winMb MB`${2}"
+    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card windows">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-windows-x64-setup\.exe(")',
+        "`${1}$releaseBase/$($win.file)`${2}"
     $html = $html -replace '(<code id="perccent-sha256"[^>]*>)[a-f0-9]{64}(</code>)',
-        "`${1}$($pkg.sha256)`${2}"
-    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-windows-x64-setup\.exe\.sha256(")',
-        "`${1}$releaseBase/$($pkg.file).sha256`${2}"
+        "`${1}$($win.sha256)`${2}"
+    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card windows">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-windows-x64-setup\.exe\.sha256(")',
+        "`${1}$releaseBase/$($win.file).sha256`${2}"
     $html = $html -replace '(<code id="perccent-setup-name">)perccent-wallet-v[0-9.]+-windows-x64-setup\.exe(</code>)',
-        "`${1}$($pkg.file)`${2}"
+        "`${1}$($win.file)`${2}"
+
+    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card android">.*?<p class="meta">)perccent-wallet-v[0-9.]+-android-setup\.apk &middot; ~[0-9.]+ MB( &middot; arm64, arm32, x86_64)?(</p>)',
+        "`${1}$($apk.file) &middot; ~$apkMb MB &middot; arm64, arm32, x86_64`${3}"
+    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card android">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-android-setup\.apk(")',
+        "`${1}$releaseBase/$($apk.file)`${2}"
+    $html = $html -replace '(<code id="perccent-apk-sha256"[^>]*>)[a-f0-9]{64}(</code>)',
+        "`${1}$($apk.sha256)`${2}"
+    $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card android">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-android-setup\.apk\.sha256(")',
+        "`${1}$releaseBase/$($apk.file).sha256`${2}"
+    $html = $html -replace '(<code id="perccent-apk-name">)perccent-wallet-v[0-9.]+-android-setup\.apk(</code>)',
+        "`${1}$($apk.file)`${2}"
 
     Set-Content -Path $DownloadsIndex -Value $html -NoNewline
     return [PSCustomObject]@{
         Version = $version
-        Windows = $pkg.file
-        Sha256 = $pkg.sha256
+        Windows = $win.file
+        Android = $apk.file
+        Sha256 = $win.sha256
+        AndroidSha256 = $apk.sha256
         ManifestPath = $ManifestPath
     }
 }
