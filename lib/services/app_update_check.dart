@@ -66,28 +66,32 @@ class AppUpdateChecker {
   @visibleForTesting
   static Future<String?> Function(Uri url)? fetchBodyOverride;
 
+  /// When set, answers whether a platform installer URL is reachable (HEAD/GET).
+  @visibleForTesting
+  static Future<bool> Function(Uri url)? headProbeOverride;
+
   Future<AppUpdateInfo> check({
     String current = PercAppVersion.current,
   }) async {
     // gh-pages is the published release feed (installers + web). main/version.json
     // may run ahead from the pre-push hook before a full publish — do not treat
     // it as newer than Pages when both are reachable.
-    RemoteVersionFeed? newest;
+    RemoteVersionFeed? published;
     var anySucceeded = false;
 
     final pagesFeed = await _fetchFeed(Uri.parse(pagesVersionUrl));
     if (pagesFeed != null && pagesFeed.release.isNotEmpty) {
-      newest = pagesFeed;
+      published = pagesFeed;
       anySucceeded = true;
     } else {
       final mainFeed = await _fetchFeed(Uri.parse(sourceVersionUrl));
       if (mainFeed != null && mainFeed.release.isNotEmpty) {
-        newest = mainFeed;
+        published = mainFeed;
         anySucceeded = true;
       }
     }
 
-    if (!anySucceeded || newest == null || newest.release.isEmpty) {
+    if (!anySucceeded || published == null || published.release.isEmpty) {
       return AppUpdateInfo(
         currentFull: current,
         latestFull: current,
@@ -97,13 +101,20 @@ class AppUpdateChecker {
       );
     }
 
-    final updateAvailable = PercAppVersion.isNewerThan(newest.full, current);
+    final semverNewer = PercAppVersion.isNewerThan(published.full, current);
+    var updateAvailable = false;
+    if (semverNewer) {
+      final installerReady =
+          await _installerPublished(published.release);
+      updateAvailable = installerReady;
+    }
+
     return AppUpdateInfo(
       currentFull: current,
-      latestFull: newest.full,
+      latestFull: published.full,
       updateAvailable: updateAvailable,
       checkSucceeded: true,
-      updateUrl: updateUrlForRelease(newest.release),
+      updateUrl: updateUrlForRelease(published.release),
     );
   }
 
@@ -159,6 +170,45 @@ class AppUpdateChecker {
           .timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) return null;
       return response.body;
+    } finally {
+      if (ownsClient) {
+        client.close();
+      }
+    }
+  }
+
+  Future<bool> _installerPublished(String release) async {
+    if (kIsWeb) {
+      return _headOk(Uri.parse('https://rgsneddon.github.io/evolve/'));
+    }
+    for (final url in updateUrlsForRelease(release)) {
+      final uri = Uri.parse(url);
+      if (!_looksLikeInstallerUrl(uri)) continue;
+      if (await _headOk(uri)) return true;
+    }
+    return false;
+  }
+
+  bool _looksLikeInstallerUrl(Uri uri) {
+    final path = uri.path.toLowerCase();
+    return path.endsWith('.apk') ||
+        path.endsWith('.exe') ||
+        uri.host == 'github.com' && path.contains('/releases/download/');
+  }
+
+  Future<bool> _headOk(Uri uri) async {
+    if (headProbeOverride != null) {
+      return headProbeOverride!(uri);
+    }
+    final client = _client ?? http.Client();
+    final ownsClient = _client == null;
+    try {
+      final response = await client
+          .head(uri)
+          .timeout(const Duration(seconds: 8));
+      return response.statusCode >= 200 && response.statusCode < 400;
+    } catch (_) {
+      return false;
     } finally {
       if (ownsClient) {
         client.close();
