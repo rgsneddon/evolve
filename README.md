@@ -387,6 +387,20 @@ The web app cannot run a localhost proxy (browser security). Heuristic mode is t
 
 ---
 
+## Security / Safe use
+
+Release builds of Evolve are **checked regularly for safe use** before they are signed and published:
+
+- **Malware scan** — Windows `.exe` and Android `.apk` installers under `build/downloads/v<version>/` are scanned with Windows Defender (when available) plus structural integrity checks (PE/APK headers, expected Android package id).
+- **Dependency audit** — `flutter pub audit` and `npm audit --audit-level=high` in `perc_chain/` run before each release; any remaining critical/high findings must be documented in [SECURITY.md](SECURITY.md).
+- **Integrity** — Every published package ships with SHA-256 and SHA-512 checksum sidecars. Verify the `.sha256` file from [GitHub Releases](https://github.com/rgsneddon/evolve/releases) or the [downloads page](https://rgsneddon.github.io/evolve/downloads/) **before installing**.
+
+**Limitation:** Automated scans and checksums reduce risk but **cannot guarantee** that a build is free of malware or other security issues. Use current antivirus tools on your device, verify checksums, and install only from official release URLs.
+
+Release pipeline entry points: `scripts/scan_release_artifacts.ps1`, `scripts/audit_dependencies.ps1`, and `scripts/sign_download_packages.ps1` (gates signing).
+
+---
+
 ## Build requirements
 
 - **Flutter** 3.44+ (stable), **Dart** 3.12+

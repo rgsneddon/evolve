@@ -8,6 +8,8 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\package_checksum.ps1"
+. "$PSScriptRoot\lib\security_scan.ps1"
+. "$PSScriptRoot\lib\dependency_audit.ps1"
 Set-Location $Root
 
 if (-not $Version) {
@@ -30,10 +32,20 @@ if (-not (Test-Path $SourceDir)) {
 $baseUrl = "https://rgsneddon.github.io/evolve/downloads/v$Version"
 
 if ($VerifyOnly) {
+    Invoke-ReleaseArtifactSecurityScan `
+        -Root $Root `
+        -VersionDir $SourceDir `
+        -ExpectedApkPackage 'com.evolve.chronoflux' | Out-Null
     Test-VersionPackageChecksums -VersionDir $SourceDir -RequireSidecars
     Write-Host "Checksum verification passed for v$Version" -ForegroundColor Green
     exit 0
 }
+
+Invoke-DependencyAudit -Root $Root | Out-Null
+Invoke-ReleaseArtifactSecurityScan `
+    -Root $Root `
+    -VersionDir $SourceDir `
+    -ExpectedApkPackage 'com.evolve.chronoflux' | Out-Null
 
 $packages = Get-ChildItem $SourceDir -File | Where-Object {
     $_.Extension -notin '.sha256', '.sha512', '.json' -and

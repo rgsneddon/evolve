@@ -91,7 +91,17 @@ if ($StartAt -in @('all', 'build')) {
   Write-Host '=== build_all (skipped; prior log valid) ===' -ForegroundColor Yellow
 }
 
-# (d) Installers + publish with gh-pages enabled (no skip flags)
+# (d) Security scan + dependency audit on staged installers
+if ($StartAt -in @('all', 'build', 'publish')) {
+  Invoke-StepLog 'security_scan' {
+    & "$PSScriptRoot\scan_release_artifacts.ps1" -Version $Version
+  }
+  Invoke-StepLog 'dependency_audit' {
+    & "$PSScriptRoot\audit_dependencies.ps1"
+  }
+}
+
+# (e) Installers + publish with gh-pages enabled (no skip flags)
 $publishArgs = @{
   Version     = $Version
   EvidenceDir = $ScratchDir
@@ -113,15 +123,15 @@ Invoke-StepLog 'publish' {
   & "$PSScriptRoot\publish_github_release.ps1" @publishParams
 }
 
-# (e) GitHub release API/asset probe
+# (f) GitHub release API/asset probe
 & "$PSScriptRoot\verify_github_release.ps1" -Version $Version -ScratchDir $ScratchDir
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# (f) Live gh-pages downloads proof
+# (g) Live gh-pages downloads proof
 & "$PSScriptRoot\verify_ghpages_downloads.ps1" -Version $Version -Build $build -ScratchDir $ScratchDir
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# (g) Ensure tag v$Version points at HEAD (force-move when drifted)
+# (h) Ensure tag v$Version points at HEAD (force-move when drifted)
 $tag = "v$Version"
 $head = (git rev-parse HEAD).Trim()
 git show-ref --verify --quiet "refs/tags/$tag"
@@ -155,7 +165,7 @@ if ($LASTEXITCODE -eq 0) {
 & "$PSScriptRoot\verify_github_release.ps1" -Version $Version -ScratchDir $ScratchDir
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# (h) Evidence bundle for session goal
+# (i) Evidence bundle for session goal
 & "$PSScriptRoot\capture_release_evidence.ps1" -ScratchDir $ScratchDir -BaseRef $BaseRef -Version $Version
 
 Write-Host "Finalize complete. Evidence: $ScratchDir" -ForegroundColor Green
