@@ -282,8 +282,13 @@
       line-height: 1.6;
     }
 
-    .perccent-wallet .card {
-      max-width: 360px;
+    .perccent-wallet .grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    @media (min-width: 700px) {
+      .perccent-wallet .grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
@@ -297,7 +302,7 @@
         Social science scenario analysis with the Chronoflux hydrodynamic framework.
         All core calculations run locally on your device.
       </p>
-      <p class="version">Latest release: <strong>v4.0.4</strong> (build 149)</p>
+      <p class="version">Latest release: <strong>v4.0.5</strong> (build 150)</p>
     </header>
 
     <div class="grid">
@@ -305,14 +310,14 @@
         <div class="card-icon" aria-hidden="true">&#8862;</div>
         <h2>Windows</h2>
         <p>Run the Windows setup installer. Installs Evolve with Start Menu shortcut and uninstaller.</p>
-        <p class="meta">evolve-v4.0.4-windows-x64-setup.exe &middot; ~12 MB</p>
-        <a class="btn btn-primary" href="https://github.com/rgsneddon/evolve/releases/download/v4.0.4/evolve-v4.0.4-windows-x64-setup.exe" download>
+        <p class="meta">evolve-v4.0.5-windows-x64-setup.exe &middot; ~12 MB</p>
+        <a class="btn btn-primary" href="https://github.com/rgsneddon/evolve/releases/download/v4.0.5/evolve-v4.0.5-windows-x64-setup.exe" download>
           Download Windows Installer
         </a>
         <p class="meta" style="margin-top:12px;margin-bottom:0;">
           SHA-256:
-          <code style="font-size:0.72rem;word-break:break-all;">0a8462980df6e3e85b8789d0fef9897e6845e919dc880f3fca0dd66a772b8ea3</code>
-          (<a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.4/evolve-v4.0.4-windows-x64-setup.exe.sha256">.sha256</a>)
+          <code style="font-size:0.72rem;word-break:break-all;">0d26277be085bf79a05249a64b179bf861b3788ca4d384137b57677918af13e5</code>
+          (<a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.5/evolve-v4.0.5-windows-x64-setup.exe.sha256">.sha256</a>)
         </p>
       </article>
 
@@ -320,14 +325,14 @@
         <div class="card-icon" aria-hidden="true">&#9741;</div>
         <h2>Android</h2>
         <p>Install the versioned setup APK on your phone or tablet. Enable &ldquo;Install unknown apps&rdquo; if prompted.</p>
-        <p class="meta">evolve-v4.0.4-android-setup.apk &middot; ~75.1 MB &middot; arm64, arm32, x86_64</p>
-        <a class="btn btn-secondary" href="https://github.com/rgsneddon/evolve/releases/download/v4.0.4/evolve-v4.0.4-android-setup.apk" download>
+        <p class="meta">evolve-v4.0.5-android-setup.apk &middot; ~75.1 MB &middot; arm64, arm32, x86_64</p>
+        <a class="btn btn-secondary" href="https://github.com/rgsneddon/evolve/releases/download/v4.0.5/evolve-v4.0.5-android-setup.apk" download>
           Download Android Installer
         </a>
         <p class="meta" style="margin-top:12px;margin-bottom:0;">
           SHA-256:
-          <code style="font-size:0.72rem;word-break:break-all;">68bfd72e9a861c23e7b37d4252e1863b654acb054d5e2c8febebd3387bc00662</code>
-          (<a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.4/evolve-v4.0.4-android-setup.apk.sha256">.sha256</a>)
+          <code style="font-size:0.72rem;word-break:break-all;">19aa28cfd1ffdfceb6f95030d1d5b4999bfd75f73fb994533e01045eda0a1017</code>
+          (<a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.5/evolve-v4.0.5-android-setup.apk.sha256">.sha256</a>)
         </p>
       </article>
 
@@ -364,32 +369,50 @@
       <h2>Perccent Wallet</h2>
       <p class="perccent-lead">
         Standalone PERC wallet for send, receive, stake, and chain sync — without the full Evolve scenario suite.
-        Windows installer with SHA-256 verification.
+        Windows and Android installers with SHA-256 verification.
       </p>
-      <article class="card windows">
-        <div class="card-icon" aria-hidden="true">&#8862;</div>
-        <h2>Windows</h2>
-        <p>Install Perccent Wallet with Start Menu shortcut and uninstaller.</p>
-        <p class="meta">perccent-wallet-v1.0.1-windows-x64-setup.exe &middot; ~11.5 MB</p>
-        <p class="meta"><strong>Install:</strong> Run <code id="perccent-setup-name">perccent-wallet-v1.0.3-windows-x64-setup.exe</code>. Verify SHA-256 before installing. Windows SmartScreen may ask you to confirm.</p>
-        <a class="btn btn-primary" href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.0.3/perccent-wallet-v1.0.3-windows-x64-setup.exe" download>
-          Download Perccent Wallet
-        </a>
-        <p class="meta" style="margin-top:12px;margin-bottom:0;">
-          SHA-256:
-          <code id="perccent-sha256" style="font-size:0.72rem;word-break:break-all;">48f227aef95df3d0ad47c98a6e4eeef12713e5c800ce1806074065dab5a1ee1c</code>
-          (<a href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.0.3/perccent-wallet-v1.0.3-windows-x64-setup.exe.sha256">.sha256</a>)
-        </p>
-      </article>
+      <div class="grid">
+        <article class="card windows">
+          <div class="card-icon" aria-hidden="true">&#8862;</div>
+          <h2>Windows</h2>
+          <p>Install Perccent Wallet with Start Menu shortcut and uninstaller.</p>
+          <p class="meta">perccent-wallet-v1.0.4-windows-x64-setup.exe &middot; ~11.5 MB</p>
+          <p class="meta"><strong>Install:</strong> Run <code id="perccent-setup-name">perccent-wallet-v1.0.4-windows-x64-setup.exe</code>. Verify SHA-256 before installing. Windows SmartScreen may ask you to confirm.</p>
+          <a class="btn btn-primary" href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.0.4/perccent-wallet-v1.0.4-windows-x64-setup.exe" download>
+            Download Windows Installer
+          </a>
+          <p class="meta" style="margin-top:12px;margin-bottom:0;">
+            SHA-256:
+            <code id="perccent-sha256" style="font-size:0.72rem;word-break:break-all;">8d24b30ab010da26c8c5ca0bc6d8b8c1927914100547761c7a2b9072df5453ad</code>
+            (<a href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.0.4/perccent-wallet-v1.0.4-windows-x64-setup.exe.sha256">.sha256</a>)
+          </p>
+        </article>
+
+        <article class="card android">
+          <div class="card-icon" aria-hidden="true">&#9741;</div>
+          <h2>Android</h2>
+          <p>Install the versioned setup APK on your phone or tablet. Enable &ldquo;Install unknown apps&rdquo; if prompted.</p>
+          <p class="meta">perccent-wallet-v1.0.4-android-setup.apk &middot; ~70.4 MB &middot; arm64, arm32, x86_64</p>
+          <p class="meta"><strong>Install:</strong> Open <code id="perccent-apk-name">perccent-wallet-v1.0.4-android-setup.apk</code> after download. Verify SHA-256 before installing.</p>
+          <a class="btn btn-secondary" href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.0.4/perccent-wallet-v1.0.4-android-setup.apk" download>
+            Download Android Installer
+          </a>
+          <p class="meta" style="margin-top:12px;margin-bottom:0;">
+            SHA-256:
+            <code id="perccent-apk-sha256" style="font-size:0.72rem;word-break:break-all;">05e38b35577884e46f557baf289046f2aca4620f3359ce0503e17c144e9cfe9b</code>
+            (<a href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.0.4/perccent-wallet-v1.0.4-android-setup.apk.sha256">.sha256</a>)
+          </p>
+        </article>
+      </div>
     </section>
 
     <section class="notes">
       <h3>Install notes</h3>
       <ul>
-        <li><strong>Windows:</strong> Run <code>evolve-v4.0.4-windows-x64-setup.exe</code>. Verify the SHA-256 checksum before installing. Windows SmartScreen may ask you to confirm.</li>
-        <li><strong>Android:</strong> Run <code>evolve-v4.0.4-android-setup.apk</code>. Requires Android 6.0+ (API 23). Verify SHA-256 before installing. Camera permission is requested only when you scan a PERC QR code.</li>
+        <li><strong>Windows:</strong> Run <code>evolve-v4.0.5-windows-x64-setup.exe</code>. Verify the SHA-256 checksum before installing. Windows SmartScreen may ask you to confirm.</li>
+        <li><strong>Android:</strong> Run <code>evolve-v4.0.5-android-setup.apk</code>. Requires Android 6.0+ (API 23). Verify SHA-256 before installing. Camera permission is requested only when you scan a PERC QR code.</li>
         <li><strong>Web:</strong> Hosted at the same GitHub Pages site. Grok construal uses local heuristic mode in the browser.</li>
-        <li><strong>Integrity:</strong> Every package ships with <strong>SHA-256</strong> and <strong>SHA-512</strong> checksum sidecars (not Authenticode-signed). Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.4/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.4/CHECKSUMS.sha512">CHECKSUMS.sha512</a> (or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.4/checksums.json">checksums.json</a>).</li>
+        <li><strong>Integrity:</strong> Every package ships with <strong>SHA-256</strong> and <strong>SHA-512</strong> checksum sidecars (not Authenticode-signed). Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.5/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.5/CHECKSUMS.sha512">CHECKSUMS.sha512</a> (or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.0.5/checksums.json">checksums.json</a>).</li>
         <li><strong>Updates:</strong> Check <a href="https://github.com/rgsneddon/evolve/releases">GitHub Releases</a> for older versions and release notes.</li>
       </ul>
     </section>
