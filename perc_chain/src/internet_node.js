@@ -26,6 +26,7 @@ import {
   touchPeerHeartbeatOnSeed,
 } from './peer_online.js';
 import { applyRelayLedgerPut } from './rendezvous_ledger_put.js';
+import { mergeUpstreamPeers } from './upstream_rendezvous.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -71,6 +72,34 @@ function publicEndpoint() {
   const explicit = (process.env.PERC_PUBLIC_ENDPOINT ?? process.env.RENDER_EXTERNAL_URL ?? '').trim();
   if (explicit) return explicit.replace(/\/$/, '');
   return `http://127.0.0.1:${PORT}`;
+}
+
+function readDefaultUpstreamRendezvousUrl() {
+  const configPath = path.join(__dirname, '..', '..', 'assets', 'config', 'perc_network.json');
+  try {
+    const raw = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const url = (raw.rendezvousUrl ?? '').trim();
+    if (url) return url.replace(/\/$/, '');
+  } catch {
+    // optional — env override still works
+  }
+  return 'https://evolve-perc-internet.onrender.com';
+}
+
+function upstreamRendezvousUrl() {
+  const explicit = (process.env.PERC_UPSTREAM_RENDEZVOUS_URL ?? '').trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+  return readDefaultUpstreamRendezvousUrl();
+}
+
+function networkSyncBase() {
+  const local = publicEndpoint();
+  const isLocal =
+    !local ||
+    local.includes('127.0.0.1') ||
+    local.includes('localhost') ||
+    local.startsWith('http://[::1]');
+  return isLocal ? upstreamRendezvousUrl() : local;
 }
 
 function json(res, code, body) {
@@ -133,7 +162,13 @@ function servePublic(relPath, res) {
 
 async function registerSeed() {
   const endpoint = publicEndpoint();
-  if (!endpoint || endpoint.includes('127.0.0.1') || endpoint.includes('localhost')) return;
+  if (!endpoint) return;
+  const explicitPublic = Boolean((process.env.PERC_PUBLIC_ENDPOINT ?? '').trim());
+  const isLoopback =
+    endpoint.includes('127.0.0.1') ||
+    endpoint.includes('localhost') ||
+    endpoint.startsWith('http://[::1]');
+  if (isLoopback && !explicitPublic) return;
   const status = store.status(SEED_USERNAME, endpoint);
   peers.set(SEED_USERNAME, {
     sessionUsername: SEED_USERNAME,
@@ -167,9 +202,23 @@ async function fetchJson(url, options = {}) {
   return response.json();
 }
 
+async function syncUpstreamPeers() {
+  const upstream = upstreamRendezvousUrl();
+  if (!upstream) return 0;
+  try {
+    const peerList = await fetchJson(
+      `${upstream}/perc/rendezvous/peers?chainId=${encodeURIComponent(CHAIN_ID)}`,
+    );
+    return mergeUpstreamPeers(peers, peerList, CHAIN_ID);
+  } catch (err) {
+    console.warn('Upstream peer merge failed:', err?.message ?? err);
+    return 0;
+  }
+}
+
 async function syncFromNetwork() {
-  const base = publicEndpoint();
-  if (!base || base.includes('127.0.0.1')) return;
+  const base = networkSyncBase();
+  if (!base) return;
 
   let peerList = [];
   try {
@@ -180,6 +229,7 @@ async function syncFromNetwork() {
     return;
   }
   if (!Array.isArray(peerList)) return;
+  mergeUpstreamPeers(peers, peerList, CHAIN_ID);
 
   let best = null;
   let bestUsername = null;
@@ -482,11 +532,16 @@ server.listen(PORT, bindHost, async () => {
     );
   }
   await registerSeed();
+  const upstreamMerged = await syncUpstreamPeers();
+  if (upstreamMerged > 0) {
+    console.log(`Merged ${upstreamMerged} upstream peer(s) from ${upstreamRendezvousUrl()}`);
+  }
   await syncFromNetwork();
   if (regenerateTreasuryIfLow(store, TREASURY_USERNAME)) {
     await registerSeed();
   }
   setInterval(async () => {
+    await syncUpstreamPeers();
     await syncFromNetwork();
     if (regenerateTreasuryIfLow(store, TREASURY_USERNAME)) {
       await registerSeed();
