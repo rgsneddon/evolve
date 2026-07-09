@@ -162,6 +162,58 @@ function Get-PublishedMaxAppVersion {
     return $max
 }
 
+function Get-MaxPublishedAndroidBuild {
+    param([string]$Root)
+
+    $installerDir = Join-Path $Root 'installer\android'
+    $max = 0
+    if (-not (Test-Path $installerDir)) {
+        return $max
+    }
+
+    Get-ChildItem $installerDir -Filter 'evolve-v*-android.json' | ForEach-Object {
+        try {
+            $json = Get-Content $_.FullName -Raw | ConvertFrom-Json
+            $build = [int]$json.build
+            if ($build -gt $max) { $max = $build }
+        } catch {
+            # skip malformed manifests
+        }
+    }
+    return $max
+}
+
+function Test-AndroidVersionCodeMonotonic {
+    param(
+        [string]$Root,
+        [int]$CandidateBuild
+    )
+
+    $maxPublished = Get-MaxPublishedAndroidBuild -Root $Root
+    return [pscustomobject]@{
+        Ok = ($CandidateBuild -gt $maxPublished)
+        CandidateBuild = $CandidateBuild
+        MaxPublishedAndroidBuild = $maxPublished
+    }
+}
+
+function Assert-AndroidVersionCodeMonotonic {
+    param(
+        [string]$Root,
+        [int]$CandidateBuild
+    )
+
+    $check = Test-AndroidVersionCodeMonotonic -Root $Root -CandidateBuild $CandidateBuild
+    if (-not $check.Ok) {
+        throw (
+            "Android versionCode $CandidateBuild must be greater than the highest " +
+            "published Android build $($check.MaxPublishedAndroidBuild) " +
+            "(installer/android manifests). Downgrade APKs fail with 'App not installed' / 'update not installed'."
+        )
+    }
+    return $check
+}
+
 function Get-NextAppVersion {
     param(
         [string]$Root,
@@ -182,6 +234,10 @@ function Get-NextAppVersion {
 
     if ($BuildOnly) {
         $build += 1
+        $androidMax = Get-MaxPublishedAndroidBuild -Root $Root
+        if ($build -le $androidMax) {
+            $build = $androidMax + 1
+        }
     } elseif ($PatchOnly) {
         $patch += 1
         $build = 1

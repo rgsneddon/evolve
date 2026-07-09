@@ -9,6 +9,7 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
 . "$PSScriptRoot\lib\package_checksum.ps1"
+. "$PSScriptRoot\version_utils.ps1"
 
 Set-Location $Root
 
@@ -32,6 +33,8 @@ if (-not $SkipApkBuild) {
 if (-not (Test-Path $apkSrc)) {
     throw "Missing Android release APK: $apkSrc"
 }
+
+Assert-AndroidVersionCodeMonotonic -Root $Root -CandidateBuild ([int]$Build)
 
 function Get-ApkAbis([string]$ApkPath) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
