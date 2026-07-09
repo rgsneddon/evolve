@@ -17,9 +17,9 @@ list them below under "Documented exceptions". -->
 
 ### Documented exceptions
 
-| Finding | Rationale |
-|---------|-----------|
-| `dart pub audit` subcommand unavailable on Dart SDK 3.12.x in this environment | SDK lacks built-in pub audit; `npm audit --audit-level=high` covers `perc_chain/` (0 high/critical at last run). Flutter dependencies are reviewed via `flutter pub outdated` snapshot captured in audit logs before each release. Upgrade SDK when `dart pub audit` ships to enable automated Dart advisory checks. |
+| Exception ID | Rationale |
+|--------------|-----------|
+| EX-dart_pub_audit_unavailable | Dart SDK 3.12.x lacks `dart pub audit`; `npm audit --audit-level=high` covers `perc_chain/`; `flutter pub outdated` snapshot is captured in audit logs before each release until SDK supports pub audit. |
 
 ## Reporting vulnerabilities
 

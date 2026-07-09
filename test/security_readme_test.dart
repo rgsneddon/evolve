@@ -71,6 +71,21 @@ void main() {
     _expectSecuritySection('perccent_wallet', readme.readAsStringSync());
   });
 
+  test('SECURITY.md documents per-finding exception ids', () {
+    final evolveSec = evolveRepoFile('SECURITY.md');
+    final walletRoot =
+        '${Directory(evolveRepoRoot()).parent.path}${Platform.pathSeparator}perccent_wallet';
+    final walletSecurity = File(
+      '$walletRoot${Platform.pathSeparator}SECURITY.md',
+    );
+    expect(evolveSec.existsSync(), isTrue);
+    expect(walletSecurity.existsSync(), isTrue);
+    final evolveText = evolveSec.readAsStringSync();
+    final walletText = walletSecurity.readAsStringSync();
+    expect(evolveText, contains('EX-dart_pub_audit_unavailable'));
+    expect(walletText, contains('EX-dart_pub_audit_unavailable'));
+  });
+
   test('security scan scripts exist and are wired into release flow', () {
     final evolveRoot = evolveRepoRoot();
     _expectScanScript(evolveRoot, 'evolve_app');
@@ -80,5 +95,10 @@ void main() {
         '${Directory(evolveRoot).parent.path}${Platform.pathSeparator}perccent_wallet';
     _expectScanScript(walletRoot, 'perccent_wallet');
     _expectSignOrPublishWiring(walletRoot, 'perccent_wallet');
+
+    final verify = File(
+      '$walletRoot${Platform.pathSeparator}scripts${Platform.pathSeparator}verify_download_packages.ps1',
+    );
+    expect(verify.existsSync(), isTrue, reason: 'perccent verify_download_packages.ps1 must exist');
   });
 }

@@ -1,4 +1,183 @@
-# Supply-chain audit: Flutter pub audit + npm audit in perc_chain.
+# Supply-chain audit: Dart pub audit (or SDK fallback) + npm audit in perc_chain.
+
+function Get-DocumentedSecurityExceptionIds {
+    param([string]$SecurityText)
+
+    $ids = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in ($SecurityText -split "`r?`n")) {
+        if ($line -match 'EX-([a-z0-9_]+)') {
+            [void]$ids.Add($Matches[1])
+        }
+    }
+    return $ids
+}
+
+function Test-FindingsDocumentedInSecurityPolicy {
+    param(
+        [System.Collections.IEnumerable]$RecordedFindings,
+        [Parameter(Mandatory = $true)][string]$SecurityText
+    )
+
+    if (-not $RecordedFindings -or @($RecordedFindings).Count -eq 0) {
+        return $true
+    }
+
+    $documented = Get-DocumentedSecurityExceptionIds -SecurityText $SecurityText
+    foreach ($finding in $RecordedFindings) {
+        if ($documented -notcontains $finding.Id) {
+            return $false
+        }
+    }
+    return $true
+}
+
+function Merge-AuditSectionResult {
+    param(
+        [System.Collections.Generic.List[string]]$TargetLog,
+        [System.Collections.Generic.List[object]]$TargetFindings,
+        [psobject]$SectionResult
+    )
+
+    foreach ($entry in $SectionResult.LogEntries) {
+        [void]$TargetLog.Add($entry)
+    }
+    foreach ($finding in $SectionResult.Findings) {
+        [void]$TargetFindings.Add($finding)
+    }
+}
+
+function Invoke-DartPubAuditSection {
+    $sectionLog = [System.Collections.Generic.List[string]]::new()
+    $sectionFindings = [System.Collections.Generic.List[object]]::new()
+
+    if (-not (Get-Command dart -ErrorAction SilentlyContinue)) {
+        $sectionFindings.Add([PSCustomObject]@{
+            Id = 'dart_cli_missing'
+            Detail = 'dart CLI not found on PATH'
+        }) | Out-Null
+        $sectionLog.Add('dart pub audit: SKIPPED (dart CLI missing)')
+        return [PSCustomObject]@{
+            LogEntries = $sectionLog
+            Findings = $sectionFindings
+        }
+    }
+
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $pubLines = & dart pub audit 2>&1
+    $pubExit = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+
+    $pubOut = ($pubLines | ForEach-Object { "$_" }) -join [Environment]::NewLine
+    $sectionLog.Add('')
+    $sectionLog.Add('--- dart pub audit ---')
+    $sectionLog.Add($pubOut.Trim())
+
+    if ($pubOut -match 'Could not find a subcommand named "audit"') {
+        $sectionLog.Add('fallback: dart pub audit unavailable on this SDK; running flutter pub outdated snapshot')
+        $prevEap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        $outdatedLines = & flutter pub outdated --show-all 2>&1
+        $ErrorActionPreference = $prevEap
+        $outdated = ($outdatedLines | ForEach-Object { "$_" }) -join [Environment]::NewLine
+        $sectionLog.Add($outdated.Trim())
+        $sectionLog.Add('flutter_pub_outdated_snapshot=recorded (manual advisory review before release)')
+        $sectionFindings.Add([PSCustomObject]@{
+            Id = 'dart_pub_audit_unavailable'
+            Detail = 'dart pub audit subcommand not available on installed Dart SDK'
+        }) | Out-Null
+        return [PSCustomObject]@{
+            LogEntries = $sectionLog
+            Findings = $sectionFindings
+        }
+    }
+
+    if ($pubExit -ne 0) {
+        $sectionFindings.Add([PSCustomObject]@{
+            Id = "dart_pub_audit_exit_$pubExit"
+            Detail = "dart pub audit exited with code $pubExit"
+        }) | Out-Null
+        return [PSCustomObject]@{
+            LogEntries = $sectionLog
+            Findings = $sectionFindings
+        }
+    }
+
+    if ($pubOut -match '(?i)(critical|high)\s+vulnerabilit') {
+        $sectionFindings.Add([PSCustomObject]@{
+            Id = 'dart_pub_audit_high_critical'
+            Detail = 'dart pub audit reported critical/high vulnerabilities'
+        }) | Out-Null
+    }
+
+    return [PSCustomObject]@{
+        LogEntries = $sectionLog
+        Findings = $sectionFindings
+    }
+}
+
+function Invoke-NpmAuditSection {
+    param([Parameter(Mandatory = $true)][string]$PercChainDir)
+
+    $sectionLog = [System.Collections.Generic.List[string]]::new()
+    $sectionFindings = [System.Collections.Generic.List[object]]::new()
+
+    if (-not (Test-Path (Join-Path $PercChainDir 'package.json'))) {
+        $sectionLog.Add('')
+        $sectionLog.Add('--- npm audit skipped (no perc_chain/package.json) ---')
+        return [PSCustomObject]@{
+            LogEntries = $sectionLog
+            Findings = $sectionFindings
+        }
+    }
+
+    Push-Location $PercChainDir
+    try {
+        if (-not (Test-Path 'node_modules')) {
+            $sectionLog.Add('npm install (perc_chain, first-time lockfile sync)')
+            $prevEap = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            $null = & npm install 2>&1
+            $installExit = $LASTEXITCODE
+            $ErrorActionPreference = $prevEap
+            if ($installExit -ne 0) {
+                $sectionFindings.Add([PSCustomObject]@{
+                    Id = 'npm_install_failed'
+                    Detail = "npm install failed with exit $installExit"
+                }) | Out-Null
+                return [PSCustomObject]@{
+                    LogEntries = $sectionLog
+                    Findings = $sectionFindings
+                }
+            }
+        }
+
+        $prevEap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        $npmLines = & npm audit --audit-level=high 2>&1
+        $npmExit = $LASTEXITCODE
+        $ErrorActionPreference = $prevEap
+
+        $npmOut = ($npmLines | ForEach-Object { "$_" }) -join [Environment]::NewLine
+        $sectionLog.Add('')
+        $sectionLog.Add('--- npm audit (perc_chain, --audit-level=high) ---')
+        $sectionLog.Add($npmOut.Trim())
+
+        if ($npmExit -ne 0) {
+            $sectionFindings.Add([PSCustomObject]@{
+                Id = "npm_audit_exit_$npmExit"
+                Detail = "npm audit --audit-level=high exited with code $npmExit"
+            }) | Out-Null
+        }
+    } finally {
+        Pop-Location
+    }
+
+    return [PSCustomObject]@{
+        LogEntries = $sectionLog
+        Findings = $sectionFindings
+    }
+}
 
 function Invoke-DependencyAudit {
     param(
@@ -11,89 +190,55 @@ function Invoke-DependencyAudit {
         $SecurityDocPath = Join-Path $Root 'SECURITY.md'
     }
 
-    $lines = [System.Collections.Generic.List[string]]::new()
-    $lines.Add("=== Dependency audit $(Get-Date -Format o) ===")
-    $lines.Add("root=$Root")
+    $repoLog = [System.Collections.Generic.List[string]]::new()
+    $repoFindings = [System.Collections.Generic.List[object]]::new()
+    $repoLog.Add("=== Dependency audit $(Get-Date -Format o) ===")
+    $repoLog.Add("root=$Root")
 
-    $unmitigated = [System.Collections.Generic.List[string]]::new()
     Push-Location $Root
     try {
-        $pubCmd = Get-Command dart -ErrorAction SilentlyContinue
-        if (-not $pubCmd) {
-            throw 'dart CLI not found on PATH'
-        }
-        $pubOut = dart pub audit 2>&1 | Out-String
-        $lines.Add('')
-        $lines.Add('--- dart pub audit ---')
-        $lines.Add($pubOut.Trim())
-        if ($pubOut -match 'Could not find a subcommand named "audit"') {
-            $lines.Add('fallback: dart pub audit unavailable on this SDK; running flutter pub outdated snapshot')
-            $outdated = flutter pub outdated --show-all 2>&1 | Out-String
-            $lines.Add($outdated.Trim())
-            $lines.Add('flutter_pub_outdated_snapshot=recorded (manual advisory review before release)')
-        } elseif ($LASTEXITCODE -ne 0) {
-            $unmitigated.Add("dart pub audit exit $LASTEXITCODE")
-        } elseif ($pubOut -match '(?i)(critical|high)\s+vulnerabilit') {
-            $unmitigated.Add('dart pub audit reported critical/high vulnerabilities')
-        }
-    } catch {
-        $lines.Add("dart pub audit ERROR: $($_.Exception.Message)")
-        $unmitigated.Add('dart pub audit failed to run')
+        $dartSection = Invoke-DartPubAuditSection
+        Merge-AuditSectionResult -TargetLog $repoLog -TargetFindings $repoFindings -SectionResult $dartSection
     } finally {
         Pop-Location
     }
 
-    $percChain = Join-Path $Root 'perc_chain'
-    if (Test-Path (Join-Path $percChain 'package.json')) {
-        Push-Location $percChain
-        try {
-            if (-not (Test-Path 'node_modules')) {
-                $lines.Add('npm install (perc_chain, first-time lockfile sync)')
-                npm install 2>&1 | Out-Null
-                if ($LASTEXITCODE -ne 0) {
-                    throw "npm install failed with exit $LASTEXITCODE"
-                }
-            }
-            $npmOut = npm audit --audit-level=high 2>&1 | Out-String
-            $lines.Add('')
-            $lines.Add('--- npm audit (perc_chain, --audit-level=high) ---')
-            $lines.Add($npmOut.Trim())
-            if ($LASTEXITCODE -ne 0) {
-                $unmitigated.Add("npm audit exit $LASTEXITCODE")
-            }
-        } catch {
-            $lines.Add("npm audit ERROR: $($_.Exception.Message)")
-            $unmitigated.Add('npm audit failed to run')
-        } finally {
-            Pop-Location
-        }
-    } else {
-        $lines.Add('')
-        $lines.Add('--- npm audit skipped (no perc_chain/package.json) ---')
-    }
+    $npmSection = Invoke-NpmAuditSection -PercChainDir (Join-Path $Root 'perc_chain')
+    Merge-AuditSectionResult -TargetLog $repoLog -TargetFindings $repoFindings -SectionResult $npmSection
 
-    $documented = $false
+    $securityText = ''
     if (Test-Path $SecurityDocPath) {
-        $secText = Get-Content $SecurityDocPath -Raw
-        if ($secText -match '(?i)dependency audit exceptions|documented exceptions') {
-            $documented = $true
-            $lines.Add('')
-            $lines.Add("exceptions: documented in $SecurityDocPath")
+        $securityText = Get-Content $SecurityDocPath -Raw
+    }
+
+    $allDocumented = if ($repoFindings.Count -eq 0) {
+        $true
+    } else {
+        Test-FindingsDocumentedInSecurityPolicy -RecordedFindings @($repoFindings) -SecurityText $securityText
+    }
+
+    $repoLog.Add('')
+    if ($repoFindings.Count -eq 0) {
+        $repoLog.Add('dependency_audit=PASS')
+    } elseif ($allDocumented) {
+        $repoLog.Add('dependency_audit=PASS_WITH_DOCUMENTED_EXCEPTIONS')
+        foreach ($finding in $repoFindings) {
+            $repoLog.Add("documented_exception: EX-$($finding.Id) - $($finding.Detail)")
+        }
+    } else {
+        $repoLog.Add('dependency_audit=FAIL')
+        foreach ($finding in $repoFindings) {
+            $repoLog.Add("unmitigated: EX-$($finding.Id) - $($finding.Detail)")
+        }
+        $missing = @($repoFindings | ForEach-Object { $_.Id } | Where-Object {
+            (Get-DocumentedSecurityExceptionIds -SecurityText $securityText) -notcontains $_
+        })
+        if ($missing.Count -gt 0) {
+            $repoLog.Add("missing_security_md_ids: $($missing -join ', ')")
         }
     }
 
-    $lines.Add('')
-    if ($unmitigated.Count -eq 0) {
-        $lines.Add('dependency_audit=PASS')
-    } elseif ($documented) {
-        $lines.Add('dependency_audit=PASS_WITH_DOCUMENTED_EXCEPTIONS')
-        foreach ($item in $unmitigated) { $lines.Add("unmitigated: $item") }
-    } else {
-        $lines.Add('dependency_audit=FAIL')
-        foreach ($item in $unmitigated) { $lines.Add("unmitigated: $item") }
-    }
-
-    $text = $lines -join [Environment]::NewLine
+    $text = $repoLog -join [Environment]::NewLine
     if ($LogPath) {
         $parent = Split-Path $LogPath -Parent
         if ($parent -and -not (Test-Path $parent)) {
@@ -104,13 +249,13 @@ function Invoke-DependencyAudit {
         Write-Host $text
     }
 
-    if ($unmitigated.Count -gt 0 -and -not $documented) {
-        throw "Dependency audit failed with unmitigated critical/high findings. Document exceptions in SECURITY.md or remediate."
+    if ($repoFindings.Count -gt 0 -and -not $allDocumented) {
+        throw "Dependency audit failed: unmitigated findings without matching EX-* ids in SECURITY.md"
     }
 
     return [PSCustomObject]@{
-        UnmitigatedCount = $unmitigated.Count
-        DocumentedExceptions = $documented
+        FindingCount = $repoFindings.Count
+        AllDocumented = $allDocumented
         LogPath = $LogPath
     }
 }
