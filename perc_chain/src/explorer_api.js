@@ -23,7 +23,7 @@ export function hiddenPeerUsernames() {
 }
 
 export function isHiddenPeer(username) {
-  if (!username) return true;
+  if (!username) return false;
   return hiddenPeerUsernames().has(username);
 }
 

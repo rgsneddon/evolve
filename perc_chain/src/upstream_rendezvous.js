@@ -12,29 +12,33 @@ export function mergeUpstreamPeers(localPeers, upstreamList, chainId) {
     if (!peer || typeof peer !== 'object') continue;
     const endpoint = peer.endpoint;
     if (!endpoint) continue;
-    const username =
-      peer.sessionUsername ??
-      peer.username ??
-      peer.publicAlias ??
-      endpoint;
+    const sessionUsername = peer.sessionUsername ?? peer.username ?? null;
+    const publicAlias = peer.publicAlias ?? null;
     const peerChain = peer.evolutionaryChainId ?? chainId;
     if (peerChain !== chainId) continue;
-    const key = String(username);
+    const key = String(sessionUsername ?? publicAlias ?? endpoint);
     const existing = localPeers.get(key);
     const incomingRevision = Number(peer.revision ?? 0);
     const existingRevision = Number(existing?.revision ?? 0);
     if (!existing || incomingRevision >= existingRevision) {
-      localPeers.set(key, {
-        sessionUsername: key,
+      const entry = {
         endpoint,
         evolutionaryChainId: peerChain,
         blockHeight: peer.blockHeight ?? existing?.blockHeight ?? 0,
         tipHash: peer.tipHash ?? existing?.tipHash ?? '',
         revision: incomingRevision || existingRevision,
-        publicAlias: peer.publicAlias ?? existing?.publicAlias,
         updatedAt: Date.now(),
         upstream: true,
-      });
+      };
+      if (sessionUsername) {
+        entry.sessionUsername = sessionUsername;
+      }
+      if (publicAlias) {
+        entry.publicAlias = publicAlias;
+      } else if (sessionUsername) {
+        entry.publicAlias = existing?.publicAlias;
+      }
+      localPeers.set(key, entry);
       merged += 1;
     }
   }
