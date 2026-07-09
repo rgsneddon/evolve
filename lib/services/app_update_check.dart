@@ -78,10 +78,12 @@ class AppUpdateChecker {
     // it as newer than Pages when both are reachable.
     RemoteVersionFeed? published;
     var anySucceeded = false;
+    var fromPages = false;
 
     final pagesFeed = await _fetchFeed(Uri.parse(pagesVersionUrl));
     if (pagesFeed != null && pagesFeed.release.isNotEmpty) {
       published = pagesFeed;
+      fromPages = true;
       anySucceeded = true;
     } else {
       final mainFeed = await _fetchFeed(Uri.parse(sourceVersionUrl));
@@ -102,11 +104,19 @@ class AppUpdateChecker {
     }
 
     final semverNewer = PercAppVersion.isNewerThan(published.full, current);
+    final releaseLineNewer = PercAppVersion.releaseOf(published.full) !=
+        PercAppVersion.releaseOf(current);
     var updateAvailable = false;
     if (semverNewer) {
-      final installerReady =
-          await _installerPublished(published.release);
-      updateAvailable = installerReady;
+      // main/version.json may run ahead via pre-push hook on the same release
+      // line (e.g. 4.0.4+150) while gh-pages and Releases still ship +149.
+      // Only gh-pages may advertise build-only bumps; main needs a new semver.
+      final mayAdvertise = fromPages || releaseLineNewer;
+      if (mayAdvertise) {
+        final installerReady =
+            await _installerPublished(published.release);
+        updateAvailable = installerReady;
+      }
     }
 
     return AppUpdateInfo(

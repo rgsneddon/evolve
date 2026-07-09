@@ -93,19 +93,37 @@ void main() {
     expect(info.updateAvailable, isFalse);
   });
 
-  test('falls back to main when gh-pages is unreachable', () async {
+  test('falls back to main for semver bump when gh-pages is unreachable',
+      () async {
     AppUpdateChecker.fetchBodyOverride = (uri) async {
       if (uri.host.contains('github.io')) {
         return null;
       }
-      return '{"version":"3.3.11","build_number":"95","app_name":"evolve"}';
+      return '{"version":"3.3.12","build_number":"10","app_name":"evolve"}';
     };
     AppUpdateChecker.headProbeOverride =
         (uri) async => _installerUrl(uri);
 
     final info = await const AppUpdateChecker().check(current: '3.3.11+89');
-    expect(info.latestFull, '3.3.11+95');
+    expect(info.latestFull, '3.3.12+10');
     expect(info.updateAvailable, isTrue);
+  });
+
+  test('main fallback ignores same-release build bump even if installer exists',
+      () async {
+    AppUpdateChecker.fetchBodyOverride = (uri) async {
+      if (uri.host.contains('github.io')) {
+        return null;
+      }
+      return '{"version":"4.0.4","build_number":"150","app_name":"evolve"}';
+    };
+    AppUpdateChecker.headProbeOverride =
+        (uri) async => _installerUrl(uri);
+
+    final info = await const AppUpdateChecker().check(current: '4.0.4+149');
+    expect(info.checkSucceeded, isTrue);
+    expect(info.latestFull, '4.0.4+150');
+    expect(info.updateAvailable, isFalse);
   });
 
   test('main fallback does not advertise build without published installer',
