@@ -1,3 +1,6 @@
+@Tags(['serial'])
+library registration_chain_alignment_live_test;
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -14,8 +17,6 @@ import 'package:evolve/perc/services/perc_network_config.dart';
 import 'package:evolve/perc/services/perc_network_coordinator.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-@Tags(['serial'])
 
 final _scratch = Platform.environment['SCRATCH'] ??
     r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-cb031749c6db\implementer';

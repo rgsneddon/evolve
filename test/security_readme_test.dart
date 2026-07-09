@@ -86,6 +86,18 @@ void main() {
     expect(walletText, contains('EX-dart_pub_audit_unavailable'));
   });
 
+  test('run security audit script exists', () {
+    final evolveRoot = evolveRepoRoot();
+    final audit = File(
+      '$evolveRoot${Platform.pathSeparator}scripts${Platform.pathSeparator}run_security_audit.ps1',
+    );
+    expect(audit.existsSync(), isTrue, reason: 'run_security_audit.ps1 must exist');
+    expect(
+      audit.readAsStringSync().toLowerCase(),
+      contains('run security audit'),
+    );
+  });
+
   test('security scan scripts exist and are wired into release flow', () {
     final evolveRoot = evolveRepoRoot();
     _expectScanScript(evolveRoot, 'evolve_app');

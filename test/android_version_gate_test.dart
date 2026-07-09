@@ -47,14 +47,22 @@ void main() {
   });
 
   test('broken v4.0.4+3 build is below prior published Android versionCode', () {
-    final maxPrior = maxPublishedAndroidBuild(
+    final maxAfterBrokenRelease = maxPublishedAndroidBuild(
       repoRoot,
       excludeReleaseVersion: '4.0.4',
     );
-    expect(PercAppVersion.buildOf('4.0.4+3'), lessThan(maxPrior));
+    expect(
+      PercAppVersion.buildOf('4.0.4+3'),
+      lessThan(maxAfterBrokenRelease),
+    );
+
+    final maxBeforeCurrent = maxPublishedAndroidBuild(
+      repoRoot,
+      excludeReleaseVersion: PercAppVersion.releaseOf(PercAppVersion.current),
+    );
     expect(
       PercAppVersion.buildOf(PercAppVersion.current),
-      greaterThan(maxPrior),
+      greaterThan(maxBeforeCurrent),
     );
   });
 }

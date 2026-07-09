@@ -4,9 +4,12 @@
 
 Before each GitHub Release, maintainers run:
 
-1. `scripts/scan_release_artifacts.ps1` — Defender scan + PE/APK integrity on `build/downloads/v*`
-2. `scripts/audit_dependencies.ps1` — `flutter pub audit` + `npm audit --audit-level=high` in `perc_chain/`
-3. `scripts/sign_download_packages.ps1` — SHA-256/SHA-512 sidecars and checksum manifest verification
+1. **`run security audit`** — `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_security_audit.ps1` (or workspace `run_security_audit.ps1` for both repos)
+2. `scripts/scan_release_artifacts.ps1` — Defender scan + PE/APK integrity on `build/downloads/v*`
+3. `scripts/audit_dependencies.ps1` — `flutter pub audit` + `npm audit --audit-level=high` in `perc_chain/`
+4. `scripts/sign_download_packages.ps1` — SHA-256/SHA-512 sidecars and checksum manifest verification
+
+**Regular checks:** Run **run security audit** weekly or before any release publish. Manual device/network QA steps live in [MANUAL_TESTS.md](MANUAL_TESTS.md).
 
 ## Dependency audit exceptions
 

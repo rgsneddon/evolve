@@ -18,13 +18,29 @@ test('peer_online module matches wallet peerOnlineWindow (7 min)', () => {
   assert.equal(PEER_ONLINE_MS, 7 * 60 * 1000);
 });
 
+function isLiveSeedUnreachableError(err) {
+  return err?.name === 'TimeoutError' ||
+    err?.code === 'ABORT_ERR' ||
+    err?.cause?.code === 'ETIMEDOUT' ||
+    err?.cause?.code === 'ECONNREFUSED' ||
+    err?.cause?.code === 'ENOTFOUND';
+}
+
 test('live seed is compatible with v3.1.1 wallet API', async (t) => {
   const base = (process.env.PERC_SEED_URL ?? DEFAULT_SEED).replace(/\/$/, '');
   if (process.env.PERC_SKIP_LIVE_SEED === '1') {
     t.skip('PERC_SKIP_LIVE_SEED=1');
   }
 
-  const health = await getJson(base, '/health');
+  let health;
+  try {
+    health = await getJson(base, '/health');
+  } catch (err) {
+    if (isLiveSeedUnreachableError(err)) {
+      t.skip(`live seed unreachable (${base}): ${err.message}`);
+    }
+    throw err;
+  }
   assert.equal(health.ok, true);
   assert.equal(health.service, 'perc-internet-node');
   assert.equal(health.ledgerReady, true);
