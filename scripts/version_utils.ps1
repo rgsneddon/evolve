@@ -163,7 +163,10 @@ function Get-PublishedMaxAppVersion {
 }
 
 function Get-MaxPublishedAndroidBuild {
-    param([string]$Root)
+    param(
+        [string]$Root,
+        [string]$ExcludeReleaseVersion = ''
+    )
 
     $installerDir = Join-Path $Root 'installer\android'
     $max = 0
@@ -172,6 +175,12 @@ function Get-MaxPublishedAndroidBuild {
     }
 
     Get-ChildItem $installerDir -Filter 'evolve-v*-android.json' | ForEach-Object {
+        if (
+            $ExcludeReleaseVersion -and
+            $_.Name -eq "evolve-v$ExcludeReleaseVersion-android.json"
+        ) {
+            return
+        }
         try {
             $json = Get-Content $_.FullName -Raw | ConvertFrom-Json
             $build = [int]$json.build
@@ -186,24 +195,27 @@ function Get-MaxPublishedAndroidBuild {
 function Test-AndroidVersionCodeMonotonic {
     param(
         [string]$Root,
-        [int]$CandidateBuild
+        [int]$CandidateBuild,
+        [string]$ReleaseVersion = ''
     )
 
-    $maxPublished = Get-MaxPublishedAndroidBuild -Root $Root
+    $maxPublished = Get-MaxPublishedAndroidBuild -Root $Root -ExcludeReleaseVersion $ReleaseVersion
     return [pscustomobject]@{
         Ok = ($CandidateBuild -gt $maxPublished)
         CandidateBuild = $CandidateBuild
         MaxPublishedAndroidBuild = $maxPublished
+        ExcludedReleaseVersion = $ReleaseVersion
     }
 }
 
 function Assert-AndroidVersionCodeMonotonic {
     param(
         [string]$Root,
-        [int]$CandidateBuild
+        [int]$CandidateBuild,
+        [string]$ReleaseVersion = ''
     )
 
-    $check = Test-AndroidVersionCodeMonotonic -Root $Root -CandidateBuild $CandidateBuild
+    $check = Test-AndroidVersionCodeMonotonic -Root $Root -CandidateBuild $CandidateBuild -ReleaseVersion $ReleaseVersion
     if (-not $check.Ok) {
         throw (
             "Android versionCode $CandidateBuild must be greater than the highest " +

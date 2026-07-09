@@ -4,8 +4,11 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/perc_app_version.dart';
 
-/// Highest `build` in installer/android/evolve-v*-android.json manifests.
-int maxPublishedAndroidBuild(String repoRoot) {
+/// Highest `build` in installer/android manifests, optionally excluding one release.
+int maxPublishedAndroidBuild(
+  String repoRoot, {
+  String? excludeReleaseVersion,
+}) {
   final dir = Directory('$repoRoot/installer/android');
   if (!dir.existsSync()) return 0;
   var max = 0;
@@ -13,6 +16,10 @@ int maxPublishedAndroidBuild(String repoRoot) {
       .listSync()
       .whereType<File>()
       .where((f) => RegExp(r'evolve-v.+-android\.json$').hasMatch(f.path))) {
+    if (excludeReleaseVersion != null &&
+        file.path.endsWith('evolve-v$excludeReleaseVersion-android.json')) {
+      continue;
+    }
     final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
     final build = int.tryParse('${json['build']}') ?? 0;
     if (build > max) max = build;
@@ -23,21 +30,31 @@ int maxPublishedAndroidBuild(String repoRoot) {
 void main() {
   final repoRoot = Directory.current.path;
 
-  test('current Android build exceeds max published installer manifest', () {
-    final maxPublished = maxPublishedAndroidBuild(repoRoot);
-    expect(maxPublished, greaterThanOrEqualTo(136));
+  test('current Android build exceeds prior published installer manifests', () {
+    final release = PercAppVersion.releaseOf(PercAppVersion.current);
+    final maxPrior = maxPublishedAndroidBuild(
+      repoRoot,
+      excludeReleaseVersion: release,
+    );
+    expect(maxPrior, greaterThanOrEqualTo(148));
     final currentBuild = PercAppVersion.buildOf(PercAppVersion.current);
     expect(
       currentBuild,
-      greaterThan(maxPublished),
+      greaterThan(maxPrior),
       reason:
-          'versionCode $currentBuild must exceed published Android build $maxPublished',
+          'versionCode $currentBuild must exceed prior Android build $maxPrior',
     );
   });
 
-  test('broken v4.0.4+3 build is below published Android versionCode ceiling', () {
-    final maxPublished = maxPublishedAndroidBuild(repoRoot);
-    expect(PercAppVersion.buildOf('4.0.4+3'), lessThan(maxPublished));
-    expect(PercAppVersion.buildOf(PercAppVersion.current), greaterThan(maxPublished));
+  test('broken v4.0.4+3 build is below prior published Android versionCode', () {
+    final maxPrior = maxPublishedAndroidBuild(
+      repoRoot,
+      excludeReleaseVersion: '4.0.4',
+    );
+    expect(PercAppVersion.buildOf('4.0.4+3'), lessThan(maxPrior));
+    expect(
+      PercAppVersion.buildOf(PercAppVersion.current),
+      greaterThan(maxPrior),
+    );
   });
 }

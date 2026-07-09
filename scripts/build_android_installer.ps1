@@ -34,7 +34,7 @@ if (-not (Test-Path $apkSrc)) {
     throw "Missing Android release APK: $apkSrc"
 }
 
-Assert-AndroidVersionCodeMonotonic -Root $Root -CandidateBuild ([int]$Build)
+Assert-AndroidVersionCodeMonotonic -Root $Root -CandidateBuild ([int]$Build) -ReleaseVersion $Version
 
 function Get-ApkAbis([string]$ApkPath) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
