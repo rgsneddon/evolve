@@ -65,4 +65,4 @@ cd perccent_wallet\perc_chain; npm test
 
 ---
 
-*Last updated for Evolve v4.0.5+150 and Perccent Wallet v1.0.4+2 automated suites.*
+*Last updated for Evolve v4.0.6+151 and Perccent Wallet v1.0.6+4 automated suites.*
