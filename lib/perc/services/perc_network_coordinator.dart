@@ -1485,11 +1485,17 @@ class PercNetworkCoordinator extends ChangeNotifier {
     await _registerSessionOnSeed(hub, status);
   }
 
+  bool _canPublishSessionToSeed(PercLedgerHub hub) {
+    if (!hasPendingRegistrationRecovery) return true;
+    return isPendingRegistrationAligned(hub);
+  }
+
   Future<void> _registerSessionOnSeed(
-    PercLedgerHub _hub,
+    PercLedgerHub hub,
     PercNetworkStatus status,
   ) async {
     if (status.endpoint == null || status.sessionUsername == null) return;
+    if (!_canPublishSessionToSeed(hub)) return;
     await _rendezvous.register(status);
   }
 
