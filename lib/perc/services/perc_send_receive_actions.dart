@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -101,13 +103,18 @@ class PercSendReceiveActions {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             FilledButton(
-              onPressed: () async {
-                await wallet.send(
-                  toAddress: toCtrl.text.trim(),
-                  amountText: amountCtrl.text,
-                  memo: memoCtrl.text,
-                );
+              onPressed: () {
+                final toAddress = toCtrl.text.trim();
+                final amountText = amountCtrl.text;
+                final memo = memoCtrl.text;
                 if (ctx.mounted) Navigator.pop(ctx);
+                unawaited(
+                  wallet.send(
+                    toAddress: toAddress,
+                    amountText: amountText,
+                    memo: memo,
+                  ),
+                );
               },
               child: Text(strings.t('wallet_send_confirm')),
             ),
@@ -116,6 +123,8 @@ class PercSendReceiveActions {
       ),
     );
 
+    // Dialog route may still be animating out when showDialog completes.
+    await Future<void>.delayed(Duration.zero);
     toCtrl.dispose();
     amountCtrl.dispose();
     memoCtrl.dispose();
