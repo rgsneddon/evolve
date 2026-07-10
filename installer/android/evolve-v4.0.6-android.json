@@ -4,10 +4,10 @@
     "platform":  "android",
     "version":  "4.0.6",
     "sizeMb":  75.1,
-    "sha512":  "daa16204bb478b891351498d333b02801e96d601a74f47a2f70ce674561a4ffa812d91b3cbaff77fdb69c3cc5372315eacab07bb5fd721ca7b9d4d9ae39dfb3b",
+    "sha512":  "d5524a9912661fb50c1a421e9824657e1b6a8e29486ff8fa3b5b7584a7219d95302dce4b9382022daef66096662cbac8dff9a81547108a2b66e8bf72dbedfde3",
     "name":  "evolve-v4.0.6-android-setup.apk",
     "minSdk":  23,
-    "sha256":  "25a205c15608c6376488b96731155f2fa8313ad993de6c8d6e94f259d774b86c",
+    "sha256":  "6a9c771f5bacb0dd9813db01df89f99af9d16d0c897a24e5b5652ac6a5e1fe63",
     "abis":  [
                  "arm64-v8a",
                  "armeabi-v7a",
