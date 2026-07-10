@@ -26,6 +26,10 @@ import {
   touchPeerHeartbeatOnSeed,
 } from './peer_online.js';
 import { applyRelayLedgerPut } from './rendezvous_ledger_put.js';
+import {
+  createInboundHintsStore,
+  fetchInboundRelayHints,
+} from './rendezvous_inbound_hints.js';
 import { mergeUpstreamPeers } from './upstream_rendezvous.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -46,6 +50,7 @@ const peers = new Map();
 const ledgers = new Map();
 /** @type {Map<string, string>} wallet address → sessionUsername */
 const addresses = new Map();
+const inboundHints = createInboundHintsStore();
 
 function findRelayEntryByAddress(address) {
   const needle = (address ?? '').trim();
@@ -168,6 +173,7 @@ async function registerSeed() {
     endpoint.includes('127.0.0.1') ||
     endpoint.includes('localhost') ||
     endpoint.startsWith('http://[::1]');
+  // Self-hosted multi-seed dev: allow loopback when PERC_PUBLIC_ENDPOINT is set explicitly.
   if (isLoopback && !explicitPublic) return;
   const status = store.status(SEED_USERNAME, endpoint);
   peers.set(SEED_USERNAME, {
@@ -430,11 +436,23 @@ const server = http.createServer(async (req, res) => {
       username: data.username,
       ledger: data.ledger,
       seedUsername: SEED_USERNAME,
+      notifyRecipient: data.notifyRecipient,
+      inboundHints,
     });
     if (!result.ok) {
       return json(res, 400, { error: result.error });
     }
     return json(res, 200, { ok: true, imported: result.imported });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/perc/rendezvous/inbound-hints') {
+    const username = url.searchParams.get('username')?.trim();
+    if (!username) {
+      return json(res, 400, { error: 'username required' });
+    }
+    return json(res, 200, {
+      hints: fetchInboundRelayHints(inboundHints, username),
+    });
   }
 
   if (req.method === 'GET' && url.pathname === '/perc/rendezvous/ledger') {

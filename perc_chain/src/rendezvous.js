@@ -12,6 +12,11 @@ import {
   isRecipientOnlineOnSeed,
   touchPeerHeartbeatOnSeed,
 } from './peer_online.js';
+import {
+  createInboundHintsStore,
+  fetchInboundRelayHints,
+  recordInboundRelayHint,
+} from './rendezvous_inbound_hints.js';
 
 const PORT = Number(process.env.PORT ?? process.env.PERC_RENDEZVOUS_PORT ?? 9478);
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
@@ -24,6 +29,7 @@ const ledgers = new Map();
 const addresses = new Map();
 /** @type {Map<string, { envelope: string, updatedAt: number }>} */
 const seedRecoveries = new Map();
+const inboundHints = createInboundHintsStore();
 
 function findRelayEntryByAddress(address) {
   const needle = (address ?? '').trim();
@@ -123,7 +129,18 @@ const server = http.createServer(async (req, res) => {
       updatedAt: Date.now(),
     });
     indexLedgerAddresses(data.ledger, addresses);
+    recordInboundRelayHint(inboundHints, data.notifyRecipient, data.username);
     return json(res, 200, { ok: true });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/perc/rendezvous/inbound-hints') {
+    const username = url.searchParams.get('username')?.trim();
+    if (!username) {
+      return json(res, 400, { error: 'username required' });
+    }
+    return json(res, 200, {
+      hints: fetchInboundRelayHints(inboundHints, username),
+    });
   }
 
   if (req.method === 'POST' && url.pathname === '/perc/rendezvous/address') {

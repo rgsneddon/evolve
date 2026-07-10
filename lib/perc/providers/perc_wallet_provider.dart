@@ -856,7 +856,7 @@ class PercWalletProvider extends ChangeNotifier {
   /// Pull inbound PERC immediately (send screen, app resume, wallet tab focus).
   Future<void> refreshInboundNow() async {
     if (!_ready || !isLoggedIn) return;
-    await PercLedgerHub.instance.network.pollForInboundTransfers();
+    await PercLedgerHub.instance.network.runFirstBurstCycle();
     notifyListeners();
   }
 

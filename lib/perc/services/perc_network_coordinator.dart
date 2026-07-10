@@ -48,6 +48,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
   String? _publicEndpoint;
   bool _seedConnected = false;
   Timer? _receivePollTimer;
+  Timer? _burstPollTimer;
+  int _burstAttemptsRemaining = 0;
+  DateTime? _lastBurstStarted;
+  final Set<String> _burstSenderTargets = {};
   Timer? _pendingRegistrationRetryTimer;
   bool _appInBackground = false;
   final Map<String, PercLedger> _senderPeerCache = {};
@@ -81,8 +85,16 @@ class PercNetworkCoordinator extends ChangeNotifier {
     instance.clearTestSeedLedger();
     instance.clearPendingRegistrationRecovery();
     instance.onPendingRegistrationRecoveryReady = null;
+    PercNetworkRendezvous.resetForTest();
     instance._detach();
   }
+
+  @visibleForTesting
+  int get burstAttemptsRemainingForTest => _burstAttemptsRemaining;
+
+  @visibleForTesting
+  bool get burstActiveForTest =>
+      _burstPollTimer != null || _burstAttemptsRemaining > 0;
 
   @visibleForTesting
   void registerSenderPeerForTest(String username, PercLedger peer) {
@@ -390,6 +402,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   void _detach() {
     _networkGeneration++;
     _stopReceivePolling();
+    _stopBurstPolling();
     _pendingRegistrationRetryTimer?.cancel();
     _pendingRegistrationRetryTimer = null;
     _hub?.removeListener(_onHubChanged);
@@ -1145,12 +1158,16 @@ class PercNetworkCoordinator extends ChangeNotifier {
     String? username,
     String? address,
   }) async {
-    if (disableLiveNodesForTests) return;
     final session = ledger.sessionUsername;
-    if (session != null) {
-      await _rendezvous.relayLedger(username: session, ledger: ledger);
-    }
     final normalizedUser = username?.trim();
+    if (session != null) {
+      await _rendezvous.relayLedger(
+        username: session,
+        ledger: ledger,
+        notifyRecipientUsername: normalizedUser,
+      );
+    }
+    if (disableLiveNodesForTests) return;
     if (normalizedUser != null && normalizedUser.isNotEmpty) {
       final node = ledger.networkNodes[normalizedUser];
       final endpoint = node?.endpoint;
@@ -1181,13 +1198,190 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (changed) {
       await hub.persistLocal();
     }
+    await _maybeScheduleBurstAfterPoll(hub);
     notifyListeners();
+  }
+
+  /// Foreground burst inbound sync — tab focus, resume, or relay PUT hints.
+  void scheduleInboundBurst({
+    List<String>? senderUsernames,
+    bool immediate = true,
+  }) {
+    final hub = _hub;
+    if (hub == null || _activeUsername == null || _appInBackground) return;
+
+    final now = DateTime.now();
+    if (_lastBurstStarted != null &&
+        now.difference(_lastBurstStarted!) <
+            AppPerformance.inboundBurstCooldown &&
+        _burstAttemptsRemaining <= 0) {
+      return;
+    }
+
+    if (senderUsernames != null) {
+      for (final sender in senderUsernames) {
+        final normalized = sender.trim();
+        if (normalized.isNotEmpty) {
+          _burstSenderTargets.add(normalized);
+        }
+      }
+    }
+
+    _burstAttemptsRemaining = AppPerformance.inboundBurstMaxAttempts;
+    _lastBurstStarted = now;
+    _burstPollTimer?.cancel();
+
+    if (immediate) {
+      unawaited(_runBurstInboundCycle());
+    } else {
+      _scheduleNextBurstTick();
+    }
+  }
+
+  @visibleForTesting
+  Future<void> runBurstInboundCycleForTest() async {
+    if (_burstAttemptsRemaining <= 0) {
+      _burstAttemptsRemaining = 1;
+    }
+    await _runBurstInboundCycle();
+  }
+
+  /// Runs one burst cycle — used by [PercWalletProvider.refreshInboundNow].
+  Future<void> runFirstBurstCycle() async {
+    if (_burstAttemptsRemaining <= 0) {
+      scheduleInboundBurst(immediate: false);
+    }
+    await _runBurstInboundCycle();
+  }
+
+  Future<void> _runBurstInboundCycle() async {
+    final hub = _hub;
+    if (hub == null ||
+        _activeUsername == null ||
+        _burstAttemptsRemaining <= 0 ||
+        _appInBackground) {
+      _stopBurstPolling();
+      return;
+    }
+
+    _burstAttemptsRemaining--;
+    final changed = await _syncInboundBurst(hub);
+    if (changed) {
+      await hub.persistLocal();
+      _burstAttemptsRemaining = 0;
+      _stopBurstPolling();
+      notifyListeners();
+      return;
+    }
+
+    if (_burstAttemptsRemaining > 0) {
+      _scheduleNextBurstTick();
+    } else {
+      _stopBurstPolling();
+    }
+    notifyListeners();
+  }
+
+  void _scheduleNextBurstTick() {
+    _burstPollTimer?.cancel();
+    if (_burstAttemptsRemaining <= 0) return;
+    _burstPollTimer = Timer(AppPerformance.inboundBurstPollInterval, () {
+      unawaited(_runBurstInboundCycle());
+    });
+  }
+
+  void _stopBurstPolling() {
+    _burstPollTimer?.cancel();
+    _burstPollTimer = null;
+    _burstAttemptsRemaining = 0;
+    _burstSenderTargets.clear();
+    _lastBurstStarted = null;
+  }
+
+  Future<bool> _syncInboundBurst(PercLedgerHub hub) async {
+    final session = _activeUsername!;
+    final balanceBefore = hub.ledger.sessionBalance;
+    final pendingBefore = hub.ledger.pendingInboundFor(session).length;
+
+    await _fetchTargetedInboundRelays(hub);
+    hub.ledger.refreshPendingInboundTransfers();
+
+    return hub.ledger.sessionBalance != balanceBefore ||
+        hub.ledger.pendingInboundFor(session).length != pendingBefore;
+  }
+
+  Future<void> _fetchTargetedInboundRelays(PercLedgerHub hub) async {
+    final session = _activeUsername!;
+    final targets = <String>{..._burstSenderTargets};
+
+    final hints = await _rendezvous.fetchInboundRelayHints(
+      recipientUsername: session,
+    );
+    for (final hint in hints) {
+      targets.add(hint.senderUsername);
+    }
+
+    for (final pending in hub.ledger.pendingInboundFor(session)) {
+      final acc = hub.ledger.account(pending.fromUsername);
+      if (acc == null || !acc.passwordSet) {
+        targets.add(pending.fromUsername);
+      }
+    }
+
+    for (final sender in targets) {
+      await _applyRelayFromSenderSlot(hub, sender);
+    }
+  }
+
+  Future<void> _applyRelayFromSenderSlot(
+    PercLedgerHub hub,
+    String senderUsername,
+  ) async {
+    final relayed =
+        await _rendezvous.fetchRelayedLedger(username: senderUsername);
+    if (relayed == null) return;
+    hub.ledger.applyInboundRelayFromSender(relayed);
+    hub.ledger.reconcileSettledTransfersFromPeer(relayed);
+    _burstSenderTargets.remove(senderUsername);
+  }
+
+  Future<void> _maybeScheduleBurstAfterPoll(PercLedgerHub hub) async {
+    if (_appInBackground || _activeUsername == null) return;
+
+    final session = _activeUsername!;
+    final hints = await _rendezvous.fetchInboundRelayHints(
+      recipientUsername: session,
+    );
+    if (hints.isNotEmpty) {
+      scheduleInboundBurst(
+        senderUsernames: hints.map((h) => h.senderUsername).toList(),
+        immediate: true,
+      );
+      return;
+    }
+
+    final remotePendingSenders = hub.ledger
+        .pendingInboundFor(session)
+        .where((pending) {
+          final acc = hub.ledger.account(pending.fromUsername);
+          return acc == null || !acc.passwordSet;
+        })
+        .map((pending) => pending.fromUsername)
+        .toSet();
+    if (remotePendingSenders.isNotEmpty) {
+      scheduleInboundBurst(senderUsernames: remotePendingSenders.toList());
+    }
   }
 
   /// Slow network polling while the app is minimized or on another desktop.
   void setAppInBackground(bool inBackground) {
     if (_appInBackground == inBackground) return;
     _appInBackground = inBackground;
+    if (inBackground) {
+      _stopBurstPolling();
+    } else {
+      scheduleInboundBurst();
+    }
     if (_receivePollTimer != null) {
       _startReceivePolling();
     }
@@ -1212,6 +1406,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   void _stopReceivePolling() {
     _receivePollTimer?.cancel();
     _receivePollTimer = null;
+    _stopBurstPolling();
   }
 
   bool isWalletOnlineOnNetwork(String username) {

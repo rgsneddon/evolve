@@ -1,4 +1,5 @@
 import { indexLedgerAddresses } from './address_index.js';
+import { recordInboundRelayHint } from './rendezvous_inbound_hints.js';
 
 /**
  * Shipped rendezvous PUT /perc/rendezvous/ledger handler body.
@@ -9,6 +10,8 @@ import { indexLedgerAddresses } from './address_index.js';
  *   username: string,
  *   ledger: object,
  *   seedUsername: string,
+ *   notifyRecipient?: string,
+ *   inboundHints?: import('./rendezvous_inbound_hints.js').InboundHintsStore,
  * }} ctx
  */
 export function applyRelayLedgerPut({
@@ -18,6 +21,8 @@ export function applyRelayLedgerPut({
   username,
   ledger,
   seedUsername,
+  notifyRecipient,
+  inboundHints,
 }) {
   if (!username || !ledger) {
     return { ok: false, error: 'username and ledger required' };
@@ -36,6 +41,10 @@ export function applyRelayLedgerPut({
     if (imported) {
       indexLedgerAddresses(store.ledger, addresses);
     }
+  }
+
+  if (inboundHints) {
+    recordInboundRelayHint(inboundHints, notifyRecipient, username);
   }
 
   return { ok: true, imported };

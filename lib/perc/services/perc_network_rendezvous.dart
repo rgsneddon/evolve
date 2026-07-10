@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../perc_chain_constants.dart';
@@ -7,11 +8,34 @@ import 'perc_ledger.dart';
 import 'perc_network_config.dart';
 import 'perc_network_protocol.dart';
 
+/// Sender relay PUT wake hint for a recipient wallet.
+class InboundRelayHint {
+  const InboundRelayHint({
+    required this.senderUsername,
+    required this.updatedAt,
+  });
+
+  final String senderUsername;
+  final DateTime updatedAt;
+}
+
 /// Internet rendezvous — wallets register public endpoints and relay ledgers.
 class PercNetworkRendezvous {
   const PercNetworkRendezvous({http.Client? client}) : _client = client;
 
   final http.Client? _client;
+
+  @visibleForTesting
+  static final Map<String, PercLedger> testRelayByUsername = {};
+
+  @visibleForTesting
+  static final Map<String, List<InboundRelayHint>> testHintsByRecipient = {};
+
+  @visibleForTesting
+  static void resetForTest() {
+    testRelayByUsername.clear();
+    testHintsByRecipient.clear();
+  }
 
   http.Client get _http => _client ?? http.Client();
 
@@ -90,7 +114,21 @@ class PercNetworkRendezvous {
   Future<void> relayLedger({
     required String username,
     required PercLedger ledger,
+    String? notifyRecipientUsername,
   }) async {
+    final recipient = notifyRecipientUsername?.trim();
+    testRelayByUsername[username] = PercLedger.fromJson(ledger.toJson());
+    if (recipient != null && recipient.isNotEmpty) {
+      final hints = testHintsByRecipient.putIfAbsent(recipient, () => []);
+      hints.removeWhere((h) => h.senderUsername == username);
+      hints.add(
+        InboundRelayHint(
+          senderUsername: username,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+      );
+    }
+
     final base = await baseUrl();
     if (base == null) return;
     final uri = Uri.parse('$base/perc/rendezvous/ledger');
@@ -102,10 +140,58 @@ class PercNetworkRendezvous {
             body: jsonEncode({
               'username': username,
               'ledger': ledger.toJson(),
+              if (recipient != null && recipient.isNotEmpty)
+                'notifyRecipient': recipient,
             }),
           )
           .timeout(PercChainConstants.networkRequestTimeout);
     } catch (_) {}
+  }
+
+  /// Recent sender relay PUT hints for a recipient (burst-poll wake).
+  Future<List<InboundRelayHint>> fetchInboundRelayHints({
+    required String recipientUsername,
+  }) async {
+    final recipient = recipientUsername.trim();
+    if (recipient.isEmpty) return const [];
+
+    final testHints = testHintsByRecipient[recipient];
+    if (testHints != null && testHints.isNotEmpty) {
+      return List<InboundRelayHint>.from(testHints);
+    }
+
+    final base = await baseUrl();
+    if (base == null) return const [];
+    final uri = Uri.parse(
+      '$base/perc/rendezvous/inbound-hints?username=${Uri.encodeComponent(recipient)}',
+    );
+    try {
+      final response = await _getWithRetry(uri);
+      if (response?.statusCode != 200) return const [];
+      final json = jsonDecode(response!.body);
+      if (json is! Map) return const [];
+      final hints = json['hints'];
+      if (hints is! List) return const [];
+      return hints
+          .whereType<Map>()
+          .map((entry) {
+            final sender = (entry['sender'] as String?)?.trim() ?? '';
+            if (sender.isEmpty) return null;
+            final updatedMs = entry['updatedAt'];
+            final updatedAt = updatedMs is num
+                ? DateTime.fromMillisecondsSinceEpoch(updatedMs.toInt(),
+                    isUtc: true)
+                : DateTime.now().toUtc();
+            return InboundRelayHint(
+              senderUsername: sender,
+              updatedAt: updatedAt,
+            );
+          })
+          .whereType<InboundRelayHint>()
+          .toList(growable: false);
+    } catch (_) {
+      return const [];
+    }
   }
 
   /// Whether the seed node currently sees the recipient wallet online (recent heartbeat).
@@ -199,6 +285,14 @@ class PercNetworkRendezvous {
     String? username,
     String? address,
   }) async {
+    final user = username?.trim();
+    if (user != null && user.isNotEmpty) {
+      final testRelay = testRelayByUsername[user];
+      if (testRelay != null) {
+        return PercLedger.fromJson(testRelay.toJson());
+      }
+    }
+
     final base = await baseUrl();
     if (base == null) return null;
     final params = <String, String>{};
