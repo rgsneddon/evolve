@@ -600,14 +600,8 @@ class PercWalletProvider extends ChangeNotifier {
         );
         _setStatus('wallet_sync_seed_offline');
       } else if (action.publishNow) {
-        final network = PercLedgerHub.instance.network;
-        network.refreshSeedPeerFromLocalLedger();
-        var published =
+        final published =
             await _publishRegistrationIfRecovered(statusKey: statusKey);
-        if (!published) {
-          network.refreshSeedPeerFromLocalLedger();
-          published = await _publishRegistrationIfRecovered(statusKey: statusKey);
-        }
         if (!published) {
           _registrationAwaitingSeedAlignment = true;
         }
@@ -675,8 +669,6 @@ class PercWalletProvider extends ChangeNotifier {
           'wallet_sync_success',
           {'height': '$networkBlockHeight'},
         );
-      } else if (!network.isConnectedToSeed) {
-        _setError('wallet_sync_seed_offline');
       } else if (_registrationAwaitingSeedAlignment) {
         _setStatus(
           'wallet_sync_partial',
@@ -690,6 +682,16 @@ class PercWalletProvider extends ChangeNotifier {
           'wallet_sync_success',
           {'height': '$networkBlockHeight'},
         );
+      } else if (blockHeight >= networkBlockHeight && networkBlockHeight > 0) {
+        _setStatus(
+          'wallet_sync_partial',
+          {
+            'local': '$blockHeight',
+            'network': '$networkBlockHeight',
+          },
+        );
+      } else if (!network.isConnectedToSeed) {
+        _setError('wallet_sync_seed_offline');
       } else {
         _setStatus(
           'wallet_sync_partial',
@@ -698,6 +700,12 @@ class PercWalletProvider extends ChangeNotifier {
             'network': '$networkBlockHeight',
           },
         );
+      }
+
+      try {
+        await refreshInboundNow();
+      } catch (_) {
+        // Inbound burst after manual sync is best-effort; sync outcome already set.
       }
     } catch (e) {
       _setError(WalletMessageLocalization.errorKeyFromException(e));

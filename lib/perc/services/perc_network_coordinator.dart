@@ -849,8 +849,20 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
 
     hub.ledger.refreshPendingInboundTransfers();
+    await syncInboundState();
+    scheduleInboundBurst();
+    _reconcileSeedConnectivityAfterSync(hub);
     await gossipToPeers();
     notifyListeners();
+  }
+
+  /// Seed HTTP may fail transiently while ledger merge still advances — avoid stale offline.
+  void _reconcileSeedConnectivityAfterSync(PercLedgerHub hub) {
+    final localHeight = PercChainTip.height(hub.ledger);
+    if (_syncState == PercNetworkSyncState.synced ||
+        localHeight >= _networkBlockHeight) {
+      _seedConnected = true;
+    }
   }
 
   Future<void> syncToNetworkHeight({bool quick = false}) async {
@@ -972,6 +984,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
       );
     }
 
+    _reconcileSeedConnectivityAfterSync(hub);
     notifyListeners();
   }
 
@@ -1541,6 +1554,16 @@ class PercNetworkCoordinator extends ChangeNotifier {
       }
     }
 
+    final session = hub.ledger.sessionUsername;
+    if (session != null) {
+      final hints = await _rendezvous.fetchInboundRelayHints(
+        recipientUsername: session,
+      );
+      for (final hint in hints) {
+        await mergeRelay(username: hint.senderUsername);
+      }
+    }
+
     final peers = await _rendezvous.fetchPeers();
     for (final status in peers) {
       await mergeRelay(
@@ -1560,7 +1583,6 @@ class PercNetworkCoordinator extends ChangeNotifier {
       await mergeRelay(username: nodeUser);
     }
 
-    final session = hub.ledger.sessionUsername;
     final sessionAddr = hub.ledger.sessionAccount?.address;
     if (sessionAddr != null && sessionAddr.isNotEmpty) {
       await mergeRelay(address: sessionAddr);
@@ -1739,6 +1761,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (seedEndpoint == null || seedEndpoint.isEmpty) return const [];
     final status = await _client.fetchStatus(seedEndpoint);
     if (status == null) return const [];
+    _seedConnected = true;
     final hub = _hub;
     final corrected = hub != null
         ? _statusWithImportedSeedTip(status, hub)
