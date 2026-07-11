@@ -463,7 +463,31 @@ class PercNetworkCoordinator extends ChangeNotifier {
     await hub.persistLocal();
     _startReceivePolling();
     notifyListeners();
+    if (!disableLiveNodesForTests) {
+      unawaited(_maybeScheduleInboundBurstOnSessionStart(hub));
+    }
     scheduleDeepSync();
+  }
+
+  Future<void> _maybeScheduleInboundBurstOnSessionStart(
+    PercLedgerHub hub,
+  ) async {
+    final session = hub.ledger.sessionUsername;
+    if (session == null) return;
+
+    if (hub.ledger.pendingInboundFor(session).isNotEmpty) {
+      scheduleInboundBurst();
+      return;
+    }
+
+    final hints = await _rendezvous.fetchInboundRelayHints(
+      recipientUsername: session,
+    );
+    if (hints.isNotEmpty) {
+      scheduleInboundBurst(
+        senderUsernames: hints.map((h) => h.senderUsername).toList(),
+      );
+    }
   }
 
   /// Attaches a new registration locally and schedules retry when seed is offline.
@@ -534,6 +558,12 @@ class PercNetworkCoordinator extends ChangeNotifier {
     final session = hub.ledger.sessionUsername;
     if (session != null) {
       hub.ledger.reconcileSessionStakingFromChain(session, applyCredits: true);
+    }
+    if (!disableLiveNodesForTests) {
+      await syncInboundState();
+      await _maybeScheduleInboundBurstOnSessionStart(hub);
+      await _reconcileOutboundHoldsFromReceivers(hub);
+      await _finalizeInboundSettlement(hub);
     }
     await hub.persistLocal();
     await _maybeNotifyPendingRegistrationRecovery(hub);
@@ -1128,6 +1158,57 @@ class PercNetworkCoordinator extends ChangeNotifier {
     );
   }
 
+  /// After relay settlement credits a receiver, push witnesses to senders and seed.
+  Future<void> _finalizeInboundSettlement(PercLedgerHub hub) async {
+    hub.ledger.refreshPendingInboundTransfers();
+    if (hub.ledger.settlementWitnesses.isEmpty) return;
+
+    await propagateSettlementWitnesses();
+
+    if (disableLiveNodesForTests) return;
+    final session = hub.ledger.sessionUsername;
+    if (session == null ||
+        session == PercChainConstants.treasuryUsername ||
+        session == PercChainConstants.seedUsername) {
+      return;
+    }
+    await _rendezvous.relayLedger(username: session, ledger: hub.ledger);
+  }
+
+  /// Sender-side: pull receiver relay ledgers to release outbound holds.
+  Future<void> _reconcileOutboundHoldsFromReceivers(PercLedgerHub hub) async {
+    if (disableLiveNodesForTests) return;
+    final session = hub.ledger.sessionUsername;
+    if (session == null) return;
+
+    final sessionKey = PercAuth.normalizeUsername(session);
+    final receivers = hub.ledger.pendingInboundTransfers
+        .where(
+          (p) => PercAuth.normalizeUsername(p.fromUsername) == sessionKey,
+        )
+        .map((p) => p.toUsername)
+        .toSet();
+    if (receivers.isEmpty) return;
+
+    for (final receiver in receivers) {
+      var relayed = await _rendezvous.fetchRelayedLedger(username: receiver);
+      relayed ??= await _fetchReceiverRelayByAddress(hub, receiver);
+      if (relayed != null) {
+        hub.ledger.reconcileSettledTransfersFromPeer(relayed);
+      }
+    }
+    hub.ledger.refreshPendingInboundTransfers();
+  }
+
+  Future<PercLedger?> _fetchReceiverRelayByAddress(
+    PercLedgerHub hub,
+    String receiverUsername,
+  ) async {
+    final acc = hub.ledger.account(receiverUsername);
+    if (acc == null || acc.address.isEmpty) return null;
+    return _rendezvous.fetchRelayedLedger(address: acc.address);
+  }
+
   /// Pushes settlement witnesses to sender rendezvous slots after receiver scenario.
   Future<void> propagateSettlementWitnesses() async {
     final hub = _hub;
@@ -1204,11 +1285,14 @@ class PercNetworkCoordinator extends ChangeNotifier {
     await syncInboundState();
     hub.ledger.refreshPendingInboundTransfers();
 
+    await _reconcileOutboundHoldsFromReceivers(hub);
+
     final changed = PercChainTip.height(hub.ledger) != heightBefore ||
         hub.ledger.pendingInboundFor(_activeUsername!).length != pendingBefore ||
         hub.ledger.sessionBalance != balanceBefore;
 
     if (changed) {
+      await _finalizeInboundSettlement(hub);
       await hub.persistLocal();
     }
     await _maybeScheduleBurstAfterPoll(hub);
@@ -1280,6 +1364,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
     _burstAttemptsRemaining--;
     final changed = await _syncInboundBurst(hub);
     if (changed) {
+      await _finalizeInboundSettlement(hub);
       await hub.persistLocal();
       _burstAttemptsRemaining = 0;
       _stopBurstPolling();
