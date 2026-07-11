@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:evolve_app/perc/models/perc_amount.dart';
-import 'package:evolve_app/perc/models/perc_transaction.dart';
-import 'package:evolve_app/perc/perc_chain_constants.dart';
-import 'package:evolve_app/perc/providers/perc_wallet_provider.dart';
-import 'package:evolve_app/perc/services/perc_ledger.dart';
-import 'package:evolve_app/perc/services/perc_ledger_hub.dart';
-import 'package:evolve_app/perc/services/perc_network_coordinator.dart';
-import 'package:evolve_app/perc/services/perc_wallet_store_memory.dart';
+import 'package:evolve/perc/models/perc_amount.dart';
+import 'package:evolve/perc/models/perc_transaction.dart';
+import 'package:evolve/perc/perc_chain_constants.dart';
+import 'package:evolve/perc/providers/perc_wallet_provider.dart';
+import 'package:evolve/perc/services/perc_ledger.dart';
+import 'package:evolve/perc/services/perc_ledger_hub.dart';
+import 'package:evolve/perc/services/perc_network_coordinator.dart';
+import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 
 import 'support/two_device_harness.dart';
 
