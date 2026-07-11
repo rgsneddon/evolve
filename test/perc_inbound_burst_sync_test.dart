@@ -72,7 +72,11 @@ Future<({
 
   final hub = PercLedgerHub.instance;
   TwoDeviceHarness.seed(hub.ledger);
-  hub.ledger.register(devices.receiverUser, devices.password);
+  TwoDeviceHarness.adoptRegisteredAccount(
+    target: hub.ledger,
+    source: devices.receiver,
+    username: devices.receiverUser,
+  );
   hub.ledger.login(devices.receiverUser, devices.password);
   hub.ledger.mergeDiscoverableAccounts(devices.sender);
 
@@ -142,7 +146,7 @@ void main() {
   );
 
   test(
-    'poll after sender PUT schedules burst via hints within 5s',
+    'pushLedgerToRecipient credits logged-in receiver immediately',
     () async {
       final ctx = await _receiverHarnessWithRelayPending(
         amount: PercAmount.fromPerc(0.00000008),
@@ -152,6 +156,7 @@ void main() {
       final devices = ctx.devices;
       final amount = ctx.amount;
 
+      final pickupStarted = DateTime.now();
       await coordinator.pushLedgerToRecipient(
         ledger: devices.sender,
         username: devices.receiverUser,
@@ -162,46 +167,27 @@ void main() {
       expect(hints, isNotEmpty);
       expect(hints.first.senderUsername, devices.senderUser);
 
-      expect(hub.ledger.sessionBalance, PercAmount.zero);
-      expect(coordinator.burstActiveForTest, isFalse);
-
-      final pickupStarted = DateTime.now();
-      await coordinator.pollForInboundTransfers();
-      await Future<void>.delayed(Duration.zero);
-
-      final elapsed = await awaitBurstSettlement(
-        coordinator: coordinator,
-        hub: hub,
-        receiverUser: devices.receiverUser,
-        expectedAmount: amount,
-      );
-
-      expect(
-        elapsed,
-        lessThan(burstPickupDeadline),
-        reason: 'poll-linked burst must credit within $burstPickupDeadline',
-      );
-      expect(
-        elapsed,
-        lessThan(AppPerformance.foregroundNetworkPoll),
-        reason: 'must beat default 3s foreground poll',
-      );
       expect(hub.ledger.pendingInboundFor(devices.receiverUser), isEmpty);
       expect(hub.ledger.sessionBalance, amount);
       expect(
         DateTime.now().difference(pickupStarted),
-        lessThan(burstPickupDeadline),
+        lessThan(AppPerformance.foregroundNetworkPoll),
+        reason: 'wake-on-push must credit before foreground poll interval',
       );
+
+      await coordinator.pollForInboundTransfers();
+      expect(hub.ledger.sessionBalance, amount);
     },
   );
 
-  test('refreshInboundNow schedules burst sync', () async {
+  test('refreshInboundNow credits receiver after relay while logged out', () async {
     final store = PercWalletStoreMemory();
     final wallet = PercWalletProvider(store: store);
     await wallet.initialize();
     await wallet.setupTreasuryPassword('password123');
     await wallet.register('bob', 'password123');
-    final bobAddr = wallet.address;
+    final bobAddr = wallet.addressForUsername('bob');
+    await wallet.logout();
 
     final sender = PercLedger.empty();
     TwoDeviceHarness.seed(sender);

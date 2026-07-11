@@ -1,3 +1,4 @@
+import 'package:evolve/perc/models/perc_account.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
 
@@ -22,6 +23,32 @@ class TwoDeviceHarness {
     ledger.setupTreasuryPassword('password123');
     ledger.launchBlockchain();
     ledger.consumeBlockchainLaunchEvent();
+  }
+
+  /// Adopts a registered wallet from [source] so hub/device addresses stay aligned.
+  static void adoptRegisteredAccount({
+    required PercLedger target,
+    required PercLedger source,
+    required String username,
+    PercAmount balance = PercAmount.zero,
+  }) {
+    final src = source.account(username);
+    if (src == null || !src.passwordSet) {
+      throw StateError('Source account $username is not registered');
+    }
+    if (target.accounts.containsKey(username)) {
+      throw StateError('Username $username already exists on target');
+    }
+    target.accounts[username] = PercAccount(
+      username: src.username,
+      passwordHash: src.passwordHash,
+      salt: src.salt,
+      address: src.address,
+      passwordSet: true,
+      passwordSwitchCommit: src.passwordSwitchCommit,
+      balance: balance,
+    );
+    target.connectAllWalletsConcurrently();
   }
 
   static TwoDeviceHarness create({

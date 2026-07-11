@@ -1,4 +1,5 @@
 import '../perc_chain_constants.dart';
+import '../services/perc_auth.dart';
 import '../services/perc_switch_commitment.dart';
 import 'perc_amount.dart';
 
@@ -15,6 +16,7 @@ class PercPendingInboundTransfer {
     required this.sentAt,
     PercAmount? fee,
     this.memo,
+    this.toAddress,
     this.recipientBroughtOnlineAt,
     String? switchCommitment,
   })  : fee = fee ?? PercChainConstants.sendTransactionFee,
@@ -24,6 +26,8 @@ class PercPendingInboundTransfer {
   final String id;
   final String fromUsername;
   final String toUsername;
+  /// Authoritative recipient wallet address — inbound matching uses this, not username alone.
+  final String? toAddress;
   final PercAmount amount;
   final PercAmount fee;
   final DateTime sentAt;
@@ -36,10 +40,19 @@ class PercPendingInboundTransfer {
   bool get switchCommitmentValid =>
       PercSwitchCommitment.validates(switchCommitment, 'transfer:$id');
 
+  String normalizedToAddress({String fallback = ''}) {
+    final raw = toAddress?.trim();
+    if (raw != null && raw.isNotEmpty) {
+      return PercAuth.normalizeAddress(raw);
+    }
+    return PercAuth.normalizeAddress(fallback);
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'fromUsername': fromUsername,
         'toUsername': toUsername,
+        if (toAddress != null && toAddress!.isNotEmpty) 'toAddress': toAddress,
         'amount': amount.toJson(),
         'fee': fee.toJson(),
         'sentAt': sentAt.toIso8601String(),
@@ -55,6 +68,7 @@ class PercPendingInboundTransfer {
       id: json['id'] as String,
       fromUsername: json['fromUsername'] as String,
       toUsername: json['toUsername'] as String,
+      toAddress: json['toAddress'] as String?,
       amount: PercAmount.fromJson(json['amount'] as Map<String, dynamic>),
       fee: json['fee'] == null
           ? null

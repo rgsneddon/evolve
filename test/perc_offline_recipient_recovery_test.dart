@@ -37,7 +37,11 @@ void main() {
 
       final hub = PercLedgerHub.instance;
       TwoDeviceHarness.seed(hub.ledger);
-      hub.ledger.register(devices.receiverUser, devices.password);
+      TwoDeviceHarness.adoptRegisteredAccount(
+        target: hub.ledger,
+        source: devices.receiver,
+        username: devices.receiverUser,
+      );
       hub.ledger.login(devices.receiverUser, devices.password);
       hub.ledger.mergeDiscoverableAccounts(devices.sender);
 
@@ -123,9 +127,6 @@ void main() {
         ledger: sender,
         username: 'bob',
       );
-
-      await wallet.refreshInboundNow();
-      await PercNetworkCoordinator.instance.runBurstInboundCycleForTest();
 
       expect(wallet.pendingInboundTransfers, isEmpty);
       expect(wallet.balance, amount);

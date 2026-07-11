@@ -91,7 +91,15 @@ class _PercNodeServerIo implements PercNodeServer {
         try {
           final json = jsonDecode(body) as Map<String, dynamic>;
           final remote = PercLedger.fromJson(json);
+          final balanceBefore = hub.ledger.sessionBalance;
           hub.importPeerLedger(remote);
+          await hub.persistLocal();
+          final coordinator = hub.network;
+          await coordinator.syncInboundState();
+          if (hub.ledger.sessionBalance != balanceBefore ||
+              hub.ledger.settlementWitnesses.isNotEmpty) {
+            await coordinator.propagateSettlementWitnesses();
+          }
           await _writeJson(request, {'ok': true});
         } catch (_) {
           request.response.statusCode = HttpStatus.badRequest;

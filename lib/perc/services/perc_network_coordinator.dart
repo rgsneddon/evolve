@@ -48,6 +48,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   String? _publicEndpoint;
   bool _seedConnected = false;
   Timer? _receivePollTimer;
+  Timer? _hintPollTimer;
   Timer? _burstPollTimer;
   int _burstAttemptsRemaining = 0;
   DateTime? _lastBurstStarted;
@@ -1261,6 +1262,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
         notifyRecipientUsername: normalizedUser,
       );
     }
+    await _wakeRecipientInboundPickup(
+      recipientUsername: normalizedUser,
+      senderUsername: session,
+    );
     if (disableLiveNodesForTests) return;
     if (normalizedUser != null && normalizedUser.isNotEmpty) {
       final node = ledger.networkNodes[normalizedUser];
@@ -1268,6 +1273,47 @@ class PercNetworkCoordinator extends ChangeNotifier {
       if (endpoint != null && endpoint.isNotEmpty) {
         await _client.pushLedger(endpoint: endpoint, ledger: ledger);
       }
+    }
+  }
+
+  /// When this device hosts the recipient session, ingest relayed sender ledgers
+  /// immediately instead of waiting for the next foreground poll.
+  Future<void> _wakeRecipientInboundPickup({
+    String? recipientUsername,
+    String? senderUsername,
+  }) async {
+    final hub = _hub;
+    final active = _activeUsername;
+    if (hub == null || active == null || recipientUsername == null) return;
+    if (PercAuth.normalizeUsername(active) !=
+        PercAuth.normalizeUsername(recipientUsername)) {
+      return;
+    }
+
+    final sender = senderUsername?.trim();
+    if (sender != null && sender.isNotEmpty) {
+      _burstSenderTargets.add(sender);
+    }
+
+    final balanceBefore = hub.ledger.sessionBalance;
+    final pendingBefore =
+        hub.ledger.pendingInboundFor(active).length;
+
+    await _fetchTargetedInboundRelays(hub);
+    hub.ledger.refreshPendingInboundTransfers();
+
+    var changed = hub.ledger.sessionBalance != balanceBefore ||
+        hub.ledger.pendingInboundFor(active).length != pendingBefore;
+
+    if (!changed) {
+      _burstAttemptsRemaining = AppPerformance.inboundBurstMaxAttempts;
+      changed = await _syncInboundBurst(hub);
+    }
+
+    if (changed) {
+      await _finalizeInboundSettlement(hub);
+      await hub.persistLocal();
+      notifyListeners();
     }
   }
 
@@ -1342,6 +1388,13 @@ class PercNetworkCoordinator extends ChangeNotifier {
     }
     await _runBurstInboundCycle();
   }
+
+  /// Drives [_pollInboundRelayHints] for cross-device receiver pickup tests.
+  @visibleForTesting
+  Future<void> pollInboundRelayHintsForTest() => _pollInboundRelayHints();
+
+  @visibleForTesting
+  void stopInboundPollingForTest() => _stopReceivePolling();
 
   /// Runs one burst cycle — used by [PercWalletProvider.refreshInboundNow].
   Future<void> runFirstBurstCycle() async {
@@ -1455,6 +1508,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
         senderUsernames: hints.map((h) => h.senderUsername).toList(),
         immediate: true,
       );
+      await _runBurstInboundCycle();
       return;
     }
 
@@ -1492,11 +1546,19 @@ class PercNetworkCoordinator extends ChangeNotifier {
   void _startReceivePolling() {
     if (disableLiveNodesForTests || _activeUsername == null) return;
     _receivePollTimer?.cancel();
+    _hintPollTimer?.cancel();
     unawaited(pollForInboundTransfers());
+    unawaited(_pollInboundRelayHints());
     _receivePollTimer = Timer.periodic(
       _receivePollInterval,
       (_) {
         pollForInboundTransfers();
+      },
+    );
+    _hintPollTimer = Timer.periodic(
+      AppPerformance.inboundBurstPollInterval,
+      (_) {
+        unawaited(_pollInboundRelayHints());
       },
     );
   }
@@ -1504,7 +1566,35 @@ class PercNetworkCoordinator extends ChangeNotifier {
   void _stopReceivePolling() {
     _receivePollTimer?.cancel();
     _receivePollTimer = null;
+    _hintPollTimer?.cancel();
+    _hintPollTimer = null;
     _stopBurstPolling();
+  }
+
+  /// Lightweight rendezvous hint poll — credits inbound PERC within ~400ms of relay PUT.
+  Future<void> _pollInboundRelayHints() async {
+    if (_appInBackground || _activeUsername == null) return;
+    final hub = _hub;
+    if (hub == null) return;
+
+    final hints = await _rendezvous.fetchInboundRelayHints(
+      recipientUsername: _activeUsername!,
+    );
+    if (hints.isEmpty) return;
+
+    final balanceBefore = hub.ledger.sessionBalance;
+    for (final hint in hints) {
+      _burstSenderTargets.add(hint.senderUsername);
+    }
+    if (_burstAttemptsRemaining <= 0) {
+      _burstAttemptsRemaining = AppPerformance.inboundBurstMaxAttempts;
+    }
+    await _runBurstInboundCycle();
+
+    if (hub.ledger.sessionBalance != balanceBefore) {
+      await hub.persistLocal();
+      notifyListeners();
+    }
   }
 
   bool isWalletOnlineOnNetwork(String username) {
