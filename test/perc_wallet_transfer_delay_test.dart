@@ -92,6 +92,38 @@ void main() {
       Duration.zero,
     );
     expect(PercChainConstants.walletInboundRevertEnabled, isFalse);
+    final sentAt = DateTime.utc(2020, 1, 1);
+    final now = DateTime.utc(2030, 1, 1);
+    expect(
+      PercChainConstants.pendingInboundExpired(sentAt: sentAt, now: now),
+      isFalse,
+    );
+    expect(
+      PercChainConstants.pendingInboundWithinWindow(sentAt: sentAt, now: now),
+      isTrue,
+    );
+  });
+
+  test('pendingInboundExpired respects positive override window', () {
+    PercChainConstants.walletInboundRevertWindowOverride =
+        const Duration(seconds: 1);
+    final sentAt = DateTime.utc(2026, 1, 1);
+    final beforeExpiry = sentAt.add(const Duration(milliseconds: 500));
+    final afterExpiry = sentAt.add(const Duration(seconds: 2));
+    expect(
+      PercChainConstants.pendingInboundExpired(
+        sentAt: sentAt,
+        now: beforeExpiry,
+      ),
+      isFalse,
+    );
+    expect(
+      PercChainConstants.pendingInboundExpired(
+        sentAt: sentAt,
+        now: afterExpiry,
+      ),
+      isTrue,
+    );
   });
 
   test('zero revert window keeps aged pending inbound without reverting', () {
