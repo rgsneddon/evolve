@@ -2,7 +2,7 @@ EVOLVE CHRONOFLUX — PRIVACY POLICY
 ===================================
 
 Effective date: 3 July 2026
-Last updated: 7 July 2026 (v4.0.0 build 136; one-time registration seed on splash; Security tab backup/restore only; treasury scenario-only emission with no manual receive or inbound funding)
+Last updated: 13 July 2026 (v4.1.1 build 161; inbound credits at one main-chain confirmation; Android pull-to-refresh on wallet screens; hold-to-reveal login password; optional Android biometric sign-in for existing accounts)
 
 This Privacy Policy describes how Evolve Chronoflux ("Evolve", "we", "us", or "our")
 collects, uses, stores, and shares information when you use the Evolve application
@@ -68,6 +68,12 @@ Privacy enquiries:
 - Inside the Evolve app, you see your own username. Other users' names in your
   transaction history and wallet block explorer are shown as the same style of
   five-character alias unless you are viewing your own activity.
+- Optional Android biometric sign-in (user opt-in, existing accounts only): if you
+  accept after a successful password login, your username and password are stored
+  only on your device in OS-backed secure storage (encrypted shared preferences).
+  Unlocking uses the device biometric prompt via the platform API (local_auth).
+  Biometric templates and plaintext passwords are not sent to Evolve, the seed
+  node, or third-party servers. You may decline and continue with manual login.
 
 
 3. INFORMATION WE COLLECT AND HOW WE USE IT
@@ -161,6 +167,8 @@ read a PERC wallet address from a QR code.
     - INTERNET — Grok construal, narrative links, PERC seed-node sync, optional
       proxy communication
     - CAMERA — PERC QR scanner (optional; only when you use Send scan)
+    - USE_BIOMETRIC / USE_FINGERPRINT — optional fingerprint sign-in for PERC
+      wallet login when you opt in (Section 3.14); not required for manual login
 
   iOS
     - Camera — PERC QR scanner (optional; only when you use Send scan)
@@ -331,6 +339,36 @@ titles, summaries, vote tallies, and comments you choose to submit remain visibl
 to participants.
 
 
+3.14 Optional Android biometric sign-in (PERC wallet)
+
+On Android only, after you sign in to an existing PERC account with your
+username and password, Evolve may offer to enable biometric sign-in. This is
+entirely optional.
+
+If you accept:
+
+  - Your username and password are saved on your device in OS-backed secure
+    storage (flutter_secure_storage with encrypted shared preferences).
+  - On later visits, you may tap the fingerprint button to unlock those stored
+    credentials through your device's biometric prompt (local_auth).
+  - Evolve uses the recovered credentials only to complete local wallet login on
+    your device.
+
+If you decline, cancel the biometric prompt, or biometrics are unavailable, you
+may always sign in manually with username and password.
+
+Evolve does not:
+
+  - Collect, store, or transmit your fingerprint, face data, or other biometric
+    templates to Evolve Chronoflux or the seed node
+  - Upload your plaintext PERC wallet password to Evolve, Render, or peer wallets
+  - Enable biometric sign-in for brand-new registrations before the first
+    successful password login
+
+Clearing app data or declining enrollment removes the opt-in stored credentials
+from your device.
+
+
 4. WHAT WE DO NOT COLLECT OR EXPOSE PUBLICLY
 --------------------------------------------
 
@@ -449,6 +487,9 @@ You can:
   - Avoid Community Ward Voting if you do not want proposals, votes, or comments
     stored on the shared chain
   - Decline in-app update prompts if you prefer to stay on your current build
+  - Decline Android biometric sign-in enrollment and use manual PERC login only
+  - Clear app data on Android to remove opt-in biometric credentials from secure
+    storage
 
 Depending on your location, you may have rights to access, correct, delete, or
 restrict processing of personal data. Because most app data is stored locally on
