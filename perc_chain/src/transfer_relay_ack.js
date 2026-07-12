@@ -74,7 +74,7 @@ export function acknowledgeRelayTransfers(canonical, relay) {
       .map((tx) => tx.id)
       .filter(Boolean);
     if (transferIds.length === 0) continue;
-    if (transferIds.every((id) => known.has(id))) continue;
+    if (transferIds.some((id) => known.has(id))) continue;
 
     const canonicalIndex = peerLedgerHeight(canonical);
     canonical.blocks.push(cloneTransferBlockForCanonicalTip(block, canonicalIndex));

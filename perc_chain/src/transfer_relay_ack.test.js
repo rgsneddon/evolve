@@ -94,6 +94,35 @@ describe('acknowledgeRelayTransfers', () => {
     assert.equal(canonical.blocks.length, 1);
   });
 
+  it('skips relay block when any transfer id already exists on canonical chain', () => {
+    const canonical = {
+      networkGenesisRevision: 2,
+      blocks: [
+        {
+          index: 0,
+          transactions: [{ id: 'tx-old', kind: 'transfer', blockIndex: 0 }],
+        },
+      ],
+    };
+    const relay = {
+      networkGenesisRevision: 2,
+      blocks: [
+        {
+          index: 1,
+          transactions: [
+            { id: 'tx-old', kind: 'transfer', blockIndex: 1 },
+            { id: 'tx-new', kind: 'transfer', blockIndex: 1 },
+          ],
+        },
+      ],
+    };
+
+    const result = acknowledgeRelayTransfers(canonical, relay);
+    assert.equal(result.ok, false);
+    assert.equal(canonical.blocks.length, 1);
+    assert.deepEqual([...collectTransferTxIds(canonical)], ['tx-old']);
+  });
+
   it('rejects genesis revision mismatch', () => {
     const canonical = { networkGenesisRevision: 2, blocks: [] };
     const relay = { networkGenesisRevision: 3, blocks: [] };

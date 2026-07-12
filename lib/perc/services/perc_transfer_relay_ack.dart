@@ -45,7 +45,7 @@ class PercTransferRelayAck {
           .map((tx) => tx.id)
           .toList(growable: false);
       if (transferIds.isEmpty) continue;
-      if (transferIds.every(known.contains)) continue;
+      if (transferIds.any(known.contains)) continue;
 
       final canonicalIndex = canonical.blocks.length;
       canonical.blocks.add(_cloneForCanonicalTip(block, canonicalIndex));
