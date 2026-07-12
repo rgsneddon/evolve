@@ -254,6 +254,7 @@ class PercWalletProvider extends ChangeNotifier {
       }
     }
     _ready = true;
+    _clearStaleBootError();
     notifyListeners();
   }
 
@@ -270,6 +271,7 @@ class PercWalletProvider extends ChangeNotifier {
       // Boot must not fail if the seed is unreachable.
     } finally {
       _postLoginSyncing = false;
+      _clearStaleBootError();
       notifyListeners();
     }
   }
@@ -352,11 +354,16 @@ class PercWalletProvider extends ChangeNotifier {
       _ledger.login(PercChainConstants.treasuryUsername, password);
       clearSessionTimedOut();
       _armSessionTimeout();
-      await PercLedgerHub.instance.onWalletSessionStarted(
-        PercChainConstants.treasuryUsername,
-      );
+      try {
+        await PercLedgerHub.instance.onWalletSessionStarted(
+          PercChainConstants.treasuryUsername,
+        );
+      } catch (_) {
+        // Treasury is usable locally even when seed attach is transiently down.
+      }
       _captureTreasuryLaunchEvent();
       _setStatus('wallet_status_treasury_secured');
+      _clearStaleBootError();
       notifyListeners();
       await _commit();
     } catch (e) {
@@ -529,18 +536,18 @@ class PercWalletProvider extends ChangeNotifier {
       _ledger.login(username, password);
       clearSessionTimedOut();
       _armSessionTimeout();
-      notifyListeners();
-      await _completeWalletSessionStart(
-        username,
-        statusKey: 'wallet_status_signed_in',
-        statusArgs: {'user': _ledger.sessionUsername ?? ''},
-        captureLaunch: true,
-      );
     } catch (e) {
-      _postLoginSyncing = false;
       _setError(WalletMessageLocalization.errorKeyFromException(e));
       notifyListeners();
+      return;
     }
+    notifyListeners();
+    await _completeWalletSessionStart(
+      username,
+      statusKey: 'wallet_status_signed_in',
+      statusArgs: {'user': _ledger.sessionUsername ?? ''},
+      captureLaunch: true,
+    );
   }
 
   Future<void> _completeWalletSessionStart(
@@ -552,16 +559,25 @@ class PercWalletProvider extends ChangeNotifier {
     _postLoginSyncing = true;
     notifyListeners();
     try {
-      await PercLedgerHub.instance.onWalletSessionStarted(username);
-      if (captureLaunch) _captureTreasuryLaunchEvent();
-      _setStatus(statusKey, statusArgs);
-      await PercLedgerHub.instance.persistLocal();
-      await syncModeratorVerifierToMishiBridge(
-        ledger: _ledger,
-        username: username,
-      );
+      try {
+        await PercLedgerHub.instance.onWalletSessionStarted(username);
+        if (captureLaunch) _captureTreasuryLaunchEvent();
+        _setStatus(statusKey, statusArgs);
+        await PercLedgerHub.instance.persistLocal();
+        try {
+          await syncModeratorVerifierToMishiBridge(
+            ledger: _ledger,
+            username: username,
+          );
+        } catch (_) {
+          // Mishi bridge sync is best-effort after local sign-in.
+        }
+      } catch (_) {
+        // Network session attach is best-effort; local sign-in already succeeded.
+      }
     } finally {
       _postLoginSyncing = false;
+      _clearStaleBootError();
       notifyListeners();
     }
   }
@@ -1098,6 +1114,16 @@ class PercWalletProvider extends ChangeNotifier {
     statusMessage = null;
     errorMessage = null;
     statusMessageArgs = const {};
+    errorMessageArgs = const {};
+  }
+
+  /// Clears a stale generic banner after successful boot or resume.
+  @visibleForTesting
+  void clearStaleBootErrorForTest() => _clearStaleBootError();
+
+  void _clearStaleBootError() {
+    if (errorMessage != 'wallet_err_generic') return;
+    errorMessage = null;
     errorMessageArgs = const {};
   }
 

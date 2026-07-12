@@ -81,6 +81,7 @@ class PercNetworkCoordinator extends ChangeNotifier {
   static void resetForTest() {
     instance._networkGeneration++;
     disableLiveNodesForTests = true;
+    sessionStartThrowsForTest = false;
     instance._senderPeerCache.clear();
     instance.settlementPeerTargets.clear();
     instance.clearTestSeedLedger();
@@ -393,6 +394,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
   /// Disabled in tests by default; enabled from [main] for production wallets.
   static bool disableLiveNodesForTests = true;
 
+  /// When true, [onSessionStarted] throws to simulate transient seed attach failure.
+  @visibleForTesting
+  static bool sessionStartThrowsForTest = false;
+
   Future<void> bind(PercLedgerHub hub) async {
     _hub = hub;
     hub.addListener(_onHubChanged);
@@ -424,6 +429,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
   }
 
   Future<void> onSessionStarted(String username) async {
+    if (sessionStartThrowsForTest) {
+      throw StateError('Simulated session start failure');
+    }
     final hub = _hub;
     if (hub == null) return;
     _activeUsername = username;
