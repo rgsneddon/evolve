@@ -86,14 +86,46 @@ void main() {
     );
   });
 
-  test('production inbound revert window is 24 hours for undelivered relay', () {
+  test('production inbound revert window is zero (no auto-revert delay)', () {
     expect(
       PercChainConstants.walletInboundRevertWindow,
-      const Duration(hours: 24),
+      Duration.zero,
     );
+    expect(PercChainConstants.walletInboundRevertEnabled, isFalse);
+  });
+
+  test('zero revert window keeps aged pending inbound without reverting', () {
+    final ledger = PercLedger.empty();
+    _seedLedger(ledger);
+    ledger.register('alice', 'password123');
+    ledger.register('bob', 'password123');
+
+    ledger.pendingInboundTransfers.add(
+      PercPendingInboundTransfer(
+        id: 'tx-never-revert',
+        fromUsername: 'alice',
+        toUsername: 'bob',
+        toAddress: _addr(ledger, 'bob'),
+        amount: PercAmount.fromPerc(0.00000005),
+        fee: PercChainConstants.sendTransactionFee,
+        sentAt: DateTime.utc(2020, 1, 1),
+      ),
+    );
+    ledger.account('bob')!.balance = PercAmount.zero;
+    final aliceBefore = ledger.account('alice')!.balance;
+
+    ledger.refreshPendingInboundTransfers(
+      now: DateTime.utc(2030, 1, 1),
+    );
+
+    expect(ledger.pendingInboundFor('bob'), hasLength(1));
+    expect(ledger.account('bob')!.balance, PercAmount.zero);
+    expect(ledger.account('alice')!.balance, aliceBefore);
     expect(
-      PercChainConstants.walletInboundRevertWindow.inDays,
-      lessThan(365),
+      ledger.account('alice')!.transactions.any(
+            (t) => t.kind == PercTxKind.transferRevert,
+          ),
+      isFalse,
     );
   });
 }

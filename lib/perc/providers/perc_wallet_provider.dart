@@ -838,14 +838,17 @@ class PercWalletProvider extends ChangeNotifier {
         final statusKey = tx.confirmations > 0
             ? deliveryPlan.walletStatusKey
             : deliveryPlan.addToPendingQueue
-                ? deliveryPlan.walletStatusKey
+                ? (PercChainConstants.walletInboundRevertEnabled
+                    ? deliveryPlan.walletStatusKey
+                    : InboundTransferDeliveryPlan.relay.walletStatusKey)
                 : InboundTransferDeliveryPlan.relay.walletStatusKey;
         final statusArgs = {
           'amount': amount.displayFixed8,
           'symbol': PercChainConstants.currencySymbol,
           'dest': dest,
           'fee': fee.displayFixed8,
-          if (deliveryPlan.addToPendingQueue)
+          if (deliveryPlan.addToPendingQueue &&
+              PercChainConstants.walletInboundRevertEnabled)
             'delayKey': _inboundRevertWindowKey(),
         };
         _setEphemeralStatus(statusKey, statusArgs);

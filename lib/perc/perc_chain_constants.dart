@@ -169,8 +169,9 @@ class PercChainConstants {
       walletSessionIdleTimeoutOverride ?? walletSessionIdleTimeout;
 
   /// Safety window before undelivered inbound transfers revert to the sender.
+  /// [Duration.zero] disables auto-revert (zero delay — pending until delivered).
   /// Transfers credit near-instantly on send/relay — not a user receive wait.
-  static const Duration walletInboundRevertWindow = Duration(hours: 24);
+  static const Duration walletInboundRevertWindow = Duration.zero;
 
   /// Override for tests — never set in production code.
   @visibleForTesting
@@ -178,6 +179,32 @@ class PercChainConstants {
 
   static Duration get walletInboundRevertWindowEffective =>
       walletInboundRevertWindowOverride ?? walletInboundRevertWindow;
+
+  /// True when undelivered inbound transfers may eventually revert to the sender.
+  static bool get walletInboundRevertEnabled =>
+      walletInboundRevertWindowEffective > Duration.zero;
+
+  /// Whether [pending] is still eligible for relay settlement (not past revert window).
+  static bool pendingInboundWithinWindow({
+    required DateTime sentAt,
+    required DateTime now,
+    Duration? window,
+  }) {
+    final effective = window ?? walletInboundRevertWindowEffective;
+    if (effective <= Duration.zero) return true;
+    return now.isBefore(sentAt.add(effective));
+  }
+
+  /// Whether [pending] should revert to the sender (past revert window).
+  static bool pendingInboundExpired({
+    required DateTime sentAt,
+    required DateTime now,
+    Duration? window,
+  }) {
+    final effective = window ?? walletInboundRevertWindowEffective;
+    if (effective <= Duration.zero) return false;
+    return !now.isBefore(sentAt.add(effective));
+  }
 
   /// Cumulative staking: 0.00000005 PERC per 1 PERC held per scenario block.
   static const int stakingYieldPercent = 10;

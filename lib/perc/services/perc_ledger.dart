@@ -2138,9 +2138,16 @@ class PercLedger {
   }
 
   void _revertExpiredPendingInbound(DateTime now) {
+    if (!PercChainConstants.walletInboundRevertEnabled) return;
     final window = PercChainConstants.walletInboundRevertWindowEffective;
     final expired = pendingInboundTransfers
-        .where((p) => !now.isBefore(p.sentAt.add(window)))
+        .where(
+          (p) => PercChainConstants.pendingInboundExpired(
+            sentAt: p.sentAt,
+            now: now,
+            window: window,
+          ),
+        )
         .toList();
     if (expired.isEmpty) return;
 
@@ -2489,7 +2496,13 @@ class PercLedger {
     final toSettle = pendingInboundTransfers
         .where((p) => _pendingTargetsUser(p, username))
         .where((p) => !t.isBefore(p.sentAt))
-        .where((p) => t.isBefore(p.sentAt.add(window)))
+        .where(
+          (p) => PercChainConstants.pendingInboundWithinWindow(
+            sentAt: p.sentAt,
+            now: t,
+            window: window,
+          ),
+        )
         .toList();
     if (toSettle.isEmpty) return;
 
