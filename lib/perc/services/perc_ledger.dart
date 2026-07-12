@@ -852,6 +852,11 @@ class PercLedger {
       if (recipient == null) continue;
       if (_isTreasuryManualFundingForbidden(recipient.username)) continue;
       if (!pending.switchCommitmentValid) continue;
+      if (isTransferAlreadySettledForReceiver(pending.id, recipient)) continue;
+      if (_senderIsLocalWallet(pending.fromUsername) &&
+          _senderTransferConfirmed(pending.id, pending.fromUsername)) {
+        continue;
+      }
       final localPending = PercPendingInboundTransfer(
         id: pending.id,
         fromUsername: pending.fromUsername,
@@ -2349,6 +2354,10 @@ class PercLedger {
 
       final sender = _accountFor(pending.fromUsername);
       if (sender == null) continue;
+      if (_senderTransferConfirmed(pending.id, pending.fromUsername)) {
+        pendingInboundTransfers.remove(pending);
+        continue;
+      }
 
       final plan = planSettlement(
         phase: SettlementPhase.senderPeerReconcile,
@@ -2390,7 +2399,11 @@ class PercLedger {
   }) {
     if (!pending.switchCommitmentValid) return false;
     final sender = _accountFor(pending.fromUsername);
-    if (sender == null || !_canDebitSenderForPending(sender, pending)) {
+    if (sender == null) return false;
+    if (_senderTransferConfirmed(pending.id, pending.fromUsername)) {
+      return true;
+    }
+    if (!_canDebitSenderForPending(sender, pending)) {
       return false;
     }
     _debitForOutboundSettlement(sender, pending.totalHold);
@@ -2513,6 +2526,10 @@ class PercLedger {
       if (!pending.switchCommitmentValid) continue;
       final receiver = _resolvePendingRecipient(pending);
       if (receiver == null) continue;
+      if (isTransferAlreadySettledForReceiver(pending.id, receiver)) {
+        pendingInboundTransfers.remove(pending);
+        continue;
+      }
 
       final sender = _accountFor(pending.fromUsername);
       final senderIsLocal = _senderIsLocalWallet(pending.fromUsername);

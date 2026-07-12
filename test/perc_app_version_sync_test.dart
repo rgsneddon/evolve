@@ -20,9 +20,13 @@ void main() {
   });
 
   test('AppUpdateChecker reports no update when remote matches current', () async {
+    final current = PercAppVersion.current;
+    final sep = current.indexOf('+');
+    final version = current.substring(0, sep);
+    final build = current.substring(sep + 1);
     AppUpdateChecker.fetchBodyOverride = (uri) async {
       return '''
-{"version":"4.0.8","build_number":153,"package_name":"evolve"}
+{"version":"$version","build_number":$build,"package_name":"evolve"}
 ''';
     };
     addTearDown(() => AppUpdateChecker.fetchBodyOverride = null);

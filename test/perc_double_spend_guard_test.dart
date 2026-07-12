@@ -159,6 +159,80 @@ void main() {
     );
   });
 
+  test(
+    're-injected settled pending does not double-debit sender with surplus balance',
+    () {
+      final ledger = PercLedger.empty();
+      ledger.ensureTreasuryAccount();
+      ledger.setupTreasuryPassword('password123');
+      ledger.launchBlockchain();
+      ledger.register('alice', 'password123');
+      ledger.register('bob', 'password123');
+      ledger.creditScenario(username: 'alice', percentChance: 50);
+      final aliceStart = ledger.account('alice')!.balance;
+
+      final amount = PercAmount.fromPerc(0.00000008);
+      const fee = PercChainConstants.sendTransactionFee;
+      final sentAt = DateTime.now().toUtc();
+      const txId = 'tx-replay-surplus';
+      final pending = PercPendingInboundTransfer(
+        id: txId,
+        fromUsername: 'alice',
+        toUsername: 'bob',
+        amount: amount,
+        fee: fee,
+        sentAt: sentAt,
+      );
+      ledger.pendingInboundTransfers.add(pending);
+
+      ledger.settlePendingInboundOnActivity('bob', now: sentAt);
+      final aliceAfterSettle = ledger.account('alice')!.balance;
+      expect(aliceAfterSettle.microUnits, lessThan(aliceStart.microUnits));
+
+      ledger.pendingInboundTransfers.add(pending);
+      ledger.settlePendingInboundOnActivity('bob', now: sentAt);
+
+      expect(ledger.account('alice')!.balance, aliceAfterSettle);
+      expect(
+        ledger.account('bob')!.transactions
+            .where((t) => t.id == txId && t.isConfirmed)
+            .length,
+        1,
+      );
+    },
+  );
+
+  test('mergePendingInboundFromPeer ignores settled transfer ids', () {
+    final ledger = PercLedger.empty();
+    ledger.ensureTreasuryAccount();
+    ledger.setupTreasuryPassword('password123');
+    ledger.launchBlockchain();
+    ledger.register('alice', 'password123');
+    ledger.register('bob', 'password123');
+    ledger.creditScenario(username: 'alice', percentChance: 50);
+
+    final amount = PercAmount.fromPerc(0.00000006);
+    const fee = PercChainConstants.sendTransactionFee;
+    final sentAt = DateTime.now().toUtc();
+    const txId = 'tx-merge-settled';
+    final pending = PercPendingInboundTransfer(
+      id: txId,
+      fromUsername: 'alice',
+      toUsername: 'bob',
+      amount: amount,
+      fee: fee,
+      sentAt: sentAt,
+    );
+    ledger.pendingInboundTransfers.add(pending);
+    ledger.settlePendingInboundOnActivity('bob', now: sentAt);
+    expect(ledger.pendingInboundFor('bob'), isEmpty);
+
+    final remote = PercLedger.fromJson(ledger.toJson());
+    remote.pendingInboundTransfers.add(pending);
+    ledger.mergePendingInboundFromPeer(remote);
+    expect(ledger.pendingInboundFor('bob'), isEmpty);
+  });
+
   test('witness propagate does not double-debit sender', () {
     final devices = TwoDeviceHarness.create();
     devices.linkDevices();
