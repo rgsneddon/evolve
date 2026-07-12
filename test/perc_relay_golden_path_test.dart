@@ -4,11 +4,13 @@ import 'package:evolve/perc/models/perc_block.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_block_display_label.dart';
 import 'package:evolve/perc/services/perc_ledger.dart';
+import 'package:evolve/perc/services/perc_transfer_relay_ack.dart';
 import 'helpers/send_relay_fixture.dart';
 
 void _seed(PercLedger ledger) {
   ledger.ensureTreasuryAccount();
   ledger.setupTreasuryPassword('password12345');
+  ledger.networkGenesisRevision = 2;
   ledger.launchBlockchain();
   ledger.consumeBlockchainLaunchEvent();
 }
@@ -44,19 +46,16 @@ void main() {
     expect(receiver.blockHeight, greaterThan(sender.blockHeight));
 
     final relay = PercLedger.fromJson(sender.toJson());
-    receiver.applyInboundRelayFromSender(relay);
+    final ack = PercTransferRelayAck.acknowledgeRelayTransfers(receiver, relay);
+    expect(ack.ok, isTrue);
+    expect(ack.canonicalIndices.single, built.transferBlockIndex);
+    final preservedTx = PercBlockDisplayLabel.transferTransactions(
+      receiver.blocks[built.transferBlockIndex],
+    ).first;
+    expect(preservedTx.id, transferTxId);
+    expect(preservedTx.blockIndex, built.transferBlockIndex);
 
-    final promoted = receiver.blocks.lastWhere(PercBlockDisplayLabel.hasTransfer);
-    final canonicalIndex = receiver.blocks.length - 1;
-    expect(promoted.index, canonicalIndex);
-    expect(
-      PercBlockDisplayLabel.transferTransactions(promoted).first.id,
-      transferTxId,
-    );
-    expect(
-      PercBlockDisplayLabel.transferTransactions(promoted).first.blockIndex,
-      canonicalIndex,
-    );
+    receiver.applyInboundRelayFromSender(relay);
     expect(receiver.microblocksPerBlock, PercChainConstants.microblocksPerBlock);
 
     receiver.login('windows_user', 'password12345');

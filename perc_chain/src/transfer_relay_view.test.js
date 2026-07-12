@@ -33,19 +33,19 @@ describe('resolveRelayBlockView contract', () => {
     };
     acknowledgeRelayTransfers(canonical, fixture.ledger);
 
-    const canonicalIndex = canonical.blocks.length - 1;
-    const view = resolveRelayBlockView(canonical, canonicalIndex);
+    const preservedIndex = fixture.transferBlockIndex;
+    const view = resolveRelayBlockView(canonical, preservedIndex);
     assert.ok(view);
     assert.equal(view.matchedBy, 'canonical');
-    assert.equal(view.canonicalIndex, canonicalIndex);
-    assert.equal(view.relaySourceBlockIndex, fixture.transferBlockIndex);
+    assert.equal(view.canonicalIndex, preservedIndex);
+    assert.equal(view.relaySourceBlockIndex, null);
     assert.equal(view.transferTx.id, fixture.transferTxId);
 
-    const detail = getBlockDetail(canonical, canonicalIndex);
+    const detail = getBlockDetail(canonical, preservedIndex);
     assert.equal(detail.matchedBy, 'canonical');
-    assert.equal(detail.queriedIndex, canonicalIndex);
-    assert.equal(detail.canonicalIndex, canonicalIndex);
-    assert.equal(detail.relaySourceBlockIndex, fixture.transferBlockIndex);
+    assert.equal(detail.queriedIndex, preservedIndex);
+    assert.equal(detail.canonicalIndex, preservedIndex);
+    assert.equal(detail.relaySourceBlockIndex, null);
     assert.equal(detail.transactions.find((tx) => tx.kind === 'transfer').id, fixture.transferTxId);
   });
 

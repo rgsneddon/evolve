@@ -78,12 +78,11 @@ class SendRelayFixture {
     expectRelayShorterThanSeed(built.ledger, seed);
     PercTransferRelayAck.acknowledgeRelayTransfers(seed, built.ledger);
     seed.mergeDiscoverableAccounts(built.ledger);
-    final canonicalIndex = seed.blocks.length - 1;
     return (
       ledger: seed,
       transferTxId: built.transferTxId,
       transferBlockIndex: built.transferBlockIndex,
-      canonicalIndex: canonicalIndex,
+      canonicalIndex: built.transferBlockIndex,
     );
   }
 

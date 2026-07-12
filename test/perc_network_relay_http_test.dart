@@ -235,10 +235,16 @@ void main() {
           .firstWhere((t) => t.kind == PercTxKind.transfer);
 
       expect(relayedTransferTxId, senderTransfer.id);
-      expect(relayedCanonicalIndex, mockSeedLedger.blockHeight - 1);
+      final senderBlockIndex = senderLedger.blocks
+          .firstWhere(
+            (b) => b.transactions.any((t) => t.id == senderTransfer.id),
+          )
+          .index;
+      expect(relayedCanonicalIndex, senderBlockIndex);
 
-      final seedBlock =
-          mockSeedLedger.blocks.lastWhere(PercBlockDisplayLabel.hasTransfer);
+      final seedBlock = mockSeedLedger.blocks.firstWhere(
+        PercBlockDisplayLabel.hasTransfer,
+      );
       expect(
         PercBlockDisplayLabel.transferTransactions(seedBlock).first.id,
         senderTransfer.id,

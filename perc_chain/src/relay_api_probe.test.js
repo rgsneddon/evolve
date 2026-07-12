@@ -102,27 +102,23 @@ describe('relay API probe capture', () => {
     assert.equal(result.ok, true);
     assert.equal(result.imported, true);
 
-    const canonicalIndex = store.ledger.blocks.length - 1;
+    const preservedIndex = fixture.transferBlockIndex;
     const list = listBlocks(store.ledger, { offset: 0, limit: 50 });
-    const detail = getBlockDetail(store.ledger, canonicalIndex);
+    const detail = getBlockDetail(store.ledger, preservedIndex);
     assert.equal(detail.displayLabel, 'Manual tx');
-    assert.equal(detail.relaySourceBlockIndex, fixture.transferBlockIndex);
-    assert.equal(detail.queriedIndex, canonicalIndex);
-    assert.equal(detail.canonicalIndex, canonicalIndex);
+    assert.equal(detail.relaySourceBlockIndex, null);
+    assert.equal(detail.queriedIndex, preservedIndex);
+    assert.equal(detail.canonicalIndex, preservedIndex);
     assert.equal(detail.matchedBy, 'canonical');
     const transfer = detail.transactions.find((tx) => tx.kind === 'transfer');
     assert.equal(transfer.id, expectedTxId);
     assert.equal(transfer.kind, 'transfer');
-
-    // Sender index 1 collides with native seed scenario block — alias is not used.
-    const nativeAtSenderIndex = getBlockDetail(store.ledger, fixture.transferBlockIndex);
-    assert.equal(nativeAtSenderIndex.matchedBy, 'canonical');
-    assert.notEqual(nativeAtSenderIndex.displayLabel, 'Manual tx');
+    assert.equal(transfer.blockIndex, preservedIndex);
 
     const transferSummary = list.blocks.find((b) => b.displayLabel === 'Manual tx');
     assert.ok(transferSummary);
-    assert.equal(transferSummary.relaySourceBlockIndex, fixture.transferBlockIndex);
-    assert.equal(transferSummary.canonicalIndex, canonicalIndex);
+    assert.equal(transferSummary.relaySourceBlockIndex, null);
+    assert.equal(transferSummary.canonicalIndex, preservedIndex);
     assert.equal(transferSummary.matchedBy, 'canonical');
 
     const promoted = store.ledger.blocks.find((b) =>
@@ -130,37 +126,10 @@ describe('relay API probe capture', () => {
     );
     assert.ok(promoted);
 
-    // Unoccupied sender index — alias lookup returns the same transfer tx.id.
-    const relayAliasDetail = getBlockDetail(
-      {
-        networkGenesisRevision: 2,
-        blocks: [
-          { index: 0, transactions: [] },
-          { index: 1, transactions: [{ id: 's', kind: 'scenarioReward' }] },
-          {
-            index: canonicalIndex,
-            relaySourceBlockIndex: 99,
-            timestamp: promoted.timestamp,
-            triggerUsername: promoted.triggerUsername,
-            transactions: promoted.transactions,
-          },
-        ],
-      },
-      99,
-    );
-    assert.equal(relayAliasDetail.matchedBy, 'relaySource');
-    assert.equal(relayAliasDetail.queriedIndex, 99);
-    assert.equal(relayAliasDetail.canonicalIndex, canonicalIndex);
-    assert.equal(relayAliasDetail.displayIndex, 99);
-    assert.equal(relayAliasDetail.relaySourceBlockIndex, 99);
-    const aliasTransfer = relayAliasDetail.transactions.find((tx) => tx.kind === 'transfer');
-    assert.equal(aliasTransfer.id, expectedTxId);
-    assert.equal(aliasTransfer.amount, '0.00000005');
-
     fs.mkdirSync(SCRATCH, { recursive: true });
     fs.writeFileSync(
       path.join(SCRATCH, 'local_relay_api_probe.json'),
-      `${JSON.stringify({ list, detail, nativeAtSenderIndex, relayAliasDetail }, null, 2)}\n`,
+      `${JSON.stringify({ list, detail }, null, 2)}\n`,
       'utf8',
     );
   });

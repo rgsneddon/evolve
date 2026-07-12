@@ -1,7 +1,6 @@
 /**
- * Canonical relay acknowledgment: promote sender transfer blocks by stable tx.id.
- * Re-indexes to the canonical chain tip so explorers, list order, and 100M
- * microblock marker angles stay monotonic on taller seed/receiver ledgers.
+ * Canonical relay acknowledgment: promote sender transfer blocks by stable tx.id
+ * at the sender's block height (not re-indexed to the canonical tip).
  */
 
 export function peerGenesisRevision(ledger) {
@@ -32,14 +31,48 @@ function clonePreservedBlock(block) {
     : JSON.parse(JSON.stringify(block));
 }
 
+function emptyBlockAtIndex(index) {
+  return {
+    index,
+    transactions: [],
+    timestamp: new Date().toISOString(),
+  };
+}
+
+function ensureChainSlots(canonical, minLength) {
+  while (canonical.blocks.length < minLength) {
+    canonical.blocks.push(emptyBlockAtIndex(canonical.blocks.length));
+  }
+}
+
+function transferIdsInBlock(block) {
+  return (block?.transactions ?? [])
+    .filter((tx) => tx?.kind === 'transfer' && tx.id)
+    .map((tx) => tx.id);
+}
+
 /**
- * Clone relay transfer block onto canonical tip, preserving tx.id and payload.
+ * Clone relay transfer block preserving sender height and tx.blockIndex.
  * @param {object} block
- * @param {number} canonicalIndex
+ */
+export function cloneTransferBlockPreservingHeight(block) {
+  const cloned = clonePreservedBlock(block);
+  const sourceIndex = block.index ?? 0;
+  cloned.index = sourceIndex;
+  delete cloned.relaySourceBlockIndex;
+  for (const tx of cloned.transactions ?? []) {
+    if (tx && typeof tx === 'object' && tx.kind === 'transfer') {
+      tx.blockIndex = sourceIndex;
+    }
+  }
+  return cloned;
+}
+
+/**
+ * @deprecated Use cloneTransferBlockPreservingHeight — kept for treasury payout tip promotion.
  */
 export function cloneTransferBlockForCanonicalTip(block, canonicalIndex) {
   const cloned = clonePreservedBlock(block);
-  cloned.relaySourceBlockIndex = block.index;
   cloned.index = canonicalIndex;
   for (const tx of cloned.transactions ?? []) {
     if (tx && typeof tx === 'object') {
@@ -47,6 +80,45 @@ export function cloneTransferBlockForCanonicalTip(block, canonicalIndex) {
     }
   }
   return cloned;
+}
+
+function mergeBlockAtSourceIndex(canonical, block) {
+  const sourceIndex = block.index ?? 0;
+  ensureChainSlots(canonical, sourceIndex + 1);
+
+  const incomingIds = transferIdsInBlock(block);
+  const existing = canonical.blocks[sourceIndex];
+  const cloned = cloneTransferBlockPreservingHeight(block);
+
+  if (!existing || (existing.transactions ?? []).length === 0) {
+    canonical.blocks[sourceIndex] = cloned;
+    return true;
+  }
+
+  const existingTransferIds = new Set(transferIdsInBlock(existing));
+  if (incomingIds.some((id) => existingTransferIds.has(id))) {
+    return false;
+  }
+  if (existingTransferIds.size > 0) {
+    return false;
+  }
+
+  existing.index = sourceIndex;
+  for (const tx of cloned.transactions ?? []) {
+    if (tx?.kind !== 'transfer') continue;
+    tx.blockIndex = sourceIndex;
+    existing.transactions.push(tx);
+  }
+  if (!existing.timestamp && cloned.timestamp) {
+    existing.timestamp = cloned.timestamp;
+  }
+  if (!existing.triggerUsername && cloned.triggerUsername) {
+    existing.triggerUsername = cloned.triggerUsername;
+  }
+  if (!existing.chronofluxFingerprint && cloned.chronofluxFingerprint) {
+    existing.chronofluxFingerprint = cloned.chronofluxFingerprint;
+  }
+  return true;
 }
 
 /**
@@ -76,13 +148,14 @@ export function acknowledgeRelayTransfers(canonical, relay) {
     if (transferIds.length === 0) continue;
     if (transferIds.some((id) => known.has(id))) continue;
 
-    const canonicalIndex = peerLedgerHeight(canonical);
-    canonical.blocks.push(cloneTransferBlockForCanonicalTip(block, canonicalIndex));
+    const sourceIndex = block.index ?? 0;
+    if (!mergeBlockAtSourceIndex(canonical, block)) continue;
+
     for (const id of transferIds) {
       known.add(id);
       promoted.push(id);
     }
-    canonicalIndices.push(canonicalIndex);
+    canonicalIndices.push(sourceIndex);
     acknowledged += 1;
   }
 

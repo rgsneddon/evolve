@@ -38,13 +38,13 @@ export function genericBlockLabel(block) {
   const kinds = new Set(txs.map((tx) => tx.kind).filter(Boolean));
   const text = collectScenarioText(block);
 
+  if (kinds.has('transfer')) return 'Manual tx';
+
   if (kinds.has('scenarioReward') || kinds.has('scenarioFaucet')) {
     if (isScsInput(text)) return 'SCS input';
     if (isPercentChanceInput(text)) return '% chance input';
     return 'Scenario reward';
   }
-
-  if (kinds.has('transfer')) return 'Manual tx';
   if (kinds.has('transferRevert')) return 'Transfer revert';
 
   if (block.microblockSeal || kinds.has('chronofluxMicroblock')) {

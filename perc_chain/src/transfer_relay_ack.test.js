@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import {
   acknowledgeRelayTransfers,
   blockHasTransfer,
-  cloneTransferBlockForCanonicalTip,
+  cloneTransferBlockPreservingHeight,
   collectTransferTxIds,
 } from './transfer_relay_ack.js';
 
 describe('acknowledgeRelayTransfers', () => {
-  it('re-indexes relay transfer to canonical tip preserving tx.id', () => {
+  it('preserves relay transfer at sender block index', () => {
     const canonical = {
       networkGenesisRevision: 2,
       blocks: [
@@ -44,28 +44,55 @@ describe('acknowledgeRelayTransfers', () => {
     assert.equal(result.ok, true);
     assert.equal(result.acknowledged, 1);
     assert.deepEqual(result.transferIds, ['tx-1']);
-    assert.deepEqual(result.canonicalIndices, [3]);
-    assert.equal(canonical.blocks.length, 4);
+    assert.deepEqual(result.canonicalIndices, [1]);
+    assert.equal(canonical.blocks.length, 3);
 
-    const promoted = canonical.blocks[3];
-    assert.equal(promoted.index, 3);
-    assert.equal(promoted.relaySourceBlockIndex, 1);
+    const promoted = canonical.blocks[1];
+    assert.equal(promoted.index, 1);
+    assert.equal(promoted.relaySourceBlockIndex, undefined);
     assert.equal(promoted.chronofluxFingerprint, 'fp-transfer-1');
-    assert.equal(promoted.transactions[0].id, 'tx-1');
-    assert.equal(promoted.transactions[0].blockIndex, 3);
+    assert.equal(promoted.transactions.find((tx) => tx.kind === 'transfer').id, 'tx-1');
+    assert.equal(promoted.transactions.find((tx) => tx.kind === 'transfer').blockIndex, 1);
     assert.equal(blockHasTransfer(promoted), true);
     assert.deepEqual([...collectTransferTxIds(canonical)], ['tx-1']);
   });
 
-  it('cloneTransferBlockForCanonicalTip assigns monotonic index', () => {
+  it('gap-fills empty slots when sender index exceeds canonical tip', () => {
+    const canonical = {
+      networkGenesisRevision: 2,
+      blocks: [{ index: 0, transactions: [] }],
+    };
+    const relay = {
+      networkGenesisRevision: 2,
+      blocks: [
+        {
+          index: 3,
+          transactions: [
+            { id: 'tx-gap', kind: 'transfer', blockIndex: 3 },
+          ],
+        },
+      ],
+    };
+
+    const result = acknowledgeRelayTransfers(canonical, relay);
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.canonicalIndices, [3]);
+    assert.equal(canonical.blocks.length, 4);
+    assert.equal(canonical.blocks[3].index, 3);
+    assert.equal(canonical.blocks[3].transactions[0].blockIndex, 3);
+    assert.equal(canonical.blocks[1].transactions.length, 0);
+    assert.equal(canonical.blocks[2].transactions.length, 0);
+  });
+
+  it('cloneTransferBlockPreservingHeight keeps sender index on txs', () => {
     const relayBlock = {
       index: 2,
       transactions: [{ id: 'tx-9', kind: 'transfer', blockIndex: 2 }],
     };
-    const cloned = cloneTransferBlockForCanonicalTip(relayBlock, 7);
-    assert.equal(cloned.index, 7);
-    assert.equal(cloned.relaySourceBlockIndex, 2);
-    assert.equal(cloned.transactions[0].blockIndex, 7);
+    const cloned = cloneTransferBlockPreservingHeight(relayBlock);
+    assert.equal(cloned.index, 2);
+    assert.equal(cloned.relaySourceBlockIndex, undefined);
+    assert.equal(cloned.transactions[0].blockIndex, 2);
     assert.equal(cloned.transactions[0].id, 'tx-9');
   });
 

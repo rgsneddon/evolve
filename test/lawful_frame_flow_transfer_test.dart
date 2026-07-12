@@ -74,8 +74,8 @@ void main() {
     final transferBlock = wallet.blocks.firstWhere(
       (b) => PercTransferRelayView.firstTransferTx(b) != null,
     );
-    expect(transferBlock.relaySourceBlockIndex, built.transferBlockIndex);
-    expect(transferBlock.index, built.canonicalIndex);
+    expect(transferBlock.relaySourceBlockIndex, isNull);
+    expect(transferBlock.index, built.transferBlockIndex);
 
     await tester.binding.setSurfaceSize(const Size(1200, 2400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -93,7 +93,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.textContaining('Main-chain transfer lane'), findsOneWidget);
-    expect(find.textContaining('Block #${built.canonicalIndex}'), findsWidgets);
+    expect(find.textContaining('Block #${built.transferBlockIndex}'), findsWidgets);
     expect(find.textContaining('0.00000005'), findsWidgets);
 
     final painters = tester
@@ -111,16 +111,14 @@ void main() {
     expect(markerAngles, painters.first.transferMarkers);
     expect(LawfulFrameFlowPainter.lastPaintedTransferMarkerCount, greaterThan(0));
 
-    final relaySource = transferBlock.relaySourceBlockIndex;
     final graphicLine =
-        'GRAPHIC: markers=${painters.first.transferMarkers} relaySource=$relaySource '
-        'canonicalIndex=${transferBlock.index} '
+        'GRAPHIC: markers=${painters.first.transferMarkers} '
+        'blockIndex=${transferBlock.index} '
         'lastPainted=${LawfulFrameFlowPainter.lastPaintedTransferMarkerCount} '
         'microblocksPerBlock=${wallet.microblocksPerBlock}';
     print(graphicLine);
-    expect(relaySource, isNotNull);
     expect(graphicLine, contains('GRAPHIC:'));
-    expect(graphicLine, contains('relaySource=${built.transferBlockIndex}'));
+    expect(graphicLine, contains('blockIndex=${built.transferBlockIndex}'));
     expect(graphicLine, contains('microblocksPerBlock=100000000'));
   });
 

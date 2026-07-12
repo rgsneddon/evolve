@@ -241,7 +241,11 @@ describe('mergeNetworkStateFromPeer', () => {
     const result = mergeNetworkStateFromPeer(canonical, relay);
     assert.equal(result.pendingMerged, 1);
     assert.equal(result.acknowledged, 1);
-    assert.equal(canonical.blocks.length, 3);
+    assert.equal(canonical.blocks.length, 2);
+    assert.equal(
+      canonical.blocks[1].transactions.find((tx) => tx.id === 'tx-new')?.blockIndex,
+      1,
+    );
     assert.equal(canonical.pendingInboundTransfers.length, 1);
   });
 });

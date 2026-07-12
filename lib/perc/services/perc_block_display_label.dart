@@ -10,13 +10,13 @@ class PercBlockDisplayLabel {
     final kinds = txs.map((t) => t.kind).toSet();
     final text = _collectScenarioText(block);
 
+    if (kinds.contains(PercTxKind.transfer)) return 'Manual tx';
+
     if (kinds.contains(PercTxKind.scenarioReward)) {
       if (_isScsInput(text)) return 'SCS input';
       if (_isPercentChanceInput(text)) return '% chance input';
       return 'Scenario reward';
     }
-
-    if (kinds.contains(PercTxKind.transfer)) return 'Manual tx';
     if (kinds.contains(PercTxKind.transferRevert)) return 'Transfer revert';
 
     if (block.microblockSeal || kinds.contains(PercTxKind.chronofluxMicroblock)) {

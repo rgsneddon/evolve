@@ -3,7 +3,10 @@ import { genericBlockLabel } from './block_display_label.js';
 import { resolveRelayBlockView } from './transfer_relay_view.js';
 import { buildDynamicEmissionStats } from './dynamic_emission.js';
 import { blockHeight, tipHash } from './ledger_store.js';
-import { seedBlockHeightFromLedger } from './seed_block.js';
+import {
+  chainBlockHeightFromLedger,
+  treasuryEmissionMilestoneFromLedger,
+} from './seed_block.js';
 
 const CHAIN_ID = 'evolve-chronoflux-principia-chain-1';
 import { isPeerOnline, PEER_ONLINE_MS } from './peer_online.js';
@@ -155,6 +158,7 @@ export function getBlockDetail(ledger, index) {
       fee: tx.fee ? formatPercAmount(tx.fee) : null,
       memo: tx.memo ?? null,
       scenarioLabel: tx.scenarioLabel ?? null,
+      blockIndex: tx.blockIndex ?? block.index ?? null,
       timestamp: tx.timestamp ?? block.timestamp,
     })),
   };
@@ -192,10 +196,11 @@ export function buildWalletBlockChart({
   };
 
   const seedLedger = store?.ledger ?? null;
-  const seedAnchorBlock = seedBlockHeightFromLedger(seedLedger);
+  const seedChainHeight = chainBlockHeightFromLedger(seedLedger);
+  const treasuryMilestone = treasuryEmissionMilestoneFromLedger(seedLedger);
 
   upsert(seedUsername, {
-    chainBlockHeight: seedAnchorBlock,
+    chainBlockHeight: seedChainHeight,
     scenarioBlockHeight: scenarioBlockFromLedger(seedLedger, seedUsername),
     relayHeight: blockHeight(seedLedger),
     online: true,
@@ -259,11 +264,12 @@ export function buildWalletBlockChart({
     })
     .sort((a, b) => b.displayBlock - a.displayBlock || a.username.localeCompare(b.username));
 
-  const maxBlock = Math.max(1, seedAnchorBlock, ...users.map((u) => u.displayBlock));
+  const maxBlock = Math.max(0, seedChainHeight, ...users.map((u) => u.displayBlock));
   const pentagonScale = [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(maxBlock * t));
 
   return {
-    seedAnchorBlock,
+    seedAnchorBlock: treasuryMilestone,
+    seedChainHeight,
     maxBlock,
     pentagonScale,
     visibleTimeoutSeconds: peerOnlineTimeoutSeconds(),

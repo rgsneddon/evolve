@@ -142,13 +142,15 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
           !knownPayouts.has(tx.id),
       ),
     ).length;
-    const canonicalIndex = store.ledger.blocks.length - 1;
-    assert.equal(canonicalIndex, seedHeightBefore + treasuryPromotions);
-    assert.equal(promoted.index, canonicalIndex);
-    assert.equal(promoted.relaySourceBlockIndex, fixture.transferBlockIndex);
-    assert.equal(promoted.transactions.find((tx) => tx.kind === 'transfer').blockIndex, canonicalIndex);
+    assert.equal(store.ledger.blocks.length, seedHeightBefore + treasuryPromotions);
+    assert.equal(promoted.index, fixture.transferBlockIndex);
+    assert.equal(promoted.relaySourceBlockIndex, undefined);
+    assert.equal(
+      promoted.transactions.find((tx) => tx.kind === 'transfer').blockIndex,
+      fixture.transferBlockIndex,
+    );
 
-    const detail = getBlockDetail(store.ledger, canonicalIndex);
+    const detail = getBlockDetail(store.ledger, fixture.transferBlockIndex);
     assert.ok(detail);
     assert.equal(detail.displayLabel, 'Manual tx');
     const transfer = detail.transactions.find((tx) => tx.kind === 'transfer');
@@ -184,8 +186,7 @@ describe('rendezvous PUT relay path promotes transfer blocks into seed store', (
       assert.equal(payload.ok, true);
       assert.equal(payload.imported, true);
 
-      const canonicalIndex = store.ledger.blocks.length - 1;
-      const detail = getBlockDetail(store.ledger, canonicalIndex);
+      const detail = getBlockDetail(store.ledger, fixture.transferBlockIndex);
       assert.equal(detail.displayLabel, 'Manual tx');
       const transfer = detail.transactions.find((tx) => tx.kind === 'transfer');
       assert.equal(transfer.id, expectedTxId);

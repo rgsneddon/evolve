@@ -38,13 +38,13 @@ void main() {
 
     PercTransferRelayAck.acknowledgeRelayTransfers(seed, relay);
 
-    final canonicalIndex = seed.blocks.length - 1;
-    final byCanonical = PercTransferRelayView.resolve(seed, canonicalIndex);
+    final preservedIndex = built.transferBlockIndex;
+    final byCanonical = PercTransferRelayView.resolve(seed, preservedIndex);
 
     expect(byCanonical, isNotNull);
     expect(byCanonical!.matchedBy, RelayMatchKind.canonical);
-    expect(byCanonical.canonicalIndex, canonicalIndex);
-    expect(byCanonical.relaySourceBlockIndex, built.transferBlockIndex);
+    expect(byCanonical.canonicalIndex, preservedIndex);
+    expect(byCanonical.relaySourceBlockIndex, isNull);
     expect(byCanonical.transferTx!.id, built.transferTxId);
 
     // Alias lookup when sender index is unoccupied on the taller seed ledger.

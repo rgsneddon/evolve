@@ -345,7 +345,7 @@
           relayHeight: Math.max(u.relayHeight ?? 0, p?.relayHeight ?? 0),
         };
       });
-      const maxBlock = Math.max(1, chart.maxBlock ?? 1);
+      const maxBlock = Math.max(0, chart.maxBlock ?? 0);
       const cx = 160;
       const cy = 160;
       const radius = 118;
