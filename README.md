@@ -282,7 +282,7 @@ The chain is designed to grow with user activity without unbounded local storage
 | **Per-ward log pruning** | Fair-usage log never exceeds 10,000 entries per ward on device |
 | **Seed ledger compaction** | Hosted seed drops `microblockLog` when compacting — anchor blocks and balances persist |
 | **Peer mesh gossip** | Wallets sync taller chains and pending transfers without a central custodian |
-| **Offline receive window** | Unreceived inbound transfers revert to sender after **7 days**; delivered transfers credit near-instantly on send/relay |
+| **Offline receive** | **Zero delay** — inbound transfers credit near-instantly on send/relay; undelivered entries stay pending (no auto-revert window) |
 | **Scenario block height** | Per-wallet progressive scenario counter (cap 100M) for explorer progress |
 | **Seed anchor blocks** | Seed block height advances on cumulative treasury emission thresholds (100M PERC steps) |
 
