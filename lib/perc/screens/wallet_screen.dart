@@ -24,9 +24,12 @@ import '../services/perc_chronoflux_time_confirmations.dart';
 import '../services/perc_send_receive_actions.dart';
 import '../widgets/blockchain_launch_balloon.dart';
 import '../../widgets/evolve_creator_attribution.dart';
+import '../widgets/wallet_biometric_auth_ui.dart';
 import '../widgets/wallet_creator_credit.dart';
 import '../widgets/wallet_credential_error_banner.dart';
 import '../widgets/wallet_language_selector.dart';
+import '../widgets/wallet_password_field.dart';
+import '../services/perc_auth.dart';
 import '../widgets/wallet_mesh_card.dart';
 import '../widgets/wallet_opening_screen.dart';
 import 'blockchain_explorer_screen.dart';
@@ -46,8 +49,25 @@ class _WalletScreenState extends State<WalletScreen> {
   bool _registerMode = false;
   bool _showTreasurySetup = false;
   bool _registerDefaultSet = false;
+  bool _hasBiometricCredentials = false;
   PercWalletProvider? _wallet;
   final _credentialErrorKey = GlobalKey<WalletCredentialErrorBannerState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final has = await WalletBiometricAuthUi.store.hasStoredCredentials();
+    final username = await WalletBiometricAuthUi.store.storedUsername();
+    if (!mounted) return;
+    setState(() => _hasBiometricCredentials = has);
+    if (username != null && username.isNotEmpty) {
+      _usernameCtrl.text = username;
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -78,6 +98,30 @@ class _WalletScreenState extends State<WalletScreen> {
         final strings = AppLocalizations.of(context.read<LocaleProvider>().config);
         showBlockchainLaunchBalloon(context, strings);
       });
+    }
+  }
+
+  Future<void> _submitLoginRegister(
+    PercWalletProvider wallet,
+    AppLocalizations strings,
+  ) async {
+    final username = PercAuth.normalizeUsername(_usernameCtrl.text);
+    final password = _passwordCtrl.text;
+    if (_registerMode) {
+      await wallet.register(username, password);
+      return;
+    }
+    final accountExisted = wallet.allRegisteredWallets.contains(username);
+    await wallet.login(username, password);
+    if (!mounted) return;
+    if (wallet.isLoggedIn && wallet.errorMessage == null && accountExisted) {
+      await WalletBiometricAuthUi.offerEnrollmentAfterLogin(
+        context: context,
+        strings: strings,
+        username: username,
+        password: password,
+      );
+      await _loadBiometricState();
     }
   }
 
@@ -287,20 +331,14 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        TextField(
+                        WalletPasswordField(
                           controller: _passwordCtrl,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: strings.t('wallet_password'),
-                          ),
+                          labelText: strings.t('wallet_password'),
                         ),
                         const SizedBox(height: 12),
-                        TextField(
+                        WalletPasswordField(
                           controller: _confirmCtrl,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: strings.t('wallet_password_confirm'),
-                          ),
+                          labelText: strings.t('wallet_password_confirm'),
                         ),
                         if (wallet.localizedErrorMessage(strings) != null) ...[
                           const SizedBox(height: 10),
@@ -403,12 +441,9 @@ class _WalletScreenState extends State<WalletScreen> {
                           enableSuggestions: false,
                         ),
                         const SizedBox(height: 12),
-                        TextField(
+                        WalletPasswordField(
                           controller: _passwordCtrl,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: strings.t('wallet_password'),
-                          ),
+                          labelText: strings.t('wallet_password'),
                         ),
                         if (WalletMessageLocalization.isCredentialError(
                           wallet.errorMessage,
@@ -427,21 +462,23 @@ class _WalletScreenState extends State<WalletScreen> {
                             style: const TextStyle(color: Colors.redAccent),
                           ),
                         ],
+                        if (WalletBiometricAuthUi.showBiometricSignIn(
+                          loginMode: !_registerMode,
+                          hasStoredCredentials: _hasBiometricCredentials,
+                        )) ...[
+                          const SizedBox(height: 12),
+                          WalletBiometricAuthUi.biometricSignInButton(
+                            context: context,
+                            strings: strings,
+                            wallet: wallet,
+                            usernameController: _usernameCtrl,
+                            passwordController: _passwordCtrl,
+                            onSignedIn: () {},
+                          )!,
+                        ],
                         const SizedBox(height: 16),
                         FilledButton(
-                          onPressed: () async {
-                            if (_registerMode) {
-                              await wallet.register(
-                                _usernameCtrl.text,
-                                _passwordCtrl.text,
-                              );
-                            } else {
-                              wallet.login(
-                                _usernameCtrl.text,
-                                _passwordCtrl.text,
-                              );
-                            }
-                          },
+                          onPressed: () => _submitLoginRegister(wallet, strings),
                           child: Text(
                             _registerMode
                                 ? strings.t('wallet_register')

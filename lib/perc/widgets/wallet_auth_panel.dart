@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../providers/perc_wallet_provider.dart';
+import '../services/perc_auth.dart';
+import 'wallet_biometric_auth_ui.dart';
 import 'wallet_creator_credit.dart';
 import 'wallet_credential_error_banner.dart';
 import 'wallet_language_selector.dart';
+import 'wallet_password_field.dart';
 import '../../l10n/wallet_message_localization.dart';
 
 /// Compact wallet sign-in / registration form (splash and wallet tab).
@@ -32,9 +35,26 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
   final _credentialErrorKey = GlobalKey<WalletCredentialErrorBannerState>();
   bool _registerMode = false;
   bool _registerDefaultSet = false;
+  bool _hasBiometricCredentials = false;
 
   void dismissCredentialError() {
     _credentialErrorKey.currentState?.dismiss();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final has = await WalletBiometricAuthUi.store.hasStoredCredentials();
+    final username = await WalletBiometricAuthUi.store.storedUsername();
+    if (!mounted) return;
+    setState(() => _hasBiometricCredentials = has);
+    if (username != null && username.isNotEmpty) {
+      _usernameCtrl.text = username;
+    }
   }
 
   @override
@@ -54,6 +74,11 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
       _registerDefaultSet = true;
       _registerMode = !wallet.hasNonTreasuryAccounts;
     }
+
+    final showBiometric = WalletBiometricAuthUi.showBiometricSignIn(
+      loginMode: !_registerMode,
+      hasStoredCredentials: _hasBiometricCredentials,
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -141,14 +166,11 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
           enableSuggestions: false,
         ),
         const SizedBox(height: 10),
-        TextField(
+        WalletPasswordField(
           controller: _passwordCtrl,
-          obscureText: true,
-          decoration: InputDecoration(
-            labelText: strings.t('wallet_password'),
-            filled: true,
-            fillColor: const Color(0xFF1A2030),
-          ),
+          labelText: strings.t('wallet_password'),
+          filled: true,
+          fillColor: const Color(0xFF1A2030),
           onSubmitted: (_) => _submit(wallet, strings),
         ),
         if (WalletMessageLocalization.isCredentialError(wallet.errorMessage)) ...[
@@ -166,6 +188,17 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
             style: const TextStyle(color: Colors.redAccent, fontSize: 12),
             textAlign: TextAlign.center,
           ),
+        ],
+        if (showBiometric) ...[
+          const SizedBox(height: 12),
+          WalletBiometricAuthUi.biometricSignInButton(
+            context: context,
+            strings: strings,
+            wallet: wallet,
+            usernameController: _usernameCtrl,
+            passwordController: _passwordCtrl,
+            onSignedIn: () {},
+          )!,
         ],
         const SizedBox(height: 14),
         FilledButton(
@@ -194,10 +227,23 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
     PercWalletProvider wallet,
     AppLocalizations strings,
   ) async {
+    final username = PercAuth.normalizeUsername(_usernameCtrl.text);
+    final password = _passwordCtrl.text;
     if (_registerMode) {
-      await wallet.register(_usernameCtrl.text, _passwordCtrl.text);
-    } else {
-      wallet.login(_usernameCtrl.text, _passwordCtrl.text);
+      await wallet.register(username, password);
+      return;
+    }
+    final accountExisted = wallet.allRegisteredWallets.contains(username);
+    await wallet.login(username, password);
+    if (!mounted) return;
+    if (wallet.isLoggedIn && wallet.errorMessage == null && accountExisted) {
+      await WalletBiometricAuthUi.offerEnrollmentAfterLogin(
+        context: context,
+        strings: strings,
+        username: username,
+        password: password,
+      );
+      await _loadBiometricState();
     }
   }
 }

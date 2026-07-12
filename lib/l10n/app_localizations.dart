@@ -794,7 +794,15 @@ final _en = {
       'Treasury holder receives all scenario-driven emissions. Create your password now (first use only).',
   'wallet_treasury_username': 'Treasury username',
   'wallet_password': 'Password',
+  'wallet_password_reveal_hint': 'Hold the eye icon to show your password',
   'wallet_password_confirm': 'Confirm password',
+  'wallet_biometric_sign_in': 'Sign in with biometrics',
+  'wallet_biometric_enable_title': 'Enable biometric sign-in?',
+  'wallet_biometric_enable_message':
+      'Use fingerprint or face unlock to sign in to this wallet on this device. Your password is stored in secure device storage.',
+  'wallet_biometric_enable': 'Enable',
+  'wallet_biometric_not_now': 'Not now',
+  'wallet_biometric_auth_reason': 'Authenticate to sign in to your wallet',
   'wallet_create_password': 'Create password',
   'wallet_login_title': 'Evolve Wallet sign-in',
   'wallet_login_note':
