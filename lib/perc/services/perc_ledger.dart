@@ -2277,6 +2277,9 @@ class PercLedger {
     PercPendingInboundTransfer pending,
   ) {
     final from = PercAuth.normalizeUsername(pending.fromUsername);
+    if (_senderTransferConfirmed(pending.id, from)) {
+      return true;
+    }
     final sender = peer.account(from);
     if (sender == null || !sender.passwordSet) return false;
     final holdActive = peer.pendingInboundTransfers.any(
@@ -2284,6 +2287,87 @@ class PercLedger {
     );
     if (!holdActive) return false;
     return sender.balance >= pending.totalHold;
+  }
+
+  PercTransaction? _confirmedTransferOnPeer(
+    PercLedger peer,
+    String transferId,
+  ) {
+    for (final acc in peer.accounts.values) {
+      for (final tx in acc.transactions) {
+        if (tx.id == transferId &&
+            tx.kind == PercTxKind.transfer &&
+            tx.isConfirmed) {
+          return tx;
+        }
+      }
+    }
+    for (final block in peer.blocks) {
+      for (final tx in block.transactions) {
+        if (tx.id == transferId &&
+            tx.kind == PercTxKind.transfer &&
+            tx.isConfirmed) {
+          return tx;
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Credits local recipients when [remote] already settled inbound transfers
+  /// (e.g. same-device instant send) but this ledger still lists them pending.
+  void _reconcileConfirmedInboundFromPeer(
+    PercLedger remote, {
+    DateTime? now,
+  }) {
+    final remoteSettledIds = _confirmedTransferIdsOnLedger(remote);
+    if (remoteSettledIds.isEmpty) return;
+
+    for (final transferId in remoteSettledIds) {
+      final remoteTx = _confirmedTransferOnPeer(remote, transferId);
+      if (remoteTx == null) continue;
+      final toUser = remoteTx.toUsername;
+      if (toUser == null || toUser.isEmpty) continue;
+
+      PercPendingInboundTransfer? pending;
+      for (final p in pendingInboundTransfers) {
+        if (p.id == transferId) {
+          pending = p;
+          break;
+        }
+      }
+
+      final remoteRecipient = remote.account(toUser);
+      final recipient = pending != null
+          ? _resolvePendingRecipient(pending)
+          : _localWalletForRemoteParty(
+              toUser,
+              remote,
+              toAddress: pending?.toAddress ?? remoteRecipient?.address,
+            );
+      if (recipient == null) continue;
+      if (_isTreasuryManualFundingForbidden(recipient.username)) continue;
+      if (isTransferAlreadySettledForReceiver(transferId, recipient)) continue;
+
+      final fromUser = remoteTx.fromUsername ?? pending?.fromUsername ?? '';
+      final syntheticPending = pending ??
+          PercPendingInboundTransfer(
+            id: transferId,
+            fromUsername: fromUser,
+            toUsername: recipient.username,
+            toAddress: recipient.address,
+            amount: remoteTx.amount,
+            sentAt: remoteTx.timestamp,
+            memo: remoteTx.memo,
+          );
+      final confirmedTx = _confirmedTransferTx(
+        syntheticPending,
+        remoteTx.timestamp,
+        blockIndex: remoteTx.blockIndex,
+      );
+      _applyConfirmedInboundCredit(recipient, confirmedTx);
+      pendingInboundTransfers.removeWhere((p) => p.id == transferId);
+    }
   }
 
   void _mergeSettlementWitnessesFromPeer(PercLedger remote) {
@@ -2309,6 +2393,7 @@ class PercLedger {
     PercTransferRelayAck.acknowledgeRelayTransfers(this, remote);
     _mergeSettlementWitnessesFromPeer(remote);
     _trySettleEligiblePending(senderPeer: remote);
+    _reconcileConfirmedInboundFromPeer(remote);
     final session = sessionUsername;
     if (session != null) {
       refreshPendingInboundTransfers();
