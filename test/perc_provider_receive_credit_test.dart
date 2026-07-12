@@ -115,6 +115,54 @@ void main() {
   );
 
   test(
+    'refreshInboundNow updates provider balance after 1-confirmation relay',
+    () async {
+      final store = PercWalletStoreMemory();
+      final receiverWallet = PercWalletProvider(store: store);
+      await receiverWallet.initialize();
+      await receiverWallet.setupTreasuryPassword('password123');
+      await receiverWallet.register('bob', 'password123');
+
+      final sender = PercLedger.empty();
+      TwoDeviceHarness.seed(sender);
+      sender.register('alice', 'password123');
+      sender.login('alice', 'password123');
+      sender.mergeDiscoverableAccounts(PercLedgerHub.instance.ledger);
+      sender.creditScenario(username: 'alice', percentChance: 50);
+
+      final amount = PercAmount.fromPerc(0.00000005);
+      sender.send(
+        fromUsername: 'alice',
+        toAddress: receiverWallet.address,
+        amount: amount,
+        deliverInstantly: false,
+      );
+
+      PercNetworkCoordinator.instance.settlementPeerTargets['alice'] = sender;
+
+      await receiverWallet.login('bob', 'password123');
+      expect(receiverWallet.balance, PercAmount.zero);
+
+      await const PercNetworkRendezvous().relayLedger(
+        username: 'alice',
+        ledger: sender,
+        notifyRecipientUsername: 'bob',
+      );
+
+      await receiverWallet.refreshInboundNow();
+
+      expect(receiverWallet.pendingInboundTransfers, isEmpty);
+      expect(receiverWallet.balance, amount);
+      expect(
+        receiverWallet.transactions.any(
+          (tx) => tx.amount == amount && tx.isConfirmed,
+        ),
+        isTrue,
+      );
+    },
+  );
+
+  test(
     'same-hub ledger send credits logged-in receiver provider immediately',
     () async {
       final store = PercWalletStoreMemory();

@@ -867,7 +867,19 @@ class PercWalletProvider extends ChangeNotifier {
   /// Pull inbound PERC immediately (send screen, app resume, wallet tab focus).
   Future<void> refreshInboundNow() async {
     if (!_ready || !isLoggedIn) return;
+    final username = loggedInUsername;
+    final balanceBefore = balance;
+    final creditFpBefore = username == null
+        ? 0
+        : _ledger.inboundCreditStateFingerprint(username);
     await PercLedgerHub.instance.network.runFirstBurstCycle();
+    _ledger.refreshPendingInboundForSession();
+    final creditFpAfter = username == null
+        ? 0
+        : _ledger.inboundCreditStateFingerprint(username);
+    if (balance != balanceBefore || creditFpAfter != creditFpBefore) {
+      await PercLedgerHub.instance.persistLocal();
+    }
     notifyListeners();
   }
 

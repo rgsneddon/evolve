@@ -1399,7 +1399,8 @@ class PercNetworkCoordinator extends ChangeNotifier {
   /// Runs one burst cycle — used by [PercWalletProvider.refreshInboundNow].
   Future<void> runFirstBurstCycle() async {
     if (_burstAttemptsRemaining <= 0) {
-      scheduleInboundBurst(immediate: false);
+      _burstAttemptsRemaining = AppPerformance.inboundBurstMaxAttempts;
+      _burstPollTimer?.cancel();
     }
     await _runBurstInboundCycle();
   }
@@ -1453,12 +1454,14 @@ class PercNetworkCoordinator extends ChangeNotifier {
     final session = _activeUsername!;
     final balanceBefore = hub.ledger.sessionBalance;
     final pendingBefore = hub.ledger.pendingInboundFor(session).length;
+    final creditFpBefore = hub.ledger.inboundCreditStateFingerprint(session);
 
     await _fetchTargetedInboundRelays(hub);
     hub.ledger.refreshPendingInboundTransfers();
 
     return hub.ledger.sessionBalance != balanceBefore ||
-        hub.ledger.pendingInboundFor(session).length != pendingBefore;
+        hub.ledger.pendingInboundFor(session).length != pendingBefore ||
+        hub.ledger.inboundCreditStateFingerprint(session) != creditFpBefore;
   }
 
   Future<void> _fetchTargetedInboundRelays(PercLedgerHub hub) async {

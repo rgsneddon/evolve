@@ -1070,6 +1070,22 @@ class PercLedger {
     return _spendableBalance(acc);
   }
 
+  /// Fingerprint of confirmed inbound credits + spendable balance for [username].
+  int inboundCreditStateFingerprint(String username) {
+    final u = PercAuth.normalizeUsername(username);
+    final acc = account(u);
+    if (acc == null) return 0;
+    var fp = acc.balance.microUnits;
+    for (final tx in acc.transactions) {
+      if (tx.kind == PercTxKind.transfer &&
+          tx.toUsername == u &&
+          tx.isConfirmed) {
+        fp = Object.hash(fp, tx.id, tx.confirmations);
+      }
+    }
+    return Object.hash(fp, pendingInboundFor(u).length);
+  }
+
   PercAmount _spendableBalance(PercAccount account) =>
       account.balance - _pendingOutboundHold(account.username);
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -594,20 +595,28 @@ class _WalletScreenState extends State<WalletScreen> {
     required List<Widget> children,
     double maxWidth = 720,
   }) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(compact ? 12 : 20, 12, compact ? 12 : 20, 24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: children,
-            ),
+    final scroll = SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(compact ? 12 : 20, 12, compact ? 12 : 20, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
           ),
         ),
       ),
     );
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return SafeArea(
+        child: RefreshIndicator(
+          onRefresh: wallet.refreshInboundNow,
+          child: scroll,
+        ),
+      );
+    }
+    return SafeArea(child: scroll);
   }
 
   Widget _sendReceiveRow(
