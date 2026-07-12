@@ -29,6 +29,14 @@ void main() {
     );
   }
 
+  test('MainActivity extends FlutterFragmentActivity for local_auth', () {
+    final mainActivity = File(
+      'android/app/src/main/kotlin/com/evolve/chronoflux/MainActivity.kt',
+    ).readAsStringSync();
+    expect(mainActivity, contains('FlutterFragmentActivity'));
+    expect(mainActivity, isNot(contains('FlutterActivity()')));
+  });
+
   test('biometric sign-in affordance gated to Android login with stored creds',
       () {
     final authUi =
