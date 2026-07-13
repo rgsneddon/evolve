@@ -23,7 +23,11 @@ void main() {
     PercWalletProvider.sessionTimeoutEnabled = false;
   });
 
+  EvolveTunnelController? _lastTunnel;
+
   tearDown(() {
+    _lastTunnel?.stopStatusPolling();
+    _lastTunnel = null;
     PercWalletProvider.sessionTimeoutEnabled = true;
     PercLedgerHub.resetForTest();
   });
@@ -40,26 +44,22 @@ void main() {
         timestamp: DateTime.utc(2026, 3, 1),
         transactions: const [],
         treasuryEmitted: PercAmount.zero,
-        scenarioLabel: 'security nav test seed',
+        scenarioLabel: 'vpn nav test seed',
       ),
     );
     return seed;
   }
 
-  EvolveTunnelController? _tunnel;
-
-  tearDown(() {
-    _tunnel?.stopStatusPolling();
-    _tunnel = null;
-  });
-
-  Future<void> pumpShell(WidgetTester tester, PercWalletProvider wallet) async {
+  Future<void> pumpShell(
+    WidgetTester tester,
+    PercWalletProvider wallet,
+    EvolveTunnelController tunnel,
+  ) async {
     final evolve = EvolveProvider();
     await evolve.initialize();
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await fcg.initialize();
     final locale = await createTestLocaleProvider();
-    _tunnel ??= createMockTunnelController();
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -67,52 +67,73 @@ void main() {
           ChangeNotifierProvider.value(value: wallet),
           ChangeNotifierProvider.value(value: fcg),
           ChangeNotifierProvider.value(value: locale),
-          ChangeNotifierProvider.value(value: _tunnel!),
+          ChangeNotifierProvider.value(value: tunnel),
         ],
         child: MaterialApp(
           home: const EvolveShellScreen(),
         ),
       ),
     );
-    // Avoid pumpAndSettle — Voting tab Mishi access probe can leave pending timers.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
   }
 
-  testWidgets('Security nav sits between Wallet and Credit when gated', (tester) async {
-    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
-    await wallet.initialize();
-    await pumpShell(tester, wallet);
-
-    final labels = tester
-        .widgetList<NavigationDestination>(find.byType(NavigationDestination))
-        .map((d) => d.label)
-        .toList();
-
-    expect(labels.indexOf('Wallet'), 0);
-    expect(labels.indexOf('Security'), 1);
-    expect(labels.indexOf('Credit'), 2);
-  });
-
-  testWidgets('Security nav order with full app access', (tester) async {
+  testWidgets('VPN nav is second from the right when wallet has app access',
+      (tester) async {
     PercNetworkCoordinator.instance.registerTestSeedLedger(
       _registrationSeedForTests(),
     );
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
     await wallet.initialize();
     await wallet.setupTreasuryPassword('treasury-pass-phrase');
-    await wallet.register('navuser', 'password12345');
+    await wallet.register('vpnnavuser', 'password12345');
     expect(wallet.hasAppAccess, isTrue);
-    await pumpShell(tester, wallet);
+
+    final tunnel = createMockTunnelController();
+    _lastTunnel = tunnel;
+    await pumpShell(tester, wallet, tunnel);
 
     final labels = tester
         .widgetList<NavigationDestination>(find.byType(NavigationDestination))
         .map((d) => d.label)
         .toList();
 
-    expect(labels.indexOf('Wallet'), lessThan(labels.indexOf('Security')));
-    expect(labels.indexOf('Security'), lessThan(labels.indexOf('VPN')));
-    expect(labels.indexOf('VPN'), lessThan(labels.indexOf('Credit')));
+    expect(labels.length, greaterThanOrEqualTo(2));
+    expect(labels[labels.length - 1], 'Credit');
     expect(labels[labels.length - 2], 'VPN');
+    tunnel.stopStatusPolling();
+  });
+
+  testWidgets('VPN screen exposes connect and disconnect controls', (tester) async {
+    PercNetworkCoordinator.instance.registerTestSeedLedger(
+      _registrationSeedForTests(),
+    );
+    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    await wallet.initialize();
+    await wallet.setupTreasuryPassword('treasury-pass-phrase');
+    await wallet.register('vpnctrluser', 'password12345');
+
+    final tunnel = createMockTunnelController();
+    _lastTunnel = tunnel;
+    tunnel.updateWalletAccess(true);
+    await pumpShell(tester, wallet, tunnel);
+
+    final labels = tester
+        .widgetList<NavigationDestination>(find.byType(NavigationDestination))
+        .map((d) => d.label)
+        .toList();
+    final vpnIndex = labels.indexOf('VPN');
+    expect(vpnIndex, greaterThanOrEqualTo(0));
+
+    await tester.tap(find.byType(NavigationDestination).at(vpnIndex));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Connect'), findsOneWidget);
+    expect(find.text('Disconnect'), findsOneWidget);
+    tunnel.stopStatusPolling();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
   });
 }

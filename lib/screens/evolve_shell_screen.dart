@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:evolve_tunnel/evolve_tunnel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,6 +13,7 @@ import '../providers/evolve_provider.dart';
 import '../providers/locale_provider.dart';
 import '../fcg/screens/fcg_voting_screen.dart';
 import 'home_screen.dart';
+import 'evolve_vpn_screen.dart';
 import '../perc/screens/credit_screen.dart';
 import '../perc/screens/security_screen.dart';
 import '../perc/screens/wallet_screen.dart';
@@ -33,6 +35,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
   late bool _walletTabVisited = widget.openRegistrationOnLaunch;
   PercWalletProvider? _wallet;
   EvolveProvider? _evolve;
+  EvolveTunnelController? _tunnel;
 
   @override
   void initState() {
@@ -45,6 +48,14 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
     final inBackground = state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive;
     PercNetworkCoordinator.instance.setAppInBackground(inBackground);
+    final tunnel = _tunnel;
+    if (tunnel != null) {
+      tunnel.updateAppForeground(!inBackground);
+      if (state == AppLifecycleState.detached ||
+          state == AppLifecycleState.hidden) {
+        unawaited(tunnel.teardownOnAppClose());
+      }
+    }
     if (state == AppLifecycleState.resumed) {
       _wallet?.checkSessionTimeout();
       final wallet = _wallet;
@@ -64,16 +75,21 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
       _wallet!.addListener(_onWalletUpdate);
     }
     _evolve = context.read<EvolveProvider>();
+    _tunnel = context.read<EvolveTunnelController>();
+    _tunnel?.updateWalletAccess(_wallet?.hasAppAccess ?? false);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _wallet?.removeListener(_onWalletUpdate);
+    _tunnel?.stopStatusPolling();
+    unawaited(_tunnel?.teardownOnAppClose());
     super.dispose();
   }
 
   void _onWalletUpdate() {
+    _tunnel?.updateWalletAccess(_wallet?.hasAppAccess ?? false);
     final popup = _wallet?.takeCooldownPopup();
     if (popup != null && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -134,6 +150,11 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
               label: strings.t('nav_voting'),
             ),
             NavigationDestination(
+              icon: const Icon(Icons.vpn_key_outlined),
+              selectedIcon: const Icon(Icons.vpn_key),
+              label: strings.t('nav_vpn'),
+            ),
+            NavigationDestination(
               icon: const Icon(Icons.info_outline),
               selectedIcon: const Icon(Icons.info),
               label: strings.t('nav_credit'),
@@ -179,6 +200,7 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
                 showWallet ? const WalletScreen() : const SizedBox.shrink(),
                 const SecurityScreen(),
                 const FcgVotingScreen(),
+                const EvolveVpnScreen(),
                 const CreditScreen(),
               ],
             )
@@ -192,7 +214,14 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
             ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navIndex,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) {
+          setState(() => _index = i);
+          if (wallet.hasAppAccess && i == destinations.length - 2) {
+            _tunnel?.startStatusPolling();
+          } else {
+            _tunnel?.stopStatusPolling();
+          }
+        },
         destinations: destinations,
       ),
     );

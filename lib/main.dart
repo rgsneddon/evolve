@@ -1,3 +1,4 @@
+import 'package:evolve_tunnel/evolve_tunnel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +34,7 @@ Future<void> main() async {
   final walletProvider = PercWalletProvider();
   final fcgProvider = FcgVotingProvider();
   final localeProvider = LocaleProvider();
+  final tunnelController = EvolveTunnelController();
   await Future.wait([
     evolveProvider.initialize(),
     fcgProvider.initialize(),
@@ -76,6 +78,7 @@ Future<void> main() async {
     walletProvider: walletProvider,
     fcgProvider: fcgProvider,
     localeProvider: localeProvider,
+    tunnelController: tunnelController,
   ));
 }
 
@@ -86,12 +89,14 @@ class EvolveApp extends StatelessWidget {
     required this.walletProvider,
     required this.fcgProvider,
     required this.localeProvider,
+    required this.tunnelController,
   });
 
   final EvolveProvider evolveProvider;
   final PercWalletProvider walletProvider;
   final FcgVotingProvider fcgProvider;
   final LocaleProvider localeProvider;
+  final EvolveTunnelController tunnelController;
 
   @override
   Widget build(BuildContext context) {
@@ -101,6 +106,7 @@ class EvolveApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: evolveProvider),
         ChangeNotifierProvider.value(value: walletProvider),
         ChangeNotifierProvider.value(value: fcgProvider),
+        ChangeNotifierProvider.value(value: tunnelController),
       ],
       child: Consumer<LocaleProvider>(
         builder: (context, localeProv, _) {

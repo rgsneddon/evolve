@@ -7,6 +7,7 @@ import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
+import 'mock_tunnel.dart';
 import 'test_locale_provider.dart';
 import 'package:evolve/screens/evolve_loading_screen.dart';
 import 'package:evolve/widgets/evolve_banner.dart';
@@ -40,6 +41,7 @@ void main() {
     await provider.initialize();
     await fcg.initialize();
     final locale = await createTestLocaleProvider();
+    final tunnel = createMockTunnelController();
 
     await tester.pumpWidget(
       EvolveApp(
@@ -47,12 +49,14 @@ void main() {
         walletProvider: wallet,
         fcgProvider: fcg,
         localeProvider: locale,
+        tunnelController: tunnel,
       ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(wallet.hasAppAccess, isFalse);
+    tunnel.stopStatusPolling();
     expect(find.text('Create your wallet first'), findsOneWidget);
     expect(find.byType(EvolveBanner), findsNothing);
     expect(find.text('RUN ANALYSIS'), findsNothing);
@@ -68,6 +72,7 @@ void main() {
     await provider.initialize();
     await fcg.initialize();
     final locale = await createTestLocaleProvider();
+    final tunnel = createMockTunnelController();
     await _unlockApp(wallet);
 
     expect(wallet.hasAppAccess, isTrue);
@@ -79,6 +84,7 @@ void main() {
         walletProvider: wallet,
         fcgProvider: fcg,
         localeProvider: locale,
+        tunnelController: tunnel,
       ),
     );
     await tester.pump();
