@@ -33,6 +33,8 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
     with WidgetsBindingObserver {
   int _index = 0;
   late bool _walletTabVisited = widget.openRegistrationOnLaunch;
+  bool _hadAppAccess = false;
+  bool _capturedInitialAccess = false;
   PercWalletProvider? _wallet;
   EvolveProvider? _evolve;
   EvolveTunnelController? _tunnel;
@@ -73,6 +75,10 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
       _wallet?.removeListener(_onWalletUpdate);
       _wallet = wallet;
       _wallet!.addListener(_onWalletUpdate);
+      if (!_capturedInitialAccess) {
+        _hadAppAccess = wallet.hasAppAccess;
+        _capturedInitialAccess = true;
+      }
     }
     _evolve = context.read<EvolveProvider>();
     _tunnel = context.read<EvolveTunnelController>();
@@ -89,6 +95,24 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
   }
 
   void _onWalletUpdate() {
+    final wallet = _wallet;
+    if (wallet != null) {
+      final hasAccess = wallet.hasAppAccess;
+      if (!_capturedInitialAccess) {
+        _hadAppAccess = hasAccess;
+        _capturedInitialAccess = true;
+      } else if (_hadAppAccess && !hasAccess) {
+        // Logout shrinks the nav — stale indices land on Security/Credit.
+        final walletTab = 0;
+        if (_index != walletTab || !_walletTabVisited) {
+          setState(() {
+            _index = walletTab;
+            _walletTabVisited = true;
+          });
+        }
+      }
+      _hadAppAccess = hasAccess;
+    }
     _tunnel?.updateWalletAccess(_wallet?.hasAppAccess ?? false);
     final popup = _wallet?.takeCooldownPopup();
     if (popup != null && mounted) {

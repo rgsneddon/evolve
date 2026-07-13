@@ -152,6 +152,26 @@ void main() {
     expect(info.updateAvailable, isFalse);
   });
 
+  test('matching feed short-circuits before installer probe', () async {
+    var headProbes = 0;
+    AppUpdateChecker.fetchBodyOverride = (uri) async {
+      if (uri.host.contains('github.io')) {
+        return '{"version":"4.1.5","build_number":"169","app_name":"evolve"}';
+      }
+      return '{"version":"4.1.6","build_number":"1","app_name":"evolve"}';
+    };
+    AppUpdateChecker.headProbeOverride = (uri) async {
+      headProbes++;
+      return _installerUrl(uri);
+    };
+
+    final info = await const AppUpdateChecker().check(current: '4.1.5+169');
+    expect(info.checkSucceeded, isTrue);
+    expect(info.updateAvailable, isFalse);
+    expect(info.latestFull, '4.1.5+169');
+    expect(headProbes, 0);
+  });
+
   test('installed build ahead of gh-pages does not advertise update', () async {
     AppUpdateChecker.fetchBodyOverride = (uri) async {
       if (uri.host.contains('github.io')) {

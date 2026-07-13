@@ -12,6 +12,7 @@ import 'package:evolve/perc/services/perc_ledger_hub.dart';
 import 'package:evolve/perc/services/perc_network_coordinator.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
+import 'package:evolve/perc/screens/wallet_screen.dart';
 import 'package:evolve/screens/evolve_shell_screen.dart';
 import 'mock_tunnel.dart';
 import 'test_locale_provider.dart';
@@ -114,5 +115,34 @@ void main() {
     expect(labels.indexOf('Security'), lessThan(labels.indexOf('VPN')));
     expect(labels.indexOf('VPN'), lessThan(labels.indexOf('Credit')));
     expect(labels[labels.length - 2], 'VPN');
+  });
+
+  testWidgets('logout from Wallet tab returns to wallet login, not Security',
+      (tester) async {
+    PercNetworkCoordinator.instance.registerTestSeedLedger(
+      _registrationSeedForTests(),
+    );
+    final wallet = PercWalletProvider(store: PercWalletStoreMemory());
+    await wallet.initialize();
+    await wallet.setupTreasuryPassword('treasury-pass-phrase');
+    await wallet.register('navuser', 'password12345');
+    expect(wallet.hasAppAccess, isTrue);
+    await pumpShell(tester, wallet);
+
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Wallet'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Sign out'), findsOneWidget);
+    await tester.tap(find.text('Sign out'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(wallet.hasAppAccess, isFalse);
+    expect(find.text('Evolve Wallet sign-in'), findsOneWidget);
+    expect(find.byType(WalletScreen), findsOneWidget);
+
+    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(navBar.selectedIndex, 0);
   });
 }

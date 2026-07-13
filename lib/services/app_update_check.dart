@@ -103,6 +103,16 @@ class AppUpdateChecker {
       );
     }
 
+    if (PercAppVersion.compare(current, published.full) >= 0) {
+      return AppUpdateInfo(
+        currentFull: current,
+        latestFull: current,
+        updateAvailable: false,
+        checkSucceeded: true,
+        updateUrl: updateUrlForRelease(published.release),
+      );
+    }
+
     final installedUpToDate =
         PercAppVersion.compare(current, published.full) >= 0;
     final semverNewer = PercAppVersion.isNewerThan(published.full, current);

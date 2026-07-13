@@ -50,6 +50,7 @@ class _WalletScreenState extends State<WalletScreen> {
   bool _showTreasurySetup = false;
   bool _registerDefaultSet = false;
   bool _hasBiometricCredentials = false;
+  bool _biometricLaunchPrompted = false;
   PercWalletProvider? _wallet;
   final _credentialErrorKey = GlobalKey<WalletCredentialErrorBannerState>();
 
@@ -73,6 +74,42 @@ class _WalletScreenState extends State<WalletScreen> {
     if (username != null && username.isNotEmpty) {
       _usernameCtrl.text = username;
     }
+    if (_registerDefaultSet) {
+      await _maybeAutoPromptBiometricOnLaunch();
+    }
+  }
+
+  Future<void> _maybeAutoPromptBiometricOnLaunch() async {
+    if (!mounted ||
+        _biometricLaunchPrompted ||
+        !_registerDefaultSet ||
+        _registerMode ||
+        !_hasBiometricCredentials) {
+      return;
+    }
+    final wallet = _wallet ?? context.read<PercWalletProvider>();
+    final strings =
+        AppLocalizations.of(context.read<LocaleProvider>().config);
+    if (!wallet.isReady ||
+        wallet.isLoggedIn ||
+        !wallet.hasNonTreasuryAccounts) {
+      return;
+    }
+    if (!WalletBiometricAuthUi.showBiometricSignIn(
+      loginMode: true,
+      hasStoredCredentials: _hasBiometricCredentials,
+    )) {
+      return;
+    }
+    _biometricLaunchPrompted = true;
+    await WalletBiometricAuthUi.attemptSignInWithBiometric(
+      context: context,
+      strings: strings,
+      wallet: wallet,
+      onSignedIn: () {},
+      usernameController: _usernameCtrl,
+      passwordController: _passwordCtrl,
+    );
   }
 
   @override
@@ -87,6 +124,9 @@ class _WalletScreenState extends State<WalletScreen> {
     if (!_registerDefaultSet && wallet.isReady && !wallet.isLoggedIn) {
       _registerDefaultSet = true;
       _registerMode = !wallet.hasNonTreasuryAccounts;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_maybeAutoPromptBiometricOnLaunch());
+      });
     }
     if (wallet.isLoggedIn) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -398,7 +438,6 @@ class _WalletScreenState extends State<WalletScreen> {
               children: [
                 if (!wallet.hasAppAccess) _appGateBanner(strings),
                 if (wallet.sessionTimedOut) _sessionExpiredBanner(strings),
-                _publicTreasuryBanner(wallet, strings),
                 Card(
                   margin: const EdgeInsets.all(20),
                   child: Padding(
