@@ -9,6 +9,7 @@ import '../perc/models/perc_faucet_credit_result.dart';
 import '../perc/providers/perc_wallet_provider.dart';
 import '../perc/services/perc_network_coordinator.dart';
 import '../perc/services/perc_faucet_cooldown.dart';
+import '../platform/evolve_window_lifecycle.dart';
 import '../providers/evolve_provider.dart';
 import '../providers/locale_provider.dart';
 import '../fcg/screens/fcg_voting_screen.dart';
@@ -55,7 +56,10 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
       tunnel.updateAppForeground(!inBackground);
       if (state == AppLifecycleState.detached ||
           state == AppLifecycleState.hidden) {
-        unawaited(tunnel.teardownOnAppClose());
+        unawaited(
+          EvolveWindowLifecycle.instance?.teardownIfNeeded() ??
+              tunnel.teardownOnAppClose(),
+        );
       }
     }
     if (state == AppLifecycleState.resumed) {
@@ -90,7 +94,10 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
     WidgetsBinding.instance.removeObserver(this);
     _wallet?.removeListener(_onWalletUpdate);
     _tunnel?.stopStatusPolling();
-    unawaited(_tunnel?.teardownOnAppClose());
+    unawaited(
+      EvolveWindowLifecycle.instance?.teardownIfNeeded() ??
+          _tunnel?.teardownOnAppClose(),
+    );
     super.dispose();
   }
 

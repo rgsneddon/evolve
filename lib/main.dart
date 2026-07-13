@@ -18,6 +18,7 @@ import 'providers/evolve_provider.dart';
 import 'perc/providers/perc_wallet_provider.dart';
 import 'perc/services/perc_network_coordinator.dart';
 import 'platform/desktop_window_init.dart';
+import 'platform/evolve_window_lifecycle.dart';
 import 'screens/app_bootstrap_screen.dart';
 import 'theme/app_theme.dart';
 import 'platform/desktop_platform.dart';
@@ -35,6 +36,7 @@ Future<void> main() async {
   final fcgProvider = FcgVotingProvider();
   final localeProvider = LocaleProvider();
   final tunnelController = EvolveTunnelController();
+  await registerEvolveWindowLifecycle(tunnelController);
   await Future.wait([
     evolveProvider.initialize(),
     fcgProvider.initialize(),

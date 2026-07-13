@@ -69,10 +69,37 @@ void main() {
 
   test('teardown on app close disconnects and clears tracked VPN child PIDs',
       () async {
+    var running = true;
+    var installed = true;
     final backend = TrackingProcessBackend(
       runImpl: (exe, args) async {
+        if (args.isNotEmpty && args.first == 'query') {
+          if (!installed) {
+            return ProcessResult(
+              0,
+              1060,
+              '',
+              'FAILED 1060: The specified service does not exist',
+            );
+          }
+          if (running) {
+            return ProcessResult(0, 0, 'STATE              : 4  RUNNING', '');
+          }
+          return ProcessResult(0, 0, 'STATE              : 1  STOPPED', '');
+        }
         if (args.isNotEmpty && args.first == 'stop') {
+          running = false;
           return ProcessResult(0, 0, 'STOP', '');
+        }
+        if (args.isNotEmpty && args.first == 'delete') {
+          installed = false;
+          running = false;
+          return ProcessResult(0, 0, 'deleted', '');
+        }
+        if (args.contains('/uninstalltunnelservice')) {
+          installed = false;
+          running = false;
+          return ProcessResult(0, 0, 'ok', '');
         }
         return ProcessResult(0, 0, '', '');
       },
@@ -98,6 +125,69 @@ void main() {
     expect(ctl.userInitiatedSession, isFalse);
     expect(ctl.trackedVpnChildPidCount, 0);
     expect(ctl.disconnectCallCount, greaterThan(0));
+    expect(installed, isFalse);
+    expect(running, isFalse);
+  });
+
+  test('disconnectTunnel removes running tunnel service', () async {
+    var running = true;
+    var installed = true;
+    final tmp = Directory.systemTemp.createTempSync('evolve_int_disc_');
+    final confPath = '${tmp.path}${Platform.pathSeparator}demo1.conf';
+    File(confPath).writeAsStringSync('[Interface]\nAddress = 10.66.66.2/32\n');
+    final backend = TrackingProcessBackend(
+      runImpl: (exe, args) async {
+        if (args.isNotEmpty && args.first == 'query') {
+          if (!installed) {
+            return ProcessResult(
+              0,
+              1060,
+              '',
+              'FAILED 1060: The specified service does not exist',
+            );
+          }
+          if (running) {
+            return ProcessResult(0, 0, 'STATE              : 4  RUNNING', '');
+          }
+          return ProcessResult(0, 0, 'STATE              : 1  STOPPED', '');
+        }
+        if (args.isNotEmpty && args.first == 'stop') {
+          running = false;
+          return ProcessResult(0, 0, 'STOP', '');
+        }
+        if (args.contains('/uninstalltunnelservice')) {
+          installed = false;
+          running = false;
+          return ProcessResult(0, 0, 'ok', '');
+        }
+        return ProcessResult(0, 0, '', '');
+      },
+    );
+    final wg = WireGuardController(
+      node: VpnNodeConfig.vultrNode,
+      configPath: confPath,
+      processBackend: backend,
+      fileExists: (p) => File(p).existsSync(),
+      runner: backend.run,
+      configResolver: TunnelConfigResolver(
+        node: VpnNodeConfig.vultrNode,
+        explicitPath: confPath,
+      ),
+    );
+    final ctl = EvolveTunnelController(
+      wireGuard: wg,
+      processBackend: backend,
+      statusClient: FakeNodeStatusClient(),
+    );
+    ctl.userInitiatedSession = true;
+    ctl.state = VpnConnectState.connected;
+
+    await ctl.disconnectTunnel();
+
+    expect(ctl.state, VpnConnectState.disconnected);
+    expect(installed, isFalse);
+    expect(running, isFalse);
+    tmp.deleteSync(recursive: true);
   });
 
   test('log deletion presenter renders 4-hour policy from status JSON', () {

@@ -109,8 +109,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: main
-      resolved-ref: "62d0247dc8b58b2f421e10f2c74f960473e8b0bd"
+      ref: "5973249"
+      resolved-ref: "5973249a1513b8b20779ab125412b51437f7231b"
       url: "https://github.com/rgsneddon/evolve-tunnel.git"
     source: git
     version: "1.0.0"

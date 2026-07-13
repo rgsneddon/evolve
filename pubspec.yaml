@@ -10,7 +10,7 @@ dependencies:
   evolve_tunnel:
     git:
       url: https://github.com/rgsneddon/evolve-tunnel.git
-      ref: main
+      ref: "5973249"
   flutter:
     sdk: flutter
   flutter_localizations:
