@@ -30,6 +30,35 @@ File? _perccentChecksumsManifest() {
 }
 
 void main() {
+  test('download.html matches current release wording', () {
+    final pubspec = evolveRepoFile('pubspec.yaml');
+    final pubspecText = pubspec.readAsStringSync();
+    final versionMatch =
+        RegExp(r'version:\s*(\d+\.\d+\.\d+)\+(\d+)').firstMatch(pubspecText);
+    expect(versionMatch, isNotNull);
+    final release = versionMatch!.group(1)!;
+    final build = versionMatch.group(2)!;
+
+    final page = evolveRepoFile('download.html');
+    expect(page.existsSync(), isTrue, reason: 'download.html must exist');
+    final html = page.readAsStringSync();
+    expect(html, contains('v$release'));
+    expect(html, contains('build $build'));
+    expect(
+      html,
+      contains(
+        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-windows-x64-setup.exe',
+      ),
+    );
+    expect(
+      html,
+      contains(
+        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-android-setup.apk',
+      ),
+    );
+    expect(html, isNot(contains('v4.0.0')));
+  });
+
   test('downloads index matches current release wording', () {
     final pubspec = evolveRepoFile('pubspec.yaml');
     expect(pubspec.existsSync(), isTrue);
