@@ -14,11 +14,11 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ## Quick start
 
-**Latest release:** v4.1.2 (build 162) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
+**Latest release:** v4.1.3 (build 164) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
 
 ### Windows (easiest)
 
-Download **evolve-v4.1.2-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
+Download **evolve-v4.1.3-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
 
 ### Web
 
@@ -26,7 +26,7 @@ Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evol
 
 ### Android
 
-Download **evolve-v4.1.2-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases**. Verify SHA-256 before installing. The in-app updater checks GitHub Releases, then gh-pages, when a newer build is published.
+Download **evolve-v4.1.3-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases**. Verify SHA-256 before installing. The in-app updater checks GitHub Releases, then gh-pages, when a newer build is published.
 
 ---
 
@@ -325,7 +325,9 @@ The chain is designed to grow with user activity without unbounded local storage
 | **In-app updates** | Windows and Android check published gh-pages `version.json` first, then GitHub Releases / gh-pages APK fallbacks |
 | **Android wallet refresh** | Pull down on wallet screens to trigger an immediate inbound sync (`RefreshIndicator`) |
 | **Hold-to-reveal password** | Press and hold the eye icon on login/register password fields to view your typed password |
-| **Android biometric sign-in** | Optional fingerprint sign-in for **existing** accounts after you opt in post-login; credentials stay on-device in OS secure storage — manual login always available |
+| **Android biometric sign-in** | Optional fingerprint sign-in after you opt in post-login or after new registration seed setup; credentials stay on-device in OS secure storage — manual login always available |
+| **Random PERC addresses** | Each independent wallet registration receives a randomly assigned PERC address — not derived from username or password |
+| **Multi-device wallet sync** | Wallets restored from the same seed or backup file share the same address, balance, and transaction history across devices |
 | **Send re-authentication** | Outbound PERC sends require password confirmation or Android biometric unlock when enrolled; **Percent Chance** and **Social Cohesion** analysis credits do not |
 
 ---
@@ -416,9 +418,9 @@ Release pipeline entry points: `scripts/run_security_audit.ps1`, `scripts/scan_r
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/build_all.ps1
 powershell -ExecutionPolicy Bypass -File scripts/build_installers.ps1 -SkipCodeSign
-powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.1.2
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.1.3
 # Optional: capture release/Pages evidence for CI or audit
-powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.1.2 -SkipBuild -EvidenceDir .\build\release-evidence
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.1.3 -SkipBuild -EvidenceDir .\build\release-evidence
 ```
 
 If the Windows INSTALL step fails with `C:\Program Files\evolve`, delete `build\windows` and rebuild (stale CMake cache).
