@@ -26,6 +26,18 @@ void _expectReadmeSynced(String path, String semver) {
       reason: '$path must document hold-to-reveal password');
   expect(readme.toLowerCase(), contains('send re-authentication'),
       reason: '$path must document send re-authentication');
+  expect(readme.toLowerCase(), contains('vpn'),
+      reason: '$path must document Evolve VPN');
+}
+
+void _expectPrivacyVpnDisclosure(String path) {
+  final policy = File(path).readAsStringSync().toLowerCase();
+  expect(policy, contains('evolve vpn'),
+      reason: '$path must disclose Evolve VPN');
+  expect(policy, anyOf(contains('wireguard'), contains('wire guard')),
+      reason: '$path must disclose WireGuard bundling');
+  expect(policy, anyOf(contains('manual'), contains('connect or disconnect')),
+      reason: '$path must disclose manual VPN connect');
 }
 
 void _expectPrivacySendReAuth(String path) {
@@ -71,15 +83,18 @@ void main() {
     _expectReadmeSynced(ghpages.path, semver);
   });
 
-  test('privacy policy discloses biometric vault and send re-auth', () {
+  test('privacy policy discloses biometric vault, send re-auth, and VPN', () {
     _expectPrivacyBiometricDisclosure('privacy_policy.txt');
     _expectPrivacySendReAuth('privacy_policy.txt');
+    _expectPrivacyVpnDisclosure('privacy_policy.txt');
     final deploy = _siblingFile('evolve_deploy', 'privacy_policy.txt');
     final ghpages = _siblingFile('evolve_ghpages', 'privacy_policy.txt');
     _expectPrivacyBiometricDisclosure(deploy.path);
     _expectPrivacyBiometricDisclosure(ghpages.path);
     _expectPrivacySendReAuth(deploy.path);
     _expectPrivacySendReAuth(ghpages.path);
+    _expectPrivacyVpnDisclosure(deploy.path);
+    _expectPrivacyVpnDisclosure(ghpages.path);
   });
 
   test('LICENSE copies match canonical repo root', () {

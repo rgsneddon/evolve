@@ -76,7 +76,8 @@ Without a separate Commercial License, you may NOT:
 THIRD-PARTY COMPONENTS
 ----------------------
 
-The Software incorporates open-source components (for example Flutter and
+The Software incorporates open-source components (for example Flutter,
+WireGuard for Windows when bundled in the Evolve Windows installer, and
 other dependencies). Those components remain licensed under their respective
 terms. See build output files such as NOTICES for third-party license texts.
 Your use of third-party components is governed by those separate licenses in
