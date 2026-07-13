@@ -108,9 +108,11 @@ packages:
   evolve_tunnel:
     dependency: "direct main"
     description:
-      path: "../evolve_tunnel"
-      relative: true
-    source: path
+      path: "."
+      ref: main
+      resolved-ref: "67d9e1146088560aaf4aa128bbe4e2fb1a28c114"
+      url: "https://github.com/rgsneddon/evolve-tunnel.git"
+    source: git
     version: "1.0.0"
   fake_async:
     dependency: transitive
