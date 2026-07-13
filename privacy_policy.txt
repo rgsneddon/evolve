@@ -2,7 +2,7 @@ EVOLVE CHRONOFLUX — PRIVACY POLICY
 ===================================
 
 Effective date: 3 July 2026
-Last updated: 13 July 2026 (v4.1.2 build 162; send re-authentication before outbound PERC transfers; inbound credits at one main-chain confirmation; Android pull-to-refresh; hold-to-reveal login password; optional Android biometric sign-in for existing accounts)
+Last updated: 13 July 2026 (v4.1.3 build 164; Android biometric enrollment after registration seed setup; randomly assigned PERC addresses for independent registrations; balance and transaction sync for wallets restored from the same seed or backup; send re-authentication before outbound PERC transfers; inbound credits at one main-chain confirmation; Android pull-to-refresh; hold-to-reveal login password)
 
 This Privacy Policy describes how Evolve Chronoflux ("Evolve", "we", "us", or "our")
 collects, uses, stores, and shares information when you use the Evolve application
@@ -68,12 +68,20 @@ Privacy enquiries:
 - Inside the Evolve app, you see your own username. Other users' names in your
   transaction history and wallet block explorer are shown as the same style of
   five-character alias unless you are viewing your own activity.
-- Optional Android biometric sign-in (user opt-in, existing accounts only): if you
-  accept after a successful password login, your username and password are stored
-  only on your device in OS-backed secure storage (encrypted shared preferences).
-  Unlocking uses the device biometric prompt via the platform API (local_auth).
-  Biometric templates and plaintext passwords are not sent to Evolve, the seed
-  node, or third-party servers. You may decline and continue with manual login.
+- Optional Android biometric sign-in (user opt-in): if you accept after a
+  successful password login or after completing new-registration seed setup,
+  your username and password are stored only on your device in OS-backed secure storage
+  (encrypted shared preferences). Unlocking uses the device biometric
+  prompt via the platform API (local_auth). Biometric templates and plaintext
+  passwords are not sent to Evolve, the seed node, or third-party servers. You
+  may decline and continue with manual login.
+- Random PERC addresses: each independent wallet registration on a device
+  receives a randomly assigned PERC address. Addresses are not derived from
+  your username or password. Wallets restored from the same seed phrase or
+  encrypted backup file share the same address across devices.
+- Multi-device balance sync: when you restore a wallet from the same seed or
+  backup on another device, balances and transaction history merge across those
+  clones when either device sends or receives PERC on the shared chain.
 - Send re-authentication: before an outbound PERC transfer executes, Evolve may
   ask you to re-enter your wallet password or use enrolled Android biometrics.
   This gate applies only to sends — not to Percent Chance or Social Cohesion

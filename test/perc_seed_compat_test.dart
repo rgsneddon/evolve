@@ -149,8 +149,15 @@ void main() {
       return;
     }
 
-    final status = await getJson('/perc/status');
-    final ledgerJson = await getJson('/perc/ledger');
+    late final Map<String, dynamic> status;
+    late final Map<String, dynamic> ledgerJson;
+    try {
+      status = await getJson('/perc/status');
+      ledgerJson = await getJson('/perc/ledger');
+    } on TimeoutException {
+      _writeProbeLog('skipped: tip probe timeout\n');
+      return;
+    }
     final ledger = PercLedger.fromJson(ledgerJson);
     final statusTip = status['tipHash'] as String? ?? '';
     final clientTip = PercChainTip.hash(ledger);
@@ -180,7 +187,13 @@ void main() {
 
   test('live seed peer online window aligns with wallet (7 minutes)', () async {
     if (!await liveSeedReachable()) return;
-    final health = await getJson('/health');
+    late final Map<String, dynamic> health;
+    try {
+      health = await getJson('/health');
+    } on TimeoutException {
+      _writeProbeLog('skipped: peer window health timeout\n');
+      return;
+    }
     expect(health['service'], 'perc-internet-node');
     expect(
       PercChainConstants.peerOnlineWindow,
