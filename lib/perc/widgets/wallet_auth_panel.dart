@@ -44,6 +44,12 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
   @override
   void initState() {
     super.initState();
+    WalletBiometricAuthUi.credentialsRevision
+        .addListener(_onBiometricCredentialsChanged);
+    _loadBiometricState();
+  }
+
+  void _onBiometricCredentialsChanged() {
     _loadBiometricState();
   }
 
@@ -59,6 +65,8 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
 
   @override
   void dispose() {
+    WalletBiometricAuthUi.credentialsRevision
+        .removeListener(_onBiometricCredentialsChanged);
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();

@@ -9,15 +9,33 @@ import '../services/wallet_biometric_credential_store.dart';
 class WalletBiometricAuthUi {
   const WalletBiometricAuthUi._();
 
-  static final WalletBiometricCredentialStore store =
+  @visibleForTesting
+  static WalletBiometricCredentialStore? storeOverride;
+
+  static WalletBiometricCredentialStore get store =>
+      storeOverride ?? _defaultStore;
+
+  static final WalletBiometricCredentialStore _defaultStore =
       WalletBiometricCredentialStore();
+
+  /// Bumped when biometric credentials are saved or cleared.
+  static final ValueNotifier<int> credentialsRevision = ValueNotifier(0);
+
+  static void _notifyCredentialsChanged() {
+    credentialsRevision.value++;
+  }
+
+  @visibleForTesting
+  static bool? androidPlatformOverrideForTest;
 
   static bool showBiometricSignIn({
     required bool loginMode,
     required bool hasStoredCredentials,
   }) {
     if (kIsWeb) return false;
-    if (defaultTargetPlatform != TargetPlatform.android) return false;
+    final isAndroid = androidPlatformOverrideForTest ??
+        defaultTargetPlatform == TargetPlatform.android;
+    if (!isAndroid) return false;
     return loginMode && hasStoredCredentials;
   }
 
@@ -105,7 +123,11 @@ class WalletBiometricAuthUi {
       ),
     );
     if (accept == true) {
-      await store.saveCredentials(username: username, password: password);
+      final saved = await store.saveCredentials(
+        username: username,
+        password: password,
+      );
+      if (saved) _notifyCredentialsChanged();
     }
   }
 }
