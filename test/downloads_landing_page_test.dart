@@ -56,6 +56,13 @@ void main() {
         'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-android-setup.apk',
       ),
     );
+    expect(html, contains('<article class="card ios">'));
+    expect(
+      html,
+      contains(
+        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-ios-setup.ipa',
+      ),
+    );
     expect(html, isNot(contains('v4.0.0')));
   });
 
