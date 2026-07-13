@@ -24,6 +24,18 @@ void _expectReadmeSynced(String path, String semver) {
       reason: '$path must document Android wallet refresh');
   expect(readme.toLowerCase(), contains('hold-to-reveal'),
       reason: '$path must document hold-to-reveal password');
+  expect(readme.toLowerCase(), contains('send re-authentication'),
+      reason: '$path must document send re-authentication');
+}
+
+void _expectPrivacySendReAuth(String path) {
+  final policy = File(path).readAsStringSync().toLowerCase();
+  expect(policy, anyOf(contains('send re-authentication'), contains('send re-auth')),
+      reason: '$path must disclose send re-authentication');
+  expect(policy, anyOf(contains('outbound'), contains('before an outbound')),
+      reason: '$path must scope send re-auth to outbound transfers');
+  expect(policy, anyOf(contains('percent chance'), contains('social cohesion'), contains('analysis')),
+      reason: '$path must note analysis paths excluded from send re-auth');
 }
 
 void _expectPrivacyBiometricDisclosure(String path) {
@@ -59,12 +71,15 @@ void main() {
     _expectReadmeSynced(ghpages.path, semver);
   });
 
-  test('privacy policy discloses optional Android biometric vault', () {
+  test('privacy policy discloses biometric vault and send re-auth', () {
     _expectPrivacyBiometricDisclosure('privacy_policy.txt');
+    _expectPrivacySendReAuth('privacy_policy.txt');
     final deploy = _siblingFile('evolve_deploy', 'privacy_policy.txt');
     final ghpages = _siblingFile('evolve_ghpages', 'privacy_policy.txt');
     _expectPrivacyBiometricDisclosure(deploy.path);
     _expectPrivacyBiometricDisclosure(ghpages.path);
+    _expectPrivacySendReAuth(deploy.path);
+    _expectPrivacySendReAuth(ghpages.path);
   });
 
   test('LICENSE copies match canonical repo root', () {

@@ -2,7 +2,7 @@ EVOLVE CHRONOFLUX — PRIVACY POLICY
 ===================================
 
 Effective date: 3 July 2026
-Last updated: 13 July 2026 (v4.1.1 build 161; inbound credits at one main-chain confirmation; Android pull-to-refresh on wallet screens; hold-to-reveal login password; optional Android biometric sign-in for existing accounts)
+Last updated: 13 July 2026 (v4.1.2 build 162; send re-authentication before outbound PERC transfers; inbound credits at one main-chain confirmation; Android pull-to-refresh; hold-to-reveal login password; optional Android biometric sign-in for existing accounts)
 
 This Privacy Policy describes how Evolve Chronoflux ("Evolve", "we", "us", or "our")
 collects, uses, stores, and shares information when you use the Evolve application
@@ -74,6 +74,10 @@ Privacy enquiries:
   Unlocking uses the device biometric prompt via the platform API (local_auth).
   Biometric templates and plaintext passwords are not sent to Evolve, the seed
   node, or third-party servers. You may decline and continue with manual login.
+- Send re-authentication: before an outbound PERC transfer executes, Evolve may
+  ask you to re-enter your wallet password or use enrolled Android biometrics.
+  This gate applies only to sends — not to Percent Chance or Social Cohesion
+  analysis faucet credits while you remain signed in.
 
 
 3. INFORMATION WE COLLECT AND HOW WE USE IT
@@ -367,6 +371,18 @@ Evolve does not:
 
 Clearing app data or declining enrollment removes the opt-in stored credentials
 from your device.
+
+
+3.15 Send re-authentication (PERC wallet)
+
+Before Evolve records an outbound PERC transfer, you must confirm with your
+wallet password or, on Android when biometric login is enrolled, a successful
+device biometric prompt that unlocks your stored on-device credentials. Cancel,
+failure, or an incorrect password aborts the send with no debit.
+
+This confirmation is required only for outbound sends. It does not apply to
+Percent Chance or Social Cohesion Score analysis rewards, receive, staking,
+backup export, or ordinary signed-in wallet browsing.
 
 
 4. WHAT WE DO NOT COLLECT OR EXPOSE PUBLICLY
