@@ -14,7 +14,7 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ## Quick start
 
-**Latest release:** v4.1.4 (build 166) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
+**Latest release:** v4.1.4 (build 168) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
 
 ### Windows (easiest)
 
