@@ -510,8 +510,28 @@ class PercLedger {
         accounts[username] = local;
         continue;
       }
+      if (!remote.passwordSet || remote.address != local.address) {
+        accounts[username] = PercAccount(
+          username: local.username,
+          passwordHash: local.passwordHash,
+          salt: local.salt,
+          address: local.address,
+          passwordSet: true,
+          passwordSwitchCommit: local.passwordSwitchCommit,
+          balance: local.balance,
+          lastFaucetDrawAt: local.lastFaucetDrawAt,
+          cumulativeStakingEarned: local.cumulativeStakingEarned,
+          scenarioBlockHeight: local.scenarioBlockHeight,
+          transactions: List<PercTransaction>.from(local.transactions),
+        );
+        if (remote.balance.microUnits > accounts[username]!.balance.microUnits) {
+          accounts[username]!.balance = remote.balance;
+        }
+        continue;
+      }
       remote.passwordHash = local.passwordHash;
       remote.salt = local.salt;
+      remote.passwordSwitchCommit = local.passwordSwitchCommit;
       remote.passwordSet = true;
       final localDraw = local.lastFaucetDrawAt;
       final remoteDraw = remote.lastFaucetDrawAt;
@@ -690,7 +710,11 @@ class PercLedger {
           continue;
         }
       }
-      if (local.passwordSet) continue;
+      if (local.passwordSet) {
+        if (local.address != remoteAcc.address) continue;
+        _mergeClonedWalletState(local: local, remote: remoteAcc);
+        continue;
+      }
       if (remoteAcc.balance.microUnits > local.balance.microUnits) {
         local.balance = remoteAcc.balance;
       }
@@ -703,6 +727,35 @@ class PercLedger {
         if (local.transactions.any((t) => t.id == tx.id)) continue;
         local.transactions.insert(0, tx);
       }
+    }
+  }
+
+  /// Same wallet restored on another device — mirror peer balance and transfers.
+  void _mergeClonedWalletState({
+    required PercAccount local,
+    required PercAccount remote,
+  }) {
+    final localTransferIds = local.transactions
+        .where((t) => t.kind == PercTxKind.transfer)
+        .map((t) => t.id)
+        .toSet();
+    var remoteHasNewTransfers = false;
+    for (final tx in remote.transactions) {
+      if (local.transactions.any((t) => t.id == tx.id)) continue;
+      local.transactions.insert(0, tx);
+      if (tx.kind == PercTxKind.transfer &&
+          !localTransferIds.contains(tx.id)) {
+        remoteHasNewTransfers = true;
+      }
+    }
+    if (remoteHasNewTransfers) {
+      local.balance = remote.balance;
+    } else if (remote.balance.microUnits > local.balance.microUnits) {
+      local.balance = remote.balance;
+    }
+    if (remote.cumulativeStakingEarned.microUnits >
+        local.cumulativeStakingEarned.microUnits) {
+      local.cumulativeStakingEarned = remote.cumulativeStakingEarned;
     }
   }
 
@@ -2110,22 +2163,31 @@ class PercLedger {
     final u = PercAuth.normalizeUsername(username);
     _assertValidUsername(u);
     _assertValidPassword(password);
-    if (accounts.containsKey(u)) throw StateError('Username already taken');
+    final existing = accounts[u];
+    if (existing != null) {
+      if (existing.passwordSet) throw StateError('Username already taken');
+      accounts.remove(u);
+    }
     final salt = PercAuth.generateSalt();
     final passwordHash = PercAuth.hashPassword(password, salt);
     final acc = PercAccount(
       username: u,
       passwordHash: passwordHash,
       salt: salt,
-      address: PercAuth.deriveAddress(u, salt),
+      address: _allocateRegistrationAddress(),
       passwordSwitchCommit: PercAuth.passwordSwitchCommit(passwordHash, salt),
     );
-    if (_accountForAddress(acc.address) != null) {
-      throw StateError('Wallet address collision — register again');
-    }
     accounts[u] = acc;
     connectAllWalletsConcurrently();
     return acc;
+  }
+
+  String _allocateRegistrationAddress() {
+    for (var attempt = 0; attempt < 32; attempt++) {
+      final addr = PercAuth.generateRandomAddress();
+      if (_accountForAddress(addr) == null) return addr;
+    }
+    throw StateError('Wallet address collision — register again');
   }
 
   /// One-time launch — only invoked when the seed treasury admin signs in on Render.

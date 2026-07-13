@@ -19,23 +19,24 @@ void main() {
     PercWalletProvider.sessionTimeoutEnabled = true;
   });
   test('registrations with same username on different devices get unique addresses', () {
+    const password = 'password12345';
     final evolveAndroid = PercLedger.empty();
     evolveAndroid.ensureTreasuryAccount();
-    evolveAndroid.setupTreasuryPassword('password12345');
+    evolveAndroid.setupTreasuryPassword(password);
     evolveAndroid.launchBlockchain();
-    evolveAndroid.register('traveler', 'password12345');
+    evolveAndroid.register('traveler', password);
 
     final myPercAndroid = PercLedger.empty();
     myPercAndroid.ensureTreasuryAccount();
-    myPercAndroid.setupTreasuryPassword('password12345');
+    myPercAndroid.setupTreasuryPassword(password);
     myPercAndroid.launchBlockchain();
-    myPercAndroid.register('traveler', 'password12345');
+    myPercAndroid.register('traveler', password);
 
     final evolveWindows = PercLedger.empty();
     evolveWindows.ensureTreasuryAccount();
-    evolveWindows.setupTreasuryPassword('password12345');
+    evolveWindows.setupTreasuryPassword(password);
     evolveWindows.launchBlockchain();
-    evolveWindows.register('traveler', 'password12345');
+    evolveWindows.register('traveler', password);
 
     final addresses = {
       evolveAndroid.account('traveler')!.address,
@@ -43,6 +44,48 @@ void main() {
       evolveWindows.account('traveler')!.address,
     };
     expect(addresses, hasLength(3));
+
+    final credentialDerived = PercAuth.deriveAddress('traveler', password);
+    for (final addr in addresses) {
+      expect(addr, isNot(credentialDerived));
+      expect(
+        addr,
+        isNot(PercAuth.deriveAddress('traveler', evolveAndroid.account('traveler')!.salt)),
+      );
+    }
+  });
+
+  test('network stub does not block fresh local registration address', () {
+    const password = 'password12345';
+    final deviceOne = PercLedger.empty();
+    deviceOne.ensureTreasuryAccount();
+    deviceOne.setupTreasuryPassword(password);
+    deviceOne.launchBlockchain();
+    deviceOne.register('traveler', password);
+    final firstAddr = deviceOne.account('traveler')!.address;
+
+    final deviceTwo = PercLedger.empty();
+    deviceTwo.ensureTreasuryAccount();
+    deviceTwo.setupTreasuryPassword(password);
+    deviceTwo.launchBlockchain();
+    deviceTwo.ensureRemoteAccount(username: 'traveler', address: firstAddr);
+    deviceTwo.register('traveler', password);
+
+    final secondAddr = deviceTwo.account('traveler')!.address;
+    expect(secondAddr, isNot(firstAddr));
+    expect(deviceTwo.account('traveler')!.passwordSet, isTrue);
+  });
+
+  test('backup restore preserves PERC address', () {
+    final ledger = PercLedger.empty();
+    ledger.ensureTreasuryAccount();
+    ledger.setupTreasuryPassword('password12345');
+    ledger.launchBlockchain();
+    ledger.register('alice', 'password12345');
+    final address = ledger.account('alice')!.address;
+
+    final restored = PercLedger.fromJson(ledger.toJson());
+    expect(restored.account('alice')!.address, address);
   });
 
   test('send records recipient address on pending transfer', () {

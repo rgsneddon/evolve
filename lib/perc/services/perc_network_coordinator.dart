@@ -721,7 +721,9 @@ class PercNetworkCoordinator extends ChangeNotifier {
     List<String>? seedMnemonic,
   }) {
     final u = PercAuth.normalizeUsername(username);
-    if (!hub.ledger.accounts.containsKey(u)) {
+    final existing = hub.ledger.accounts[u];
+    if (existing == null || !existing.passwordSet) {
+      if (existing != null) hub.ledger.accounts.remove(u);
       hub.ledger.register(u, password);
     }
     hub.ledger.login(u, password);

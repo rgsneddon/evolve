@@ -31,6 +31,17 @@ class PercAuth {
     return 'perc1${digest.substring(0, 40)}';
   }
 
+  /// Cryptographically random wallet address — not derived from username/password.
+  static String generateRandomAddress([Random? random]) {
+    final r = random ?? Random.secure();
+    final bytes = List<int>.generate(20, (_) => r.nextInt(256));
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    if (PercChainConstants.beamPrivacyEnabled) {
+      return '${PercBeamPrivacy.confidentialPrefix}$hex';
+    }
+    return 'perc1$hex';
+  }
+
   static bool verifyPassword({
     required String password,
     required String salt,

@@ -111,11 +111,10 @@ class _WalletScreenState extends State<WalletScreen> {
       await wallet.register(username, password);
       return;
     }
-    final accountExisted = wallet.allRegisteredWallets.contains(username);
     await wallet.login(username, password);
     if (!mounted) return;
-    if (wallet.isLoggedIn && wallet.errorMessage == null && accountExisted) {
-      await WalletBiometricAuthUi.offerEnrollmentAfterLogin(
+    if (wallet.isLoggedIn && wallet.errorMessage == null) {
+      await WalletBiometricAuthUi.offerEnrollmentIfNeeded(
         context: context,
         strings: strings,
         username: username,

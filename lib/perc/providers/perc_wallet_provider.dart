@@ -87,6 +87,10 @@ class PercWalletProvider extends ChangeNotifier {
   bool get isSyncingWallet => _syncingWallet;
   bool get isPostLoginSyncing => _postLoginSyncing;
   bool get pendingSeedSetup => _pendingSeedSetup;
+
+  /// Credentials captured during registration before seed setup completes.
+  String? get pendingRegistrationUsername => _seedSetupUsername;
+  String? get pendingRegistrationPassword => _seedSetupPassword;
   bool get registrationAwaitingSeedAlignment =>
       _registrationAwaitingSeedAlignment;
   bool get isWalletConnectComplete =>

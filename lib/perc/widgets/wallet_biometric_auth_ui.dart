@@ -63,6 +63,22 @@ class WalletBiometricAuthUi {
     }
   }
 
+  /// Offers biometric enrollment when the device supports it and nothing is stored yet.
+  static Future<void> offerEnrollmentIfNeeded({
+    required BuildContext context,
+    required AppLocalizations strings,
+    required String username,
+    required String password,
+  }) async {
+    if (await store.hasStoredCredentials()) return;
+    await offerEnrollmentAfterLogin(
+      context: context,
+      strings: strings,
+      username: username,
+      password: password,
+    );
+  }
+
   static Future<void> offerEnrollmentAfterLogin({
     required BuildContext context,
     required AppLocalizations strings,

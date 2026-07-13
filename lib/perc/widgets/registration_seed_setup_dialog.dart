@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../providers/perc_wallet_provider.dart';
+import 'wallet_biometric_auth_ui.dart';
 
 /// One-time 12-word seed offer shown immediately after new registration.
 class RegistrationSeedSetupDialog extends StatefulWidget {
@@ -158,7 +159,23 @@ class _RegistrationSeedSetupDialogState
     setState(() => _busy = true);
     try {
       final wallet = context.read<PercWalletProvider>();
+      final strings =
+          AppLocalizations.of(context.read<LocaleProvider>().config);
+      final username = wallet.pendingRegistrationUsername;
+      final password = wallet.pendingRegistrationPassword;
       await wallet.completeRegistrationSeedSetup(enableSeed: enableSeed);
+      if (!mounted) return;
+      if (wallet.isLoggedIn &&
+          wallet.errorMessage == null &&
+          username != null &&
+          password != null) {
+        await WalletBiometricAuthUi.offerEnrollmentIfNeeded(
+          context: context,
+          strings: strings,
+          username: username,
+          password: password,
+        );
+      }
       if (!mounted) return;
       Navigator.of(context).pop();
     } finally {
