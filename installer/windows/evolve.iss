@@ -53,3 +53,25 @@ Name: "{autodesktop}\{#EvolveAppName}"; Filename: "{app}\{#EvolveExeName}"; Task
 
 [Run]
 Filename: "{app}\{#EvolveExeName}"; Description: "{cm:LaunchProgram,{#StringChange(EvolveAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+procedure MaterializeVpnProfile;
+var
+  Src, Dest, DestDir: string;
+begin
+  Src := ExpandConstant('{app}\vpn\demo1.conf');
+  DestDir := ExpandConstant('{localappdata}\EVOLVE_TUNNEL');
+  Dest := DestDir + '\demo1.conf';
+  if not FileExists(Src) then
+    Exit;
+  if not DirExists(DestDir) then
+    CreateDir(DestDir);
+  if not FileExists(Dest) then
+    CopyFile(Src, Dest, False);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    MaterializeVpnProfile;
+end;

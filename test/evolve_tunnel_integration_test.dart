@@ -110,6 +110,24 @@ void main() {
     expect(out, contains('2026-07-10T12:46:25+00:00'));
   });
 
+  test('WireGuardController resolves bundled install-dir wireguard.exe first',
+      () {
+    final install = Directory.systemTemp.createTempSync('evolve_int_wg_');
+    final vpnDir = Directory('${install.path}${Platform.pathSeparator}vpn');
+    vpnDir.createSync();
+    final bundled = File('${vpnDir.path}${Platform.pathSeparator}wireguard.exe');
+    bundled.writeAsStringSync('stub');
+
+    final wg = WireGuardController(
+      node: VpnNodeConfig.vultrNode,
+      installDir: install.path,
+      fileExists: (p) => File(p).existsSync(),
+    );
+
+    expect(wg.resolvedWireGuardExe, bundled.path);
+    install.deleteSync(recursive: true);
+  });
+
   test('stopStatusPolling leaves client usable after tab leave and return',
       () async {
     final ctl = createMockTunnelController();

@@ -36,6 +36,9 @@ if (-not (Test-Path $exePath)) {
     throw "Missing Windows release build: $exePath"
 }
 
+& "$PSScriptRoot\stage_vpn_bundle.ps1" -ReleaseDir $releaseDir
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 Sign-WindowsPeBinaries -Directory $releaseDir -Root $Root -SkipCodeSign:$SkipCodeSign
 
 function Find-InnoSetupCompiler {
