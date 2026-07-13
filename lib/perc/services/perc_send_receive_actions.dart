@@ -8,11 +8,14 @@ import '../../l10n/app_localizations.dart';
 import '../providers/perc_wallet_provider.dart';
 import '../widgets/perc_address_qr_scanner_dialog.dart';
 import '../widgets/perc_amount_input_formatter.dart';
+import '../models/perc_amount.dart';
 import '../perc_chain_constants.dart';
+import 'perc_auth.dart';
 import 'perc_currency.dart';
 import 'perc_beam_privacy.dart';
 import 'perc_camera_permission.dart';
 import 'perc_qr_scanner_support.dart';
+import 'wallet_send_auth_gate.dart';
 
 /// Send/receive dialogs — available to every registered wallet user.
 class PercSendReceiveActions {
@@ -103,17 +106,29 @@ class PercSendReceiveActions {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             FilledButton(
-              onPressed: () {
+              onPressed: () async {
                 final toAddress = toCtrl.text.trim();
                 final amountText = amountCtrl.text;
                 final memo = memoCtrl.text;
+                String? authPassword;
+                if (_sendNeedsAuthGate(
+                  wallet: wallet,
+                  toAddress: toAddress,
+                  amountText: amountText,
+                )) {
+                  authPassword = await WalletSendAuthGate.requestAuthorization(
+                    context: ctx,
+                    wallet: wallet,
+                    strings: strings,
+                  );
+                  if (authPassword == null) return;
+                }
                 if (ctx.mounted) Navigator.pop(ctx);
-                unawaited(
-                  wallet.send(
-                    toAddress: toAddress,
-                    amountText: amountText,
-                    memo: memo,
-                  ),
+                await wallet.send(
+                  toAddress: toAddress,
+                  amountText: amountText,
+                  memo: memo,
+                  sendAuthPassword: authPassword,
                 );
               },
               child: Text(strings.t('wallet_send_confirm')),
@@ -128,6 +143,18 @@ class PercSendReceiveActions {
     toCtrl.dispose();
     amountCtrl.dispose();
     memoCtrl.dispose();
+  }
+
+  static bool _sendNeedsAuthGate({
+    required PercWalletProvider wallet,
+    required String toAddress,
+    required String amountText,
+  }) {
+    if (!wallet.isLoggedIn || !wallet.canSendFromSession) return false;
+    final amount = PercAmount.tryParseDisplay(amountText);
+    if (amount == null || !amount.isAtLeastSmallestUnit) return false;
+    if (PercAuth.validateAddress(toAddress) != null) return false;
+    return true;
   }
 
   static Future<void> showReceive(

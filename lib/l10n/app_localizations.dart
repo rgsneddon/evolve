@@ -864,6 +864,13 @@ final _en = {
   'wallet_tx_fee_burned': 'Network fee burned',
   'wallet_send_memo': 'Memo (optional)',
   'wallet_send_confirm': 'Send Perccent',
+  'wallet_send_auth_title': 'Confirm to send',
+  'wallet_send_auth_message':
+      'Enter your wallet password or use biometrics to authorize this transfer.',
+  'wallet_send_auth_confirm': 'Authorize send',
+  'wallet_send_auth_biometric_reason': 'Authenticate to send Perccent',
+  'wallet_err_send_auth_required':
+      'Password or biometric confirmation is required to send',
   'wallet_receive_title': 'Receive Perccent',
   'wallet_receive_note':
       'Others can scan this QR code or copy your PERC address to send Perccent (PERC) to you.',

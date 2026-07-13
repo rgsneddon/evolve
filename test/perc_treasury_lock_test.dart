@@ -173,7 +173,11 @@ void main() {
 
     final treasuryAddr =
         ledger.account(PercChainConstants.treasuryUsername)!.address;
-    await wallet.send(toAddress: treasuryAddr, amountText: '0.00000001');
+    await wallet.send(
+      toAddress: treasuryAddr,
+      amountText: '0.00000001',
+      sendAuthPassword: 'password123',
+    );
 
     expect(wallet.errorMessage, 'wallet_err_treasury_no_manual_funding');
     expect(

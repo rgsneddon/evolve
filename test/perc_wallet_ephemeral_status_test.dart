@@ -31,7 +31,11 @@ void main() {
         PercLedgerHub.instance.ledger.register('bob', 'password12345');
         final bobAddr = PercLedgerHub.instance.ledger.account('bob')!.address;
 
-        await wallet.send(toAddress: bobAddr, amountText: '0.00000001');
+        await wallet.send(
+          toAddress: bobAddr,
+          amountText: '0.00000001',
+          sendAuthPassword: 'password12345',
+        );
         expect(wallet.statusMessage, 'wallet_status_sent_instant');
 
         async.elapse(const Duration(seconds: 14));

@@ -166,7 +166,11 @@ void main() {
       address: bobAddr,
     );
 
-    await wallet.send(toAddress: bobAddr, amountText: '0.00000001');
+    await wallet.send(
+      toAddress: bobAddr,
+      amountText: '0.00000001',
+      sendAuthPassword: 'password12345',
+    );
     expect(wallet.errorMessage, isNull);
     expect(
       wallet.statusMessage,

@@ -130,6 +130,7 @@ void main() {
     await wallet.send(
       toAddress: receiverAddr,
       amountText: '0.00000001',
+      sendAuthPassword: 'password12345',
     );
 
     final ledger = PercLedgerHub.instance.ledger;

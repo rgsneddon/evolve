@@ -44,7 +44,11 @@ void main() {
     await wallet.creditScenario(outcomeScore: 50, memo: 'fund');
 
     final bobAddr = PercLedgerHub.instance.ledger.account('sender')!.address;
-    await wallet.send(toAddress: bobAddr, amountText: '0.00000001');
+    await wallet.send(
+      toAddress: bobAddr,
+      amountText: '0.00000001',
+      sendAuthPassword: 'password12345',
+    );
     expect(wallet.errorMessage, 'wallet_err_send_to_yourself');
   });
 }

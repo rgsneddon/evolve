@@ -2545,6 +2545,13 @@ const walletStringsProviderEn = <String, String>{
   'wallet_err_recipient_not_found':
       'Recipient PERC address not found on the network — the owner must register and sign in once so the address is discoverable',
   'wallet_err_sign_in_to_send': 'Sign in to send {name}',
+  'wallet_err_send_auth_required':
+      'Password or biometric confirmation is required to send',
+  'wallet_send_auth_title': 'Confirm to send',
+  'wallet_send_auth_message':
+      'Enter your wallet password or use biometrics to authorize this transfer.',
+  'wallet_send_auth_confirm': 'Authorize send',
+  'wallet_send_auth_biometric_reason': 'Authenticate to send Perccent',
   'wallet_err_unknown_account': 'Unknown account',
   'wallet_err_send_to_yourself': 'Cannot send to yourself',
   'wallet_faucet_label_percent': 'Percent chance analysis',

@@ -52,6 +52,7 @@ void main() {
       await senderWallet.send(
         toAddress: bobAddr,
         amountText: amount.displayFixed8,
+        sendAuthPassword: 'password123',
       );
 
       expect(senderWallet.errorMessage, isNull);

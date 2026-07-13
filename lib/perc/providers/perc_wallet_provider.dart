@@ -746,10 +746,22 @@ class PercWalletProvider extends ChangeNotifier {
     await _commit();
   }
 
+  bool verifySendAuthPassword(String password) {
+    if (!isLoggedIn) return false;
+    final account = _ledger.account(_ledger.sessionUsername!);
+    if (account == null || !account.passwordSet) return false;
+    return PercAuth.verifyPassword(
+      password: password,
+      salt: account.salt,
+      expectedHash: account.passwordHash,
+    );
+  }
+
   Future<void> send({
     required String toAddress,
     required String amountText,
     String? memo,
+    String? sendAuthPassword,
   }) async {
     _clearMessages();
     noteUserActivity();
@@ -808,6 +820,15 @@ class PercWalletProvider extends ChangeNotifier {
       return;
     }
     final normalizedAddress = PercAuth.normalizeAddress(toAddress);
+    if (sendAuthPassword == null || !verifySendAuthPassword(sendAuthPassword)) {
+      _setError(
+        sendAuthPassword == null
+            ? 'wallet_err_send_auth_required'
+            : 'wallet_err_invalid_password',
+      );
+      notifyListeners();
+      return;
+    }
     try {
       await PercLedgerHub.instance.network.quickSyncToNetworkHeight();
       final resolved =

@@ -225,7 +225,11 @@ void main() {
       );
       PercNetworkCoordinator.instance.setSeedConnectedForTest(true);
 
-      await wallet.send(toAddress: bobAddr, amountText: '0.00000005');
+      await wallet.send(
+        toAddress: bobAddr,
+        amountText: '0.00000005',
+        sendAuthPassword: 'password12345',
+      );
 
       expect(wallet.errorMessage, isNull);
 

@@ -70,6 +70,16 @@ void main() {
       matching: find.widgetWithText(FilledButton, strings.t('wallet_send_confirm')),
     );
     await tester.tap(confirm);
+    await tester.pumpAndSettle();
+
+    expect(find.text(strings.t('wallet_send_auth_title')), findsOneWidget);
+    final authFields = find.byType(TextField);
+    await tester.enterText(authFields.last, 'password12345');
+    final authorize = find.widgetWithText(
+      FilledButton,
+      strings.t('wallet_send_auth_confirm'),
+    );
+    await tester.tap(authorize);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
 
