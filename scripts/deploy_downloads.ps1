@@ -64,6 +64,11 @@ foreach ($page in @('downloads\index.html', 'download.html')) {
     }
 }
 
+$versionJsonSrc = Join-Path $Root 'version.json'
+if (Test-Path $versionJsonSrc) {
+    Copy-Item $versionJsonSrc (Join-Path $GhPagesWorktree 'version.json') -Force
+}
+
 $pagesDeploy = Join-Path $GhPagesWorktree '.pages-deploy'
 $stamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ'
 Set-Content -Path $pagesDeploy -Value "downloads-index-v$Version`nrebuilt=$stamp" -NoNewline
