@@ -73,7 +73,7 @@ $pagesDeploy = Join-Path $GhPagesWorktree '.pages-deploy'
 $stamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ'
 Set-Content -Path $pagesDeploy -Value "downloads-index-v$Version`nrebuilt=$stamp" -NoNewline
 
-git add "downloads/v$Version" downloads/index.html download.html .pages-deploy
+git add "downloads/v$Version" downloads/index.html download.html version.json .pages-deploy
 $status = git status --porcelain
 if (-not $status) {
     Write-Host 'Downloads unchanged on gh-pages.' -ForegroundColor Yellow
