@@ -298,6 +298,8 @@ class _EvolveLoadingScreenState extends State<EvolveLoadingScreen>
           key: _authPanelKey,
           compact: true,
           showCreatorCredit: false,
+          autoPromptBiometricOnLaunch: true,
+          onSignedIn: widget.onAuthenticated,
         ),
       ),
     );

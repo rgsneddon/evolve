@@ -194,9 +194,12 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
 
-    final urls = AppUpdateChecker.updateUrlsForRelease('4.1.3');
-    expect(urls.first, endsWith('evolve-v4.1.3-ios-setup.ipa'));
-    expect(urls.any((u) => u.contains('downloads/v4.1.3/')), isTrue);
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final release =
+        RegExp(r'version:\s*(\d+\.\d+\.\d+)\+').firstMatch(pubspec)!.group(1)!;
+    final urls = AppUpdateChecker.updateUrlsForRelease(release);
+    expect(urls.first, endsWith('evolve-v$release-ios-setup.ipa'));
+    expect(urls.any((u) => u.contains('downloads/v$release/')), isTrue);
   });
 
   test('strips UTF-8 BOM from version.json bodies', () async {

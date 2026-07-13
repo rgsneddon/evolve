@@ -61,6 +61,25 @@ class WalletBiometricAuthUi {
     );
   }
 
+  /// Android splash/login: auto-prompt or button-driven biometric sign-in.
+  static Future<void> attemptSignInWithBiometric({
+    required BuildContext context,
+    required AppLocalizations strings,
+    required PercWalletProvider wallet,
+    required VoidCallback onSignedIn,
+    required TextEditingController usernameController,
+    required TextEditingController passwordController,
+  }) {
+    return _signInWithBiometric(
+      context: context,
+      strings: strings,
+      wallet: wallet,
+      onSignedIn: onSignedIn,
+      usernameController: usernameController,
+      passwordController: passwordController,
+    );
+  }
+
   static Future<void> _signInWithBiometric({
     required BuildContext context,
     required AppLocalizations strings,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,11 +21,15 @@ class WalletAuthPanel extends StatefulWidget {
     this.compact = false,
     this.showAppGateNote = true,
     this.showCreatorCredit = true,
+    this.autoPromptBiometricOnLaunch = false,
+    this.onSignedIn,
   });
 
   final bool compact;
   final bool showAppGateNote;
   final bool showCreatorCredit;
+  final bool autoPromptBiometricOnLaunch;
+  final VoidCallback? onSignedIn;
 
   @override
   State<WalletAuthPanel> createState() => WalletAuthPanelState();
@@ -36,6 +42,7 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
   bool _registerMode = false;
   bool _registerDefaultSet = false;
   bool _hasBiometricCredentials = false;
+  bool _biometricLaunchPrompted = false;
 
   void dismissCredentialError() {
     _credentialErrorKey.currentState?.dismiss();
@@ -61,6 +68,43 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
     if (username != null && username.isNotEmpty) {
       _usernameCtrl.text = username;
     }
+    if (_registerDefaultSet) {
+      await _maybeAutoPromptBiometricOnLaunch();
+    }
+  }
+
+  Future<void> _maybeAutoPromptBiometricOnLaunch() async {
+    if (!mounted ||
+        _biometricLaunchPrompted ||
+        !_registerDefaultSet ||
+        !widget.autoPromptBiometricOnLaunch ||
+        _registerMode ||
+        !_hasBiometricCredentials) {
+      return;
+    }
+    final wallet = context.read<PercWalletProvider>();
+    final strings =
+        AppLocalizations.of(context.read<LocaleProvider>().config);
+    if (!wallet.isReady ||
+        wallet.isLoggedIn ||
+        !wallet.hasNonTreasuryAccounts) {
+      return;
+    }
+    if (!WalletBiometricAuthUi.showBiometricSignIn(
+      loginMode: true,
+      hasStoredCredentials: _hasBiometricCredentials,
+    )) {
+      return;
+    }
+    _biometricLaunchPrompted = true;
+    await WalletBiometricAuthUi.attemptSignInWithBiometric(
+      context: context,
+      strings: strings,
+      wallet: wallet,
+      onSignedIn: () => widget.onSignedIn?.call(),
+      usernameController: _usernameCtrl,
+      passwordController: _passwordCtrl,
+    );
   }
 
   @override
@@ -81,6 +125,11 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
     if (!_registerDefaultSet && wallet.isReady && !wallet.isLoggedIn) {
       _registerDefaultSet = true;
       _registerMode = !wallet.hasNonTreasuryAccounts;
+      if (widget.autoPromptBiometricOnLaunch) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) unawaited(_maybeAutoPromptBiometricOnLaunch());
+        });
+      }
     }
 
     final showBiometric = WalletBiometricAuthUi.showBiometricSignIn(
@@ -205,7 +254,7 @@ class WalletAuthPanelState extends State<WalletAuthPanel> {
             wallet: wallet,
             usernameController: _usernameCtrl,
             passwordController: _passwordCtrl,
-            onSignedIn: () {},
+            onSignedIn: () => widget.onSignedIn?.call(),
           )!,
         ],
         const SizedBox(height: 14),
