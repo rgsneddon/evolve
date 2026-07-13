@@ -45,7 +45,7 @@ Sync-GhPagesBranch -Branch 'gh-pages' -Remote 'origin'
 
 $dstDir = Join-Path $GhPagesWorktree "downloads\v$Version"
 New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
-foreach ($bin in @('*-android-setup.apk', '*-windows-x64-setup.exe')) {
+foreach ($bin in @('*-android-setup.apk', '*-windows-x64-setup.exe', '*-ios-setup.ipa')) {
     Get-ChildItem $dstDir -Filter $bin -ErrorAction SilentlyContinue | ForEach-Object {
         Remove-Item $_.FullName -Force
         git rm -f --ignore-unmatch "downloads/v$Version/$($_.Name)" 2>$null | Out-Null

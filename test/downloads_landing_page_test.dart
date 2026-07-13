@@ -61,6 +61,13 @@ void main() {
         'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-android-setup.apk',
       ),
     );
+    expect(html, contains('<article class="card ios">'));
+    expect(
+      html,
+      contains(
+        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-ios-setup.ipa',
+      ),
+    );
   });
 
   test('perccent-wallet section uses perccent release checksum not evolve windows hash', () {
@@ -133,5 +140,42 @@ void main() {
     expect(section, contains('id="perccent-apk-name"'));
     expect(section, contains('<code id="perccent-apk-name">$fileName</code>'));
     expect(section, contains('Download Android Installer'));
+  });
+
+  test('perccent-wallet section includes ios installer card', () {
+    final index = evolveRepoFile('downloads/index.html');
+    final html = index.readAsStringSync();
+
+    final manifestFile = _perccentChecksumsManifest();
+    expect(manifestFile, isNotNull);
+    final manifest = jsonDecode(manifestFile!.readAsStringSync()) as Map<String, dynamic>;
+    final packages = manifest['packages'] as List<dynamic>;
+    final windows = packages.cast<Map<String, dynamic>>().firstWhere(
+      (p) => (p['file'] as String).contains('perccent-wallet') && (p['file'] as String).contains('windows'),
+    );
+    final versionMatch = RegExp(r'perccent-wallet-v([0-9.]+)-').firstMatch(windows['file'] as String);
+    expect(versionMatch, isNotNull);
+    final perccentRelease = versionMatch!.group(1)!;
+
+    final sectionStart = html.indexOf('<section class="perccent-wallet">');
+    final sectionEnd = html.indexOf('</section>', sectionStart);
+    final section = html.substring(sectionStart, sectionEnd);
+
+    expect(section, contains('<article class="card ios">'));
+    expect(section, contains('id="perccent-ios-name"'));
+    expect(section, contains('id="perccent-ios-sha256"'));
+    expect(
+      section,
+      contains(
+        'github.com/rgsneddon/perccent-wallet/releases/download/v$perccentRelease/perccent-wallet-v$perccentRelease-ios-setup.ipa',
+      ),
+    );
+
+    final iosPkg = packages.cast<Map<String, dynamic>>().where(
+      (p) => (p['file'] as String).contains('ios-setup.ipa'),
+    );
+    if (iosPkg.isNotEmpty) {
+      expect(section, contains(iosPkg.first['sha256'] as String));
+    }
   });
 }

@@ -236,8 +236,9 @@ Evolve Chronoflux $tag$buildLabel
 Downloads: https://$owner.github.io/$RepoName/downloads/
 Web: https://$owner.github.io/$RepoName/
 
-Windows: ``evolve-$tag-windows-x64-setup.exe`` (or zip fallback)
-Android: ``evolve-$tag-android-setup.apk`` (when included)
+Windows: ``evolve-v$versionNoV-windows-x64-setup.exe`` (or zip fallback)
+Android: ``evolve-v$versionNoV-android-setup.apk`` (when included)
+iOS: ``evolve-v$versionNoV-ios-setup.ipa`` (when built on macOS with Xcode signing)
 Pages bundle: ``$RepoName-github-pages.zip`` for manual deploy
 Verify downloads with attached ``.sha256`` / ``.sha512`` checksum files (minimum SHA-256)
 "@

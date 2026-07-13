@@ -53,7 +53,7 @@ $packages = Get-ChildItem $SourceDir -File | Where-Object {
 }
 
 foreach ($pkg in $packages) {
-    $platform = if ($pkg.Name -match 'windows') { 'windows' } elseif ($pkg.Name -match 'android|apk') { 'android' } else { 'package' }
+    $platform = if ($pkg.Name -match 'windows') { 'windows' } elseif ($pkg.Name -match 'android|apk') { 'android' } elseif ($pkg.Name -match 'ios|\.ipa$') { 'ios' } else { 'package' }
     Write-PackageChecksumSidecar `
         -PackagePath $pkg.FullName `
         -Version $Version `
@@ -70,9 +70,11 @@ $perccentInfo = Update-PerccentDownloadsIndexSection
 
 Write-Host ''
 Write-Host "Signed $($entries.Count) package(s) in $SourceDir" -ForegroundColor Green
-Write-Host "  downloads/index.html -> v$($indexInfo.Version) ($($indexInfo.Windows), $($indexInfo.Android))" -ForegroundColor Cyan
+$iosLabel = if ($indexInfo.iOS) { ", $($indexInfo.iOS)" } else { '' }
+Write-Host "  downloads/index.html -> v$($indexInfo.Version) ($($indexInfo.Windows), $($indexInfo.Android)$iosLabel)" -ForegroundColor Cyan
 if ($perccentInfo) {
-    Write-Host "  downloads/index.html perccent-wallet -> v$($perccentInfo.Version) ($($perccentInfo.Windows), $($perccentInfo.Android))" -ForegroundColor Cyan
+    $perccentIos = if ($perccentInfo.iOS) { ", $($perccentInfo.iOS)" } else { '' }
+    Write-Host "  downloads/index.html perccent-wallet -> v$($perccentInfo.Version) ($($perccentInfo.Windows), $($perccentInfo.Android)$perccentIos)" -ForegroundColor Cyan
     Write-Host "    SHA-256: $($perccentInfo.Sha256)" -ForegroundColor Cyan
 }
 Write-Host "  CHECKSUMS.sha256"

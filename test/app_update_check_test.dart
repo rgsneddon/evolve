@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/perc/perc_app_version.dart';
 import 'package:evolve/services/app_update_check.dart';
 
 bool _installerUrl(Uri uri) =>
@@ -148,6 +150,63 @@ void main() {
     final info = await const AppUpdateChecker().check(current: '3.3.11+89');
     expect(info.checkSucceeded, isFalse);
     expect(info.updateAvailable, isFalse);
+  });
+
+  test('installed build ahead of gh-pages does not advertise update', () async {
+    AppUpdateChecker.fetchBodyOverride = (uri) async {
+      if (uri.host.contains('github.io')) {
+        return '{"version":"4.1.3","build_number":"164","app_name":"evolve"}';
+      }
+      return '{"version":"4.1.3","build_number":"165","app_name":"evolve"}';
+    };
+    AppUpdateChecker.headProbeOverride =
+        (uri) async => _installerUrl(uri);
+
+    final info = await const AppUpdateChecker().check(current: '4.1.3+165');
+    expect(info.checkSucceeded, isTrue);
+    expect(info.updateAvailable, isFalse);
+    expect(info.latestFull, '4.1.3+165');
+  });
+
+  test('matching gh-pages feed for PercAppVersion.current is up to date', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    final current = PercAppVersion.current;
+    final release = PercAppVersion.releaseOf(current);
+    final build = PercAppVersion.buildOf(current);
+    AppUpdateChecker.fetchBodyOverride = (uri) async {
+      if (uri.host.contains('github.io')) {
+        return '{"version":"$release","build_number":"$build","app_name":"evolve"}';
+      }
+      return '{"version":"$release","build_number":"${build + 1}","app_name":"evolve"}';
+    };
+    AppUpdateChecker.headProbeOverride =
+        (uri) async => _installerUrl(uri);
+
+    final info = await const AppUpdateChecker().check(current: current);
+    expect(info.checkSucceeded, isTrue);
+    expect(info.updateAvailable, isFalse);
+    expect(info.latestFull, current);
+  });
+
+  test('iOS platform uses evolve IPA release URL', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    final urls = AppUpdateChecker.updateUrlsForRelease('4.1.3');
+    expect(urls.first, endsWith('evolve-v4.1.3-ios-setup.ipa'));
+    expect(urls.any((u) => u.contains('downloads/v4.1.3/')), isTrue);
+  });
+
+  test('strips UTF-8 BOM from version.json bodies', () async {
+    AppUpdateChecker.fetchBodyOverride = (_) async =>
+        '\uFEFF{"version":"4.1.3","build_number":"165","app_name":"evolve"}';
+
+    final info = await const AppUpdateChecker().check(current: '4.1.3+165');
+    expect(info.checkSucceeded, isTrue);
+    expect(info.updateAvailable, isFalse);
+    expect(info.latestFull, '4.1.3+165');
   });
 
   test('consecutive checks are stable under feed divergence', () async {

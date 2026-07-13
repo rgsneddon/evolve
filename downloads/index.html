@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Download Evolve Chronoflux — Windows, Android, and Web builds.">
+  <meta name="description" content="Download Evolve Chronoflux — Windows, Android, iOS, and Web builds.">
   <title>Evolve Chronoflux — Downloads</title>
   <style>
     :root {
@@ -91,7 +91,11 @@
     }
 
     @media (min-width: 700px) {
-      .grid { grid-template-columns: repeat(3, 1fr); }
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (min-width: 960px) {
+      .grid { grid-template-columns: repeat(4, 1fr); }
     }
 
     .card {
@@ -122,6 +126,7 @@
     }
 
     .card.android .card-icon { background: rgba(0, 212, 170, 0.15); }
+    .card.ios .card-icon { background: rgba(99, 102, 241, 0.15); }
     .card.web .card-icon { background: rgba(245, 158, 11, 0.15); }
 
     .card h2 {
@@ -290,6 +295,10 @@
     @media (min-width: 700px) {
       .perccent-wallet .grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    @media (min-width: 960px) {
+      .perccent-wallet .grid { grid-template-columns: repeat(3, 1fr); }
+    }
   </style>
 </head>
 <body>
@@ -336,6 +345,21 @@
         </p>
       </article>
 
+      <article class="card ios">
+        <div class="card-icon" aria-hidden="true">&#63743;</div>
+        <h2>iOS</h2>
+        <p>Sideload the signed IPA on iPhone or iPad. Requires Apple developer signing or enterprise distribution.</p>
+        <p class="meta">evolve-v4.1.3-ios-setup.ipa &middot; ~0 MB</p>
+        <a class="btn btn-primary" href="https://github.com/rgsneddon/evolve/releases/download/v4.1.3/evolve-v4.1.3-ios-setup.ipa" download>
+          Download iOS Installer
+        </a>
+        <p class="meta" style="margin-top:12px;margin-bottom:0;">
+          SHA-256:
+          <code style="font-size:0.72rem;word-break:break-all;">26b7e40be0bcf3e6667020b3acf6e07faa17585b21b2936305dd6c9ad3860b15</code>
+          (<a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.3/evolve-v4.1.3-ios-setup.ipa.sha256">.sha256</a>)
+        </p>
+      </article>
+
       <article class="card web">
         <div class="card-icon" aria-hidden="true">&#127760;</div>
         <h2>Web</h2>
@@ -369,7 +393,7 @@
       <h2>Perccent Wallet</h2>
       <p class="perccent-lead">
         Standalone PERC wallet for send, receive, stake, and chain sync — without the full Evolve scenario suite.
-        Windows and Android installers with SHA-256 verification.
+        Windows, Android, and iOS installers with SHA-256 verification.
       </p>
       <div class="grid">
         <article class="card windows">
@@ -403,6 +427,22 @@
             (<a href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.1.4/perccent-wallet-v1.1.4-android-setup.apk.sha256">.sha256</a>)
           </p>
         </article>
+
+        <article class="card ios">
+          <div class="card-icon" aria-hidden="true">&#63743;</div>
+          <h2>iOS</h2>
+          <p>Sideload the signed IPA on iPhone or iPad. Requires Apple developer signing or enterprise distribution.</p>
+          <p class="meta">perccent-wallet-v1.1.4-ios-setup.ipa &middot; ~0 MB</p>
+          <p class="meta"><strong>Install:</strong> Transfer <code id="perccent-ios-name">perccent-wallet-v1.1.4-ios-setup.ipa</code> via Apple Configurator, AltStore, or MDM. Verify SHA-256 before installing.</p>
+          <a class="btn btn-primary" href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.1.4/perccent-wallet-v1.1.4-ios-setup.ipa" download>
+            Download iOS Installer
+          </a>
+          <p class="meta" style="margin-top:12px;margin-bottom:0;">
+            SHA-256:
+            <code id="perccent-ios-sha256" style="font-size:0.72rem;word-break:break-all;">26b7e40be0bcf3e6667020b3acf6e07faa17585b21b2936305dd6c9ad3860b15</code>
+            (<a href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.1.4/perccent-wallet-v1.1.4-ios-setup.ipa.sha256">.sha256</a>)
+          </p>
+        </article>
       </div>
     </section>
 
@@ -411,6 +451,7 @@
       <ul>
         <li><strong>Windows:</strong> Run <code>evolve-v4.1.3-windows-x64-setup.exe</code>. Verify the SHA-256 checksum before installing. Windows SmartScreen may ask you to confirm.</li>
         <li><strong>Android:</strong> Run <code>evolve-v4.1.3-android-setup.apk</code>. Requires Android 6.0+ (API 23). Verify SHA-256 before installing. Camera permission is requested only when you scan a PERC QR code.</li>
+        <li><strong>iOS:</strong> Install <code>evolve-v4.1.3-ios-setup.ipa</code> via sideload tooling (AltStore, Apple Configurator, or MDM). Requires iOS 13+. Face ID is used for wallet unlock when enabled.</li>
         <li><strong>Web:</strong> Hosted at the same GitHub Pages site. Grok construal uses local heuristic mode in the browser.</li>
         <li><strong>Integrity:</strong> Every package ships with <strong>SHA-256</strong> and <strong>SHA-512</strong> checksum sidecars (not Authenticode-signed). Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.3/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.3/CHECKSUMS.sha512">CHECKSUMS.sha512</a> (or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.3/checksums.json">checksums.json</a>).</li>
         <li><strong>Updates:</strong> Check <a href="https://github.com/rgsneddon/evolve/releases">GitHub Releases</a> for older versions and release notes.</li>

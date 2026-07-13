@@ -89,7 +89,7 @@ function Sync-GhPagesDownloads {
     $versionDst = Join-Path $downloadsDst "v$Version"
     New-Item -ItemType Directory -Path $versionDst -Force | Out-Null
 
-    foreach ($bin in @('*-android-setup.apk', '*-windows-x64-setup.exe')) {
+    foreach ($bin in @('*-android-setup.apk', '*-windows-x64-setup.exe', '*-ios-setup.ipa')) {
         Get-ChildItem $versionDst -Filter $bin -ErrorAction SilentlyContinue | ForEach-Object {
             Remove-Item $_.FullName -Force
         }

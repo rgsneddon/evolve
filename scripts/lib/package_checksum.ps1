@@ -155,14 +155,16 @@ function Update-DownloadsIndexPage {
         if (-not $Build) { $Build = '0' }
     }
 
-    $win = $manifest.packages | Where-Object { $_.file -match 'windows' } | Select-Object -First 1
-    $apk = $manifest.packages | Where-Object { $_.file -match 'android|apk' } | Select-Object -First 1
+    $win = $manifest.packages | Where-Object { $_.file -match 'evolve.*windows' } | Select-Object -First 1
+    $apk = $manifest.packages | Where-Object { $_.file -match 'evolve.*android|evolve.*apk' } | Select-Object -First 1
+    $ios = $manifest.packages | Where-Object { $_.file -match 'evolve.*ios|\.ipa$' } | Select-Object -First 1
     if (-not $win -or -not $apk) {
         throw 'checksums.json must include windows and android packages'
     }
 
     $winMb = [math]::Round($win.bytes / 1MB, 1)
     $apkMb = [math]::Round($apk.bytes / 1MB, 1)
+    $iosMb = if ($ios) { [math]::Round($ios.bytes / 1MB, 1) } else { 0 }
     $vPrefix = "v$Version"
 
     . (Join-Path $PSScriptRoot 'github.ps1')
@@ -203,12 +205,26 @@ function Update-DownloadsIndexPage {
     $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)checksums\.json"',
         "href=`"$releaseBase/checksums.json`""
 
+    if ($ios) {
+        $html = $html -replace 'evolve-v[0-9.]+-ios-setup\.ipa &middot; ~[0-9.]+ MB',
+            "$($ios.file) &middot; ~$iosMb MB"
+        $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-ios-setup\.ipa"',
+            "href=`"$releaseBase/$($ios.file)`""
+        $html = $html -replace '(?s)(<article class="card ios">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
+            "`${1}$($ios.sha256)`${2}"
+        $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-ios-setup\.ipa\.sha256"',
+            "href=`"$releaseBase/$($ios.file).sha256`""
+        $html = $html -replace '<code>evolve-v[0-9.]+-ios-setup\.ipa</code>',
+            "<code>$($ios.file)</code>"
+    }
+
     Set-Content -Path $DownloadsIndex -Value $html -NoNewline
     return [PSCustomObject]@{
         Version = $Version
         Build = $Build
         Windows = $win.file
         Android = $apk.file
+        iOS = if ($ios) { $ios.file } else { '' }
     }
 }
 
@@ -273,6 +289,7 @@ function Update-PerccentDownloadsIndexSection {
     if (-not $apk) {
         throw "Perccent manifest missing android package: $ManifestPath"
     }
+    $ios = $manifest.packages | Where-Object { $_.file -match 'perccent-wallet.*ios|perccent-wallet.*\.ipa$' } | Select-Object -First 1
 
     if ($win.file -notmatch 'perccent-wallet-v([0-9.]+)-') {
         throw "Could not parse Perccent version from $($win.file)"
@@ -309,13 +326,29 @@ function Update-PerccentDownloadsIndexSection {
     $html = $html -replace '(<code id="perccent-apk-name">)perccent-wallet-v[0-9.]+-android-setup\.apk(</code>)',
         "`${1}$($apk.file)`${2}"
 
+    if ($ios) {
+        $iosMb = [math]::Round($ios.bytes / 1MB, 1)
+        $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card ios">.*?<p class="meta">)perccent-wallet-v[0-9.]+-ios-setup\.ipa &middot; ~[0-9.]+ MB(</p>)',
+            "`${1}$($ios.file) &middot; ~$iosMb MB`${2}"
+        $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card ios">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-ios-setup\.ipa(")',
+            "`${1}$releaseBase/$($ios.file)`${2}"
+        $html = $html -replace '(<code id="perccent-ios-sha256"[^>]*>)[a-f0-9]{64}(</code>)',
+            "`${1}$($ios.sha256)`${2}"
+        $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card ios">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-ios-setup\.ipa\.sha256(")',
+            "`${1}$releaseBase/$($ios.file).sha256`${2}"
+        $html = $html -replace '(<code id="perccent-ios-name">)perccent-wallet-v[0-9.]+-ios-setup\.ipa(</code>)',
+            "`${1}$($ios.file)`${2}"
+    }
+
     Set-Content -Path $DownloadsIndex -Value $html -NoNewline
     return [PSCustomObject]@{
         Version = $version
         Windows = $win.file
         Android = $apk.file
+        iOS = if ($ios) { $ios.file } else { '' }
         Sha256 = $win.sha256
         AndroidSha256 = $apk.sha256
+        iOSSha256 = if ($ios) { $ios.sha256 } else { '' }
         ManifestPath = $ManifestPath
     }
 }

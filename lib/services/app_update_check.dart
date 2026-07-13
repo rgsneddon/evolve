@@ -103,11 +103,13 @@ class AppUpdateChecker {
       );
     }
 
+    final installedUpToDate =
+        PercAppVersion.compare(current, published.full) >= 0;
     final semverNewer = PercAppVersion.isNewerThan(published.full, current);
     final releaseLineNewer = PercAppVersion.releaseOf(published.full) !=
         PercAppVersion.releaseOf(current);
     var updateAvailable = false;
-    if (semverNewer) {
+    if (!installedUpToDate && semverNewer) {
       // main/version.json may run ahead via pre-push hook on the same release
       // line (e.g. 4.0.4+150) while gh-pages and Releases still ship +149.
       // Only gh-pages may advertise build-only bumps; main needs a new semver.
@@ -119,9 +121,11 @@ class AppUpdateChecker {
       }
     }
 
+    final latestFull = installedUpToDate ? current : published.full;
+
     return AppUpdateInfo(
       currentFull: current,
-      latestFull: published.full,
+      latestFull: latestFull,
       updateAvailable: updateAvailable,
       checkSucceeded: true,
       updateUrl: updateUrlForRelease(published.release),
@@ -153,6 +157,13 @@ class AppUpdateChecker {
           'https://github.com/rgsneddon/evolve/releases/tag/$tag',
           '$downloadsBaseUrl$tag/',
         ];
+      case TargetPlatform.iOS:
+        return [
+          '$releasesBaseUrl/$tag/evolve-v$release-ios-setup.ipa',
+          '$downloadsBaseUrl$tag/evolve-v$release-ios-setup.ipa',
+          'https://github.com/rgsneddon/evolve/releases/tag/$tag',
+          '$downloadsBaseUrl$tag/',
+        ];
       default:
         return [downloadsBaseUrl];
     }
@@ -164,7 +175,8 @@ class AppUpdateChecker {
           ? await fetchBodyOverride!(uri)
           : await _fetchBody(uri);
       if (body == null || body.trim().isEmpty) return null;
-      final json = jsonDecode(body) as Map<String, dynamic>;
+      final sanitized = body.startsWith('\uFEFF') ? body.substring(1) : body;
+      final json = jsonDecode(sanitized) as Map<String, dynamic>;
       return RemoteVersionFeed.fromJson(json);
     } catch (_) {
       return null;
@@ -203,6 +215,7 @@ class AppUpdateChecker {
     final path = uri.path.toLowerCase();
     return path.endsWith('.apk') ||
         path.endsWith('.exe') ||
+        path.endsWith('.ipa') ||
         uri.host == 'github.com' && path.contains('/releases/download/');
   }
 
