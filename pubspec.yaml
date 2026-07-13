@@ -36,6 +36,11 @@ dev_dependencies:
   integration_test:
     sdk: flutter
 
+# Native Windows plugin needs ATL/MFC; stub keeps Dart FFI storage without that SDK component.
+dependency_overrides:
+  flutter_secure_storage_windows:
+    path: stubs/flutter_secure_storage_windows
+
 flutter:
   uses-material-design: true
   assets:
