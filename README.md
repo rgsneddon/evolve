@@ -14,7 +14,7 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ## Quick start
 
-**Latest release:** v4.1.5 (build 170) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
+**Latest release:** v4.1.5 (build 171) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
 
 ### Windows (easiest)
 
@@ -330,7 +330,7 @@ The chain is designed to grow with user activity without unbounded local storage
 | **Random PERC addresses** | Each independent wallet registration receives a randomly assigned PERC address — not derived from username or password |
 | **Multi-device wallet sync** | Wallets restored from the same seed or backup file share the same address, balance, and transaction history across devices |
 | **Send re-authentication** | Outbound PERC sends require password confirmation or Android biometric unlock when enrolled; **Percent Chance** and **Social Cohesion** analysis credits do not |
-| **Evolve VPN (Windows)** | Optional VPN tab (second from right in nav when wallet is open): manual Connect/Disconnect only, bundled WireGuard + profile in the Windows installer, log-deletion status from operator node, tears down on app close or background |
+| **Evolve VPN (Windows)** | Optional VPN tab (second from right in nav when wallet is open): manual Connect/Disconnect only, bundled WireGuard + profile in the Windows installer, connect-speed note (internet may be slow to start then improve), log-deletion status from operator node, full tunnel removal on Disconnect and app close (no taskbar persistence) |
 
 ---
 
