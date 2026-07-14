@@ -42,6 +42,13 @@ class _EvolveVpnScreenState extends State<EvolveVpnScreen> {
               EvolveTunnelController.freeUseDisclaimer,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+            const SizedBox(height: 8),
+            Text(
+              strings.t('vpn_connect_speed_note'),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white70,
+                  ),
+            ),
             if (!wallet.hasAppAccess) ...[
               const SizedBox(height: 12),
               Text(

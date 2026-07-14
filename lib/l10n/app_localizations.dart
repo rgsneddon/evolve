@@ -323,6 +323,8 @@ final _en = {
   'vpn_connect': 'Connect',
   'vpn_disconnect': 'Disconnect',
   'vpn_wallet_gate': 'Open your Evolve wallet to enable VPN connect.',
+  'vpn_connect_speed_note':
+      'After connecting, your internet may be slow to start and should improve over time as the tunnel settles.',
   'vpn_status_heading': 'Tunnel & log-deletion status',
   'vpn_dismiss': 'Dismiss',
   'security_intro':

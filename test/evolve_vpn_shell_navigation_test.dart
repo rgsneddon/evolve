@@ -132,6 +132,10 @@ void main() {
 
     expect(find.text('Connect'), findsOneWidget);
     expect(find.text('Disconnect'), findsOneWidget);
+    expect(
+      find.textContaining('internet may be slow to start'),
+      findsOneWidget,
+    );
     tunnel.stopStatusPolling();
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
