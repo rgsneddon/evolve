@@ -2,13 +2,16 @@
 param(
     [string]$Version = '',
     [string]$Build = '',
-    [switch]$SkipApkBuild
+    [switch]$SkipApkBuild,
+    [switch]$SkipCodeSign
 )
 
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
 . "$PSScriptRoot\lib\package_checksum.ps1"
+. "$PSScriptRoot\lib\android_sign.ps1"
+. "$PSScriptRoot\lib\code_sign.ps1"
 . "$PSScriptRoot\version_utils.ps1"
 
 Set-Location $Root
@@ -24,6 +27,10 @@ if (-not $Version -or -not $Build) {
 }
 
 $apkSrc = Join-Path $Root 'build\app\outputs\flutter-apk\app-release.apk'
+
+if (-not $SkipCodeSign) {
+    Assert-AndroidReleaseSigningReady -Root $Root
+}
 
 if (-not $SkipApkBuild) {
     & "$PSScriptRoot\build.ps1" -Platform apk
@@ -60,6 +67,12 @@ $stagingPath = Join-Path $stagingDir $publishedName
 $publishedPath = Join-Path $versionedDir $publishedName
 Copy-Item $apkSrc $stagingPath -Force
 Copy-Item $stagingPath $publishedPath -Force
+
+if (-not $SkipCodeSign) {
+    Write-Host ''
+    Write-Host '=== Android APK signature verification ===' -ForegroundColor Cyan
+    Test-ApkReleaseSignatureBatch -ApkPaths @($stagingPath, $publishedPath) | Out-Null
+}
 
 $abis = Get-ApkAbis $publishedPath
 $sizeMb = [math]::Round((Get-Item $publishedPath).Length / 1MB, 1)

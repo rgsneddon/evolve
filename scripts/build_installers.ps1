@@ -11,6 +11,11 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\ios_build.ps1"
 Set-Location $Root
+. "$PSScriptRoot\lib\code_sign.ps1"
+
+if (-not $SkipCodeSign) {
+    Assert-ReleaseSigningCredentials -Root $Root
+}
 
 & "$PSScriptRoot\build_windows_installer.ps1" @PSBoundParameters
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

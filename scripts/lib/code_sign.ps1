@@ -42,6 +42,45 @@ function Import-CodeSignLocalEnv {
     return $true
 }
 
+function Test-CodeSignCredentialsConfigured {
+    param([string]$Root)
+
+    $path = Join-Path $Root 'code_sign.local.env'
+    if (-not (Test-Path $path)) { return $false }
+
+    Import-CodeSignLocalEnv -Root $Root | Out-Null
+
+    $mode = if ($env:CODE_SIGN_MODE) { $env:CODE_SIGN_MODE.Trim().ToLowerInvariant() } else { '' }
+    if (-not $mode) {
+        if ($env:CODE_SIGN_PFX_PATH) { $mode = 'pfx' }
+        elseif ($env:CODE_SIGN_CERT_THUMBPRINT -or $env:CODE_SIGN_CERT_SUBJECT) { $mode = 'store' }
+        elseif ($env:AZURE_CODESIGN_METADATA_PATH) { $mode = 'azure' }
+    }
+    if (-not $mode) { return $false }
+
+    switch ($mode) {
+        'pfx' {
+            return [bool](
+                $env:CODE_SIGN_PFX_PATH -and
+                (Test-Path $env:CODE_SIGN_PFX_PATH) -and
+                $env:CODE_SIGN_PFX_PASSWORD
+            )
+        }
+        'store' {
+            return [bool]($env:CODE_SIGN_CERT_THUMBPRINT -or $env:CODE_SIGN_CERT_SUBJECT)
+        }
+        'azure' {
+            return [bool](
+                $env:AZURE_CODESIGN_DLIB_PATH -and
+                (Test-Path $env:AZURE_CODESIGN_DLIB_PATH) -and
+                $env:AZURE_CODESIGN_METADATA_PATH -and
+                (Test-Path $env:AZURE_CODESIGN_METADATA_PATH)
+            )
+        }
+        default { return $false }
+    }
+}
+
 function Get-CodeSignConfig {
     param([string]$Root)
 
@@ -245,6 +284,38 @@ function Sign-AuthenticodeFile {
     return $verify
 }
 
+function Assert-ReleaseSigningCredentials {
+    param(
+        [string]$Root,
+        [switch]$SkipCodeSign,
+        [switch]$WindowsOnly,
+        [switch]$AndroidOnly
+    )
+
+    if ($SkipCodeSign) { return }
+
+    $errors = [System.Collections.Generic.List[string]]::new()
+    if (-not $AndroidOnly) {
+        if (-not (Test-CodeSignCredentialsConfigured -Root $Root)) {
+            $errors.Add('Windows: code_sign.local.env is missing or incomplete (copy code_sign.local.env.example).')
+        }
+    }
+    if (-not $WindowsOnly) {
+        . (Join-Path $PSScriptRoot 'android_sign.ps1')
+        if (-not (Test-AndroidReleaseKeystoreConfigured -Root $Root)) {
+            $errors.Add('Android: android/key.properties or release keystore is missing (copy key.properties.example).')
+        }
+    }
+    if ($errors.Count -gt 0) {
+        throw @"
+Release signing credentials are required for publish builds.
+$($errors -join [Environment]::NewLine)
+
+Use -SkipCodeSign only for local dev builds that will not be published.
+"@
+    }
+}
+
 function Sign-WindowsPeBinaries {
     param(
         [string]$Directory,
@@ -257,6 +328,7 @@ function Sign-WindowsPeBinaries {
         return
     }
 
+    Assert-ReleaseSigningCredentials -Root $Root -WindowsOnly | Out-Null
     $signTool = Find-SignTool
     $config = Get-CodeSignConfig -Root $Root
     $files = Get-PeFilesInDirectory -Directory $Directory

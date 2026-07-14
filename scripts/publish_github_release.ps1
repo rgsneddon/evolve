@@ -9,6 +9,7 @@ param(
     [switch]$SkipPages,
     [switch]$RecreateRelease,
     [switch]$DryRun,
+    [switch]$SkipCodeSign,
     [string]$EvidenceDir = ''
 )
 
@@ -17,6 +18,8 @@ $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
 . "$PSScriptRoot\lib\github.ps1"
 . "$PSScriptRoot\lib\ghpages_downloads.ps1"
+. "$PSScriptRoot\lib\code_sign.ps1"
+. "$PSScriptRoot\lib\android_sign.ps1"
 
 $tag = if ($Version -match '^v') { $Version } else { "v$Version" }
 $versionNoV = $tag -replace '^v', ''
@@ -47,12 +50,22 @@ if (-not $SkipBuild) {
     }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+    if (-not $SkipCodeSign) {
+        Assert-ReleaseSigningCredentials -Root $Root
+    }
+
+    $installerArgs = @{
+        SkipWindowsBuild = $true
+        SkipApkBuild     = $true
+        SkipDeploy       = $true
+    }
+    if ($SkipCodeSign) { $installerArgs.SkipCodeSign = $true }
+
     $installerLog = if ($EvidenceDir) { Join-Path $EvidenceDir 'build_installers.log' } else { $null }
     if ($installerLog) {
-        & "$PSScriptRoot\build_installers.ps1" -SkipWindowsBuild -SkipApkBuild -SkipDeploy -SkipCodeSign *>&1 |
-            Tee-Object -FilePath $installerLog
+        & "$PSScriptRoot\build_installers.ps1" @installerArgs *>&1 | Tee-Object -FilePath $installerLog
     } else {
-        & "$PSScriptRoot\build_installers.ps1" -SkipWindowsBuild -SkipApkBuild -SkipDeploy -SkipCodeSign
+        & "$PSScriptRoot\build_installers.ps1" @installerArgs
     }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

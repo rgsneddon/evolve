@@ -82,6 +82,18 @@ if (-not $SkipCodeSign) {
     Sign-AuthenticodeFile -FilePath $setupPath -Config $signConfig -SignTool $signTool | Out-Null
 }
 
+if (-not $SkipCodeSign) {
+    Write-Host ''
+    Write-Host '=== Post-sign Authenticode verification ===' -ForegroundColor Cyan
+    Test-WindowsPeBinariesSigned -Directory $releaseDir | Out-Null
+    $signTool = Find-SignTool
+    $setupVerify = Test-AuthenticodeTrustedSignature -FilePath $setupPath -SignTool $signTool
+    if (-not $setupVerify.Valid) {
+        throw "Installer signature verification failed: $($setupVerify.Message)"
+    }
+    Write-Host "OK  $setupPath" -ForegroundColor Green
+}
+
 $versionedDir = Join-Path $Root "build\downloads\v$Version"
 New-Item -ItemType Directory -Path $versionedDir -Force | Out-Null
 $publishedName = $setupName

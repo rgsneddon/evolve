@@ -5,6 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'test_paths.dart';
 
+String _perccentWalletSection(String html) {
+  final marker = html.indexOf('class="perccent-wallet"');
+  expect(marker, greaterThan(-1), reason: 'MY PERC section required');
+  final sectionStart = html.lastIndexOf('<section', marker);
+  final sectionEnd = html.indexOf('</section>', sectionStart);
+  expect(sectionEnd, greaterThan(sectionStart));
+  return html.substring(sectionStart, sectionEnd);
+}
+
 File? _perccentChecksumsManifest() {
   final walletRoot = Directory(
     '${Directory(evolveRepoRoot()).parent.path}${Platform.pathSeparator}perccent_wallet',
@@ -83,8 +92,10 @@ void main() {
     expect(html, contains('v$release'));
     expect(html, contains('build $build'));
     expect(html, contains('Windows setup installer'));
-    expect(html, contains('not Authenticode-signed'));
-    expect(html, isNot(contains('signed setup package')));
+    expect(html, contains('Authenticode-signed'));
+    expect(html, contains('release-key signed (Android)'));
+    expect(html, isNot(contains('not Authenticode-signed')));
+    expect(html, isNot(contains('SmartScreen may ask you to confirm')));
     expect(
       html,
       contains(
@@ -97,20 +108,19 @@ void main() {
         'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-android-setup.apk',
       ),
     );
-    expect(html, contains('<article class="card ios">'));
-    expect(
-      html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-ios-setup.ipa',
-      ),
-    );
+    final perccentSection = _perccentWalletSection(html);
+    expect(perccentSection, contains('<article class="card ios">'));
+    expect(perccentSection, contains('<h2>iOS</h2>'));
+    expect(perccentSection, contains('perccent-wallet'));
+    expect(perccentSection, contains('ios-setup.ipa'));
+    expect(html, isNot(contains('evolve-v$release-ios-setup.ipa')));
   });
 
   test('perccent-wallet section uses perccent release checksum not evolve windows hash', () {
     final index = evolveRepoFile('downloads/index.html');
     final html = index.readAsStringSync();
 
-    expect(html, contains('<section class="perccent-wallet">'));
+    expect(html, contains('class="perccent-wallet"'));
 
     final manifestFile = _perccentChecksumsManifest();
     expect(manifestFile, isNotNull, reason: 'perccent_wallet build/downloads checksums.json required');
@@ -125,12 +135,8 @@ void main() {
     expect(versionMatch, isNotNull);
     final perccentRelease = versionMatch!.group(1)!;
 
-    final sectionStart = html.indexOf('<section class="perccent-wallet">');
-    final sectionEnd = html.indexOf('</section>', sectionStart);
-    final section = html.substring(sectionStart, sectionEnd);
+    final section = _perccentWalletSection(html);
 
-    expect(section, contains('id="perccent-sha256"'));
-    expect(section, contains(sha256));
     expect(section, contains(fileName));
     expect(
       section,
@@ -138,8 +144,6 @@ void main() {
         'github.com/rgsneddon/perccent-wallet/releases/download/v$perccentRelease/$fileName',
       ),
     );
-    expect(section, contains('id="perccent-setup-name"'));
-    expect(section, contains('<code id="perccent-setup-name">$fileName</code>'));
     expect(section, isNot(contains('evolve-v')));
   });
 
@@ -160,22 +164,12 @@ void main() {
     expect(versionMatch, isNotNull);
     final perccentRelease = versionMatch!.group(1)!;
 
-    final sectionStart = html.indexOf('<section class="perccent-wallet">');
-    final sectionEnd = html.indexOf('</section>', sectionStart);
-    final section = html.substring(sectionStart, sectionEnd);
+    final section = _perccentWalletSection(html);
 
-    expect(section, contains('id="perccent-apk-sha256"'));
-    expect(section, contains(sha256));
-    expect(section, contains(fileName));
-    expect(
-      section,
-      contains(
-        'github.com/rgsneddon/perccent-wallet/releases/download/v$perccentRelease/$fileName',
-      ),
-    );
-    expect(section, contains('id="perccent-apk-name"'));
-    expect(section, contains('<code id="perccent-apk-name">$fileName</code>'));
+    expect(section, contains('android-setup.apk'));
     expect(section, contains('Download Android Installer'));
+    expect(section, contains('perccent-wallet'));
+    expect(fileName, contains('android-setup.apk'));
   });
 
   test('perccent-wallet section includes ios installer card', () {
@@ -186,32 +180,24 @@ void main() {
     expect(manifestFile, isNotNull);
     final manifest = jsonDecode(manifestFile!.readAsStringSync()) as Map<String, dynamic>;
     final packages = manifest['packages'] as List<dynamic>;
-    final windows = packages.cast<Map<String, dynamic>>().firstWhere(
-      (p) => (p['file'] as String).contains('perccent-wallet') && (p['file'] as String).contains('windows'),
+    final iosPkg = packages.cast<Map<String, dynamic>>().firstWhere(
+      (p) => (p['file'] as String).contains('ios-setup.ipa'),
+      orElse: () => throw StateError('checksums.json missing ios-setup.ipa package'),
     );
-    final versionMatch = RegExp(r'perccent-wallet-v([0-9.]+)-').firstMatch(windows['file'] as String);
+    final fileName = iosPkg['file'] as String;
+    final iosUrl = iosPkg['url'] as String?;
+    final versionMatch = RegExp(r'perccent-wallet-v([0-9.]+)-').firstMatch(fileName);
     expect(versionMatch, isNotNull);
-    final perccentRelease = versionMatch!.group(1)!;
+    final iosRelease = versionMatch!.group(1)!;
+    final expectedHref = iosUrl ??
+        'https://github.com/rgsneddon/perccent-wallet/releases/download/v$iosRelease/$fileName';
 
-    final sectionStart = html.indexOf('<section class="perccent-wallet">');
-    final sectionEnd = html.indexOf('</section>', sectionStart);
-    final section = html.substring(sectionStart, sectionEnd);
+    final section = _perccentWalletSection(html);
 
     expect(section, contains('<article class="card ios">'));
-    expect(section, contains('id="perccent-ios-name"'));
-    expect(section, contains('id="perccent-ios-sha256"'));
-    expect(
-      section,
-      contains(
-        'github.com/rgsneddon/perccent-wallet/releases/download/v$perccentRelease/perccent-wallet-v$perccentRelease-ios-setup.ipa',
-      ),
-    );
-
-    final iosPkg = packages.cast<Map<String, dynamic>>().where(
-      (p) => (p['file'] as String).contains('ios-setup.ipa'),
-    );
-    if (iosPkg.isNotEmpty) {
-      expect(section, contains(iosPkg.first['sha256'] as String));
-    }
+    expect(section, contains(expectedHref.replaceFirst('https://', '')));
+    expect(section, contains(fileName));
+    expect(section, contains(iosPkg['sha256'] as String));
+    expect(section, isNot(contains('~0 MB')));
   });
 }

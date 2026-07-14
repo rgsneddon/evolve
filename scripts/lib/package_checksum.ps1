@@ -205,6 +205,15 @@ function Update-DownloadsIndexPage {
     $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)checksums\.json"',
         "href=`"$releaseBase/checksums.json`""
 
+    $html = $html -replace 'Windows SmartScreen may ask you to confirm\.',
+        'Windows packages are Authenticode-signed for a trusted install path.'
+    $html = $html -replace 'not Authenticode-signed',
+        'Authenticode-signed (Windows) and release-key signed (Android)'
+    $html = $html -replace '(<li><strong>Android \(Evolve\):</strong> Run <code>evolve-v[0-9.]+-android-setup\.apk</code>\. Requires Android 6\.0\+ \(API 23\)\.)',
+        "`${1} APK is signed with the Evolve release key (not debug)."
+    $html = $html -replace '(<li><strong>Android:</strong> Run <code>evolve-v[0-9.]+-android-setup\.apk</code>\. Requires Android 6\.0\+ \(API 23\)\.)',
+        "`${1} APK is signed with the Evolve release key (not debug)."
+
     if ($ios) {
         $html = $html -replace 'evolve-v[0-9.]+-ios-setup\.ipa &middot; ~[0-9.]+ MB',
             "$($ios.file) &middot; ~$iosMb MB"
@@ -226,6 +235,24 @@ function Update-DownloadsIndexPage {
         Android = $apk.file
         iOS = if ($ios) { $ios.file } else { '' }
     }
+}
+
+function Resolve-PerccentPackageReleaseUrl {
+    param(
+        [Parameter(Mandatory = $true)]$Package,
+        [Parameter(Mandatory = $true)][string]$DefaultReleaseBase,
+        [string]$Owner = 'rgsneddon',
+        [string]$RepoName = 'perccent-wallet'
+    )
+
+    if ($Package.url -and "$($Package.url)".Trim()) {
+        return "$($Package.url)".Trim()
+    }
+    if ($Package.file -match 'perccent-wallet-v([0-9.]+)-') {
+        $pkgVersion = $Matches[1]
+        return "https://github.com/$Owner/$RepoName/releases/download/v$pkgVersion/$($Package.file)"
+    }
+    return "$DefaultReleaseBase/$($Package.file)"
 }
 
 function Resolve-PerccentChecksumsManifest {
@@ -328,14 +355,15 @@ function Update-PerccentDownloadsIndexSection {
 
     if ($ios) {
         $iosMb = [math]::Round($ios.bytes / 1MB, 1)
+        $iosReleaseUrl = Resolve-PerccentPackageReleaseUrl -Package $ios -DefaultReleaseBase $releaseBase -Owner $Owner -RepoName $RepoName
         $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card ios">.*?<p class="meta">)perccent-wallet-v[0-9.]+-ios-setup\.ipa &middot; ~[0-9.]+ MB(</p>)',
             "`${1}$($ios.file) &middot; ~$iosMb MB`${2}"
         $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card ios">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-ios-setup\.ipa(")',
-            "`${1}$releaseBase/$($ios.file)`${2}"
+            "`${1}$iosReleaseUrl`${2}"
         $html = $html -replace '(<code id="perccent-ios-sha256"[^>]*>)[a-f0-9]{64}(</code>)',
             "`${1}$($ios.sha256)`${2}"
         $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card ios">.*?href=")https://github\.com/[^/]+/[^/]+/releases/download/v[0-9.]+/perccent-wallet-v[0-9.]+-ios-setup\.ipa\.sha256(")',
-            "`${1}$releaseBase/$($ios.file).sha256`${2}"
+            "`${1}$iosReleaseUrl.sha256`${2}"
         $html = $html -replace '(<code id="perccent-ios-name">)perccent-wallet-v[0-9.]+-ios-setup\.ipa(</code>)',
             "`${1}$($ios.file)`${2}"
     }

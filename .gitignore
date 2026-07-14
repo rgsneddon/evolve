@@ -53,6 +53,11 @@ grok_proxy.local.env
 
 # Windows Authenticode signing secrets (copy from code_sign.local.env.example)
 code_sign.local.env
+
+# Android release signing secrets (copy from android/key.properties.example)
+android/key.properties
+android/*.keystore
+android/*.jks
 .secrets/
 *.pfx
 *.p12
