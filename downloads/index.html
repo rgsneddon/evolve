@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Download Evolve Chronoflux — Windows, Android, iOS, and Web builds.">
+  <meta name="description" content="Download Evolve Chronoflux — Windows, Android, and Web builds. MY PERC iOS is hosted under Perccent Wallet.">
   <title>Evolve Chronoflux — Downloads</title>
   <style>
     :root {
@@ -345,21 +345,6 @@
         </p>
       </article>
 
-      <article class="card ios">
-        <div class="card-icon" aria-hidden="true">&#63743;</div>
-        <h2>iOS</h2>
-        <p>Sideload the signed IPA on iPhone or iPad. Requires Apple developer signing or enterprise distribution.</p>
-        <p class="meta">evolve-v4.1.5-ios-setup.ipa &middot; ~0 MB</p>
-        <a class="btn btn-primary" href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/evolve-v4.1.5-ios-setup.ipa" download>
-          Download iOS Installer
-        </a>
-        <p class="meta" style="margin-top:12px;margin-bottom:0;">
-          SHA-256:
-          <code style="font-size:0.72rem;word-break:break-all;">ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7</code>
-          (<a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/evolve-v4.1.5-ios-setup.ipa.sha256">.sha256</a>)
-        </p>
-      </article>
-
       <article class="card web">
         <div class="card-icon" aria-hidden="true">&#127760;</div>
         <h2>Web</h2>
@@ -390,16 +375,18 @@
     </section>
 
     <section class="perccent-wallet">
-      <h2>Perccent Wallet</h2>
+      <h2>MY PERC (Perccent Wallet)</h2>
       <p class="perccent-lead">
         Standalone PERC wallet for send, receive, stake, and chain sync — without the full Evolve scenario suite.
         Windows, Android, and iOS installers with SHA-256 verification.
+        <strong>iOS is hosted only here</strong> (not as an Evolve Chronoflux platform installer).
+        Full downloads: <a href="https://rgsneddon.github.io/perccent-wallet/downloads/">perccent-wallet downloads</a>.
       </p>
       <div class="grid">
         <article class="card windows">
           <div class="card-icon" aria-hidden="true">&#8862;</div>
           <h2>Windows</h2>
-          <p>Install Perccent Wallet with Start Menu shortcut and uninstaller.</p>
+          <p>Install MY PERC with Start Menu shortcut and uninstaller.</p>
           <p class="meta">perccent-wallet-v1.1.5-windows-x64-setup.exe &middot; ~11.6 MB</p>
           <p class="meta"><strong>Install:</strong> Run <code id="perccent-setup-name">perccent-wallet-v1.1.5-windows-x64-setup.exe</code>. Verify SHA-256 before installing. Windows SmartScreen may ask you to confirm.</p>
           <a class="btn btn-primary" href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.1.5/perccent-wallet-v1.1.5-windows-x64-setup.exe" download>
@@ -430,17 +417,17 @@
 
         <article class="card ios">
           <div class="card-icon" aria-hidden="true">&#63743;</div>
-          <h2>iOS</h2>
-          <p>Sideload the signed IPA on iPhone or iPad. Requires Apple developer signing or enterprise distribution.</p>
-          <p class="meta">perccent-wallet-v1.1.5-ios-setup.ipa &middot; ~0 MB</p>
-          <p class="meta"><strong>Install:</strong> Transfer <code id="perccent-ios-name">perccent-wallet-v1.1.5-ios-setup.ipa</code> via Apple Configurator, AltStore, or MDM. Verify SHA-256 before installing.</p>
-          <a class="btn btn-primary" href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.1.5/perccent-wallet-v1.1.5-ios-setup.ipa" download>
+          <h2>iOS (MY PERC)</h2>
+          <p>Download the development-signed MY PERC IPA (team SFCBP95595). Sideload via Apple Configurator, AltStore, or MDM.</p>
+          <p class="meta">perccent-wallet-v1.1.6-ios-setup.ipa &middot; ~8.3 MB</p>
+          <p class="meta"><strong>Install:</strong> Transfer <code id="perccent-ios-name">perccent-wallet-v1.1.6-ios-setup.ipa</code> after verifying SHA-256.</p>
+          <a class="btn btn-primary" href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.1.6/perccent-wallet-v1.1.6-ios-setup.ipa" download>
             Download iOS Installer
           </a>
           <p class="meta" style="margin-top:12px;margin-bottom:0;">
             SHA-256:
-            <code id="perccent-ios-sha256" style="font-size:0.72rem;word-break:break-all;">ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7</code>
-            (<a href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.1.5/perccent-wallet-v1.1.5-ios-setup.ipa.sha256">.sha256</a>)
+            <code id="perccent-ios-sha256" style="font-size:0.72rem;word-break:break-all;">1844aa2923a71ae51b7564ca978820c31537834b3789c144c0fa93b23dc241f5</code>
+            (<a href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.1.6/perccent-wallet-v1.1.6-ios-setup.ipa.sha256">.sha256</a>)
           </p>
         </article>
       </div>
@@ -449,12 +436,12 @@
     <section class="notes">
       <h3>Install notes</h3>
       <ul>
-        <li><strong>Windows:</strong> Run <code>evolve-v4.1.5-windows-x64-setup.exe</code>. Verify the SHA-256 checksum before installing. Windows SmartScreen may ask you to confirm. The installer bundles WireGuard and a VPN profile — no separate WireGuard install required.</li>
-        <li><strong>Android:</strong> Run <code>evolve-v4.1.5-android-setup.apk</code>. Requires Android 6.0+ (API 23). Verify SHA-256 before installing. Camera permission is requested only when you scan a PERC QR code.</li>
-        <li><strong>iOS:</strong> Install <code>evolve-v4.1.5-ios-setup.ipa</code> via sideload tooling (AltStore, Apple Configurator, or MDM). Requires iOS 13+. Face ID is used for wallet unlock when enabled.</li>
+        <li><strong>Windows (Evolve):</strong> Run <code>evolve-v4.1.5-windows-x64-setup.exe</code>. Verify the SHA-256 checksum before installing. Windows SmartScreen may ask you to confirm. The installer bundles WireGuard and a VPN profile — no separate WireGuard install required.</li>
+        <li><strong>Android (Evolve):</strong> Run <code>evolve-v4.1.5-android-setup.apk</code>. Requires Android 6.0+ (API 23). Verify SHA-256 before installing. Camera permission is requested only when you scan a PERC QR code.</li>
+        <li><strong>iOS (MY PERC only):</strong> There is no Evolve Chronoflux iOS installer on this page. Download <code>perccent-wallet-v1.1.6-ios-setup.ipa</code> from the Perccent Wallet section above (or <a href="https://rgsneddon.github.io/perccent-wallet/downloads/">MY PERC downloads</a>). Requires iOS 13+. Optional Face ID / Touch ID vault enrollment is supported in the wallet app.</li>
         <li><strong>Web:</strong> Hosted at the same GitHub Pages site. Grok construal uses local heuristic mode in the browser.</li>
-        <li><strong>Integrity:</strong> Every package ships with <strong>SHA-256</strong> and <strong>SHA-512</strong> checksum sidecars (not Authenticode-signed). Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/CHECKSUMS.sha512">CHECKSUMS.sha512</a> (or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/checksums.json">checksums.json</a>).</li>
-        <li><strong>Updates:</strong> Check <a href="https://github.com/rgsneddon/evolve/releases">GitHub Releases</a> for older versions and release notes.</li>
+        <li><strong>Integrity:</strong> Evolve packages ship with <strong>SHA-256</strong> and <strong>SHA-512</strong> checksum sidecars. Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/checksums.json">checksums.json</a>. MY PERC iOS: <a href="https://github.com/rgsneddon/perccent-wallet/releases/download/v1.1.6/perccent-wallet-v1.1.6-ios-setup.ipa.sha256">IPA .sha256</a>.</li>
+        <li><strong>Updates:</strong> Evolve: <a href="https://github.com/rgsneddon/evolve/releases">GitHub Releases</a>. MY PERC: <a href="https://github.com/rgsneddon/perccent-wallet/releases">perccent-wallet releases</a>.</li>
       </ul>
     </section>
 
