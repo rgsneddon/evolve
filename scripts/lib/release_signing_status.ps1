@@ -233,3 +233,37 @@ function Update-DownloadsInstallNotesForSigning {
         Copy = $copy
     }
 }
+
+function Assert-PublishReleaseSigningGate {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [string]$Version = '',
+        [switch]$AllowUnsigned
+    )
+
+    if ($AllowUnsigned) { return $null }
+
+    $status = Get-ReleaseSigningStatus -Root $Root -Version $Version
+    $blockers = [System.Collections.Generic.List[string]]::new()
+
+    if (-not $status.WindowsAuthenticodeSigned) {
+        $blockers.Add("Windows setup is not Authenticode-signed: $($status.WindowsMessage)")
+    }
+    if (-not $status.AndroidReleaseSigned) {
+        $blockers.Add("Android APK is not release-signed: $($status.AndroidMessage)")
+    }
+
+    if ($blockers.Count -eq 0) {
+        Write-ReleaseSigningStatusManifest -Root $Root -VersionDir $status.VersionDir | Out-Null
+        Write-Host 'Release signing verification passed (Windows Authenticode + Android release key).' -ForegroundColor Green
+        return $status
+    }
+
+    throw @"
+Release publish blocked: installer signing verification failed.
+$($blockers -join [Environment]::NewLine)
+
+Fix Azure Trusted Signing (metadata.json profile + AADSTS530035) or use PFX mode,
+then rebuild with scripts\build_installers.ps1. Use -SkipCodeSign only for dev builds.
+"@
+}

@@ -322,8 +322,8 @@ function Update-PerccentDownloadsIndexSection {
     $releaseBase = "https://github.com/$Owner/$RepoName/releases/download/v$version"
 
     $html = Get-Content $DownloadsIndex -Raw
-    if ($html -notmatch '<section class="perccent-wallet">') {
-        throw 'downloads/index.html missing <section class="perccent-wallet">'
+    if ($html -notmatch 'class="perccent-wallet"') {
+        throw 'downloads/index.html missing perccent-wallet section'
     }
 
     $html = $html -replace '(?s)(<section class="perccent-wallet">.*?<article class="card windows">.*?<p class="meta">)perccent-wallet-v[0-9.]+-windows-x64-setup\.exe &middot; ~[0-9.]+ MB(</p>)',

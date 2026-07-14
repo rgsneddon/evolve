@@ -14,7 +14,16 @@ void main() {
       reason: 'publish must not hard-code -SkipCodeSign on build_installers',
     );
     expect(text, contains('Assert-ReleaseSigningCredentials'));
+    expect(text, contains('release_signing_status.ps1'));
+    expect(text, contains('Assert-PublishReleaseSigningGate'));
     expect(text, contains('[switch]\$SkipCodeSign'));
+    expect(
+      RegExp(
+        r'build\\downloads\\v\$versionNoV[\s\S]{0,600}Assert-PublishReleaseSigningGate',
+      ).hasMatch(text),
+      isTrue,
+      reason: 'signing gate must run after installer staging for SkipBuild publishes',
+    );
   });
 
   test('android release gradle uses release keystore when key.properties exists', () {

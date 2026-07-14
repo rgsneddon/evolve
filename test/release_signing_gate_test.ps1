@@ -14,6 +14,12 @@ if ($publishScript -notmatch 'installerArgs\.SkipCodeSign') {
 if ($publishScript -notmatch 'Assert-ReleaseSigningCredentials') {
     throw 'publish_github_release.ps1 must call Assert-ReleaseSigningCredentials'
 }
+if ($publishScript -notmatch 'release_signing_status\.ps1') {
+    throw 'publish_github_release.ps1 must dot-source release_signing_status.ps1'
+}
+if ($publishScript -notmatch 'Assert-PublishReleaseSigningGate') {
+    throw 'publish_github_release.ps1 must call Assert-PublishReleaseSigningGate'
+}
 
 $buildInstallers = Get-Content (Join-Path $Root 'scripts\build_installers.ps1') -Raw
 if ($buildInstallers -notmatch 'Assert-ReleaseSigningCredentials') {
