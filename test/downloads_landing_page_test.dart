@@ -92,10 +92,24 @@ void main() {
     expect(html, contains('v$release'));
     expect(html, contains('build $build'));
     expect(html, contains('Windows setup installer'));
-    expect(html, contains('Authenticode-signed'));
-    expect(html, contains('release-key signed (Android)'));
-    expect(html, isNot(contains('not Authenticode-signed')));
-    expect(html, isNot(contains('SmartScreen may ask you to confirm')));
+
+    final statusPath = evolveRepoFile('build/downloads/v$release/signing-status.json');
+    if (statusPath.existsSync()) {
+      final status = jsonDecode(statusPath.readAsStringSync()) as Map<String, dynamic>;
+      final windowsSigned = (status['windows'] as Map)['authenticodeSigned'] as bool;
+      final androidRelease = (status['android'] as Map)['releaseSigned'] as bool;
+      if (windowsSigned) {
+        expect(html, contains('Authenticode-signed'));
+      } else {
+        expect(html, contains('SmartScreen may ask you to confirm'));
+      }
+      if (androidRelease) {
+        expect(html, anyOf(
+          contains('release-key signed'),
+          contains('Evolve release key (not debug)'),
+        ));
+      }
+    }
     expect(
       html,
       contains(

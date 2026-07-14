@@ -69,6 +69,28 @@ if (-not $SkipBuild) {
     }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+    if (-not $SkipCodeSign) {
+        $status = Get-ReleaseSigningStatus -Root $Root -Version $versionNoV
+        $blockers = @()
+        if (-not $status.WindowsAuthenticodeSigned) {
+            $blockers += "Windows setup is not Authenticode-signed: $($status.WindowsMessage)"
+        }
+        if (-not $status.AndroidReleaseSigned) {
+            $blockers += "Android APK is not release-signed: $($status.AndroidMessage)"
+        }
+        if ($blockers.Count -gt 0) {
+            throw @"
+Release publish blocked: installer signing verification failed.
+$($blockers -join [Environment]::NewLine)
+
+Fix Azure Trusted Signing (metadata.json profile + AADSTS530035) or use PFX mode,
+then rebuild with scripts\build_installers.ps1. Use -SkipCodeSign only for dev builds.
+"@
+        }
+        Write-ReleaseSigningStatusManifest -Root $Root -VersionDir $status.VersionDir | Out-Null
+        Write-Host 'Release signing verification passed (Windows Authenticode + Android release key).' -ForegroundColor Green
+    }
+
     $dirtyAfter = git status --porcelain
     if ($dirtyAfter) {
         git add -A

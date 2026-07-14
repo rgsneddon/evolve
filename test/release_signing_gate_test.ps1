@@ -5,8 +5,11 @@ $Root = Split-Path $PSScriptRoot -Parent
 . (Join-Path $Root 'scripts\lib\android_sign.ps1')
 
 $publishScript = Get-Content (Join-Path $Root 'scripts\publish_github_release.ps1') -Raw
-if ($publishScript -match 'build_installers\.ps1.*-SkipCodeSign') {
-    throw 'publish_github_release.ps1 must not pass -SkipCodeSign by default'
+if ($publishScript -match 'build_installers\.ps1"\s+-SkipWindowsBuild\s+-SkipApkBuild\s+-SkipDeploy\s+-SkipCodeSign') {
+    throw 'publish_github_release.ps1 must not hard-code -SkipCodeSign on build_installers'
+}
+if ($publishScript -notmatch 'installerArgs\.SkipCodeSign') {
+    throw 'publish_github_release.ps1 must only pass SkipCodeSign via explicit installerArgs when requested'
 }
 if ($publishScript -notmatch 'Assert-ReleaseSigningCredentials') {
     throw 'publish_github_release.ps1 must call Assert-ReleaseSigningCredentials'

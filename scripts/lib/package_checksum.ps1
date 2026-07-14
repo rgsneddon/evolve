@@ -205,14 +205,9 @@ function Update-DownloadsIndexPage {
     $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)checksums\.json"',
         "href=`"$releaseBase/checksums.json`""
 
-    $html = $html -replace 'Windows SmartScreen may ask you to confirm\.',
-        'Windows packages are Authenticode-signed for a trusted install path.'
-    $html = $html -replace 'not Authenticode-signed',
-        'Authenticode-signed (Windows) and release-key signed (Android)'
-    $html = $html -replace '(<li><strong>Android \(Evolve\):</strong> Run <code>evolve-v[0-9.]+-android-setup\.apk</code>\. Requires Android 6\.0\+ \(API 23\)\.)',
-        "`${1} APK is signed with the Evolve release key (not debug)."
-    $html = $html -replace '(<li><strong>Android:</strong> Run <code>evolve-v[0-9.]+-android-setup\.apk</code>\. Requires Android 6\.0\+ \(API 23\)\.)',
-        "`${1} APK is signed with the Evolve release key (not debug)."
+    . (Join-Path $PSScriptRoot 'release_signing_status.ps1')
+    Update-DownloadsInstallNotesForSigning -Root $Root -DownloadsIndex $DownloadsIndex -VersionDir $VersionDir | Out-Null
+    $html = Get-Content $DownloadsIndex -Raw
 
     if ($ios) {
         $html = $html -replace 'evolve-v[0-9.]+-ios-setup\.ipa &middot; ~[0-9.]+ MB',

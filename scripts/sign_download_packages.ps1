@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\package_checksum.ps1"
+. "$PSScriptRoot\lib\release_signing_status.ps1"
 . "$PSScriptRoot\lib\security_scan.ps1"
 . "$PSScriptRoot\lib\dependency_audit.ps1"
 Set-Location $Root
@@ -64,6 +65,14 @@ foreach ($pkg in $packages) {
 
 $entries = Write-VersionChecksumManifest -VersionDir $SourceDir -BaseUrl $baseUrl
 Test-VersionPackageChecksums -VersionDir $SourceDir -RequireSidecars | Out-Null
+
+$signingStatus = Write-ReleaseSigningStatusManifest -Root $Root -VersionDir $SourceDir
+if (-not $signingStatus.WindowsAuthenticodeSigned) {
+    Write-Host "Windows setup is NOT Authenticode-signed: $($signingStatus.WindowsMessage)" -ForegroundColor Yellow
+}
+if (-not $signingStatus.AndroidReleaseSigned) {
+    Write-Host "Android APK is NOT release-signed: $($signingStatus.AndroidMessage)" -ForegroundColor Yellow
+}
 
 $indexInfo = Update-DownloadsIndexPage -VersionDir $SourceDir -Version $Version
 $perccentInfo = Update-PerccentDownloadsIndexSection

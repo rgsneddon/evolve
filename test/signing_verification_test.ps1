@@ -20,30 +20,46 @@ if ($winResult.Valid) {
 }
 Write-Host "Unsigned PE correctly rejected: $($winResult.Message)" -ForegroundColor Green
 
-$apkCandidates = @(
-    (Join-Path $Root 'build\app\outputs\flutter-apk\app-release.apk'),
-    (Join-Path $Root 'build\downloads\v4.1.5\evolve-v4.1.5-android-setup.apk')
-)
-$apkPath = $apkCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-if ($apkPath) {
-    $apkResult = Test-ApkReleaseSignature -ApkPath $apkPath
-    Write-Host "APK under test: $apkPath" -ForegroundColor Cyan
-    Write-Host "  valid=$($apkResult.Valid) debug=$($apkResult.IsDebug) schemes=$($apkResult.Schemes -join ',')" -ForegroundColor Cyan
-    if ($apkResult.IsDebug) {
-        Write-Host 'Debug-signed APK correctly detected' -ForegroundColor Green
-    } elseif ($apkResult.Valid) {
-        Write-Host 'Release-signed APK verified' -ForegroundColor Green
-    } else {
-        Write-Host "APK verification note: $($apkResult.Message)" -ForegroundColor Yellow
-    }
-} else {
-    Write-Host 'No local APK to verify (skip APK fixture check)' -ForegroundColor Yellow
+$releaseApk = Join-Path $Root 'build\downloads\v4.1.5\evolve-v4.1.5-android-setup.apk'
+if (-not (Test-Path $releaseApk)) {
+    $releaseApk = Join-Path $Root 'build\app\outputs\flutter-apk\app-release.apk'
+}
+$releaseApkResult = $null
+if (Test-Path $releaseApk) {
+    $releaseApkResult = Test-ApkReleaseSignature -ApkPath $releaseApk
+    Write-Host "Release APK: $releaseApk valid=$($releaseApkResult.Valid) debug=$($releaseApkResult.IsDebug)" -ForegroundColor Cyan
 }
 
+$debugApk = Join-Path $Root 'build\app\outputs\flutter-apk\app-debug.apk'
+$debugApkResult = $null
+if (-not (Test-Path $debugApk)) {
+    throw "Debug APK fixture missing at $debugApk. Run: flutter build apk --debug"
+}
+if (Test-Path $debugApk) {
+    $debugApkResult = Test-ApkReleaseSignature -ApkPath $debugApk
+    Write-Host "Debug APK: $debugApk valid=$($debugApkResult.Valid) debug=$($debugApkResult.IsDebug)" -ForegroundColor Cyan
+    if (-not $debugApkResult.Valid -and $debugApkResult.IsDebug) {
+        Write-Host 'Debug-signed APK correctly rejected' -ForegroundColor Green
+    } else {
+        throw "Debug APK fixture should fail release verification with IsDebug=true; got valid=$($debugApkResult.Valid) debug=$($debugApkResult.IsDebug)"
+    }
+} else {
+    throw 'Could not produce debug APK fixture for signing verification'
+}
+
+$logPath = Join-Path $scratch 'signing_fix_assertions.log'
+$logTmp = Join-Path $scratch 'signing_fix_assertions.tmp'
 @(
     "unsigned_pe_rejected=$([bool](-not $winResult.Valid))"
     "unsigned_message=$($winResult.Message)"
-    "apk_tested=$(if ($apkPath) { $apkPath } else { 'none' })"
-) | Set-Content (Join-Path $scratch 'signing_fix_assertions.log') -Encoding utf8
+    "release_apk_tested=$releaseApk"
+    "release_apk_valid=$(if ($releaseApkResult) { $releaseApkResult.Valid } else { 'none' })"
+    "release_apk_is_debug=$(if ($releaseApkResult) { $releaseApkResult.IsDebug } else { 'none' })"
+    "debug_apk_tested=$debugApk"
+    "debug_apk_rejected=$([bool](-not $debugApkResult.Valid))"
+    "debug_apk_is_debug=$($debugApkResult.IsDebug)"
+    "debug_apk_message=$($debugApkResult.Message)"
+) | Set-Content $logTmp -Encoding utf8
+Move-Item $logTmp $logPath -Force
 
 Write-Host 'signing_verification_test PASS' -ForegroundColor Green

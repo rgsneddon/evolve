@@ -104,7 +104,7 @@ function Test-ApkReleaseSignature {
     $prevEap = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $out = & $ApkSigner verify --verbose $ApkPath 2>&1 | ForEach-Object { "$_" }
+        $out = & $ApkSigner verify --print-certs --verbose $ApkPath 2>&1 | ForEach-Object { "$_" }
         $exitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $prevEap

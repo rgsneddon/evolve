@@ -354,11 +354,11 @@
     <section class="notes">
       <h3>Install notes</h3>
       <ul>
-        <li><strong>Windows:</strong> Run <code>evolve-v4.1.5-windows-x64-setup.exe</code>. Verify the SHA-256 checksum before installing. Windows packages are Authenticode-signed for a trusted install path. The installer bundles WireGuard and a VPN profile — no separate WireGuard install required.</li>
+        <li><strong>Windows:</strong> Run <code>evolve-v4.1.5-windows-x64-setup.exe</code>. Verify the SHA-256 checksum before installing. Windows SmartScreen may ask you to confirm until Authenticode-signed releases ship. The installer bundles WireGuard and a VPN profile — no separate WireGuard install required.</li>
         <li><strong>Android:</strong> Run <code>evolve-v4.1.5-android-setup.apk</code>. Requires Android 6.0+ (API 23). APK is signed with the Evolve release key (not debug). Verify SHA-256 before installing. Camera permission is requested only when you scan a PERC QR code.</li>
         <li><strong>iOS:</strong> Install <code>evolve-v4.1.5-ios-setup.ipa</code> via sideload tooling (AltStore, Apple Configurator, or MDM). Requires iOS 13+. Face ID is used for wallet unlock when enabled.</li>
         <li><strong>Web:</strong> Hosted at the same GitHub Pages site. Grok construal uses local heuristic mode in the browser.</li>
-        <li><strong>Integrity:</strong> Packages are <strong>Authenticode-signed (Windows)</strong> and <strong>release-key signed (Android)</strong>, with SHA-256 and SHA-512 checksum sidecars. Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/CHECKSUMS.sha512">CHECKSUMS.sha512</a> (or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/checksums.json">checksums.json</a>).</li>
+        <li><strong>Integrity:</strong> Evolve Android APK is <strong>release-key signed</strong>. Windows installers are checksum-verified (not yet Authenticode-signed). SHA-256 / SHA-512 sidecars on <a href="https://github.com/rgsneddon/evolve/releases">Evolve Releases</a>. Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/CHECKSUMS.sha512">CHECKSUMS.sha512</a> (or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.5/checksums.json">checksums.json</a>).</li>
         <li><strong>Updates:</strong> Check <a href="https://github.com/rgsneddon/evolve/releases">GitHub Releases</a> for older versions and release notes.</li>
       </ul>
     </section>
