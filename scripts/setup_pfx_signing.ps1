@@ -58,6 +58,9 @@ if (-not (Test-Path $defaultPfx)) {
     Write-Host '  Sectigo:   https://www.sectigo.com/ssl-certificates-tls/code-signing'
     Write-Host '  SSL.com:   https://www.ssl.com/code-signing/'
     Write-Host ''
+    Write-Host 'Free for open source (CI signing, not local PFX):' -ForegroundColor Yellow
+    Write-Host '  SignPath:  https://signpath.org/apply'
+    Write-Host ''
     Write-Host 'After issuance, export as .pfx with private key, then:' -ForegroundColor Yellow
     Write-Host "  scripts\setup_pfx_signing.ps1 -PfxPath C:\path\to\cert.pfx -PfxPassword 'your-password'"
     exit 1

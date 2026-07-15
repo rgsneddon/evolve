@@ -263,7 +263,7 @@ function Assert-PublishReleaseSigningGate {
 Release publish blocked: installer signing verification failed.
 $($blockers -join [Environment]::NewLine)
 
-Fix Azure Trusted Signing (metadata.json profile + AADSTS530035) or use PFX mode,
+Configure PFX signing: scripts\setup_pfx_signing.ps1 -PfxPath <cert.pfx> -PfxPassword <password>
 then rebuild with scripts\build_installers.ps1. Use -SkipCodeSign only for dev builds.
 "@
 }

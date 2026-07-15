@@ -1,17 +1,17 @@
 ﻿{
     "url":  "https://rgsneddon.github.io/evolve/downloads/v4.1.5/evolve-v4.1.5-android-setup.apk",
-    "build":  "170",
+    "build":  "171",
     "platform":  "android",
     "version":  "4.1.5",
     "sizeMb":  76,
-    "sha512":  "81b64ecb74d564f547f5a2af7dd6bc8aebfb75ef774e482a48e6f980cc6e76ed8cde80f0855eb8e4a8a5a215f6f45780eee4e5d07bc730f82653ef1a4f12d4c7",
+    "sha512":  "8b1927ffb400dd42c53b40e1d39fafbc31b5e022489762518758b23a141d04ac75c76fe307272a5a4546c759c4e656158b1a5dca123f66492590a9e7d0ac9760",
     "name":  "evolve-v4.1.5-android-setup.apk",
     "minSdk":  23,
-    "sha256":  "e15da8b820970462525c8d0e192e7071f984d7acdc48374092146386ce4cef70",
+    "sha256":  "a559940b8d0534dc23665f1c1ca4b99a1b545dd6e351744a6cc39e0c0494b1c6",
     "abis":  [
                  "arm64-v8a",
                  "armeabi-v7a",
                  "x86_64"
              ],
-    "sizeBytes":  79730834
+    "sizeBytes":  79698062
 }

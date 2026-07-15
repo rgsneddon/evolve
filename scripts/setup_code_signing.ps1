@@ -100,8 +100,9 @@ if (-not (Test-Path $envFile)) {
     Write-Host ''
     Write-Host 'No code_sign.local.env found.' -ForegroundColor Yellow
     Write-Host 'Choose one path:' -ForegroundColor Yellow
-    Write-Host '  A) PFX from DigiCert/Sectigo/SSL.com -> copy code_sign.local.env.example'
-    Write-Host '  B) Azure Trusted Signing (recommended) -> run: scripts\setup_code_signing.ps1 -OpenAzurePortal'
+    Write-Host '  A) PFX from DigiCert/Sectigo/SSL.com -> scripts\setup_pfx_signing.ps1'
+    Write-Host '  B) Free OSS via SignPath -> https://signpath.org/apply'
+    Write-Host '  C) Azure Trusted Signing (deprecated here) -> code_sign.local.env.example Option C'
     $dlib = Ensure-TrustedSigningTools
     if ($dlib) { Write-AzureMetadataTemplate -DlibPath $dlib }
     if ($OpenAzurePortal) {

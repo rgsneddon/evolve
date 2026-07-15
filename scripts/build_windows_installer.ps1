@@ -36,6 +36,8 @@ if (-not (Test-Path $exePath)) {
     throw "Missing Windows release build: $exePath"
 }
 
+Assert-WindowsSigningReadiness -Root $Root -SkipCodeSign:$SkipCodeSign
+
 & "$PSScriptRoot\stage_vpn_bundle.ps1" -ReleaseDir $releaseDir
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

@@ -1,0 +1,34 @@
+SignPath Foundation setup (after approval)
+==========================================
+
+Evolve applies at https://signpath.org/apply — free Authenticode for open-source projects.
+
+When SignPath emails approval:
+
+1. SignPath.io
+   - Create organization / project for github.com/rgsneddon/evolve
+   - Add Trusted Build System: GitHub.com
+   - Create signing policy (e.g. release-signing)
+   - Upload an unsigned evolve-v*-windows-x64-setup.exe as artifact sample
+     (build locally: scripts\build_windows_installer.ps1 -SkipCodeSign)
+   - Review generated artifact configuration; exclude third-party DLLs you must not re-sign
+
+2. GitHub (repository rgsneddon/evolve)
+   - Install app: https://github.com/apps/signpath
+   - Secrets:
+       SIGNPATH_API_TOKEN        (from SignPath.io user API token, submitter role)
+       SIGNPATH_ORGANIZATION_ID  (from SignPath.io organization settings)
+   - Variables:
+       SIGNPATH_PROJECT_SLUG         (e.g. evolve)
+       SIGNPATH_SIGNING_POLICY_SLUG  (e.g. release-signing)
+       SIGNPATH_ENABLED=true
+
+3. Run workflow
+   - Actions -> SignPath Windows Release -> Run workflow
+   - Or publish a GitHub Release (workflow triggers on release published)
+
+4. Use signed artifact
+   - Download evolve-windows-setup-signed from workflow artifacts
+   - Stage to build/downloads/v{version}/ and run publish path, or attach to GitHub Release
+
+Local builds without SignPath: use -SkipCodeSign (dev only) or wait for CI-signed artifact.

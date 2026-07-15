@@ -52,13 +52,13 @@ switch ($Platform) {
         } else {
             Write-Host 'No grok_proxy.local.env — Android Grok will use mock X sign-in.' -ForegroundColor Yellow
         }
+        $apkDefineArgs = @('--android-skip-build-dependency-validation') + $defineArgs
         $prevEap = $ErrorActionPreference
         $ErrorActionPreference = 'Continue'
-        & $flutter build apk $mode @defineArgs 2>&1 | ForEach-Object {
+        # Flutter/Gradle write advisories to stderr; gate success on exit code only.
+        & $flutter build apk $mode @apkDefineArgs 2>&1 | ForEach-Object {
           if ($_ -is [System.Management.Automation.ErrorRecord]) {
-            $msg = $_.ToString()
-            if ($msg -match 'Warning:') { Write-Host $msg -ForegroundColor Yellow }
-            else { Write-Error $_ }
+            Write-Host $_.ToString() -ForegroundColor Yellow
           } else { $_ }
         }
         $apkExit = $LASTEXITCODE

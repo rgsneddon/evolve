@@ -1,0 +1,89 @@
+# Build unsigned Evolve Windows installer on GitHub-hosted runners, then Authenticode-sign
+# via SignPath Foundation (https://signpath.org). Local PFX signing is not required.
+#
+# After SignPath approves your project:
+#   1. Install https://github.com/apps/signpath on rgsneddon/evolve
+#   2. In SignPath.io: link Trusted Build System "GitHub.com", create project + signing policy
+#   3. Upload an unsigned evolve-v*-windows-x64-setup.exe sample to generate artifact configuration
+#   4. Add repository secrets: SIGNPATH_API_TOKEN, SIGNPATH_ORGANIZATION_ID
+#   5. Add repository variables: SIGNPATH_PROJECT_SLUG, SIGNPATH_SIGNING_POLICY_SLUG
+#   6. Set repository variable SIGNPATH_ENABLED=true
+#   7. Run this workflow (workflow_dispatch) or publish a GitHub Release
+
+name: SignPath Windows Release
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build-and-sign:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Inno Setup
+        run: winget install -e --id JRSoftware.InnoSetup --accept-package-agreements --accept-source-agreements
+
+      - name: Build unsigned Windows installer
+        shell: pwsh
+        run: |
+          $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
+          flutter pub get
+          ./scripts/build_windows_installer.ps1 -SkipCodeSign
+          $setup = Get-ChildItem -Path build/installer/windows -Filter 'evolve-v*-windows-x64-setup.exe' | Select-Object -First 1
+          if (-not $setup) { throw 'Unsigned setup.exe not found under build/installer/windows' }
+          "SETUP_PATH=$($setup.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Built unsigned installer: $($setup.FullName)"
+
+      - name: Upload unsigned artifact for SignPath
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: evolve-windows-setup-unsigned
+          path: ${{ env.SETUP_PATH }}
+          archive: false
+          if-no-files-found: error
+
+      - name: Sign with SignPath
+        if: vars.SIGNPATH_ENABLED == 'true'
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+          skip-decompress: true
+
+      - name: Upload signed installer to workflow artifacts
+        if: vars.SIGNPATH_ENABLED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: evolve-windows-setup-signed
+          path: signed/
+          if-no-files-found: error
+
+      - name: SignPath not configured yet
+        if: vars.SIGNPATH_ENABLED != 'true'
+        shell: pwsh
+        run: |
+          Write-Host 'SignPath signing skipped (set repository variable SIGNPATH_ENABLED=true after approval).'
+          Write-Host 'Unsigned installer is available in workflow artifacts for this run.'

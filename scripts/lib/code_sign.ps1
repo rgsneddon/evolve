@@ -45,10 +45,54 @@ function Import-CodeSignLocalEnv {
 function Test-CodeSignCredentialsConfigured {
     param([string]$Root)
 
-    $path = Join-Path $Root 'code_sign.local.env'
-    if (-not (Test-Path $path)) { return $false }
+    $readiness = Test-WindowsSigningReadiness -Root $Root
+    return $readiness.Ready
+}
 
-    Import-CodeSignLocalEnv -Root $Root | Out-Null
+function Test-WindowsSigningReadiness {
+    param(
+        [string]$Root,
+        [string]$EnvPath = '',
+        [hashtable]$EnvOverrides = @{}
+    )
+
+    $blockers = [System.Collections.Generic.List[string]]::new()
+    $backend = ''
+
+    if (-not $EnvPath) {
+        $EnvPath = Join-Path $Root 'code_sign.local.env'
+    }
+
+    if (-not (Test-Path $EnvPath)) {
+        $blockers.Add('code_sign.local.env is missing (copy code_sign.local.env.example).')
+        return [PSCustomObject]@{
+            Ready    = $false
+            Backend  = ''
+            Blockers = $blockers.ToArray()
+        }
+    }
+
+    Get-Content $EnvPath | ForEach-Object {
+        $line = $_.Trim()
+        if (-not $line -or $line.StartsWith('#')) { return }
+        $idx = $line.IndexOf('=')
+        if ($idx -lt 1) { return }
+        $key = $line.Substring(0, $idx).Trim()
+        $val = $line.Substring($idx + 1).Trim()
+        if ($val.StartsWith('"') -and $val.EndsWith('"')) {
+            $val = $val.Substring(1, $val.Length - 2)
+        }
+        Set-Item -Path "env:$key" -Value $val
+    }
+    foreach ($entry in $EnvOverrides.GetEnumerator()) {
+        Set-Item -Path "env:$($entry.Key)" -Value $entry.Value
+    }
+
+    try {
+        Find-SignTool | Out-Null
+    } catch {
+        $blockers.Add($_.Exception.Message.Trim())
+    }
 
     $mode = if ($env:CODE_SIGN_MODE) { $env:CODE_SIGN_MODE.Trim().ToLowerInvariant() } else { '' }
     if (-not $mode) {
@@ -56,29 +100,91 @@ function Test-CodeSignCredentialsConfigured {
         elseif ($env:CODE_SIGN_CERT_THUMBPRINT -or $env:CODE_SIGN_CERT_SUBJECT) { $mode = 'store' }
         elseif ($env:AZURE_CODESIGN_METADATA_PATH) { $mode = 'azure' }
     }
-    if (-not $mode) { return $false }
+    if (-not $mode) {
+        $blockers.Add('CODE_SIGN_MODE is not set (use pfx, store, or azure).')
+        return [PSCustomObject]@{
+            Ready    = $false
+            Backend  = ''
+            Blockers = $blockers.ToArray()
+        }
+    }
+    $backend = $mode
 
     switch ($mode) {
         'pfx' {
-            return [bool](
-                $env:CODE_SIGN_PFX_PATH -and
-                (Test-Path $env:CODE_SIGN_PFX_PATH) -and
-                $env:CODE_SIGN_PFX_PASSWORD
-            )
+            if (-not $env:CODE_SIGN_PFX_PATH) {
+                $blockers.Add('CODE_SIGN_PFX_PATH is not set.')
+            } elseif (-not (Test-Path $env:CODE_SIGN_PFX_PATH)) {
+                $blockers.Add("CODE_SIGN_PFX_PATH not found: $($env:CODE_SIGN_PFX_PATH)")
+            }
+            if (-not $env:CODE_SIGN_PFX_PASSWORD) {
+                $blockers.Add('CODE_SIGN_PFX_PASSWORD is not set.')
+            } elseif ($env:CODE_SIGN_PFX_PASSWORD -match 'REPLACE_WITH|your_pfx_password') {
+                $blockers.Add('CODE_SIGN_PFX_PASSWORD is still a placeholder.')
+            }
         }
         'store' {
-            return [bool]($env:CODE_SIGN_CERT_THUMBPRINT -or $env:CODE_SIGN_CERT_SUBJECT)
+            if (-not $env:CODE_SIGN_CERT_THUMBPRINT -and -not $env:CODE_SIGN_CERT_SUBJECT) {
+                $blockers.Add('CODE_SIGN_CERT_THUMBPRINT or CODE_SIGN_CERT_SUBJECT is required for store mode.')
+            }
         }
         'azure' {
-            return [bool](
-                $env:AZURE_CODESIGN_DLIB_PATH -and
-                (Test-Path $env:AZURE_CODESIGN_DLIB_PATH) -and
-                $env:AZURE_CODESIGN_METADATA_PATH -and
-                (Test-Path $env:AZURE_CODESIGN_METADATA_PATH)
-            )
+            . (Join-Path $PSScriptRoot 'azure_trusted_signing.ps1')
+            if (-not $env:AZURE_CODESIGN_DLIB_PATH) {
+                $blockers.Add('AZURE_CODESIGN_DLIB_PATH is not set.')
+            } elseif (-not (Test-Path $env:AZURE_CODESIGN_DLIB_PATH)) {
+                $blockers.Add("AZURE_CODESIGN_DLIB_PATH not found: $($env:AZURE_CODESIGN_DLIB_PATH)")
+            }
+            if (-not $env:AZURE_CODESIGN_METADATA_PATH) {
+                $blockers.Add('AZURE_CODESIGN_METADATA_PATH is not set.')
+            } elseif (-not (Test-Path $env:AZURE_CODESIGN_METADATA_PATH)) {
+                $blockers.Add("AZURE_CODESIGN_METADATA_PATH not found: $($env:AZURE_CODESIGN_METADATA_PATH)")
+            } else {
+                $meta = Get-Content $env:AZURE_CODESIGN_METADATA_PATH -Raw | ConvertFrom-Json
+                if ([string]$meta.CodeSigningAccountName -match 'YOUR_') {
+                    $blockers.Add('metadata.json CodeSigningAccountName is still a placeholder.')
+                }
+                if ([string]$meta.CertificateProfileName -match 'YOUR_') {
+                    $blockers.Add('metadata.json CertificateProfileName is still a placeholder (YOUR_PROFILE_NAME).')
+                }
+            }
+            if (-not (Find-AzureCli)) {
+                $blockers.Add('Azure CLI not found (required for Trusted Signing metadata refresh).')
+            }
         }
-        default { return $false }
+        default {
+            $blockers.Add("Unsupported CODE_SIGN_MODE: $mode")
+        }
     }
+
+    return [PSCustomObject]@{
+        Ready    = ($blockers.Count -eq 0)
+        Backend  = $backend
+        Blockers = $blockers.ToArray()
+    }
+}
+
+function Assert-WindowsSigningReadiness {
+    param(
+        [string]$Root,
+        [switch]$SkipCodeSign
+    )
+
+    if ($SkipCodeSign) { return }
+
+    $readiness = Test-WindowsSigningReadiness -Root $Root
+    if ($readiness.Ready) { return $readiness }
+
+    throw @"
+Windows code signing is not ready (backend: $($readiness.Backend)).
+$($readiness.Blockers -join [Environment]::NewLine)
+
+Run scripts\doctor_windows_signing.ps1 for details.
+PFX: scripts\setup_pfx_signing.ps1 -PfxPath <cert.pfx> -PfxPassword <password>
+Store: install OV/EV cert in Current User\Personal, set CODE_SIGN_MODE=store
+Free OSS signing: https://signpath.org/apply (SignPath CI workflow, not local signtool)
+Use -SkipCodeSign only for local dev builds that will not be published.
+"@
 }
 
 function Get-CodeSignConfig {

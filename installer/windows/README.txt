@@ -13,25 +13,21 @@ Authenticode signing (required for release):
   all Release\ PE files (.exe, .dll), and the setup.exe installer.
 
   Quick setup:
-    scripts\setup_code_signing.ps1 -OpenAzurePortal
+    scripts\setup_pfx_signing.ps1 -PfxPath <cert.pfx> -PfxPassword <password>
 
-  Option A — Azure Trusted Signing:
-    Individual Public Trust: billing country must be USA or Canada only.
-    Organization Public Trust: USA, Canada, EU, or UK (registered business).
-    UK developers: use Organization → Public (not Individual) on account evrgs.
-    1. az login
-    2. Create Artifact Signing account + identity validation + cert profile
-       (Azure portal; identity review can take 1–20 business days)
-       Account name rules: 3–24 chars, start with a letter, letters/numbers/hyphens
-       only (no underscores). Example: evolve-codesign
-    3. Copy tools\trusted-signing\metadata.json.example to metadata.json
-    4. Set CODE_SIGN_MODE=azure in code_sign.local.env
-    5. scripts\setup_code_signing.ps1 then scripts\build_windows_installer.ps1
+  Option A — PFX from DigiCert, Sectigo, or SSL.com (recommended):
+    UK individuals: OV code signing supported (no Azure identity validation needed).
+    1. Purchase OV code signing certificate; export as .pfx with private key
+    2. scripts\setup_pfx_signing.ps1 -PfxPath C:\path\to\cert.pfx -PfxPassword <password>
+    3. scripts\finish_windows_signing.ps1
 
-  Option B — PFX from DigiCert, Sectigo, or SSL.com:
-    1. Copy code_sign.local.env.example to code_sign.local.env
-    2. Set CODE_SIGN_MODE=pfx, CODE_SIGN_PFX_PATH, and CODE_SIGN_PFX_PASSWORD
-    3. scripts\build_windows_installer.ps1
+  Option B — SignPath Foundation (applied; pending approval):
+    See .signpath/SETUP.txt and .github/workflows/signpath-windows-release.yml
+    GitHub Actions builds unsigned setup.exe, SignPath signs on GitHub-hosted runners.
+    After approval: set SIGNPATH_* secrets/vars, SIGNPATH_ENABLED=true, run workflow.
+
+  Option C — Windows certificate store:
+    Install OV/EV cert in Current User\Personal; set CODE_SIGN_MODE=store in code_sign.local.env
 
   Verify: scripts\verify_windows_signatures.ps1
 

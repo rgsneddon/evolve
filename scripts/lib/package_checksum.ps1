@@ -205,6 +205,8 @@ function Update-DownloadsIndexPage {
     $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)checksums\.json"',
         "href=`"$releaseBase/checksums.json`""
 
+    Set-Content -Path $DownloadsIndex -Value $html -NoNewline
+
     . (Join-Path $PSScriptRoot 'release_signing_status.ps1')
     Update-DownloadsInstallNotesForSigning -Root $Root -DownloadsIndex $DownloadsIndex -VersionDir $VersionDir | Out-Null
     $html = Get-Content $DownloadsIndex -Raw
