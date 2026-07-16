@@ -2,7 +2,7 @@ EVOLVE CHRONOFLUX — PRIVACY POLICY
 ===================================
 
 Effective date: 3 July 2026
-Last updated: 15 July 2026 (v4.1.6 build 172; Windows VPN connect-speed note after connect; WireGuard tunnel fully removed on Disconnect and app close; Android login splash shows full EVOLVE banner proportionally on phone screens; Evolve-only VPN tab with manual connect/disconnect and bundled WireGuard on Windows; VPN log-deletion status from operator node; Android biometric enrollment after registration seed setup; randomly assigned PERC addresses for independent registrations; balance and transaction sync for wallets restored from the same seed or backup; send re-authentication before outbound PERC transfers; inbound credits at one main-chain confirmation; Android pull-to-refresh; hold-to-reveal login password)
+Last updated: 16 July 2026 (v4.1.7 build 173; VPN tab and bundled WireGuard tunnel removed from Windows installer; Android login splash shows full EVOLVE banner proportionally on phone screens; Android biometric enrollment after registration seed setup; randomly assigned PERC addresses for independent registrations; balance and transaction sync for wallets restored from the same seed or backup; send re-authentication before outbound PERC transfers; inbound credits at one main-chain confirmation; Android pull-to-refresh; hold-to-reveal login password)
 
 This Privacy Policy describes how Evolve Chronoflux ("Evolve", "we", "us", or "our")
 collects, uses, stores, and shares information when you use the Evolve application
@@ -86,15 +86,6 @@ Privacy enquiries:
   ask you to re-enter your wallet password or use enrolled Android biometrics.
   This gate applies only to sends — not to Percent Chance or Social Cohesion
   analysis faucet credits while you remain signed in.
-- Evolve VPN (Windows, optional): a VPN tab in the Evolve app lets you manually
-  connect or disconnect a WireGuard tunnel when your PERC wallet is open. No
-  personal details are required to use VPN. The Windows installer bundles
-  WireGuard runtime files and a pre-provisioned profile under the app install
-  directory; a copy is placed in %LOCALAPPDATA%\EVOLVE_TUNNEL\ on first use.
-  The tunnel tears down when you disconnect, close Evolve, or send the app to the
-  background. Evolve does not auto-connect VPN. When connected, device traffic
-  for the tunnel routes through the operator VPN node; the app may poll a public
-  /status endpoint for log-deletion cadence (for example a 4-hour purge cycle).
 
 
 3. INFORMATION WE COLLECT AND HOW WE USE IT
@@ -227,10 +218,6 @@ when you use network features:
   - Public IP lookup services (for example api.ipify.org and ifconfig.me) — used
     only to discover your device's public internet endpoint when your wallet
     registers as an online node; your IP address may be sent to those services
-  - Operator VPN node — when you manually connect Evolve VPN (Windows), tunneled
-    traffic and a periodic /status poll for log-deletion display may reach the
-    configured VPN endpoint
-
 These third parties process data under their own policies. Evolve Chronoflux does
 not control their practices.
 
@@ -405,43 +392,6 @@ Percent Chance or Social Cohesion Score analysis rewards, receive, staking,
 backup export, or ordinary signed-in wallet browsing.
 
 
-3.16 Evolve VPN (Windows, optional)
-
-Evolve includes an optional VPN tab (Evolve app only — not in the standalone
-MY PERC wallet). VPN is manual: you tap Connect or Disconnect; Evolve never
-auto-connects.
-
-Requirements and behaviour:
-
-  - Your PERC wallet must be open (signed in with app access) before Connect is
-    enabled.
-  - The tunnel tears down when you disconnect, close Evolve, or move the app to
-    the background.
-  - No account registration, email, phone number, or payment details are required
-    for VPN use.
-
-Windows installer bundling:
-
-  - The Evolve Windows installer may include redistributed WireGuard for Windows
-    binaries (wireguard.exe, wg.exe) and a bundled tunnel profile beside evolve.exe
-    under {app}\vpn\.
-  - On first launch, Evolve may copy the bundled profile to
-    %LOCALAPPDATA%\EVOLVE_TUNNEL\demo1.conf (or a path you set via
-    EVOLVE_TUNNEL_CONF). Private keys in that profile stay on your device.
-
-When you connect:
-
-  - Evolve starts a local WireGuard tunnel service using the bundled or copied
-    profile and routes traffic through the configured operator VPN endpoint.
-  - Evolve may contact the operator node's public /status JSON to show log-deletion
-    policy (purge interval and last purge timestamp). No wallet credentials or
-    scenario content are sent with that status poll.
-
-Evolve does not operate the VPN server. The operator node processes tunneled
-traffic under its own infrastructure and retention policies. WireGuard is
-third-party software redistributed under its own license (see Section 12).
-
-
 4. WHAT WE DO NOT COLLECT OR EXPOSE PUBLICLY
 --------------------------------------------
 
@@ -563,8 +513,6 @@ You can:
   - Decline Android biometric sign-in enrollment and use manual PERC login only
   - Clear app data on Android to remove opt-in biometric credentials from secure
     storage
-  - Avoid the Evolve VPN tab or tap Disconnect to stop routing traffic through
-    the operator tunnel
 
 Depending on your location, you may have rights to access, correct, delete, or
 restrict processing of personal data. Because most app data is stored locally on
@@ -597,8 +545,7 @@ Pages download page.
 --------------------------
 
 Evolve includes third-party open-source software (Flutter, mobile_scanner,
-permission_handler, qr_flutter, Node.js seed-node components, WireGuard for
-Windows when bundled in the Evolve Windows installer, and others). Those
+permission_handler, qr_flutter, Node.js seed-node components, and others). Those
 components are subject to their own licenses. See NOTICES in build outputs for
 attribution.
 

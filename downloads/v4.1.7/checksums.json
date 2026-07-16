@@ -1,6 +1,6 @@
 ﻿{
     "minimumAlgorithm":  "SHA256",
-    "generatedAt":  "2026-07-16T10:58:38.8441576Z",
+    "generatedAt":  "2026-07-16T11:07:19.4401876Z",
     "packages":  [
                      {
                          "file":  "evolve-v4.1.7-android-setup.apk",
@@ -8,6 +8,13 @@
                          "sha256":  "55cb9be2da6c55c8b48c21bdfca0f7a7cc4ba067d41c3e5d071967aa598606e7",
                          "sha512":  "da096dc5617717db5a21f3d0c0d68ae70bcdf233a59d1d48ee79e6fea683cc6937193f2df7def9546a37137c158b467dfaf9232f8e0316150cddc75014d53567",
                          "url":  "https://rgsneddon.github.io/evolve/downloads/v4.1.7/evolve-v4.1.7-android-setup.apk"
+                     },
+                     {
+                         "file":  "evolve-v4.1.7-ios-setup.ipa",
+                         "bytes":  4096,
+                         "sha256":  "ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+                         "sha512":  "2d23913d3759ef01704a86b4bee3ac8a29002313ecc98a7424425a78170f219577822fd77e4ae96313547696ad7d5949b58e12d5063ef2ee063b595740a3a12d",
+                         "url":  "https://rgsneddon.github.io/evolve/downloads/v4.1.7/evolve-v4.1.7-ios-setup.ipa"
                      },
                      {
                          "file":  "evolve-v4.1.7-windows-x64-setup.exe",
