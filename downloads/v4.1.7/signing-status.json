@@ -1,0 +1,14 @@
+﻿{
+    "probedUtc":  "2026-07-16T10:58:53.9335444Z",
+    "android":  {
+                    "message":  "Release APK signature OK (v2)",
+                    "file":  "evolve-v4.1.7-android-setup.apk",
+                    "debugSigned":  false,
+                    "releaseSigned":  true
+                },
+    "windows":  {
+                    "authenticodeSigned":  false,
+                    "message":  "No Authenticode signature found",
+                    "file":  "evolve-v4.1.7-windows-x64-setup.exe"
+                }
+}
