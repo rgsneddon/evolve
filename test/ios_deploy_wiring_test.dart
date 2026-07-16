@@ -8,7 +8,7 @@ import 'package:evolve/services/app_update_check.dart';
 import 'test_paths.dart';
 
 const _scratchDir =
-    r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-e6a4a8fb17ae\implementer';
+    r'C:\Users\rgsne\AppData\Local\Temp\grok-goal-f951089efbc7\implementer';
 
 Future<void> _ensureScratchDir() async {
   await Directory(_scratchDir).create(recursive: true);
@@ -66,14 +66,14 @@ void main() {
     expect(urls.any((u) => u.contains('.ipa')), isTrue);
   });
 
-  test('downloads index advertises iOS installer card', () {
+  test('download.html advertises Evolve iOS installer card', () {
     final pubspec = evolveRepoFile('pubspec.yaml').readAsStringSync();
     final versionMatch =
         RegExp(r'version:\s*(\d+\.\d+\.\d+)\+(\d+)').firstMatch(pubspec);
     expect(versionMatch, isNotNull);
     final release = versionMatch!.group(1)!;
 
-    final html = evolveRepoFile('downloads/index.html').readAsStringSync();
+    final html = evolveRepoFile('download.html').readAsStringSync();
     expect(html, contains('<article class="card ios">'));
     expect(html, contains('evolve-v$release-ios-setup.ipa'));
     expect(
@@ -82,6 +82,9 @@ void main() {
         'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-ios-setup.ipa',
       ),
     );
+
+    final index = evolveRepoFile('downloads/index.html').readAsStringSync();
+    expect(index, isNot(contains('evolve-v$release-ios-setup.ipa')));
   });
 
   test('deploy_downloads.ps1 includes ios-setup.ipa cleanup pattern', () {

@@ -26,18 +26,8 @@ void _expectReadmeSynced(String path, String semver) {
       reason: '$path must document hold-to-reveal password');
   expect(readme.toLowerCase(), contains('send re-authentication'),
       reason: '$path must document send re-authentication');
-  expect(readme.toLowerCase(), contains('vpn'),
-      reason: '$path must document Evolve VPN');
-}
-
-void _expectPrivacyVpnDisclosure(String path) {
-  final policy = File(path).readAsStringSync().toLowerCase();
-  expect(policy, contains('evolve vpn'),
-      reason: '$path must disclose Evolve VPN');
-  expect(policy, anyOf(contains('wireguard'), contains('wire guard')),
-      reason: '$path must disclose WireGuard bundling');
-  expect(policy, anyOf(contains('manual'), contains('connect or disconnect')),
-      reason: '$path must disclose manual VPN connect');
+  expect(readme.toLowerCase(), isNot(contains('evolve vpn')),
+      reason: '$path must not document removed Evolve VPN');
 }
 
 void _expectPrivacySendReAuth(String path) {
@@ -63,6 +53,8 @@ void _expectPrivacyBiometricDisclosure(String path) {
       reason: '$path must disclose user opt-in');
   expect(policy, isNot(contains('v4.0.0 build 136')),
       reason: '$path must not carry stale v4.0.0 build 136 header only');
+  expect(policy, isNot(contains('evolve vpn')),
+      reason: '$path must not disclose removed Evolve VPN');
 }
 
 File _siblingFile(String repo, String name) {
@@ -83,18 +75,16 @@ void main() {
     _expectReadmeSynced(ghpages.path, semver);
   });
 
-  test('privacy policy discloses biometric vault, send re-auth, and VPN', () {
+  test('privacy policy discloses biometric vault and send re-auth without VPN',
+      () {
     _expectPrivacyBiometricDisclosure('privacy_policy.txt');
     _expectPrivacySendReAuth('privacy_policy.txt');
-    _expectPrivacyVpnDisclosure('privacy_policy.txt');
     final deploy = _siblingFile('evolve_deploy', 'privacy_policy.txt');
     final ghpages = _siblingFile('evolve_ghpages', 'privacy_policy.txt');
     _expectPrivacyBiometricDisclosure(deploy.path);
     _expectPrivacyBiometricDisclosure(ghpages.path);
     _expectPrivacySendReAuth(deploy.path);
     _expectPrivacySendReAuth(ghpages.path);
-    _expectPrivacyVpnDisclosure(deploy.path);
-    _expectPrivacyVpnDisclosure(ghpages.path);
   });
 
   test('LICENSE copies match canonical repo root', () {

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:evolve_tunnel/evolve_tunnel.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'desktop_platform.dart';
@@ -25,23 +24,19 @@ class WindowManagerOps implements EvolveWindowOps {
       windowManager.addListener(listener);
 }
 
-/// Intercepts WM_CLOSE, awaits VPN teardown, then destroys the window.
+/// Intercepts WM_CLOSE on Windows desktop, then destroys the window.
 class EvolveWindowLifecycle with WindowListener {
-  EvolveWindowLifecycle(
-    this.tunnel, {
+  EvolveWindowLifecycle({
     EvolveWindowOps? windowOps,
   }) : _windowOps = windowOps ?? WindowManagerOps();
 
-  final EvolveTunnelController tunnel;
   final EvolveWindowOps _windowOps;
   bool _closeInProgress = false;
 
   static EvolveWindowLifecycle? instance;
 
-  Future<void> teardownIfNeeded() => tunnel.teardownOnAppClose();
+  Future<void> teardownIfNeeded() async {}
 
-  /// window_manager invokes this synchronously; teardown must run async then
-  /// [EvolveWindowOps.destroy] after [setPreventClose](true) blocked native exit.
   @override
   void onWindowClose() {
     unawaited(_handleWindowClose());
@@ -59,15 +54,14 @@ class EvolveWindowLifecycle with WindowListener {
   }
 }
 
-Future<void> registerEvolveWindowLifecycle(
-  EvolveTunnelController tunnel, {
+Future<void> registerEvolveWindowLifecycle({
   EvolveWindowOps? windowOps,
   bool? enabled,
 }) async {
   final active = enabled ?? isDesktopWindows;
   if (!active) return;
   final ops = windowOps ?? WindowManagerOps();
-  final lifecycle = EvolveWindowLifecycle(tunnel, windowOps: ops);
+  final lifecycle = EvolveWindowLifecycle(windowOps: ops);
   EvolveWindowLifecycle.instance = lifecycle;
   await ops.setPreventClose(true);
   ops.addListener(lifecycle);

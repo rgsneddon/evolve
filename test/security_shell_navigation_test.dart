@@ -1,4 +1,3 @@
-import 'package:evolve_tunnel/evolve_tunnel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +13,6 @@ import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/providers/evolve_provider.dart';
 import 'package:evolve/perc/screens/wallet_screen.dart';
 import 'package:evolve/screens/evolve_shell_screen.dart';
-import 'mock_tunnel.dart';
 import 'test_locale_provider.dart';
 
 void main() {
@@ -47,20 +45,12 @@ void main() {
     return seed;
   }
 
-  EvolveTunnelController? _tunnel;
-
-  tearDown(() {
-    _tunnel?.stopStatusPolling();
-    _tunnel = null;
-  });
-
   Future<void> pumpShell(WidgetTester tester, PercWalletProvider wallet) async {
     final evolve = EvolveProvider();
     await evolve.initialize();
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await fcg.initialize();
     final locale = await createTestLocaleProvider();
-    _tunnel ??= createMockTunnelController();
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -68,19 +58,18 @@ void main() {
           ChangeNotifierProvider.value(value: wallet),
           ChangeNotifierProvider.value(value: fcg),
           ChangeNotifierProvider.value(value: locale),
-          ChangeNotifierProvider.value(value: _tunnel!),
         ],
         child: MaterialApp(
           home: const EvolveShellScreen(),
         ),
       ),
     );
-    // Avoid pumpAndSettle — Voting tab Mishi access probe can leave pending timers.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
   }
 
-  testWidgets('Security nav sits between Wallet and Credit when gated', (tester) async {
+  testWidgets('Security nav sits between Wallet and Credit when gated',
+      (tester) async {
     final wallet = PercWalletProvider(store: PercWalletStoreMemory());
     await wallet.initialize();
     await pumpShell(tester, wallet);
@@ -93,9 +82,10 @@ void main() {
     expect(labels.indexOf('Wallet'), 0);
     expect(labels.indexOf('Security'), 1);
     expect(labels.indexOf('Credit'), 2);
+    expect(labels, isNot(contains('VPN')));
   });
 
-  testWidgets('Security nav order with full app access', (tester) async {
+  testWidgets('full app access nav has no VPN destination', (tester) async {
     PercNetworkCoordinator.instance.registerTestSeedLedger(
       _registrationSeedForTests(),
     );
@@ -111,10 +101,15 @@ void main() {
         .map((d) => d.label)
         .toList();
 
+    expect(labels, contains('Analysis'));
+    expect(labels, contains('Wallet'));
+    expect(labels, contains('Security'));
+    expect(labels, contains('Voting'));
+    expect(labels, contains('Credit'));
+    expect(labels, isNot(contains('VPN')));
     expect(labels.indexOf('Wallet'), lessThan(labels.indexOf('Security')));
-    expect(labels.indexOf('Security'), lessThan(labels.indexOf('VPN')));
-    expect(labels.indexOf('VPN'), lessThan(labels.indexOf('Credit')));
-    expect(labels[labels.length - 2], 'VPN');
+    expect(labels.indexOf('Security'), lessThan(labels.indexOf('Credit')));
+    expect(labels.last, 'Credit');
   });
 
   testWidgets('logout from Wallet tab returns to wallet login, not Security',
