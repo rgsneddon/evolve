@@ -4,4 +4,4 @@ algorithm_secondary=SHA512
 sha512=2d23913d3759ef01704a86b4bee3ac8a29002313ecc98a7424425a78170f219577822fd77e4ae96313547696ad7d5949b58e12d5063ef2ee063b595740a3a12d
 version=4.1.8
 platform=ios
-url=https://rgsneddon.github.io/evolve/downloads/v4.1.8/evolve-v4.1.8-ios-setup.ipa
+url=https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-ios-setup.ipa

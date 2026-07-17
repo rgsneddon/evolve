@@ -4,4 +4,4 @@ algorithm_secondary=SHA512
 sha512=cd5cd0ae63a5e07b3e2e2fe0d29ab058448196ea1c0c4c4ff8321f3b16799dfe68343a779b424d3bd77c7cb7c3b8783938b17e61b254e3f8452345873fa487ef
 version=4.1.8
 platform=windows
-url=https://rgsneddon.github.io/evolve/downloads/v4.1.8/evolve-v4.1.8-windows-x64-setup.exe
+url=https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-windows-x64-setup.exe
