@@ -14,11 +14,11 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ## Quick start
 
-**Latest release:** v4.1.7 (build 173) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
+**Latest release:** v4.1.8 (build 174) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
 
 ### Windows (easiest)
 
-Download **evolve-v4.1.7-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
+Download **evolve-v4.1.8-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
 
 ### Web
 
@@ -26,7 +26,7 @@ Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evol
 
 ### Android
 
-Download **evolve-v4.1.7-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases**. Verify SHA-256 before installing. The in-app updater checks GitHub Releases, then gh-pages, when a newer build is published.
+Download **evolve-v4.1.8-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases**. Verify SHA-256 before installing. The in-app updater checks GitHub Releases, then gh-pages, when a newer build is published.
 
 ---
 
