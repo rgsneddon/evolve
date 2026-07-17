@@ -30,7 +30,8 @@ if (-not (Test-Path $SourceDir)) {
     throw "Missing download packages: $SourceDir"
 }
 
-$baseUrl = "https://rgsneddon.github.io/evolve/downloads/v$Version"
+# Binaries ship on GitHub Releases; gh-pages only hosts checksum sidecars/index.
+$baseUrl = "https://github.com/rgsneddon/evolve/releases/download/v$Version"
 
 if ($VerifyOnly) {
     Invoke-ReleaseArtifactSecurityScan `

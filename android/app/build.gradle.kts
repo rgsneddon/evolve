@@ -33,7 +33,8 @@ android {
         applicationId = "com.evolve.chronoflux"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion // mobile_scanner QR camera
+        // Flutter default is API 24 (Android 7.0). Keep explicit so install docs stay honest.
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

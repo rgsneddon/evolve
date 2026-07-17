@@ -16,10 +16,14 @@ Architectures (fat APK):
   - armeabi-v7a (older 32-bit ARM)
   - x86_64      (emulators / some tablets)
 
-Minimum Android: API 23 (Android 6.0)
+Minimum Android: API 24 (Android 7.0)
+  (Flutter default minSdk; matches the APK badging sdkVersion.)
 
-Secure direct URL pattern:
-  https://rgsneddon.github.io/evolve/downloads/v{version}/evolve-v{version}-android-setup.apk
+ABIs note: fat APK includes arm64-v8a, armeabi-v7a, and x86_64 only.
+  32-bit x86 emulators are not supported.
+
+Direct download URL pattern (GitHub Releases; binaries are not hosted on gh-pages):
+  https://github.com/rgsneddon/evolve/releases/download/v{version}/evolve-v{version}-android-setup.apk
 
 Checksum sidecars (SHA-256 minimum, SHA-512 included):
   evolve-v{version}-android-setup.apk.sha256

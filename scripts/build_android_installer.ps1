@@ -76,7 +76,7 @@ if (-not $SkipCodeSign) {
 
 $abis = Get-ApkAbis $publishedPath
 $sizeMb = [math]::Round((Get-Item $publishedPath).Length / 1MB, 1)
-$secureUrl = "https://rgsneddon.github.io/evolve/downloads/v$Version/$publishedName"
+$secureUrl = "https://github.com/rgsneddon/evolve/releases/download/v$Version/$publishedName"
 
 $signed = Write-PackageChecksumSidecar `
     -PackagePath $publishedPath `
@@ -84,7 +84,7 @@ $signed = Write-PackageChecksumSidecar `
     -Build $Build `
     -Platform 'android' `
     -Url $secureUrl `
-    -ExtraMetadata @("abis=$abis", 'minSdk=23')
+    -ExtraMetadata @("abis=$abis", 'minSdk=24')
 
 $manifestPath = Join-Path $Root "installer\android\evolve-v$Version-android.json"
 @{
@@ -93,7 +93,7 @@ $manifestPath = Join-Path $Root "installer\android\evolve-v$Version-android.json
     build = $Build
     platform = 'android'
     abis = ($abis -split ', ')
-    minSdk = 23
+    minSdk = 24
     sizeBytes = (Get-Item $publishedPath).Length
     sizeMb = $sizeMb
     sha256 = $signed.Sha256
@@ -109,7 +109,7 @@ Write-Host "  $($signed.Sha512Path)"
 Write-Host "  ABIs: $abis"
 Write-Host "  Size: $sizeMb MB"
 Write-Host ''
-Write-Host 'Secure versioned URL (after gh-pages deploy):' -ForegroundColor Cyan
+Write-Host 'Release download URL:' -ForegroundColor Cyan
 Write-Host "  $secureUrl"
 Write-Host ''
 Write-Host "SHA-256: $($signed.Sha256)" -ForegroundColor Cyan
