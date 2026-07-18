@@ -2554,6 +2554,16 @@ const walletStringsProviderEn = <String, String>{
   'wallet_send_auth_biometric_reason': 'Authenticate to send Perccent',
   'wallet_err_unknown_account': 'Unknown account',
   'wallet_err_send_to_yourself': 'Cannot send to yourself',
+  'wallet_err_username_taken': 'That username is already taken — choose another',
+  'wallet_err_username_length': 'Username must be 3–24 characters',
+  'wallet_err_username_chars':
+      'Use lowercase letters, numbers, and underscores only',
+  'wallet_err_username_reserved': 'That username is reserved — choose another',
+  'wallet_err_password_short': 'Password must be at least 8 characters',
+  'wallet_err_registration_in_progress':
+      'Registration is already in progress — finish or restart the app',
+  'wallet_err_seed_phrase_required':
+      'Generate a seed phrase before continuing',
   'wallet_faucet_label_percent': 'Percent chance analysis',
   'wallet_faucet_label_scs': 'Social cohesion score analysis',
   'wallet_login_language_label': 'Language',

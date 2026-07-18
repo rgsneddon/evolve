@@ -919,6 +919,16 @@ final _en = {
   'wallet_err_send_to_yourself': 'Cannot send to yourself',
   'wallet_err_invalid_password': 'Invalid password',
   'wallet_err_generic': 'Something went wrong — try again',
+  'wallet_err_username_taken': 'That username is already taken — choose another',
+  'wallet_err_username_length': 'Username must be 3–24 characters',
+  'wallet_err_username_chars':
+      'Use lowercase letters, numbers, and underscores only',
+  'wallet_err_username_reserved': 'That username is reserved — choose another',
+  'wallet_err_password_short': 'Password must be at least 8 characters',
+  'wallet_err_registration_in_progress':
+      'Registration is already in progress — finish or restart the app',
+  'wallet_err_seed_phrase_required':
+      'Generate a seed phrase before continuing',
   'wallet_err_address_empty': 'Enter a recipient PERC address',
   'wallet_err_address_confidential': 'Enter a valid confidential PERC address',
   'wallet_err_address_invalid': 'Enter a valid PERC address',
