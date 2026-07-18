@@ -1,11 +1,10 @@
-67261f66f38f5aad2851208f7d156ff2e539d163a254547263ce0e2fde0fa62f  evolve-v4.1.8-macos-x64.zip
+b62209584ffa690018b6083ad4a5993746c6e02b29319b3cfea3d92053377c3f  evolve-v4.1.8-macos-x64.zip
 algorithm=SHA256
 algorithm_secondary=SHA512
-sha512=6b9ca2a011b9ee76191c9f421c1bc542a4d49a6198b2434bcea8d1835d8e7358459f62686648d33fbf2093fda2dd3a0e7ceace5b6afdf4e85151d88546e5d98b
+sha512=2f13d6c4ce51ab1c6d4e77443f109b217345b05dc743cea49025d85dc8d9c6d22e027901bde67c6059632646ddf3433d49039ddc3bbf6dea06f77b30831c4b1e
 version=4.1.8
 build=174
 platform=macos
 url=https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-macos-x64.zip
 bundleId=com.evolve.chronoflux
 signing=Developer ID Application + hardened runtime + notarized
-notarizationId=36c5a466-06f3-40a0-a749-e622ffbbba70

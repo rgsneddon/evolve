@@ -1,10 +1,9 @@
-8f1e802f173ea488b228ced8eaedf2bcc832f34372aeb2b16ce28fe3f80382bf  evolve-v4.1.8-ios-setup.ipa
+129e4e6704fce498288699c856a122ebf4be7fb229975747c5aad35128d0817b  evolve-v4.1.8-ios-setup.ipa
 algorithm=SHA256
 algorithm_secondary=SHA512
-sha512=5b914585af730b6eff94dca8cce1fa34ce1a2179989215f08c8713be4b503bb68d3a40f827a197fdb65e26a9e46dbc25a2e7cc2446275db9df92f188d8ab000a
+sha512=f67487d76de44a330385799ebf1430463db23ffa24d05f1f662b0662ec7db3e6f9a1e3a515d853fe8065ad7b764c3b26ff77d4fec3e245bd83ec3e0b7e32ef5e
 version=4.1.8
 build=174
 platform=ios
 url=https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-ios-setup.ipa
 bundleId=com.evolve.chronoflux
-signing=Apple Development development-signed (no Distribution profile)

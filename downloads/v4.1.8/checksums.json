@@ -1,7 +1,14 @@
 {
   "minimumAlgorithm": "SHA256",
-  "generatedAt": "2026-07-18T10:15:02Z",
+  "generatedAt": "2026-07-18T11:32:57Z",
   "packages": [
+    {
+      "file": "evolve-v4.1.8-windows-x64-setup.exe",
+      "bytes": 12642065,
+      "sha256": "3901b9810210b37253d8088747b46c49ddd51566540c3f9d5f751e2f12915428",
+      "sha512": "cd5cd0ae63a5e07b3e2e2fe0d29ab058448196ea1c0c4c4ff8321f3b16799dfe68343a779b424d3bd77c7cb7c3b8783938b17e61b254e3f8452345873fa487ef",
+      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-windows-x64-setup.exe"
+    },
     {
       "file": "evolve-v4.1.8-android-setup.apk",
       "bytes": 79419154,
@@ -10,25 +17,18 @@
       "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-android-setup.apk"
     },
     {
-      "file": "evolve-v4.1.8-ios-setup.ipa",
-      "bytes": 9541654,
-      "sha256": "8f1e802f173ea488b228ced8eaedf2bcc832f34372aeb2b16ce28fe3f80382bf",
-      "sha512": "5b914585af730b6eff94dca8cce1fa34ce1a2179989215f08c8713be4b503bb68d3a40f827a197fdb65e26a9e46dbc25a2e7cc2446275db9df92f188d8ab000a",
-      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-ios-setup.ipa"
-    },
-    {
       "file": "evolve-v4.1.8-macos-x64.zip",
-      "bytes": 22248420,
-      "sha256": "1f59e4baba72052adf482157ea3f02857fc155b745f7b3497e9a5e695da3d205",
-      "sha512": "4cd11786da57ecfbdc6c2701c1af1866e05143f03a387c70714454a57af2f4c10d070c6d36fff1b5feb2367a25379fbd51106ea5ede39f1bd326d93f7eead368",
+      "bytes": 22263551,
+      "sha256": "b62209584ffa690018b6083ad4a5993746c6e02b29319b3cfea3d92053377c3f",
+      "sha512": "2f13d6c4ce51ab1c6d4e77443f109b217345b05dc743cea49025d85dc8d9c6d22e027901bde67c6059632646ddf3433d49039ddc3bbf6dea06f77b30831c4b1e",
       "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-macos-x64.zip"
     },
     {
-      "file": "evolve-v4.1.8-windows-x64-setup.exe",
-      "bytes": 12642065,
-      "sha256": "3901b9810210b37253d8088747b46c49ddd51566540c3f9d5f751e2f12915428",
-      "sha512": "cd5cd0ae63a5e07b3e2e2fe0d29ab058448196ea1c0c4c4ff8321f3b16799dfe68343a779b424d3bd77c7cb7c3b8783938b17e61b254e3f8452345873fa487ef",
-      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-windows-x64-setup.exe"
+      "file": "evolve-v4.1.8-ios-setup.ipa",
+      "bytes": 23246691,
+      "sha256": "129e4e6704fce498288699c856a122ebf4be7fb229975747c5aad35128d0817b",
+      "sha512": "f67487d76de44a330385799ebf1430463db23ffa24d05f1f662b0662ec7db3e6f9a1e3a515d853fe8065ad7b764c3b26ff77d4fec3e245bd83ec3e0b7e32ef5e",
+      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-ios-setup.ipa"
     }
   ],
   "algorithms": [
