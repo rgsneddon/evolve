@@ -52,6 +52,52 @@ Output paths:
 | Versioned zip | `build/downloads/v{version}/evolve-v{version}-macos-x64.zip` |
 | Metadata | `installer/macos/evolve-v{version}-macos.json` |
 
-## Notarization (later Mac session)
+## Notarization (required for Gatekeeper on other Macs)
 
-After packaging a zip/DMG, notarize with `xcrun notarytool` and staple. Details depend on your Developer ID cert; not required for local smoke tests.
+Release builds use **Developer ID Application** + **hardened runtime** + secure timestamp.
+Without notarization, `spctl` reports `Unnotarized Developer ID` and other users may see
+“Apple cannot check it for malicious software.”
+
+### One-time: App Store Connect API key for notarytool
+
+1. [App Store Connect → Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api)
+2. Create a key with **Developer** (or Admin) access → download `AuthKey_XXXXXXXXXX.p8` once
+3. Note **Key ID** and **Issuer ID** (UUID) — team keys need both
+
+Store credentials in the keychain:
+
+```bash
+xcrun notarytool store-credentials "evolve-notary" \
+  --key ~/Downloads/AuthKey_XXXXXXXXXX.p8 \
+  --key-id XXXXXXXXXX \
+  --issuer "YOUR-ISSUER-UUID-HERE"
+```
+
+### Build, notarize, staple
+
+```bash
+cd /path/to/evolve
+export DEVELOPMENT_TEAM=SFCBP95595
+flutter build macos --release
+
+# Package
+ditto -c -k --keepParent --sequesterRsrc \
+  build/macos/Build/Products/Release/Evolve.app \
+  build/downloads/v4.1.8/evolve-v4.1.8-macos-x64.zip
+
+# Submit + wait
+xcrun notarytool submit build/downloads/v4.1.8/evolve-v4.1.8-macos-x64.zip \
+  --keychain-profile "evolve-notary" --wait
+
+# Staple ticket onto the app, then re-zip
+xcrun stapler staple build/macos/Build/Products/Release/Evolve.app
+spctl --assess --type execute -v build/macos/Build/Products/Release/Evolve.app
+# expect: accepted
+
+ditto -c -k --keepParent --sequesterRsrc \
+  build/macos/Build/Products/Release/Evolve.app \
+  build/downloads/v4.1.8/evolve-v4.1.8-macos-x64.zip
+```
+
+Individual API keys may omit `--issuer`; team keys require it. A `401 Unauthenticated`
+error usually means missing/wrong Issuer ID or Key ID.
