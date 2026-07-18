@@ -1,0 +1,9 @@
+1f59e4baba72052adf482157ea3f02857fc155b745f7b3497e9a5e695da3d205  evolve-v4.1.8-macos-x64.zip
+algorithm=SHA256
+algorithm_secondary=SHA512
+sha512=4cd11786da57ecfbdc6c2701c1af1866e05143f03a387c70714454a57af2f4c10d070c6d36fff1b5feb2367a25379fbd51106ea5ede39f1bd326d93f7eead368
+version=4.1.8
+build=174
+platform=macos
+url=https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-macos-x64.zip
+bundleId=com.evolve.chronoflux
