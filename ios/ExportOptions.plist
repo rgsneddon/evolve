@@ -3,14 +3,25 @@
 <plist version="1.0">
 <dict>
 	<key>method</key>
-	<string>development</string>
+	<string>app-store-connect</string>
 	<key>compileBitcode</key>
 	<false/>
 	<key>destination</key>
 	<string>export</string>
 	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>manual</string>
+	<key>teamID</key>
+	<string>SFCBP95595</string>
+	<key>signingCertificate</key>
+	<string>Apple Distribution</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.evolve.chronoflux</key>
+		<string>Evolve Chronoflux App Store</string>
+	</dict>
 	<key>stripSwiftSymbols</key>
+	<true/>
+	<key>uploadSymbols</key>
 	<true/>
 	<key>thinning</key>
 	<string>&lt;none&gt;</string>

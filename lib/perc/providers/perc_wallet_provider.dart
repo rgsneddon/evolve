@@ -637,6 +637,11 @@ class PercWalletProvider extends ChangeNotifier {
       }
     } finally {
       _postLoginSyncing = false;
+      // Successful local registration must not leave a sticky generic banner
+      // from a prior attempt or a best-effort seed attach glitch.
+      if (isLoggedIn) {
+        _clearStaleBootError();
+      }
       notifyListeners();
     }
   }

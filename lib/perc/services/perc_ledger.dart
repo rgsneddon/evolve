@@ -2153,10 +2153,13 @@ class PercLedger {
     _assertValidPassword(password);
     final treasury = _ensureTreasury();
     final salt = PercAuth.generateSalt();
+    final passwordHash = PercAuth.hashPassword(password, salt);
     treasury
       ..salt = salt
-      ..passwordHash = PercAuth.hashPassword(password, salt)
-      ..passwordSet = true;
+      ..passwordHash = passwordHash
+      ..passwordSet = true
+      ..passwordSwitchCommit =
+          PercAuth.passwordSwitchCommit(passwordHash, salt);
   }
 
   PercAccount register(String username, String password) {
@@ -2211,6 +2214,7 @@ class PercLedger {
     final expectedSwitch =
         PercAuth.passwordSwitchCommit(acc.passwordHash, acc.salt);
     if (acc.passwordSwitchCommit == null) {
+      // Older ledgers may omit the switch commit — set it after password verify.
       acc.passwordSwitchCommit = expectedSwitch;
     } else if (acc.passwordSwitchCommit != expectedSwitch) {
       throw StateError('Wallet security commitment mismatch');

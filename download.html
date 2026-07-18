@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Download Evolve Chronoflux — Windows, Android, and iOS installers.">
-  <title>Evolve Chronoflux — Downloads</title>
+  <meta name="description" content="Download Evolve Chronoflux â€” Windows, Android, iOS, and macOS installers.">
+  <title>Evolve Chronoflux â€” Downloads</title>
   <style>
     :root {
       --bg: #0b0d14;
@@ -122,6 +122,7 @@
     }
 
     .card.android .card-icon { background: rgba(0, 212, 170, 0.15); }
+    .card.macos .card-icon { background: rgba(148, 163, 184, 0.18); }
     .card.ios .card-icon { background: rgba(99, 102, 241, 0.15); }
     .card.web .card-icon { background: rgba(245, 158, 11, 0.15); }
 
@@ -301,20 +302,36 @@
         </p>
       </article>
 
+      <article class="card macos">
+        <div class="card-icon" aria-hidden="true">&#63743;</div>
+        <h2>macOS</h2>
+        <p>Download the signed <code>Evolve.app</code> zip for Apple silicon and Intel Macs. Unzip and open the app (Developer ID signed).</p>
+        <p class="meta">evolve-v4.1.8-macos-x64.zip &middot; ~21.2 MB &middot; universal</p>
+        <a class="btn btn-primary" href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-macos-x64.zip" download>
+          Download macOS Installer
+        </a>
+        <p class="meta" style="margin-top:12px;margin-bottom:0;">
+          SHA-256:
+          <code style="font-size:0.72rem;word-break:break-all;">b62209584ffa690018b6083ad4a5993746c6e02b29319b3cfea3d92053377c3f</code>
+          (<a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-macos-x64.zip.sha256">.sha256</a>)
+        </p>
+      </article>
+
       <article class="card ios">
         <div class="card-icon" aria-hidden="true">&#63743;</div>
         <h2>iOS</h2>
-        <p>Sideload the signed IPA on iPhone or iPad. Requires Apple developer signing or enterprise distribution.</p>
-        <p class="meta">evolve-v4.1.8-ios-setup.ipa &middot; ~0 MB</p>
+        <p>Sideload the development-signed IPA on iPhone or iPad. Requires Apple developer tooling (AltStore, Apple Configurator, or a registered device profile).</p>
+        <p class="meta">evolve-v4.1.8-ios-setup.ipa &middot; ~22.2 MB</p>
         <a class="btn btn-primary" href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-ios-setup.ipa" download>
           Download iOS Installer
         </a>
         <p class="meta" style="margin-top:12px;margin-bottom:0;">
           SHA-256:
-          <code style="font-size:0.72rem;word-break:break-all;">ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7</code>
+          <code style="font-size:0.72rem;word-break:break-all;">129e4e6704fce498288699c856a122ebf4be7fb229975747c5aad35128d0817b</code>
           (<a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-ios-setup.ipa.sha256">.sha256</a>)
         </p>
       </article>
+
     </div>
 
     <section class="fcg-suite">
@@ -340,8 +357,9 @@
       <ul>
         <li><strong>Windows:</strong> Run <code>evolve-v4.1.8-windows-x64-setup.exe</code>. Verify the SHA-256 checksum before installing. Windows SmartScreen may ask you to confirm until Authenticode-signed releases ship.</li>
         <li><strong>Android:</strong> Download <code>evolve-v4.1.8-android-setup.apk</code> from <strong>GitHub Releases</strong> (not a gh-pages binary path). Requires Android 7.0+ (API 24). If an older Evolve install was debug-signed, uninstall it first, then install this release-key APK. Enable &ldquo;Install unknown apps&rdquo; for your browser/files app. APK is signed with the Evolve release key (not debug). Camera permission is requested only when you scan a PERC QR code.</li>
-        <li><strong>iOS:</strong> Install <code>evolve-v4.1.8-ios-setup.ipa</code> via sideload tooling (AltStore, Apple Configurator, or MDM). Requires iOS 13+. Face ID is used for wallet unlock when enabled.</li>
-        <li><strong>Integrity:</strong> Evolve Android APK is <strong>release-key signed</strong>. Windows installers are checksum-verified (not yet Authenticode-signed). SHA-256 / SHA-512 sidecars on <a href="https://github.com/rgsneddon/evolve/releases">Evolve Releases</a>. Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/CHECKSUMS.sha512">CHECKSUMS.sha512</a> (or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/checksums.json">checksums.json</a>).</li>
+        <li><strong>macOS:</strong> Download <code>evolve-v4.1.8-macos-x64.zip</code>, unzip, and open <code>Evolve.app</code>. Developer ID signed, hardened runtime, and <strong>notarized</strong> (Team SFCBP95595).</li>
+        <li><strong>iOS:</strong> Install <code>evolve-v4.1.8-ios-setup.ipa</code> via sideload tooling (AltStore, Apple Configurator, or MDM). App Store distributionâ€“signed IPA (Team SFCBP95595). Sideload via developer tooling, or install from TestFlight when available. Requires iOS 13+. Face ID is used for wallet unlock when enabled.</li>
+        <li><strong>Integrity:</strong> Evolve Android APK is <strong>release-key signed</strong>. macOS zip is <strong>Developer ID signed</strong>. Windows installers are checksum-verified (not yet Authenticode-signed). SHA-256 / SHA-512 sidecars on <a href="https://github.com/rgsneddon/evolve/releases">Evolve Releases</a>. Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/CHECKSUMS.sha512">CHECKSUMS.sha512</a> (or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/checksums.json">checksums.json</a>).</li>
         <li><strong>Updates:</strong> Check <a href="https://github.com/rgsneddon/evolve/releases">GitHub Releases</a> for older versions and release notes.</li>
       </ul>
     </section>

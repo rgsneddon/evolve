@@ -7,5 +7,8 @@ PRODUCT_NAME = Evolve
 // The application's bundle identifier
 PRODUCT_BUNDLE_IDENTIFIER = com.evolve.chronoflux
 
+// Apple Developer Team (Russell Sneddon / existing Developer ID Application cert)
+DEVELOPMENT_TEAM = SFCBP95595
+
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 Evolve Chronoflux. All rights reserved.
