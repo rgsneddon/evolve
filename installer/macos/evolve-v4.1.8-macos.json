@@ -4,11 +4,10 @@
   "build": "174",
   "platform": "macos",
   "bundleId": "com.evolve.chronoflux",
-  "sizeBytes": 22254124,
+  "sizeBytes": 22263551,
   "sizeMb": 21.2,
-  "sha256": "67261f66f38f5aad2851208f7d156ff2e539d163a254547263ce0e2fde0fa62f",
-  "sha512": "6b9ca2a011b9ee76191c9f421c1bc542a4d49a6198b2434bcea8d1835d8e7358459f62686648d33fbf2093fda2dd3a0e7ceace5b6afdf4e85151d88546e5d98b",
+  "sha256": "b62209584ffa690018b6083ad4a5993746c6e02b29319b3cfea3d92053377c3f",
+  "sha512": "2f13d6c4ce51ab1c6d4e77443f109b217345b05dc743cea49025d85dc8d9c6d22e027901bde67c6059632646ddf3433d49039ddc3bbf6dea06f77b30831c4b1e",
   "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-macos-x64.zip",
-  "signing": "Developer ID Application + hardened runtime + notarized",
-  "notarizationId": "36c5a466-06f3-40a0-a749-e622ffbbba70"
+  "signing": "Developer ID Application + hardened runtime + notarized"
 }

@@ -4,11 +4,9 @@
   "build": "174",
   "platform": "ios",
   "bundleId": "com.evolve.chronoflux",
-  "sizeBytes": 9541654,
-  "sizeMb": 9.1,
-  "sha256": "8f1e802f173ea488b228ced8eaedf2bcc832f34372aeb2b16ce28fe3f80382bf",
-  "sha512": "5b914585af730b6eff94dca8cce1fa34ce1a2179989215f08c8713be4b503bb68d3a40f827a197fdb65e26a9e46dbc25a2e7cc2446275db9df92f188d8ab000a",
-  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-ios-setup.ipa",
-  "pagesUrl": "https://rgsneddon.github.io/evolve/downloads/v4.1.8/evolve-v4.1.8-ios-setup.ipa",
-  "signing": "Apple Development development-signed; not App Store Distribution"
+  "sizeBytes": 23246691,
+  "sizeMb": 22.2,
+  "sha256": "129e4e6704fce498288699c856a122ebf4be7fb229975747c5aad35128d0817b",
+  "sha512": "f67487d76de44a330385799ebf1430463db23ffa24d05f1f662b0662ec7db3e6f9a1e3a515d853fe8065ad7b764c3b26ff77d4fec3e245bd83ec3e0b7e32ef5e",
+  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-ios-setup.ipa"
 }
