@@ -66,12 +66,21 @@ void main() {
       ),
     );
     expect(html, contains('<article class="card ios">'));
+    expect(html, contains('<article class="card macos">'));
     expect(
       html,
       contains(
         'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-ios-setup.ipa',
       ),
     );
+    expect(
+      html,
+      contains(
+        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-macos-x64.zip',
+      ),
+    );
+    // Real package presentation — not the historical 4 KB / ~0 MB stub
+    expect(html, isNot(contains('~0 MB')));
     expect(html, isNot(contains('v4.0.0')));
   });
 
@@ -122,12 +131,26 @@ void main() {
         'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-android-setup.apk',
       ),
     );
+    // Evolve platform installers (macOS + iOS) on the main downloads grid
+    expect(html, contains('<article class="card macos">'));
+    expect(
+      html,
+      contains(
+        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-macos-x64.zip',
+      ),
+    );
+    expect(
+      html,
+      contains(
+        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-ios-setup.ipa',
+      ),
+    );
+    expect(html, isNot(contains('~0 MB')));
     final perccentSection = _perccentWalletSection(html);
     expect(perccentSection, contains('<article class="card ios">'));
     expect(perccentSection, contains('<h2>iOS</h2>'));
     expect(perccentSection, contains('perccent-wallet'));
     expect(perccentSection, contains('ios-setup.ipa'));
-    expect(html, isNot(contains('evolve-v$release-ios-setup.ipa')));
   });
 
   test('perccent-wallet section uses perccent release checksum not evolve windows hash', () {
