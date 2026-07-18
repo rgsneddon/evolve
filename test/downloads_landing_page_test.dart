@@ -73,6 +73,9 @@ void main() {
       ),
     );
     expect(html, isNot(contains('v4.0.0')));
+    expect(html, isNot(contains('Open Web App')));
+    expect(html, isNot(contains('class="card web"')));
+    expect(html, isNot(contains('btn-web')));
   });
 
   test('downloads index matches current release wording', () {
@@ -122,6 +125,9 @@ void main() {
         'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-android-setup.apk',
       ),
     );
+    expect(html, isNot(contains('Open Web App')));
+    expect(html, isNot(contains('class="card web"')));
+    expect(html, isNot(contains('btn-web')));
     final perccentSection = _perccentWalletSection(html);
     expect(perccentSection, contains('<article class="card ios">'));
     expect(perccentSection, contains('<h2>iOS</h2>'));

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Download Evolve Chronoflux — Windows, Android, and Web builds.">
+  <meta name="description" content="Download Evolve Chronoflux — Windows, Android, and iOS installers.">
   <title>Evolve Chronoflux — Downloads</title>
   <style>
     :root {
@@ -172,12 +172,6 @@
       border: 1px solid rgba(0, 212, 170, 0.35);
     }
 
-    .btn-web {
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--warn);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-    }
-
     .notes {
       margin-top: 40px;
       padding: 24px;
@@ -321,16 +315,6 @@
           (<a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/evolve-v4.1.8-ios-setup.ipa.sha256">.sha256</a>)
         </p>
       </article>
-
-      <article class="card web">
-        <div class="card-icon" aria-hidden="true">&#127760;</div>
-        <h2>Web</h2>
-        <p>Run Evolve in your browser. No download needed &mdash; works on desktop and mobile.</p>
-        <p class="meta">Progressive web app &middot; GitHub Pages</p>
-        <a class="btn btn-web" href="../">
-          Open Web App
-        </a>
-      </article>
     </div>
 
     <section class="fcg-suite">
@@ -357,7 +341,6 @@
         <li><strong>Windows:</strong> Run <code>evolve-v4.1.8-windows-x64-setup.exe</code>. Verify the SHA-256 checksum before installing. Windows SmartScreen may ask you to confirm until Authenticode-signed releases ship.</li>
         <li><strong>Android:</strong> Download <code>evolve-v4.1.8-android-setup.apk</code> from <strong>GitHub Releases</strong> (not a gh-pages binary path). Requires Android 7.0+ (API 24). If an older Evolve install was debug-signed, uninstall it first, then install this release-key APK. Enable &ldquo;Install unknown apps&rdquo; for your browser/files app. APK is signed with the Evolve release key (not debug). Camera permission is requested only when you scan a PERC QR code.</li>
         <li><strong>iOS:</strong> Install <code>evolve-v4.1.8-ios-setup.ipa</code> via sideload tooling (AltStore, Apple Configurator, or MDM). Requires iOS 13+. Face ID is used for wallet unlock when enabled.</li>
-        <li><strong>Web:</strong> Hosted at the same GitHub Pages site. Grok construal uses local heuristic mode in the browser.</li>
         <li><strong>Integrity:</strong> Evolve Android APK is <strong>release-key signed</strong>. Windows installers are checksum-verified (not yet Authenticode-signed). SHA-256 / SHA-512 sidecars on <a href="https://github.com/rgsneddon/evolve/releases">Evolve Releases</a>. Verify with <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/CHECKSUMS.sha256">CHECKSUMS.sha256</a> or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/CHECKSUMS.sha512">CHECKSUMS.sha512</a> (or <a href="https://github.com/rgsneddon/evolve/releases/download/v4.1.8/checksums.json">checksums.json</a>).</li>
         <li><strong>Updates:</strong> Check <a href="https://github.com/rgsneddon/evolve/releases">GitHub Releases</a> for older versions and release notes.</li>
       </ul>
