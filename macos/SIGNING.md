@@ -11,10 +11,13 @@ Bundle ID: `com.evolve.chronoflux` (see `Runner/Configs/AppInfo.xcconfig`).
 | Developer ID Application certificate | Direct distribution (DMG/zip outside App Store) |
 | Or Mac App Store distribution cert + profile | App Store path |
 
-Set Team ID locally:
+Team ID for this machine’s Apple Developer account is already wired into
+`Runner/Configs/AppInfo.xcconfig` and the Xcode project as `SFCBP95595`
+(Russell Sneddon). Release builds use **Developer ID Application**; Debug uses
+**Apple Development**. Override locally if needed:
 
 ```bash
-export DEVELOPMENT_TEAM=XXXXXXXXXX
+export DEVELOPMENT_TEAM=SFCBP95595
 ```
 
 Or open `macos/Runner.xcworkspace` in Xcode → Runner target → Signing & Capabilities.

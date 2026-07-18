@@ -11,10 +11,11 @@ Bundle ID: `com.evolve.chronoflux` (see `Runner.xcodeproj`).
 | Distribution certificate (Apple Distribution or iOS Distribution) | Release IPA signing |
 | Provisioning profile for `com.evolve.chronoflux` | `flutter build ipa` export |
 
-Set Team ID locally:
+Team ID for this machine’s Apple Developer account is already wired into the Xcode project
+and `ExportOptions.plist` as `SFCBP95595` (Russell Sneddon). Override locally if needed:
 
 ```bash
-export DEVELOPMENT_TEAM=XXXXXXXXXX
+export DEVELOPMENT_TEAM=SFCBP95595
 ```
 
 Or Xcode → open `ios/Runner.xcworkspace` → Runner target → Signing & Capabilities → Team.
