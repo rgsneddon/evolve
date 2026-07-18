@@ -28,6 +28,10 @@ Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evol
 
 Download **evolve-v4.1.8-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases** (the APK file itself is on GitHub Releases). Requires **Android 7.0+ (API 24)**. Verify SHA-256 before installing. If install fails after an older debug build, uninstall Evolve first, then reinstall. Enable “Install unknown apps” for the browser or Files app you use to open the APK. The in-app updater checks GitHub Releases first when a newer build is published.
 
+### iOS and macOS (build on a Mac)
+
+Apple binaries require Xcode. The repo includes a full **`ios/`** and **`macos/`** Flutter host (bundle ID `com.evolve.chronoflux`). For the late Mac session — tools, signing, IPA/macOS commands, and handoff into the Windows release pipeline — see **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**. Signing notes: [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md).
+
 ---
 
 ## How to use Evolve

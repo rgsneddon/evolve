@@ -1,0 +1,11 @@
+// Application-level settings for the Runner target.
+// Keep PRODUCT_BUNDLE_IDENTIFIER in sync with ios/ (com.evolve.chronoflux).
+
+// The application's name. By default this is also the title of the Flutter window.
+PRODUCT_NAME = Evolve
+
+// The application's bundle identifier
+PRODUCT_BUNDLE_IDENTIFIER = com.evolve.chronoflux
+
+// The copyright displayed in application information
+PRODUCT_COPYRIGHT = Copyright © 2026 Evolve Chronoflux. All rights reserved.

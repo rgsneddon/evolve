@@ -174,6 +174,13 @@ class AppUpdateChecker {
           'https://github.com/rgsneddon/evolve/releases/tag/$tag',
           '$downloadsBaseUrl$tag/',
         ];
+      case TargetPlatform.macOS:
+        return [
+          '$releasesBaseUrl/$tag/evolve-v$release-macos-x64.zip',
+          '$downloadsBaseUrl$tag/evolve-v$release-macos-x64.zip',
+          'https://github.com/rgsneddon/evolve/releases/tag/$tag',
+          '$downloadsBaseUrl$tag/',
+        ];
       default:
         return [downloadsBaseUrl];
     }
@@ -226,6 +233,7 @@ class AppUpdateChecker {
     return path.endsWith('.apk') ||
         path.endsWith('.exe') ||
         path.endsWith('.ipa') ||
+        path.endsWith('.zip') ||
         uri.host == 'github.com' && path.contains('/releases/download/');
   }
 
