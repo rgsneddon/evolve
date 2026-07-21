@@ -69,14 +69,35 @@ export function applyConstrual(input, construal) {
   };
 }
 
+/** True when XAI_API_KEY (or options.apiKey) is configured. */
+export function isGrokConfigured(options = {}) {
+  return Boolean((options.apiKey || process.env.XAI_API_KEY || '').trim());
+}
+
+/**
+ * Decide whether to call live Grok.
+ * Default: use live Grok when a key is present unless liveGrok === false.
+ */
+export function shouldUseLiveGrok(body = {}, options = {}) {
+  if (body.liveGrok === false || body.liveGrok === 'false' || body.heuristicOnly) {
+    return false;
+  }
+  if (body.liveGrok === true || body.liveGrok === 'true') return isGrokConfigured(options);
+  // Default for construe paths: prefer live when configured
+  return isGrokConfigured(options);
+}
+
 /**
  * Live Grok construal via xAI API when XAI_API_KEY is set.
  * On failure or missing key, falls back to heuristic.
+ * Fills blank construct fields only (never overwrites user-supplied text).
+ * When all fields are full, still pings Grok for a short discourse note if forceNote.
  */
 export async function grokConstrue(input = {}, options = {}) {
   const apiKey = options.apiKey || process.env.XAI_API_KEY || '';
   if (!apiKey) {
-    return heuristicConstrue(input);
+    const h = heuristicConstrue(input);
+    return { ...h, provenance: 'grok-heuristic', grokConfigured: false };
   }
 
   const blanks = [];
@@ -86,7 +107,10 @@ export async function grokConstrue(input = {}, options = {}) {
   if (!(input.flowText || input.f || '').trim()) blanks.push('flow');
   if (!(input.continuumText || '').trim()) blanks.push('continuum');
 
-  if (blanks.length === 0) {
+  // All fields supplied: still call Grok for a brief live discourse note (does not overwrite fields)
+  const forceNote = options.forceNote !== false && blanks.length === 0;
+
+  if (blanks.length === 0 && !forceNote) {
     return {
       continuumText: (input.continuumText || '').trim(),
       vortexText: (input.vortexText || input.v || '').trim(),
@@ -95,14 +119,22 @@ export async function grokConstrue(input = {}, options = {}) {
       flowText: (input.flowText || input.f || '').trim(),
       provenance: 'user-supplied',
       filledFields: [],
+      grokConfigured: true,
     };
   }
 
   const handle = input.xHandle || '@AndyBurnham';
+  const fieldList = blanks.length ? blanks.join(', ') : 'none (all filled — return discourseNote only)';
   const prompt = `You are Evolve Chronoflux construct construal. Scenario: ${handle} has become UK Prime Minister. Topic: ${input.topic || 'social cohesion of Andy Burnham as PM'}.
 Posed question: ${input.posedQuestion || input.scenarioQuery || 'n/a'}
-Fill ONLY these blank construct fields with one short observed-discourse sentence each (JSON keys): ${blanks.join(', ')}.
-Do not invent numeric SCS. Return pure JSON: {"vortex":"...","shear":"...","resistance":"...","flow":"...","continuum":"..."} with only the requested keys.`;
+Existing fields (do not contradict unless blank):
+vortex: ${(input.vortexText || input.v || '').slice(0, 200)}
+shear: ${(input.shearText || input.s || '').slice(0, 200)}
+resistance: ${(input.resistanceText || input.r || '').slice(0, 200)}
+flow: ${(input.flowText || input.f || '').slice(0, 200)}
+Blank fields to fill (JSON keys): ${fieldList}.
+Return pure JSON only: {"vortex":"...","shear":"...","resistance":"...","flow":"...","continuum":"...","discourseNote":"one sentence live Grok read of social discourse"}.
+Only populate blank construct keys; always include discourseNote. Do not invent numeric SCS.`;
 
   try {
     const res = await fetch('https://api.x.ai/v1/chat/completions', {
@@ -112,16 +144,19 @@ Do not invent numeric SCS. Return pure JSON: {"vortex":"...","shear":"...","resi
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: options.model || 'grok-3-mini',
+        model: options.model || process.env.XAI_MODEL || 'grok-3-mini',
         messages: [
           { role: 'system', content: 'Return only valid JSON for Chronoflux construct fields.' },
           { role: 'user', content: prompt },
         ],
         temperature: 0.4,
       }),
-      signal: AbortSignal.timeout(options.timeoutMs || 20000),
+      signal: AbortSignal.timeout(options.timeoutMs || 45000),
     });
-    if (!res.ok) throw new Error(`Grok HTTP ${res.status}`);
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      throw new Error(`Grok HTTP ${res.status}${errBody ? `: ${errBody.slice(0, 180)}` : ''}`);
+    }
     const data = await res.json();
     const text = data.choices?.[0]?.message?.content || '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -137,11 +172,19 @@ Do not invent numeric SCS. Return pure JSON: {"vortex":"...","shear":"...","resi
         parsed.resistance || base.resistanceText,
       ),
       flowText: pickBlank(input.flowText || input.f, parsed.flow || base.flowText),
+      discourseNote: (parsed.discourseNote || '').trim() || null,
       provenance: 'grok-live',
       filledFields: blanks,
+      grokConfigured: true,
+      model: options.model || process.env.XAI_MODEL || 'grok-3-mini',
     };
-  } catch {
+  } catch (err) {
     const h = heuristicConstrue(input);
-    return { ...h, provenance: 'grok-heuristic-fallback' };
+    return {
+      ...h,
+      provenance: 'grok-heuristic-fallback',
+      grokConfigured: true,
+      grokError: String(err?.message || err).slice(0, 240),
+    };
   }
 }

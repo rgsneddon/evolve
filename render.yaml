@@ -13,6 +13,11 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
+      # Live Grok construe for /burnham SCS — set value in Render dashboard (never commit the secret)
+      - key: XAI_API_KEY
+        sync: false
+      - key: XAI_MODEL
+        value: grok-3-mini
       - key: PERC_SEED_USERNAME
         value: evolve_seed_node
       - key: PERC_TREASURY_ADMIN_USER

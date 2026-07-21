@@ -319,11 +319,12 @@
       </div>
       <div class="actions">
         <button type="button" id="btn-score">Score cohesion</button>
-        <button type="button" id="btn-construe" class="secondary">Construe blanks + score</button>
-        <button type="button" id="btn-cycle" class="secondary">Perpetual tick</button>
+        <button type="button" id="btn-construe" class="secondary">Grok construe + score</button>
+        <button type="button" id="btn-cycle" class="secondary">Perpetual Grok tick</button>
         <button type="button" id="btn-reset" class="secondary">Load Burnham seed</button>
       </div>
       <div id="status"></div>
+      <div id="grok-status" class="sub" style="margin-top:6px" data-grok-status="true">Grok: checking…</div>
     </div>
 
     <div class="panel" id="part-one" data-conclusion="part-one">
@@ -774,11 +775,56 @@
       }
     }
 
+    function showGrokBanner(info) {
+      const el = $('grok-status');
+      if (!el) return;
+      if (!info) {
+        el.textContent = 'Grok: unknown';
+        return;
+      }
+      const configured = info.grokConfigured ?? info.configured;
+      const prov = info.provenance || info.construeProvenance || '';
+      const note = info.discourseNote || info.construe?.discourseNote || '';
+      const err = info.grokError || info.construe?.grokError || '';
+      if (configured === false) {
+        el.textContent =
+          'Grok: not configured — set XAI_API_KEY on the server (Render env) for live Grok. Using heuristic until then.';
+        el.style.color = '#f59e0b';
+        return;
+      }
+      el.style.color = '';
+      let line = `Grok: ${prov || 'ready'}`;
+      if (note) line += ` — ${note}`;
+      if (err) line += ` (fallback: ${err})`;
+      el.textContent = line;
+    }
+
+    async function refreshGrokStatus() {
+      try {
+        const s = await api('/scs/grok-status');
+        showGrokBanner({ grokConfigured: s.grokConfigured, provenance: s.grokConfigured ? 'configured' : 'missing key' });
+        window.__grokConfigured = s.grokConfigured;
+      } catch {
+        // older deploy without /scs/grok-status
+        try {
+          const h = await api('/health');
+          showGrokBanner({ grokConfigured: h.grokConfigured });
+        } catch {
+          showGrokBanner({ grokConfigured: false });
+        }
+      }
+    }
+
     async function score(extra) {
       setStatus('Scoring…');
       setPageLoading('start');
       try {
-        const body = { ...formPayload(), ...extra };
+        const body = {
+          ...formPayload(),
+          ...extra,
+          // Prefer live Grok for any construe path unless explicitly disabled
+          liveGrok: extra?.liveGrok !== false,
+        };
         const r = await api('/scs/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -786,7 +832,21 @@
         });
         const snap = await api('/scs/latest');
         applyResult(r, snap.history, { animate: true });
-        setStatus(`SCS ${r.refinedScs}/100 · ${r.lean} · ${r.construeProvenance || 'direct'}`);
+        if (r.scenario?.fields) {
+          // Reflect any blank fields filled by Grok into the form
+          if (!(formPayload().v || '').trim() && r.scenario.fields.v) $('v').value = r.scenario.fields.v;
+          if (!(formPayload().s || '').trim() && r.scenario.fields.s) $('s').value = r.scenario.fields.s;
+          if (!(formPayload().r || '').trim() && r.scenario.fields.r) $('r').value = r.scenario.fields.r;
+          if (!(formPayload().f || '').trim() && r.scenario.fields.f) $('f').value = r.scenario.fields.f;
+        }
+        const prov = r.construeProvenance || r.construe?.provenance || 'direct';
+        setStatus(`SCS ${r.refinedScs}/100 · ${r.lean} · ${prov}`);
+        showGrokBanner({
+          grokConfigured: r.grokConfigured ?? r.construe?.grokConfigured,
+          provenance: prov,
+          discourseNote: r.construe?.discourseNote,
+          grokError: r.construe?.grokError,
+        });
         setPageLoading('success');
       } catch (e) {
         setPageLoading('error');
@@ -796,10 +856,10 @@
     }
 
     async function cycle() {
-      setStatus('Perpetual tick…');
+      setStatus('Perpetual Grok tick…');
       setPageLoading('start');
       try {
-        const body = { ...formPayload(), construe: true };
+        const body = { ...formPayload(), construe: true, liveGrok: true };
         const r = await api('/scs/cycle', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -807,7 +867,14 @@
         });
         const snap = await api('/scs/latest');
         applyResult(r.result, snap.history, { animate: true });
-        setStatus(`Tick SCS ${r.result.refinedScs} · history ${r.historyCount}`);
+        const prov = r.result?.construeProvenance || r.result?.construe?.provenance || 'tick';
+        setStatus(`Tick SCS ${r.result.refinedScs} · history ${r.historyCount} · ${prov}`);
+        showGrokBanner({
+          grokConfigured: r.result?.grokConfigured ?? r.result?.construe?.grokConfigured,
+          provenance: prov,
+          discourseNote: r.result?.construe?.discourseNote,
+          grokError: r.result?.construe?.grokError,
+        });
         setPageLoading('success');
       } catch (e) {
         setPageLoading('error');
@@ -822,11 +889,12 @@
     }
 
     $('btn-score').onclick = () => score({});
-    $('btn-construe').onclick = () => score({ construe: true });
+    $('btn-construe').onclick = () => score({ construe: true, liveGrok: true });
     $('btn-cycle').onclick = () => cycle();
     $('btn-reset').onclick = () => loadSeed();
 
     ensureCharts();
+    refreshGrokStatus();
     loadLatest().catch(async (e) => {
       setPageLoading('error');
       $('api-badge').textContent = 'API offline';
