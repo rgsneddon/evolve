@@ -17,6 +17,8 @@ export const API_PATHS = Object.freeze({
   status: '/perc/status',
   network: '/api/network',
   blocks: '/api/blocks',
+  /** Variable SSUCF / Chronoflux analysis snapshot (refined SCS + % chance). */
+  ssucfAnalysis: '/ssucf_analysis.json',
 });
 
 /**
@@ -32,6 +34,7 @@ export function apiUrls(seedBase = '') {
     network: join(API_PATHS.network),
     // Seed listBlocks pages from the tip (offset=0 = newest `limit` blocks).
     blocks: join(`${API_PATHS.blocks}?limit=40&offset=0`),
+    ssucfAnalysis: join(API_PATHS.ssucfAnalysis),
   };
 }
 
@@ -222,4 +225,198 @@ export function statsCardDescriptors(stats) {
  */
 export function isProductChainId(chainId) {
   return String(chainId || '') === CHAIN_ID;
+}
+
+function pickNum(...candidates) {
+  for (const c of candidates) {
+    if (c == null || c === '') continue;
+    const n = Number(c);
+    if (Number.isFinite(n)) return n;
+  }
+  return NaN;
+}
+
+/**
+ * Format refined/weighted SCS as Chronoflux display (~NN/100).
+ */
+export function formatScsScore(score) {
+  const n = Number(score);
+  if (!Number.isFinite(n)) return '—';
+  const rounded = Math.abs(n - Math.round(n)) < 0.05 ? Math.round(n) : Math.round(n * 10) / 10;
+  return `~${rounded}/100`;
+}
+
+/**
+ * Format calibrated percent-chance headline (not continuum regressive share).
+ */
+export function formatPercentChance(pct) {
+  const n = Number(pct);
+  if (!Number.isFinite(n)) return '—';
+  return `${Math.round(n)}%`;
+}
+
+/**
+ * Format THE CONTINUUM regressive / progressive split.
+ */
+export function formatContinuumSplit(regressivePct, progressivePct) {
+  const r = Number(regressivePct);
+  const p = Number(progressivePct);
+  if (!Number.isFinite(r) || !Number.isFinite(p)) return '—';
+  return `~${Math.round(r)}% / ~${Math.round(p)}%`;
+}
+
+/**
+ * Map SSUCF / Chronoflux analysis-shaped JSON → view model for variable SCS + % chance.
+ *
+ * Accepts flat fields or nested partTwo / forecast / continuum shapes used by
+ * Evolve Chronoflux cohesion reports. Headline % chance is the *calibrated*
+ * percentChance (app display rule) — never the raw regressive continuum share.
+ *
+ * @param {object} input
+ * @returns {object} view model with numeric fields + display strings
+ */
+export function mapSsucfAnalysisToView(input = {}) {
+  const src = input && typeof input === 'object' ? input : {};
+  const partTwo = src.partTwo && typeof src.partTwo === 'object' ? src.partTwo : {};
+  const forecast = src.forecast && typeof src.forecast === 'object' ? src.forecast : {};
+  const continuum = src.continuum && typeof src.continuum === 'object' ? src.continuum : {};
+  const conclusion = src.conclusion && typeof src.conclusion === 'object' ? src.conclusion : {};
+  const core = src.core && typeof src.core === 'object' ? src.core : {};
+
+  const refinedScs = pickNum(
+    src.refinedScs,
+    src.refinedCohesionScore,
+    partTwo.refinedScs,
+    src.socialCohesionOutcome?.refinedScs,
+  );
+  const weightedScs = pickNum(
+    src.weightedScs,
+    src.weightedOverallScs,
+    conclusion.weightedScs,
+    partTwo.weightedScs,
+    refinedScs,
+  );
+  const baselineScs = pickNum(src.baselineScs, src.baselineCohesionScore, partTwo.baselineScs);
+
+  // Calibrated headline % chance (must not default to regressive continuum %)
+  const percentChance = pickNum(
+    src.percentChance,
+    src.calibratedPercentChance,
+    src.headlinePercentChance,
+    forecast.percentChance,
+    forecast.calibratedPercent,
+    forecast.heuristicPercent,
+  );
+
+  let regressivePct = pickNum(
+    src.regressivePct,
+    partTwo.regressivePct,
+    continuum.regressivePct,
+    core.regressivePct,
+    src.continuumRegressivePct,
+  );
+  let progressivePct = pickNum(
+    src.progressivePct,
+    partTwo.progressivePct,
+    continuum.progressivePct,
+    core.progressivePct,
+    src.continuumProgressivePct,
+  );
+  if (!Number.isFinite(progressivePct) && Number.isFinite(regressivePct)) {
+    progressivePct = Math.max(0, 100 - regressivePct);
+  }
+  if (!Number.isFinite(regressivePct) && Number.isFinite(progressivePct)) {
+    regressivePct = Math.max(0, 100 - progressivePct);
+  }
+
+  const leanRaw = String(
+    src.lean || partTwo.lean || continuum.lean || core.lean || '',
+  ).toUpperCase();
+  let lean = leanRaw.includes('PROG')
+    ? 'PROGRESSIVE'
+    : leanRaw.includes('REG')
+      ? 'REGRESSIVE'
+      : '';
+  if (!lean && Number.isFinite(regressivePct) && Number.isFinite(progressivePct)) {
+    lean = regressivePct >= progressivePct ? 'REGRESSIVE' : 'PROGRESSIVE';
+  }
+
+  const topic = String(
+    src.topic || src.posedQuestion || src.question || partTwo.topic || '',
+  ).trim();
+
+  const hasAnalysis =
+    Number.isFinite(refinedScs) ||
+    Number.isFinite(percentChance) ||
+    Number.isFinite(weightedScs);
+
+  return {
+    topic,
+    refinedScs: Number.isFinite(refinedScs) ? refinedScs : null,
+    weightedScs: Number.isFinite(weightedScs) ? weightedScs : null,
+    baselineScs: Number.isFinite(baselineScs) ? baselineScs : null,
+    percentChance: Number.isFinite(percentChance) ? percentChance : null,
+    regressivePct: Number.isFinite(regressivePct) ? regressivePct : null,
+    progressivePct: Number.isFinite(progressivePct) ? progressivePct : null,
+    lean,
+    hasAnalysis,
+    displayRefinedScs: formatScsScore(refinedScs),
+    displayWeightedScs: formatScsScore(weightedScs),
+    displayPercentChance: formatPercentChance(percentChance),
+    displayContinuum: formatContinuumSplit(regressivePct, progressivePct),
+    source: src.source ? String(src.source) : 'ssucf',
+  };
+}
+
+/**
+ * Card descriptors for SSUCF analysis (SCS + % chance + continuum).
+ * Distinct ids from network stats cards.
+ */
+export function ssucfAnalysisCardDescriptors(analysis) {
+  const a = analysis && typeof analysis === 'object' ? analysis : mapSsucfAnalysisToView({});
+  const leanLabel = a.lean ? a.lean : '—';
+  return [
+    {
+      id: 'refinedScs',
+      label: 'Refined SCS',
+      value: a.displayRefinedScs,
+      numeric: a.refinedScs,
+    },
+    {
+      id: 'percentChance',
+      label: '% chance',
+      value: a.displayPercentChance,
+      numeric: a.percentChance,
+    },
+    {
+      id: 'continuum',
+      label: 'Regressive / Progressive',
+      value: a.displayContinuum,
+      numeric: a.regressivePct,
+    },
+    {
+      id: 'weightedScs',
+      label: 'Weighted SCS',
+      value: a.displayWeightedScs,
+      numeric: a.weightedScs,
+    },
+    {
+      id: 'lean',
+      label: 'Continuum lean',
+      value: leanLabel,
+      numeric: null,
+    },
+  ];
+}
+
+/**
+ * Merge network stats with optional SSUCF analysis for combined page refresh.
+ * Analysis cards stay separate; this only attaches the view model.
+ */
+export function attachSsucfAnalysis(networkStats, ssucfInput) {
+  const analysis = mapSsucfAnalysisToView(ssucfInput || {});
+  return {
+    ...(networkStats || {}),
+    analysis,
+  };
 }
