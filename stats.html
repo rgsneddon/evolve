@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evolve Chronoflux — Real-time Network Stats</title>
+  <meta name="description" content="Live Evolve Chronoflux Principia chain stats from the public seed (health, height, peers, blocks).">
+  <style>
+    :root {
+      --bg: #0b0d14;
+      --panel: #141824;
+      --border: #252b3d;
+      --text: #e8ecf4;
+      --muted: #9aa3b8;
+      --accent: #6c63ff;
+      --online: #00d4aa;
+      --offline: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
+    header { margin-bottom: 28px; }
+    h1 { font-size: 1.75rem; margin-bottom: 6px; }
+    .sub { color: var(--muted); font-size: 0.95rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+    .card .label { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .card .value { font-size: 1.45rem; font-weight: 700; margin-top: 4px; word-break: break-word; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .status-pill.online { background: rgba(0,212,170,0.15); color: var(--online); border: 1px solid rgba(0,212,170,0.35); }
+    .status-pill.offline { background: rgba(245,158,11,0.12); color: var(--offline); border: 1px solid rgba(245,158,11,0.3); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    section { margin-bottom: 28px; }
+    h2 { font-size: 1.1rem; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    tr:hover td { background: rgba(108,99,255,0.06); }
+    .mono { font-family: ui-monospace, Consolas, monospace; font-size: 0.78rem; word-break: break-all; }
+    .muted { color: var(--muted); }
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .error { color: var(--danger); padding: 12px; background: rgba(239,68,68,0.1); border-radius: 8px; margin-bottom: 16px; }
+    footer { color: var(--muted); font-size: 0.8rem; margin-top: 32px; }
+    a { color: var(--accent); }
+    .meta-line { margin-top: 10px; font-size: 0.85rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Evolve Chronoflux — Real-time Stats</h1>
+      <p class="sub">Live seed network health for <span class="mono" id="chain-label">evolve-chronoflux-principia-chain-1</span></p>
+      <p class="sub" style="margin-top:8px" id="endpoint-line"></p>
+      <p class="sub" style="margin-top:4px" id="source-line"></p>
+    </header>
+
+    <div id="error" class="error" style="display:none"></div>
+    <div class="grid" id="stats"></div>
+
+    <section>
+      <div class="toolbar">
+        <h2 style="margin:0">Recent blocks</h2>
+        <button class="btn secondary" id="refresh-btn" type="button">Refresh</button>
+        <span class="muted" id="refresh-countdown">Refreshing in 30s</span>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden">
+        <table>
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>Time</th>
+              <th>Txs</th>
+              <th>Treasury</th>
+              <th>Label</th>
+            </tr>
+          </thead>
+          <tbody id="blocks"></tbody>
+        </table>
+      </div>
+      <p class="muted meta-line" id="blocks-meta"></p>
+    </section>
+
+    <footer>
+      Seed APIs:
+      <a id="link-health" href="/health">/health</a> ·
+      <a id="link-status" href="/perc/status">/perc/status</a> ·
+      <a id="link-network" href="/api/network">/api/network</a> ·
+      <a id="link-blocks" href="/api/blocks">/api/blocks</a>
+      · Auto-refresh <span id="refresh-countdown-footer">30</span>s
+      · <a href="https://evolve-perc-internet.onrender.com/">Full explorer</a> · <a href="./download.html">Downloads</a>
+      · <a href="https://github.com/rgsneddon/evolve/releases/tag/v4.1.8" target="_blank" rel="noopener">v4.1.8</a>
+    </footer>
+  </div>
+
+  <script type="module">
+    import {
+      CHAIN_ID,
+      DEFAULT_SEED_BASE,
+      REFRESH_INTERVAL_SEC,
+      apiUrls,
+      mapBlocksToRows,
+      mergeLiveSources,
+      onlinePresentation,
+      statsCardDescriptors,
+    } from './stats_page_model.js';
+
+    const $ = (id) => document.getElementById(id);
+
+    /** Same-origin when hosted on the seed; otherwise absolute public seed. */
+    function resolveSeedBase() {
+      const params = new URLSearchParams(location.search);
+      const q = (params.get('seed') || '').trim().replace(/\/$/, '');
+      if (q) return q;
+      const host = location.hostname || '';
+      if (host.includes('onrender.com') || host === 'localhost' || host === '127.0.0.1') {
+        return ''; // relative paths
+      }
+      return DEFAULT_SEED_BASE;
+    }
+
+    const SEED_BASE = resolveSeedBase();
+    const URLS = apiUrls(SEED_BASE);
+
+    function fmtTime(iso) {
+      if (!iso) return '—';
+      try { return new Date(iso).toLocaleString(); } catch { return iso; }
+    }
+
+    function pillHtml(online) {
+      const p = onlinePresentation(online);
+      return `<span class="status-pill ${p.className}"><span class="dot"></span>${p.label}</span>`;
+    }
+
+    function showError(msg) {
+      const el = $('error');
+      if (!msg) { el.style.display = 'none'; return; }
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function renderStats(stats) {
+      $('chain-label').textContent = stats.chainId || CHAIN_ID;
+      $('endpoint-line').textContent = stats.endpoint
+        ? `Endpoint: ${stats.endpoint}`
+        : (SEED_BASE || location.origin);
+      $('source-line').textContent = stats.source
+        ? `Sources: ${stats.source} · tip ${stats.tipHash ? stats.tipHash.slice(0, 12) + '…' : '—'}`
+        : '';
+
+      const cards = statsCardDescriptors(stats);
+      $('stats').innerHTML = cards.map((c) => {
+        let valueHtml;
+        if (c.id === 'node') {
+          valueHtml = pillHtml(c.online);
+        } else if (c.mono) {
+          valueHtml = `<span class="mono" style="font-size:0.72rem">${c.value}</span>`;
+        } else {
+          valueHtml = c.value;
+        }
+        return `<div class="card" data-stat="${c.id}"><div class="label">${c.label}</div><div class="value">${valueHtml}</div></div>`;
+      }).join('');
+    }
+
+    function renderBlocks(payload) {
+      const { total, rows } = mapBlocksToRows(payload);
+      $('blocks').innerHTML = rows.length
+        ? rows.map((b) => `
+          <tr data-block="${b.index}">
+            <td><strong>#${b.index}</strong></td>
+            <td class="muted">${fmtTime(b.timestamp)}</td>
+            <td>${b.txCount}</td>
+            <td>${b.treasuryEmitted} PERC</td>
+            <td>${b.displayLabel}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="5" class="muted">No blocks yet.</td></tr>';
+      $('blocks-meta').textContent = total
+        ? `Showing ${rows.length} of ${total} blocks (newest first)`
+        : '';
+    }
+
+    function wireFooterLinks() {
+      $('link-health').href = URLS.health;
+      $('link-status').href = URLS.status;
+      $('link-network').href = URLS.network;
+      $('link-blocks').href = URLS.blocks.replace(/\?.*$/, '');
+    }
+
+    let countdownSec = REFRESH_INTERVAL_SEC;
+    let countdownTimer = null;
+    let refreshInFlight = false;
+
+    function updateCountdownDisplay() {
+      const label = refreshInFlight ? 'Refreshing…' : `Refreshing in ${countdownSec}s`;
+      const toolbar = $('refresh-countdown');
+      const footer = $('refresh-countdown-footer');
+      if (toolbar) toolbar.textContent = label;
+      if (footer) footer.textContent = refreshInFlight ? '…' : String(countdownSec);
+    }
+
+    function resetCountdown() {
+      countdownSec = REFRESH_INTERVAL_SEC;
+      updateCountdownDisplay();
+    }
+
+    function startCountdown() {
+      if (countdownTimer) clearInterval(countdownTimer);
+      countdownTimer = setInterval(() => {
+        if (refreshInFlight) return;
+        countdownSec -= 1;
+        if (countdownSec <= 0) {
+          refresh();
+          return;
+        }
+        updateCountdownDisplay();
+      }, 1000);
+    }
+
+    async function fetchJson(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
+      return res.json();
+    }
+
+    async function refresh() {
+      if (refreshInFlight) return;
+      refreshInFlight = true;
+      updateCountdownDisplay();
+      showError('');
+      try {
+        const results = await Promise.allSettled([
+          fetchJson(URLS.health),
+          fetchJson(URLS.status),
+          fetchJson(URLS.network),
+          fetchJson(URLS.blocks),
+        ]);
+        const health = results[0].status === 'fulfilled' ? results[0].value : null;
+        const status = results[1].status === 'fulfilled' ? results[1].value : null;
+        const network = results[2].status === 'fulfilled' ? results[2].value : null;
+        const blocks = results[3].status === 'fulfilled' ? results[3].value : null;
+
+        if (!health && !status && !network) {
+          throw new Error('Seed APIs unavailable (health / perc/status / api/network)');
+        }
+        renderStats(mergeLiveSources({ health, status, network }));
+        renderBlocks(blocks || { total: 0, blocks: [] });
+      } catch (e) {
+        showError(e.message || 'Failed to load Chronoflux stats');
+      } finally {
+        refreshInFlight = false;
+        resetCountdown();
+      }
+    }
+
+    wireFooterLinks();
+    $('refresh-btn').addEventListener('click', refresh);
+    resetCountdown();
+    refresh();
+    startCountdown();
+  </script>
+</body>
+</html>
