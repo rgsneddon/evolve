@@ -30,8 +30,29 @@ export function apiUrls(seedBase = '') {
     health: join(API_PATHS.health),
     status: join(API_PATHS.status),
     network: join(API_PATHS.network),
-    blocks: join(`${API_PATHS.blocks}?limit=40`),
+    // Seed listBlocks pages from the tip (offset=0 = newest `limit` blocks).
+    blocks: join(`${API_PATHS.blocks}?limit=40&offset=0`),
   };
+}
+
+/**
+ * Assert a recent-blocks listing is tip-adjacent for a known chain height.
+ * Used by unit tests and live probes (max row index near tip, min in window).
+ */
+export function isTipAdjacentBlockList(rows, { tipHeight, limit = 40 } = {}) {
+  const tip = Number(tipHeight);
+  const lim = Math.max(1, Number(limit) || 40);
+  if (!Number.isFinite(tip) || tip < 0) return false;
+  const indices = (rows ?? []).map((r) => Number(r?.index)).filter((n) => Number.isFinite(n));
+  if (!indices.length) return tip === 0;
+  const maxIdx = Math.max(...indices);
+  const minIdx = Math.min(...indices);
+  // Tip block index is tipHeight-1 when height counts blocks; or tipHeight when
+  // height is last index+1. Accept either: max must be within 1 of tip.
+  const nearTip = maxIdx >= tip - 1 && maxIdx <= tip;
+  const windowOk = maxIdx - minIdx + 1 <= lim + 1;
+  const newestFirst = indices.length < 2 || indices[0] >= indices[indices.length - 1];
+  return nearTip && windowOk && newestFirst;
 }
 
 function num(v, fallback = 0) {
