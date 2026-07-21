@@ -31,6 +31,7 @@ import {
   fetchInboundRelayHints,
 } from './rendezvous_inbound_hints.js';
 import { mergeUpstreamPeers } from './upstream_rendezvous.js';
+import { handleScsRoutes } from './scs/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -286,6 +287,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+
+  // Social cohesion / Burnham-PM SCS (flokkinet Chronoflux surface)
+  if (await handleScsRoutes(req, res, url, { json, readBody, servePublic })) {
+    return;
+  }
 
   if (req.method === 'GET' && url.pathname === '/api/network') {
     return json(
