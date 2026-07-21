@@ -328,6 +328,16 @@ const server = http.createServer(async (req, res) => {
     return json(res, 503, { error: 'explorer UI missing' });
   }
 
+  // Real-time Chronoflux stats page (+ module used by explorer/stats HTML)
+  if (req.method === 'GET' && (url.pathname === '/stats' || url.pathname === '/stats/' || url.pathname === '/stats.html')) {
+    if (servePublic('stats.html', res)) return;
+    return json(res, 503, { error: 'stats UI missing' });
+  }
+  if (req.method === 'GET' && (url.pathname === '/stats_page_model.js' || url.pathname === '/public/stats_page_model.js')) {
+    if (servePublic('stats_page_model.js', res)) return;
+    return json(res, 404, { error: 'stats model missing' });
+  }
+
   if (req.method === 'GET' && url.pathname.startsWith('/public/')) {
     if (servePublic(url.pathname.slice('/public/'.length), res)) return;
     return json(res, 404, { error: 'not found' });

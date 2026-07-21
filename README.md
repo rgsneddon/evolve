@@ -294,6 +294,8 @@ The chain is designed to grow with user activity without unbounded local storage
 
 **Public explorer:** [evolve-perc-internet.onrender.com](https://evolve-perc-internet.onrender.com/) — block list, dynamic emission rate, load/block multipliers, peer status, and chain identifiers.
 
+**Real-time Chronoflux stats:** [seed `/stats`](https://evolve-perc-internet.onrender.com/stats) (auto-refresh cards + recent blocks from `/health`, `/perc/status`, `/api/network`, `/api/blocks`) · mirror [stats.html](https://rgsneddon.github.io/evolve/stats.html) on GitHub Pages (CORS GETs to the public seed).
+
 ### Quick reference
 
 | Topic | Value |

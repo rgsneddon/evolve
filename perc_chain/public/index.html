@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Perccent Network Explorer</title>
+  <title>Perccent Network Explorer — Evolve Chronoflux</title>
   <style>
     :root {
       --bg: #0b0d14;
@@ -145,11 +145,12 @@
 <body>
   <div class="wrap">
     <div class="page-top">
+      <a class="fcg-link" href="/stats" style="margin-right:14px">Real-time stats</a>
       <a class="fcg-link" href="https://rgsneddon.github.io/evolve/fcg_white_paper.html" target="_blank" rel="noopener noreferrer">FCG white paper</a>
     </div>
     <header>
       <h1>Perccent Network Explorer</h1>
-      <p class="sub">Evolve Chronoflux seed node &middot; rendezvous &middot; peer status</p>
+      <p class="sub">Evolve Chronoflux seed node &middot; rendezvous &middot; peer status &middot; live chain stats</p>
       <p class="sub" style="margin-top:8px" id="endpoint-line"></p>
     </header>
 
@@ -209,17 +210,26 @@
       API: <a href="/api/network">/api/network</a> &middot;
       <a href="/api/blocks">/api/blocks</a> &middot;
       <a href="/health">/health</a> &middot;
+      <a href="/perc/status">/perc/status</a> &middot;
+      <a href="/stats">/stats</a> &middot;
       Auto-refresh in <span id="refresh-countdown-footer">30</span>s
     </footer>
   </div>
 
-  <script>
+  <script type="module">
+    import {
+      REFRESH_INTERVAL_SEC,
+      mapBlocksToRows,
+      mapNetworkToStats,
+      onlinePresentation,
+      statsCardDescriptors,
+    } from '/stats_page_model.js';
+
     const $ = (id) => document.getElementById(id);
 
     function pill(online) {
-      const cls = online ? 'online' : 'offline';
-      const label = online ? 'Online' : 'Offline';
-      return `<span class="status-pill ${cls}"><span class="dot"></span>${label}</span>`;
+      const p = onlinePresentation(online);
+      return `<span class="status-pill ${p.className}"><span class="dot"></span>${p.label}</span>`;
     }
 
     function fmtTime(iso) {
@@ -429,18 +439,25 @@
           `Chronoflux five-point pentagon — wallets by current block height (scenario, chain, or relay). ` +
           `Five rings mark 0%–100% of network max. Wallets show for ${timeoutMin} minutes after last heartbeat, then drop off.`;
       }
-      $('stats').innerHTML = `
-        <div class="card"><div class="label">Node</div><div class="value">${pill(net.nodeStatus === 'online')}</div></div>
-        <div class="card"><div class="label">Seed height</div><div class="value">${net.blockHeight}</div></div>
-        <div class="card"><div class="label">Network height</div><div class="value">${net.networkHeight}</div></div>
-        <div class="card"><div class="label">Peers online</div><div class="value">${net.peers.online} / ${net.peers.total}</div></div>
-        <div class="card"><div class="label">Ledger</div><div class="value">${net.ledgerReady ? 'Synced' : 'Pending'}</div></div>
-        <div class="card"><div class="label">Chain</div><div class="value mono" style="font-size:0.75rem">${net.chainId}</div></div>
-      `;
+      // Pure mapper: same card contract as /stats page (heights, peers, chain id, ledger)
+      const stats = mapNetworkToStats(net);
+      const cards = statsCardDescriptors(stats);
+      $('stats').innerHTML = cards.map((c) => {
+        let valueHtml;
+        if (c.id === 'node') {
+          valueHtml = pill(c.online);
+        } else if (c.mono) {
+          valueHtml = `<span class="mono" style="font-size:0.75rem">${c.value}</span>`;
+        } else {
+          valueHtml = c.value;
+        }
+        return `<div class="card" data-stat="${c.id}"><div class="label">${c.label}</div><div class="value">${valueHtml}</div></div>`;
+      }).join('');
     }
 
     function renderBlocks(data) {
-      const rows = data.blocks || [];
+      const mapped = mapBlocksToRows(data);
+      const rows = mapped.rows;
       $('blocks').innerHTML = rows.length
         ? rows.map((b) => `
           <tr>
@@ -452,8 +469,8 @@
             <td><button class="btn secondary" data-block="${b.index}">View</button></td>
           </tr>`).join('')
         : '<tr><td colspan="6" class="muted">No blocks yet — the Perccent chain will appear here as scenarios advance.</td></tr>';
-      $('blocks-meta').textContent = data.total
-        ? `Showing ${rows.length} of ${data.total} blocks (newest first)`
+      $('blocks-meta').textContent = mapped.total
+        ? `Showing ${rows.length} of ${mapped.total} blocks (newest first)`
         : '';
       document.querySelectorAll('[data-block]').forEach((btn) => {
         btn.addEventListener('click', () => loadBlock(btn.dataset.block));
@@ -469,7 +486,6 @@
       $('detail-body').textContent = JSON.stringify(sanitizeExplorerJson(block), null, 2);
     }
 
-    const REFRESH_INTERVAL_SEC = 30;
     let countdownSec = REFRESH_INTERVAL_SEC;
     let countdownTimer = null;
     let refreshInFlight = false;
