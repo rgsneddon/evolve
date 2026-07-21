@@ -88,4 +88,26 @@ function num(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+export function loadingPresentation(currentlyVisible, event) {
+  switch (event) {
+    case 'start':
+      return { visible: true, label: 'LOADING…', reason: 'fetch-start' };
+    case 'success':
+      return { visible: false, label: 'LOADING…', reason: 'fetch-success' };
+    case 'error':
+      return { visible: false, label: 'LOADING…', reason: 'fetch-error' };
+    case 'idle':
+    default:
+      return {
+        visible: Boolean(currentlyVisible),
+        label: 'LOADING…',
+        reason: 'idle',
+      };
+  }
+}
+
+export function initialLoadingState() {
+  return loadingPresentation(false, 'start');
+}
+
 export { round1, easeInOut };

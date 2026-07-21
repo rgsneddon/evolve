@@ -155,6 +155,73 @@
       color: #c8d0e0;
     }
     .gauge-wrap { display: flex; align-items: center; justify-content: center; height: 220px; }
+    /* Large animated LOADING under headings while primary data loads */
+    .page-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin: 8px 0 22px;
+      padding: 18px 20px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: linear-gradient(120deg, #141824 0%, #1a1f33 50%, #141824 100%);
+      background-size: 200% 100%;
+      animation: loadingBar 1.6s ease-in-out infinite;
+    }
+    .page-loading[hidden],
+    .page-loading.is-hidden {
+      display: none !important;
+    }
+    .page-loading-tag {
+      font-size: clamp(1.75rem, 5vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-variant-numeric: tabular-nums;
+    }
+    .page-loading-tag .dots {
+      display: inline-block;
+      min-width: 1.4em;
+      text-align: left;
+      animation: loadingDots 1.2s steps(4, end) infinite;
+    }
+    .page-loading-spinner {
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 50%;
+      border: 3px solid rgba(108, 99, 255, 0.25);
+      border-top-color: var(--accent);
+      animation: loadingSpin 0.75s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes loadingDots {
+      0% { content: ""; opacity: 0.3; }
+      25% { opacity: 1; }
+      100% { opacity: 1; }
+    }
+    @keyframes loadingSpin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes loadingBar {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    /* Animated ellipsis via width clip on the dots span */
+    .page-loading-tag .dots::after {
+      content: "...";
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: bottom;
+      animation: ellipsisWidth 1.2s steps(4, end) infinite;
+      width: 0;
+    }
+    @keyframes ellipsisWidth {
+      0% { width: 0; }
+      100% { width: 1.15em; }
+    }
   </style>
 </head>
 <body>
@@ -173,6 +240,20 @@
         from Evolve Chronoflux scoring of observed discourse fields (v / f / s).
       </p>
     </header>
+
+    <!-- Visible on first paint until primary data ready; hidden on success or error -->
+    <div
+      id="page-loading"
+      class="page-loading"
+      data-page-loading="true"
+      data-loading-visible="true"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span class="page-loading-spinner" aria-hidden="true"></span>
+      <span class="page-loading-tag" data-loading-label="true">LOADING<span class="dots"></span></span>
+    </div>
 
     <div class="grid" id="kpi">
       <div class="card moving-score" id="kpi-scs-card" data-moving-score="true">
@@ -284,6 +365,8 @@
       partThreeDiagram,
       conclusionDiagrams,
       round1,
+      loadingPresentation,
+      initialLoadingState,
     } from './view_model.js';
 
     // Expose for headless / verification probes
@@ -294,6 +377,8 @@
       partTwoDiagram,
       partThreeDiagram,
       conclusionDiagrams,
+      loadingPresentation,
+      initialLoadingState,
     };
 
     const API = '';
@@ -314,6 +399,34 @@
     }
 
     function setStatus(msg) { $('status').textContent = msg || ''; }
+
+    /**
+     * Show/hide large LOADING… under headings using shipped loadingPresentation helper.
+     * @param {'start'|'success'|'error'} event
+     */
+    function setPageLoading(event) {
+      const el = $('page-loading');
+      if (!el) return;
+      const current = el.dataset.loadingVisible === 'true';
+      const next = loadingPresentation(current, event);
+      el.dataset.loadingVisible = next.visible ? 'true' : 'false';
+      el.dataset.loadingReason = next.reason;
+      el.setAttribute('aria-busy', next.visible ? 'true' : 'false');
+      if (next.visible) {
+        el.hidden = false;
+        el.classList.remove('is-hidden');
+        el.removeAttribute('hidden');
+      } else {
+        el.hidden = true;
+        el.classList.add('is-hidden');
+        el.setAttribute('hidden', '');
+      }
+      window.__pageLoadingVisible = next.visible;
+      return next;
+    }
+
+    // First paint already shows LOADING in HTML; keep state in sync
+    setPageLoading('start');
 
     function fillForm(scenario) {
       if (!scenario) return;
@@ -634,28 +747,36 @@
     }
 
     async function loadLatest() {
-      const data = await api('/scs/latest');
-      if (data.latest) {
-        applyResult(data.latest, data.history, { animate: true });
-        if (data.latest.scenario) {
-          fillForm({
-            posedQuestion: data.latest.scenario.posedQuestion,
-            vortexText: data.latest.scenario.fields?.v,
-            shearText: data.latest.scenario.fields?.s,
-            resistanceText: data.latest.scenario.fields?.r,
-            flowText: data.latest.scenario.fields?.f,
-          });
+      setPageLoading('start');
+      try {
+        const data = await api('/scs/latest');
+        if (data.latest) {
+          applyResult(data.latest, data.history, { animate: true });
+          if (data.latest.scenario) {
+            fillForm({
+              posedQuestion: data.latest.scenario.posedQuestion,
+              vortexText: data.latest.scenario.fields?.v,
+              shearText: data.latest.scenario.fields?.s,
+              resistanceText: data.latest.scenario.fields?.r,
+              flowText: data.latest.scenario.fields?.f,
+            });
+          }
+          if (!data.latest.markdown) {
+            const rep = await api('/scs/report');
+            if (rep.markdown) $('report-md').textContent = rep.markdown;
+          }
         }
-        if (!data.latest.markdown) {
-          const rep = await api('/scs/report');
-          if (rep.markdown) $('report-md').textContent = rep.markdown;
-        }
+        $('api-badge').textContent = 'API ok';
+        setPageLoading('success');
+      } catch (e) {
+        setPageLoading('error');
+        throw e;
       }
-      $('api-badge').textContent = 'API ok';
     }
 
     async function score(extra) {
       setStatus('Scoring…');
+      setPageLoading('start');
       try {
         const body = { ...formPayload(), ...extra };
         const r = await api('/scs/score', {
@@ -666,7 +787,9 @@
         const snap = await api('/scs/latest');
         applyResult(r, snap.history, { animate: true });
         setStatus(`SCS ${r.refinedScs}/100 · ${r.lean} · ${r.construeProvenance || 'direct'}`);
+        setPageLoading('success');
       } catch (e) {
+        setPageLoading('error');
         setStatus('Error: ' + e.message);
         console.error(e);
       }
@@ -674,6 +797,7 @@
 
     async function cycle() {
       setStatus('Perpetual tick…');
+      setPageLoading('start');
       try {
         const body = { ...formPayload(), construe: true };
         const r = await api('/scs/cycle', {
@@ -684,7 +808,9 @@
         const snap = await api('/scs/latest');
         applyResult(r.result, snap.history, { animate: true });
         setStatus(`Tick SCS ${r.result.refinedScs} · history ${r.historyCount}`);
+        setPageLoading('success');
       } catch (e) {
+        setPageLoading('error');
         setStatus('Error: ' + e.message);
       }
     }
@@ -702,6 +828,7 @@
 
     ensureCharts();
     loadLatest().catch(async (e) => {
+      setPageLoading('error');
       $('api-badge').textContent = 'API offline';
       setStatus('Could not reach API: ' + e.message + ' — loading seed form only');
       try {
