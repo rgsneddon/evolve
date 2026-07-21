@@ -10,6 +10,7 @@ import {
   DEFAULT_SEED_BASE,
   apiUrls,
   isProductChainId,
+  isTipAdjacentBlockList,
   ledgerPresentation,
   mapBlocksToRows,
   mapHealthToStats,
@@ -19,6 +20,7 @@ import {
   onlinePresentation,
   statsCardDescriptors,
 } from '../public/stats_page_model.js';
+import { listBlocks } from './explorer_api.js';
 
 /** Representative /api/network body (field names match live seed). */
 const SAMPLE_NETWORK = {
@@ -185,6 +187,48 @@ describe('mapBlocksToRows', () => {
     assert.equal(rows[0].displayLabel, 'SCS input');
     assert.equal(rows[1].index, 1);
     assert.equal(rows[1].displayLabel, '% chance input');
+  });
+});
+
+describe('listBlocks tip-adjacent recent window', () => {
+  it('offset=0 limit=N returns newest N indices near tip, not genesis', () => {
+    const blocks = Array.from({ length: 96 }, (_, i) => ({
+      index: i,
+      timestamp: `2026-07-01T00:00:${String(i).padStart(2, '0')}.000Z`,
+      transactions: [],
+      treasuryEmitted: { microUnits: 0 },
+    }));
+    const ledger = { blocks };
+    const listing = listBlocks(ledger, { offset: 0, limit: 40 });
+    assert.equal(listing.total, 96);
+    assert.equal(listing.blocks.length, 40);
+    const indices = listing.blocks.map((b) => b.index);
+    assert.equal(indices[0], 95, 'first row must be tip index');
+    assert.equal(indices[indices.length - 1], 56, 'window ends 40 below tip');
+    assert.ok(
+      isTipAdjacentBlockList(listing.blocks, { tipHeight: 96, limit: 40 }),
+      'max row index must be near tip height',
+    );
+    // Must not be the old bug (oldest window max index 39)
+    assert.ok(Math.max(...indices) > 39);
+  });
+
+  it('mapBlocksToRows + isTipAdjacentBlockList accept tip-window payload', () => {
+    const tipPayload = {
+      total: 96,
+      offset: 0,
+      limit: 5,
+      blocks: [95, 94, 93, 92, 91].map((index) => ({
+        index,
+        timestamp: '2026-07-04T00:00:00.000Z',
+        txCount: 1,
+        treasuryEmitted: '0',
+        displayLabel: 'test',
+      })),
+    };
+    const { rows } = mapBlocksToRows(tipPayload);
+    assert.ok(isTipAdjacentBlockList(rows, { tipHeight: 96, limit: 5 }));
+    assert.equal(Math.max(...rows.map((r) => r.index)), 95);
   });
 });
 

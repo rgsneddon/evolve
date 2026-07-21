@@ -117,16 +117,26 @@ export function blockHashAt(ledger, index) {
   return tipHash({ ...ledger, blocks: [block] });
 }
 
+/**
+ * List blocks newest-first (tip-adjacent "recent blocks" window).
+ *
+ * Ledger `blocks[]` is ascending by index. `offset` counts back from the tip:
+ * offset=0 returns the latest `limit` blocks; offset=limit pages into older history.
+ * Response rows are newest → oldest so explorers show the live tip first.
+ */
 export function listBlocks(ledger, { offset = 0, limit = 50 } = {}) {
   const blocks = ledger?.blocks ?? [];
   const total = blocks.length;
-  const start = Math.max(0, Math.min(offset, total));
-  const end = Math.max(start, Math.min(start + limit, total));
+  const off = Math.max(0, Number(offset) || 0);
+  const lim = Math.max(0, Math.min(200, Number(limit) || 50));
+  // Ascending array [0 .. total-1]; tip is total-1.
+  const end = Math.max(0, total - off);
+  const start = Math.max(0, end - lim);
   const slice = blocks.slice(start, end).reverse();
   return {
     total,
-    offset: start,
-    limit,
+    offset: off,
+    limit: lim,
     blocks: slice.map((b) => summarizeListedBlock(b, ledger)),
   };
 }
