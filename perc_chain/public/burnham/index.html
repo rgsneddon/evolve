@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Burnham PM — Social Cohesion (Chronoflux SCS)</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- No Chart.js CDN: lightweight SVG bars only (faster first paint / no CDN hang). -->
   <style>
     :root {
       --bg: #0b0d14;
@@ -83,6 +83,10 @@
     }
     .chart-box h3 { font-size: 0.95rem; margin-bottom: 8px; color: var(--muted); font-weight: 600; }
     .chart-box canvas { max-height: 240px; width: 100% !important; }
+    .chart-box .light-chart { display: block; max-width: 100%; height: auto; }
+    .chart-box { min-height: auto; }
+    .part-diagram { min-height: auto; }
+    .part-diagram .light-chart { display: block; max-width: 100%; }
     .full { grid-column: 1 / -1; }
     .panel {
       background: var(--panel);
@@ -270,26 +274,14 @@
       <div class="card"><div class="label">Jμ Flow</div><div class="value" id="kpi-jmu">—</div></div>
     </div>
 
-    <div class="charts">
+    <div class="charts" data-charts="light-svg" data-chart-count="2">
       <div class="chart-box">
         <h3>Construct scores (ω / σ / Iτ / Jμ)</h3>
-        <canvas id="chart-radar" data-chart="radar"></canvas>
+        <div id="chart-constructs" data-chart="constructs" data-chart-engine="svg-bars"></div>
       </div>
       <div class="chart-box">
-        <h3>Regressive vs Progressive</h3>
-        <canvas id="chart-split" data-chart="split"></canvas>
-      </div>
-      <div class="chart-box">
-        <h3>Refined SCS gauge</h3>
-        <div class="gauge-wrap"><canvas id="chart-gauge" data-chart="gauge"></canvas></div>
-      </div>
-      <div class="chart-box">
-        <h3>SCS history (perpetual construe)</h3>
-        <canvas id="chart-history" data-chart="history"></canvas>
-      </div>
-      <div class="chart-box full">
-        <h3>Part continuum — baseline vs refined vs lever band</h3>
-        <canvas id="chart-parts" data-chart="parts"></canvas>
+        <h3>Continuum + levers (refined / reg / prog / lever band)</h3>
+        <div id="chart-summary" data-chart="summary" data-chart-engine="svg-bars"></div>
       </div>
     </div>
 
@@ -331,7 +323,7 @@
       <h2>Part One: Baseline Parameter Mapping</h2>
       <div class="part-diagram" data-part-diagram="one">
         <h3>Part One diagram — baseline constructs</h3>
-        <canvas id="chart-part-one" data-conclusion-chart="part-one"></canvas>
+        <div id="chart-part-one" data-conclusion-chart="part-one" data-chart-engine="svg-bars"></div>
       </div>
       <div id="part-one-body"></div>
     </div>
@@ -339,7 +331,7 @@
       <h2>Part Two: Broader Political Continuum Integration</h2>
       <div class="part-diagram" data-part-diagram="two">
         <h3>Part Two diagram — continuum refinement</h3>
-        <canvas id="chart-part-two" data-conclusion-chart="part-two"></canvas>
+        <div id="chart-part-two" data-conclusion-chart="part-two" data-chart-engine="svg-bars"></div>
       </div>
       <div id="part-two-body"></div>
     </div>
@@ -347,7 +339,7 @@
       <h2>Part Three: Actionable Levers</h2>
       <div class="part-diagram" data-part-diagram="three">
         <h3>Part Three diagram — lever band</h3>
-        <canvas id="chart-part-three" data-conclusion-chart="part-three"></canvas>
+        <div id="chart-part-three" data-conclusion-chart="part-three" data-chart-engine="svg-bars"></div>
       </div>
       <div id="part-three-body"></div>
     </div>
@@ -368,6 +360,9 @@
       round1,
       loadingPresentation,
       initialLoadingState,
+      chartConfig,
+      buildBarChartSvg,
+      capHistory,
     } from './view_model.js';
 
     // Expose for headless / verification probes
@@ -380,10 +375,13 @@
       conclusionDiagrams,
       loadingPresentation,
       initialLoadingState,
+      chartConfig,
+      buildBarChartSvg,
+      capHistory,
     };
 
     const API = '';
-    let charts = {};
+    const CFG = chartConfig();
     let latest = null;
     let displayedScs = null;
     let scoreAnimFrame = null;
@@ -391,8 +389,13 @@
 
     function $(id) { return document.getElementById(id); }
 
-    async function api(path, opts) {
-      const res = await fetch(API + path, opts);
+    async function api(path, opts = {}) {
+      const timeoutMs = opts.timeoutMs ?? CFG.fetchTimeoutMs ?? 15000;
+      const { timeoutMs: _t, ...fetchOpts } = opts;
+      const res = await fetch(API + path, {
+        ...fetchOpts,
+        signal: fetchOpts.signal || AbortSignal.timeout(timeoutMs),
+      });
       if (!res.ok) throw new Error(path + ' → ' + res.status);
       const ct = res.headers.get('content-type') || '';
       if (ct.includes('markdown')) return { markdown: await res.text() };
@@ -450,10 +453,9 @@
     }
 
     /**
-     * Moving score: tween KPI refined SCS with requestAnimationFrame.
-     * Intermediate frames write data-score-live + textContent.
+     * Short moving score tween (≤400ms, few frames). No Chart.js gauge thrash.
      */
-    function animateScoreTo(target, { durationMs = 900, force = false } = {}) {
+    function animateScoreTo(target, { durationMs = 400, force = false } = {}) {
       const el = $('kpi-scs');
       const card = $('kpi-scs-card');
       const to = Number(target);
@@ -461,7 +463,7 @@
 
       const from =
         displayedScs == null || Number.isNaN(Number(displayedScs))
-          ? (force ? 0 : to)
+          ? (force ? Math.max(0, to - 6) : to)
           : Number(displayedScs);
 
       if (scoreAnimFrame) cancelAnimationFrame(scoreAnimFrame);
@@ -473,8 +475,7 @@
         card.dataset.animating = 'true';
       }
 
-      // If first paint and from===to, still flash one intermediate path via 0→to when force
-      const startVal = from === to && force ? Math.max(0, to - 8) : from;
+      const startVal = from;
 
       function frame(now) {
         if (token !== scoreAnimToken) return;
@@ -485,10 +486,6 @@
         el.textContent = shown;
         el.dataset.scoreLive = String(shown);
         el.dataset.animateProgress = String(t);
-        if (charts.gauge) {
-          charts.gauge.data.datasets[0].data = [shown, Math.max(0, 100 - shown)];
-          charts.gauge.update('none');
-        }
         if (t < 1) {
           scoreAnimFrame = requestAnimationFrame(frame);
         } else {
@@ -555,196 +552,73 @@
         .replace(/>/g, '&gt;');
     }
 
-    function ensureCharts() {
-      if (charts.radar) return;
-      const common = { responsive: true, maintainAspectRatio: true };
-      charts.radar = new Chart($('chart-radar'), {
-        type: 'radar',
-        data: {
-          labels: ['ω Vortex', 'σ Shear', 'Iτ Resistance', 'Jμ Flow', 'ρt Continuum'],
-          datasets: [{
-            label: 'Construct SCS',
-            data: [0, 0, 0, 0, 0],
-            backgroundColor: 'rgba(108,99,255,0.25)',
-            borderColor: '#6c63ff',
-            pointBackgroundColor: '#6c63ff',
-          }],
-        },
-        options: {
-          ...common,
-          scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#252b3d' }, angleLines: { color: '#252b3d' }, pointLabels: { color: '#9aa3b8' } } },
-          plugins: { legend: { display: false } },
-        },
-      });
-      charts.split = new Chart($('chart-split'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Regressive', 'Progressive'],
-          datasets: [{ data: [50, 50], backgroundColor: ['#f59e0b', '#00d4aa'], borderWidth: 0 }],
-        },
-        options: { ...common, plugins: { legend: { labels: { color: '#9aa3b8' } } } },
-      });
-      charts.gauge = new Chart($('chart-gauge'), {
-        type: 'doughnut',
-        data: {
-          labels: ['SCS', 'gap'],
-          datasets: [{ data: [0, 100], backgroundColor: ['#6c63ff', '#1e2436'], borderWidth: 0, circumference: 180, rotation: 270 }],
-        },
-        options: {
-          ...common,
-          cutout: '70%',
-          plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        },
-      });
-      charts.history = new Chart($('chart-history'), {
-        type: 'line',
-        data: {
-          labels: [],
-          datasets: [
-            { label: 'Refined SCS', data: [], borderColor: '#6c63ff', tension: 0.25, fill: false },
-            { label: 'Regressive %', data: [], borderColor: '#f59e0b', tension: 0.25, fill: false },
-            { label: 'Progressive %', data: [], borderColor: '#00d4aa', tension: 0.25, fill: false },
-          ],
-        },
-        options: {
-          ...common,
-          scales: {
-            x: { ticks: { color: '#9aa3b8' }, grid: { color: '#1e2436' } },
-            y: { min: 0, max: 100, ticks: { color: '#9aa3b8' }, grid: { color: '#1e2436' } },
-          },
-          plugins: { legend: { labels: { color: '#9aa3b8' } } },
-        },
-      });
-      charts.parts = new Chart($('chart-parts'), {
-        type: 'bar',
-        data: {
-          labels: ['Baseline SCS', 'Refined SCS', 'Levers min', 'Levers max', 'ω', 'σ', 'Iτ', 'Jμ'],
-          datasets: [{
-            label: 'Score',
-            data: [0, 0, 0, 0, 0, 0, 0, 0],
-            backgroundColor: ['#4b5568', '#6c63ff', '#00d4aa', '#00d4aa', '#7c6cff', '#ff6b9d', '#f59e0b', '#00d4aa'],
-          }],
-        },
-        options: {
-          ...common,
-          scales: {
-            x: { ticks: { color: '#9aa3b8' }, grid: { display: false } },
-            y: { min: 0, max: 100, ticks: { color: '#9aa3b8' }, grid: { color: '#1e2436' } },
-          },
-          plugins: { legend: { display: false } },
-        },
-      });
-
-      // Per-conclusion diagrams
-      charts.partOne = new Chart($('chart-part-one'), {
-        type: 'bar',
-        data: {
-          labels: partOneDiagram({}).labels,
-          datasets: [{ label: 'Part One', data: [0, 0, 0, 0, 0, 0], backgroundColor: partOneDiagram({}).colors }],
-        },
-        options: {
-          ...common,
-          scales: {
-            x: { ticks: { color: '#9aa3b8', maxRotation: 45, minRotation: 0 }, grid: { display: false } },
-            y: { min: 0, max: 100, ticks: { color: '#9aa3b8' }, grid: { color: '#1e2436' } },
-          },
-          plugins: { legend: { display: false } },
-        },
-      });
-      charts.partTwo = new Chart($('chart-part-two'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Regressive %', 'Progressive %'],
-          datasets: [{ data: [50, 50], backgroundColor: ['#f59e0b', '#00d4aa'], borderWidth: 0 }],
-        },
-        options: {
-          ...common,
-          plugins: {
-            legend: { labels: { color: '#9aa3b8' } },
-            title: {
-              display: true,
-              text: 'Refined SCS —',
-              color: '#c4bfff',
-              font: { size: 14 },
-            },
-          },
-        },
-      });
-      charts.partThree = new Chart($('chart-part-three'), {
-        type: 'bar',
-        data: {
-          labels: partThreeDiagram({}).labels,
-          datasets: [{ label: 'Part Three', data: [0, 0, 0], backgroundColor: partThreeDiagram({}).colors }],
-        },
-        options: {
-          ...common,
-          scales: {
-            x: { ticks: { color: '#9aa3b8' }, grid: { display: false } },
-            y: { min: 0, max: 100, ticks: { color: '#9aa3b8' }, grid: { color: '#1e2436' } },
-          },
-          plugins: { legend: { display: false } },
-        },
-      });
+    /** Lightweight SVG charts only — no Chart.js, no CDN, no canvas animations. */
+    function paintBars(elId, labels, values, colors) {
+      const el = $(elId);
+      if (!el) return;
+      el.innerHTML = buildBarChartSvg(labels, values, colors);
+      el.dataset.populated = 'true';
     }
 
     function updateConclusionDiagrams(r) {
-      ensureCharts();
       const d1 = partOneDiagram(r);
       const d2 = partTwoDiagram(r);
       const d3 = partThreeDiagram(r);
-      charts.partOne.data.labels = d1.labels;
-      charts.partOne.data.datasets[0].data = d1.values;
-      charts.partOne.data.datasets[0].backgroundColor = d1.colors;
-      charts.partOne.update();
-      charts.partTwo.data.datasets[0].data = [d2.split.regressive, d2.split.progressive];
-      if (charts.partTwo.options.plugins?.title) {
-        charts.partTwo.options.plugins.title.text = `Refined SCS ${d2.values[2]}`;
-      }
-      charts.partTwo.update();
-      charts.partThree.data.labels = d3.labels;
-      charts.partThree.data.datasets[0].data = d3.values;
-      charts.partThree.data.datasets[0].backgroundColor = d3.colors;
-      charts.partThree.update();
-      // Mark surfaces as populated for verification
+      // Keep part-one compact: constructs only (skip weighted labels if crowded)
+      paintBars(
+        'chart-part-one',
+        d1.labels.slice(0, 4),
+        d1.values.slice(0, 4),
+        d1.colors.slice(0, 4),
+      );
+      paintBars('chart-part-two', d2.labels, d2.values, d2.colors);
+      paintBars('chart-part-three', d3.labels, d3.values, d3.colors);
       document.querySelectorAll('[data-part-diagram]').forEach((el) => {
         el.dataset.populated = 'true';
       });
     }
 
-    function updateCharts(r, history) {
-      ensureCharts();
-      const c = r.constructs;
-      charts.radar.data.datasets[0].data = [c.omega, c.sigma, c.itau, c.jmu, c.continuum];
-      charts.radar.update();
-      charts.split.data.datasets[0].data = [r.regressivePct, r.progressivePct];
-      charts.split.update();
-      // gauge follows moving score when animating; set final baseline here too
-      charts.gauge.data.datasets[0].data = [r.refinedScs, Math.max(0, 100 - r.refinedScs)];
-      charts.gauge.update();
+    function updateCharts(r, _history) {
+      const c = r.constructs || {};
       const p3 = r.partThree || {};
-      charts.parts.data.datasets[0].data = [
-        r.baselineScs,
-        r.refinedScs,
-        p3.withLeversMin || r.refinedScs,
-        p3.withLeversMax || r.refinedScs,
-        c.omega, c.sigma, c.itau, c.jmu,
-      ];
-      charts.parts.update();
-      const hist = history || [];
-      charts.history.data.labels = hist.map((h, i) => String(i + 1));
-      charts.history.data.datasets[0].data = hist.map((h) => h.refinedScs);
-      charts.history.data.datasets[1].data = hist.map((h) => h.regressivePct);
-      charts.history.data.datasets[2].data = hist.map((h) => h.progressivePct);
-      charts.history.update();
+      paintBars(
+        'chart-constructs',
+        ['ω Vortex', 'σ Shear', 'Iτ Resist', 'Jμ Flow'],
+        [c.omega, c.sigma, c.itau, c.jmu],
+        ['#7c6cff', '#ff6b9d', '#f59e0b', '#00d4aa'],
+      );
+      paintBars(
+        'chart-summary',
+        ['Refined SCS', 'Regressive %', 'Progressive %', 'Levers min', 'Levers max'],
+        [
+          r.refinedScs,
+          r.regressivePct,
+          r.progressivePct,
+          p3.withLeversMin ?? r.refinedScs,
+          p3.withLeversMax ?? r.refinedScs,
+        ],
+        ['#6c63ff', '#f59e0b', '#00d4aa', '#34d399', '#10b981'],
+      );
       updateConclusionDiagrams(r);
+      // Cap history in memory only (no heavy line chart)
+      window.__scsHistoryLight = capHistory(_history || [], CFG.historyCap);
     }
 
     function applyResult(r, history, { animate = true } = {}) {
       latest = r;
       window.__scsLatest = r;
+      // KPIs first so UI is usable even if diagram paint is slow
+      // Short tween still runs (moving score); CFG.animations=false means no Chart.js work
       updateKpis(r, { animate });
       updateParts(r);
-      updateCharts(r, history);
+      // Defer SVG paint to next tick so LOADING can clear immediately after
+      requestAnimationFrame(() => {
+        try {
+          updateCharts(r, history);
+        } catch (e) {
+          console.error('chart paint', e);
+        }
+      });
     }
 
     async function loadLatest() {
@@ -893,17 +767,27 @@
     $('btn-cycle').onclick = () => cycle();
     $('btn-reset').onclick = () => loadSeed();
 
-    ensureCharts();
-    refreshGrokStatus();
-    loadLatest().catch(async (e) => {
-      setPageLoading('error');
-      $('api-badge').textContent = 'API offline';
-      setStatus('Could not reach API: ' + e.message + ' — loading seed form only');
-      try {
-        const data = await api('/scs/scenario');
-        fillForm(data.scenario);
-      } catch (_) {}
-    });
+    // Do NOT init heavy charts on boot — wait for /scs/latest (or timeout).
+    refreshGrokStatus().catch(() => {});
+    // Hard stop LOADING after max wait (cold start / hung fetch)
+    const bootWatchdog = setTimeout(() => {
+      if (window.__pageLoadingVisible) {
+        setPageLoading('error');
+        setStatus('Load timed out — retry Score cohesion or refresh. Service may be cold-starting.');
+      }
+    }, 25000);
+    loadLatest()
+      .then(() => clearTimeout(bootWatchdog))
+      .catch(async (e) => {
+        clearTimeout(bootWatchdog);
+        setPageLoading('error');
+        $('api-badge').textContent = 'API offline';
+        setStatus('Could not reach API: ' + e.message + ' — loading seed form only');
+        try {
+          const data = await api('/scs/scenario', { timeoutMs: 8000 });
+          fillForm(data.scenario);
+        } catch (_) {}
+      });
   </script>
 </body>
 </html>
