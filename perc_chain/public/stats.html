@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Evolve Chronoflux — Real-time Network Stats</title>
-  <meta name="description" content="Live Evolve Chronoflux Principia chain stats from the public seed (health, height, peers, blocks).">
+  <title>Evolve Chronoflux — Real-time Stats · SCS &amp; % chance</title>
+  <meta name="description" content="Live Evolve Chronoflux stats: network health plus variable SSUCF refined SCS and calibrated % chance.">
   <style>
     :root {
       --bg: #0b0d14;
@@ -78,6 +78,15 @@
     footer { color: var(--muted); font-size: 0.8rem; margin-top: 32px; }
     a { color: var(--accent); }
     .meta-line { margin-top: 10px; font-size: 0.85rem; color: var(--muted); }
+    .analysis-topic {
+      font-size: 0.95rem;
+      color: var(--text);
+      margin: 8px 0 14px;
+      max-width: 52rem;
+    }
+    .analysis-note { color: var(--muted); font-size: 0.8rem; margin-top: 8px; }
+    .card.analysis-accent { border-color: rgba(108, 99, 255, 0.45); }
+    .card.analysis-accent .value { color: var(--accent); }
   </style>
 </head>
 <body>
@@ -91,6 +100,19 @@
 
     <div id="error" class="error" style="display:none"></div>
     <div class="grid" id="stats"></div>
+
+    <section id="ssucf-section" aria-labelledby="ssucf-heading">
+      <div class="toolbar">
+        <h2 style="margin:0" id="ssucf-heading">SSUCF analysis · SCS &amp; % chance</h2>
+        <button class="btn secondary" id="refresh-analysis-btn" type="button">Update analysis</button>
+      </div>
+      <p class="analysis-topic" id="analysis-topic">Loading Chronoflux analysis…</p>
+      <div class="grid" id="analysis-stats"></div>
+      <p class="analysis-note" id="analysis-note">
+        Headline <strong>% chance</strong> is the calibrated Chronoflux forecast (not the raw regressive continuum share).
+        Values update when <code>ssucf_analysis.json</code> changes or via <code>window.updateSsucfAnalysis(payload)</code>.
+      </p>
+    </section>
 
     <section>
       <div class="toolbar">
@@ -120,7 +142,8 @@
       <a id="link-health" href="/health">/health</a> ·
       <a id="link-status" href="/perc/status">/perc/status</a> ·
       <a id="link-network" href="/api/network">/api/network</a> ·
-      <a id="link-blocks" href="/api/blocks">/api/blocks</a>
+      <a id="link-blocks" href="/api/blocks">/api/blocks</a> ·
+      <a id="link-ssucf" href="/ssucf_analysis.json">/ssucf_analysis.json</a>
       · Auto-refresh <span id="refresh-countdown-footer">30</span>s
       · <a href="/">Full explorer</a>
       · <a href="https://github.com/rgsneddon/evolve/releases/tag/v4.1.8" target="_blank" rel="noopener">v4.1.8</a>
@@ -134,9 +157,11 @@
       REFRESH_INTERVAL_SEC,
       apiUrls,
       mapBlocksToRows,
+      mapSsucfAnalysisToView,
       mergeLiveSources,
       onlinePresentation,
       statsCardDescriptors,
+      ssucfAnalysisCardDescriptors,
     } from '/stats_page_model.js';
 
     const $ = (id) => document.getElementById(id);
@@ -213,12 +238,37 @@
         : '';
     }
 
+    /** Render variable SSUCF SCS / % chance cards from analysis-shaped payload. */
+    function renderSsucfAnalysis(raw) {
+      const view = mapSsucfAnalysisToView(raw || {});
+      const topicEl = $('analysis-topic');
+      if (topicEl) {
+        topicEl.textContent = view.topic
+          ? view.topic
+          : (view.hasAnalysis ? 'Chronoflux SSUCF analysis' : 'No SSUCF analysis payload loaded');
+      }
+      const cards = ssucfAnalysisCardDescriptors(view);
+      const accent = new Set(['refinedScs', 'percentChance']);
+      $('analysis-stats').innerHTML = cards.map((c) => {
+        const cls = accent.has(c.id) ? 'card analysis-accent' : 'card';
+        return `<div class="${cls}" data-stat="${c.id}" data-numeric="${c.numeric ?? ''}"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>`;
+      }).join('');
+      return view;
+    }
+
     function wireFooterLinks() {
       $('link-health').href = URLS.health;
       $('link-status').href = URLS.status;
       $('link-network').href = URLS.network;
       $('link-blocks').href = URLS.blocks.replace(/\?.*$/, '');
+      const ssucf = $('link-ssucf');
+      if (ssucf) ssucf.href = URLS.ssucfAnalysis;
     }
+
+    /** Optional override: programmatic analysis update without full page reload. */
+    window.updateSsucfAnalysis = function updateSsucfAnalysis(payload) {
+      return renderSsucfAnalysis(payload);
+    };
 
     let countdownSec = REFRESH_INTERVAL_SEC;
     let countdownTimer = null;
@@ -256,6 +306,37 @@
       return res.json();
     }
 
+    async function loadSsucfAnalysis() {
+      // Allow ?analysis=https://… override for alternate payloads
+      const params = new URLSearchParams(location.search);
+      const override = (params.get('analysis') || '').trim();
+      const url = override || URLS.ssucfAnalysis;
+      try {
+        const raw = await fetchJson(url);
+        return renderSsucfAnalysis(raw);
+      } catch (e) {
+        // Same-origin relative path when seed base is empty but page is gh-pages:
+        if (!override && SEED_BASE) {
+          try {
+            const raw = await fetchJson('./ssucf_analysis.json');
+            return renderSsucfAnalysis(raw);
+          } catch {
+            /* fall through */
+          }
+        }
+        if (!override) {
+          try {
+            const raw = await fetchJson('./ssucf_analysis.json');
+            return renderSsucfAnalysis(raw);
+          } catch {
+            /* empty view */
+          }
+        }
+        renderSsucfAnalysis({});
+        throw e;
+      }
+    }
+
     async function refresh() {
       if (refreshInFlight) return;
       refreshInFlight = true;
@@ -267,6 +348,7 @@
           fetchJson(URLS.status),
           fetchJson(URLS.network),
           fetchJson(URLS.blocks),
+          loadSsucfAnalysis().then((v) => v).catch((err) => ({ __error: err })),
         ]);
         const health = results[0].status === 'fulfilled' ? results[0].value : null;
         const status = results[1].status === 'fulfilled' ? results[1].value : null;
@@ -278,6 +360,11 @@
         }
         renderStats(mergeLiveSources({ health, status, network }));
         renderBlocks(blocks || { total: 0, blocks: [] });
+        // Analysis already rendered inside loadSsucfAnalysis; soft-fail if missing
+        const analysisResult = results[4].status === 'fulfilled' ? results[4].value : null;
+        if (analysisResult && analysisResult.__error) {
+          console.warn('SSUCF analysis load failed', analysisResult.__error);
+        }
       } catch (e) {
         showError(e.message || 'Failed to load Chronoflux stats');
       } finally {
@@ -288,6 +375,16 @@
 
     wireFooterLinks();
     $('refresh-btn').addEventListener('click', refresh);
+    const analysisBtn = $('refresh-analysis-btn');
+    if (analysisBtn) {
+      analysisBtn.addEventListener('click', async () => {
+        try {
+          await loadSsucfAnalysis();
+        } catch (e) {
+          showError(e.message || 'Failed to load SSUCF analysis');
+        }
+      });
+    }
     resetCountdown();
     refresh();
     startCountdown();

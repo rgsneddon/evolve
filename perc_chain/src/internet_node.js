@@ -153,6 +153,7 @@ function servePublic(relPath, res) {
     '.html': 'text/html; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
     '.js': 'application/javascript; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
     '.svg': 'image/svg+xml',
     '.png': 'image/png',
     '.ico': 'image/x-icon',
@@ -336,6 +337,10 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && (url.pathname === '/stats_page_model.js' || url.pathname === '/public/stats_page_model.js')) {
     if (servePublic('stats_page_model.js', res)) return;
     return json(res, 404, { error: 'stats model missing' });
+  }
+  if (req.method === 'GET' && (url.pathname === '/ssucf_analysis.json' || url.pathname === '/public/ssucf_analysis.json')) {
+    if (servePublic('ssucf_analysis.json', res)) return;
+    return json(res, 404, { error: 'ssucf analysis missing' });
   }
 
   if (req.method === 'GET' && url.pathname.startsWith('/public/')) {

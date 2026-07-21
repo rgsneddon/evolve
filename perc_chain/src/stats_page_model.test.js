@@ -4,11 +4,16 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import {
   API_PATHS,
   CHAIN_ID,
   DEFAULT_SEED_BASE,
   apiUrls,
+  formatPercentChance,
+  formatScsScore,
   isProductChainId,
   isTipAdjacentBlockList,
   ledgerPresentation,
@@ -16,11 +21,16 @@ import {
   mapHealthToStats,
   mapNetworkToStats,
   mapStatusToStats,
+  mapSsucfAnalysisToView,
   mergeLiveSources,
   onlinePresentation,
   statsCardDescriptors,
+  ssucfAnalysisCardDescriptors,
 } from '../public/stats_page_model.js';
 import { listBlocks } from './explorer_api.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const FIXTURE_PATH = path.join(__dirname, '../public/ssucf_analysis.json');
 
 /** Representative /api/network body (field names match live seed). */
 const SAMPLE_NETWORK = {
@@ -249,5 +259,89 @@ describe('presentation helpers', () => {
     assert.equal(ledgerPresentation(false), 'Pending');
     const cards = statsCardDescriptors(mapNetworkToStats({ ...SAMPLE_NETWORK, ledgerReady: false }));
     assert.equal(cards.find((c) => c.id === 'ledger').value, 'Pending');
+  });
+});
+
+/** Objective-shaped SSUCF: Andy Burnham GE 2029 analysis. */
+const BURNHAM_SSUCF = {
+  topic: 'What is the percent chance of Andy Burnham winning the general election in 2029?',
+  refinedScs: 59,
+  weightedScs: 61.7,
+  baselineScs: 48,
+  percentChance: 44,
+  calibratedPercentChance: 44,
+  regressivePct: 64,
+  progressivePct: 36,
+  lean: 'REGRESSIVE',
+  partTwo: { refinedScs: 59, regressivePct: 64, progressivePct: 36 },
+  forecast: { percentChance: 44, calibratedPercent: 44 },
+};
+
+describe('mapSsucfAnalysisToView (variable SCS + % chance)', () => {
+  it('maps Burnham 2029 objective-shaped refined SCS and calibrated % chance', () => {
+    const view = mapSsucfAnalysisToView(BURNHAM_SSUCF);
+    assert.equal(view.refinedScs, 59);
+    assert.equal(view.weightedScs, 61.7);
+    assert.equal(view.percentChance, 44);
+    assert.equal(view.regressivePct, 64);
+    assert.equal(view.progressivePct, 36);
+    assert.equal(view.lean, 'REGRESSIVE');
+    assert.equal(view.displayRefinedScs, formatScsScore(59));
+    assert.equal(view.displayPercentChance, formatPercentChance(44));
+    assert.equal(view.displayRefinedScs, '~59/100');
+    assert.equal(view.displayPercentChance, '44%');
+    assert.equal(view.displayContinuum, '~64% / ~36%');
+    assert.equal(view.displayWeightedScs, '~61.7/100');
+    // Headline % must not equal raw regressive continuum share
+    assert.notEqual(Math.round(view.percentChance), Math.round(view.regressivePct));
+    assert.match(view.topic, /Andy Burnham/i);
+  });
+
+  it('reads nested partTwo / forecast shapes without flat fields', () => {
+    const view = mapSsucfAnalysisToView({
+      topic: 'nested only',
+      partTwo: { refinedScs: 59, regressivePct: 64, progressivePct: 36, lean: 'REGRESSIVE' },
+      forecast: { percentChance: 44 },
+      conclusion: { weightedScs: 61.7 },
+    });
+    assert.equal(view.refinedScs, 59);
+    assert.equal(view.percentChance, 44);
+    assert.equal(view.weightedScs, 61.7);
+    assert.equal(view.displayPercentChance, '44%');
+  });
+
+  it('builds analysis card descriptors with SCS and % chance ids', () => {
+    const view = mapSsucfAnalysisToView(BURNHAM_SSUCF);
+    const cards = ssucfAnalysisCardDescriptors(view);
+    const byId = Object.fromEntries(cards.map((c) => [c.id, c]));
+    assert.equal(byId.refinedScs.value, '~59/100');
+    assert.equal(byId.percentChance.value, '44%');
+    assert.equal(byId.continuum.value, '~64% / ~36%');
+    assert.equal(byId.weightedScs.value, '~61.7/100');
+    assert.equal(byId.lean.value, 'REGRESSIVE');
+    assert.equal(byId.percentChance.numeric, 44);
+    assert.equal(byId.refinedScs.numeric, 59);
+  });
+
+  it('maps shipped ssucf_analysis.json fixture (real file path)', () => {
+    const raw = JSON.parse(readFileSync(FIXTURE_PATH, 'utf8'));
+    const view = mapSsucfAnalysisToView(raw);
+    assert.equal(view.refinedScs, 59);
+    assert.equal(view.percentChance, 44);
+    assert.equal(view.regressivePct, 64);
+    assert.equal(view.progressivePct, 36);
+    assert.ok(view.hasAnalysis);
+    assert.equal(API_PATHS.ssucfAnalysis, '/ssucf_analysis.json');
+    assert.ok(apiUrls(DEFAULT_SEED_BASE).ssucfAnalysis.endsWith('/ssucf_analysis.json'));
+  });
+
+  it('updates displayed values when input payload changes (variable path)', () => {
+    const a = mapSsucfAnalysisToView({ refinedScs: 59, percentChance: 44, regressivePct: 64, progressivePct: 36 });
+    const b = mapSsucfAnalysisToView({ refinedScs: 72, percentChance: 51, regressivePct: 40, progressivePct: 60 });
+    assert.equal(a.displayRefinedScs, '~59/100');
+    assert.equal(b.displayRefinedScs, '~72/100');
+    assert.equal(a.displayPercentChance, '44%');
+    assert.equal(b.displayPercentChance, '51%');
+    assert.notEqual(a.displayRefinedScs, b.displayRefinedScs);
   });
 });
