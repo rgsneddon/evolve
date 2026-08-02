@@ -31,15 +31,28 @@ class PercNetworkRendezvous {
   @visibleForTesting
   static final Map<String, List<InboundRelayHint>> testHintsByRecipient = {};
 
-  /// Test inject for seed-recovery publish/fetch (works without rendezvous URL).
+  /// Process-local stage for seed-recovery (cleared on app restart / [clearProcessStageForTest]).
   /// Value is the raw transport string (may be composite suite ledger+meta).
   @visibleForTesting
   static final Map<String, String> testSeedRecoveries = {};
+
+  /// Durable remote inject simulating rendezvous server storage after PUT.
+  /// Survives [clearProcessStageForTest] so post-restart hub re-publish can
+  /// fetch existing suite_seed_transport meta without a live HTTP server.
+  @visibleForTesting
+  static final Map<String, String> testDurableRemoteSeedRecoveries = {};
 
   @visibleForTesting
   static void resetForTest() {
     testRelayByUsername.clear();
     testHintsByRecipient.clear();
+    testSeedRecoveries.clear();
+    testDurableRemoteSeedRecoveries.clear();
+  }
+
+  /// Drop process-local stage only (simulates app restart; network durable remains).
+  @visibleForTesting
+  static void clearProcessStageForTest() {
     testSeedRecoveries.clear();
   }
 
@@ -255,8 +268,9 @@ class PercNetworkRendezvous {
     required String envelopeB64,
     String? metaBlobB64,
   }) async {
-    // Always stage test map so Suite clean-install proofs work offline.
+    // Process stage + durable remote (simulates successful server PUT offline).
     testSeedRecoveries[fingerprint] = envelopeB64;
+    testDurableRemoteSeedRecoveries[fingerprint] = envelopeB64;
     final base = await baseUrl();
     if (base == null) return;
     final uri = Uri.parse('$base/perc/rendezvous/seed-recovery');
@@ -279,8 +293,13 @@ class PercNetworkRendezvous {
   Future<String?> fetchSeedRecoveryEnvelope({
     required String fingerprint,
   }) async {
+    // 1) Process-local stage (same app session).
     final staged = testSeedRecoveries[fingerprint];
     if (staged != null && staged.isNotEmpty) return staged;
+    // 2) Durable remote inject (survives process-stage clear / app restart sim).
+    final durable = testDurableRemoteSeedRecoveries[fingerprint];
+    if (durable != null && durable.isNotEmpty) return durable;
+    // 3) Live rendezvous HTTP.
     final base = await baseUrl();
     if (base == null) return null;
     final uri = Uri.parse(

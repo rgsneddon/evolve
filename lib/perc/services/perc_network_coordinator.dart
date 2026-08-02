@@ -1151,10 +1151,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
 
   /// Publishes encrypted seed recovery envelopes for the signed-in wallet.
   ///
-  /// Never clobbers Suite sealed meta: merges with any existing remote/test
-  /// composite via [buildSeedRecoveryNetworkPayload]. Always stages the merged
-  /// payload on [PercNetworkRendezvous.testSeedRecoveries] so a later hub
-  /// re-publish cannot drop KEYGEN meta even when live nodes are disabled.
+  /// Never clobbers Suite sealed meta: **always** resolves existing remote
+  /// composite via [PercNetworkRendezvous.fetchSeedRecoveryEnvelope] (process
+  /// stage → durable remote → live HTTP) before merge, so a post-restart hub
+  /// persist with only the account ledger envelope keeps KEYGEN meta.
   Future<void> publishSeedRecoveryEnvelopes() async {
     final hub = _hub;
     final session = hub?.ledger.sessionUsername;
@@ -1168,15 +1168,21 @@ class PercNetworkCoordinator extends ChangeNotifier {
         envelope.isEmpty) {
       return;
     }
-    // Prefer already-staged composite (Suite export); avoid network hang.
-    final existing = PercNetworkRendezvous.testSeedRecoveries[fingerprint];
+    // Fetch existing composite (process stage → durable remote → live HTTP).
+    // Do not rely on process-local map alone — that is empty after app restart.
+    String? existing;
+    try {
+      existing = await _rendezvous
+          .fetchSeedRecoveryEnvelope(fingerprint: fingerprint)
+          .timeout(const Duration(seconds: 3), onTimeout: () => null);
+    } catch (_) {
+      existing = null;
+    }
     final payload = buildSeedRecoveryNetworkPayload(
       ledgerEnvelopeB64: envelope,
       existingRemoteB64: existing,
     );
-    // Stage merged payload first (survives ledger-only account envelopes).
-    PercNetworkRendezvous.testSeedRecoveries[fingerprint] = payload;
-    if (disableLiveNodesForTests) return;
+    // Stages process + durable remote; best-effort live PUT when URL configured.
     await _rendezvous.publishSeedRecoveryEnvelope(
       fingerprint: fingerprint,
       envelopeB64: payload,
