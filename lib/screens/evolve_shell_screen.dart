@@ -18,11 +18,26 @@ import '../perc/screens/security_screen.dart';
 import '../perc/screens/wallet_screen.dart';
 
 /// Root shell — Analysis + wallet after PERC address registration.
+///
+/// When [showBottomBar] is false (Suite embed), only the body for [tabIndex]
+/// is shown — the Suite main bar owns navigation.
 class EvolveShellScreen extends StatefulWidget {
-  const EvolveShellScreen({super.key, this.openRegistrationOnLaunch = false});
+  const EvolveShellScreen({
+    super.key,
+    this.openRegistrationOnLaunch = false,
+    this.showBottomBar = true,
+    this.tabIndex,
+  });
 
   /// When true, wallet registration/login is shown on first frame (unsigned users).
   final bool openRegistrationOnLaunch;
+
+  /// When false, hide nested bottom [NavigationBar] (Suite hosts destinations).
+  final bool showBottomBar;
+
+  /// When non-null, force this tab body (full-access order:
+  /// 0 Analysis, 1 Wallet, 2 Security, 3 Voting, 4 Credit).
+  final int? tabIndex;
 
   @override
   State<EvolveShellScreen> createState() => _EvolveShellScreenState();
@@ -187,9 +202,10 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
           ];
 
     final walletTabIndex = wallet.hasAppAccess ? 1 : 0;
+    final rawIndex = widget.tabIndex ?? _index;
     final navIndex = wallet.hasAppAccess
-        ? _index
-        : _index.clamp(0, destinations.length - 1);
+        ? rawIndex.clamp(0, destinations.length - 1)
+        : rawIndex.clamp(0, destinations.length - 1);
 
     final showWallet =
         _walletTabVisited || navIndex == walletTabIndex;
@@ -199,26 +215,36 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
       });
     }
 
+    final body = wallet.hasAppAccess
+        ? IndexedStack(
+            index: navIndex,
+            children: [
+              const HomeScreen(),
+              showWallet ? const WalletScreen() : const SizedBox.shrink(),
+              const SecurityScreen(),
+              const FcgVotingScreen(),
+              const CreditScreen(),
+            ],
+          )
+        : IndexedStack(
+            index: navIndex,
+            children: [
+              showWallet ? const WalletScreen() : const SizedBox.shrink(),
+              const SecurityScreen(),
+              const CreditScreen(),
+            ],
+          );
+
+    if (!widget.showBottomBar) {
+      // Suite main bar owns destinations — no nested child bar.
+      return Scaffold(
+        key: const Key('evolve_shell_embed_no_bottom_bar'),
+        body: body,
+      );
+    }
+
     return Scaffold(
-      body: wallet.hasAppAccess
-          ? IndexedStack(
-              index: navIndex,
-              children: [
-                const HomeScreen(),
-                showWallet ? const WalletScreen() : const SizedBox.shrink(),
-                const SecurityScreen(),
-                const FcgVotingScreen(),
-                const CreditScreen(),
-              ],
-            )
-          : IndexedStack(
-              index: navIndex,
-              children: [
-                showWallet ? const WalletScreen() : const SizedBox.shrink(),
-                const SecurityScreen(),
-                const CreditScreen(),
-              ],
-            ),
+      body: body,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navIndex,
         onDestinationSelected: (i) => setState(() => _index = i),

@@ -13,9 +13,20 @@ import 'evolve_shell_screen.dart';
 
 /// Looping banner splash, wallet boot, then user sign-in before the shell.
 class AppBootstrapScreen extends StatefulWidget {
-  const AppBootstrapScreen({super.key, required this.walletProvider});
+  const AppBootstrapScreen({
+    super.key,
+    required this.walletProvider,
+    this.showShellBottomBar = true,
+    this.shellTabIndex,
+  });
 
   final PercWalletProvider walletProvider;
+
+  /// When false, [EvolveShellScreen] hides its nested bottom bar (Suite embed).
+  final bool showShellBottomBar;
+
+  /// Optional forced shell tab when embedded in Suite.
+  final int? shellTabIndex;
 
   @override
   State<AppBootstrapScreen> createState() => _AppBootstrapScreenState();
@@ -61,8 +72,12 @@ class _AppBootstrapScreenState extends State<AppBootstrapScreen> {
   @override
   Widget build(BuildContext context) {
     if (_ready) {
-      return const RegistrationSeedSetupDialogHost(
-        child: EvolveShellScreen(openRegistrationOnLaunch: false),
+      return RegistrationSeedSetupDialogHost(
+        child: EvolveShellScreen(
+          openRegistrationOnLaunch: false,
+          showBottomBar: widget.showShellBottomBar,
+          tabIndex: widget.shellTabIndex,
+        ),
       );
     }
 
