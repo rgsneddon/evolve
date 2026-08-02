@@ -31,10 +31,16 @@ class PercNetworkRendezvous {
   @visibleForTesting
   static final Map<String, List<InboundRelayHint>> testHintsByRecipient = {};
 
+  /// Test inject for seed-recovery publish/fetch (works without rendezvous URL).
+  /// Value is the raw transport string (may be composite suite ledger+meta).
+  @visibleForTesting
+  static final Map<String, String> testSeedRecoveries = {};
+
   @visibleForTesting
   static void resetForTest() {
     testRelayByUsername.clear();
     testHintsByRecipient.clear();
+    testSeedRecoveries.clear();
   }
 
   http.Client get _http => _client ?? http.Client();
@@ -247,22 +253,30 @@ class PercNetworkRendezvous {
   Future<void> publishSeedRecoveryEnvelope({
     required String fingerprint,
     required String envelopeB64,
+    String? metaBlobB64,
   }) async {
+    // Always stage test map so Suite clean-install proofs work offline.
+    testSeedRecoveries[fingerprint] = envelopeB64;
     final base = await baseUrl();
     if (base == null) return;
     final uri = Uri.parse('$base/perc/rendezvous/seed-recovery');
-    await _putWithRetry(
-      uri,
-      jsonEncode({
-        'fingerprint': fingerprint,
-        'envelope': envelopeB64,
-      }),
-    );
+    final body = <String, dynamic>{
+      'fingerprint': fingerprint,
+      'envelope': envelopeB64,
+    };
+    // Optional field for servers that store suite meta separately; composite
+    // meta may already be embedded in envelopeB64 (suite_seed_transport).
+    if (metaBlobB64 != null && metaBlobB64.isNotEmpty) {
+      body['meta'] = metaBlobB64;
+    }
+    await _putWithRetry(uri, jsonEncode(body));
   }
 
   Future<String?> fetchSeedRecoveryEnvelope({
     required String fingerprint,
   }) async {
+    final staged = testSeedRecoveries[fingerprint];
+    if (staged != null && staged.isNotEmpty) return staged;
     final base = await baseUrl();
     if (base == null) return null;
     final uri = Uri.parse(
@@ -275,6 +289,29 @@ class PercNetworkRendezvous {
       if (json is! Map) return null;
       final envelope = json['envelope'] as String?;
       if (envelope == null || envelope.isEmpty) return null;
+      // If server returned separate meta, re-wrap so Suite decode recovers KEYGEN.
+      final meta = json['meta'] as String?;
+      if (meta != null && meta.isNotEmpty) {
+        try {
+          // Avoid double-wrapping if envelope is already composite transport.
+          final probe = utf8.decode(base64Decode(envelope));
+          final map = jsonDecode(probe);
+          if (map is Map && map['kind'] == 'suite_seed_transport') {
+            return envelope;
+          }
+        } catch (_) {}
+        final wrapped = base64Encode(
+          utf8.encode(
+            jsonEncode({
+              'v': 1,
+              'kind': 'suite_seed_transport',
+              'ledger': envelope,
+              'meta': meta,
+            }),
+          ),
+        );
+        return wrapped;
+      }
       return envelope;
     } catch (_) {
       return null;
