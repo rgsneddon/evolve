@@ -269,7 +269,11 @@ class PercNetworkRendezvous {
     if (metaBlobB64 != null && metaBlobB64.isNotEmpty) {
       body['meta'] = metaBlobB64;
     }
-    await _putWithRetry(uri, jsonEncode(body));
+    // Best-effort network; never hang seed export / hub re-publish offline.
+    try {
+      await _putWithRetry(uri, jsonEncode(body))
+          .timeout(const Duration(seconds: 3));
+    } catch (_) {}
   }
 
   Future<String?> fetchSeedRecoveryEnvelope({

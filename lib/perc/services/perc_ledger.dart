@@ -827,6 +827,10 @@ class PercLedger {
   }
 
   /// Re-encrypts seed envelopes after ledger mutations when mnemonic is stored at rest.
+  ///
+  /// Skips accounts that already have a non-empty envelope for the current
+  /// fingerprint — re-attaching embeds the prior envelope into a new ciphertext
+  /// and grows without bound on every [persistLocal].
   void refreshSeedRecoveryEnvelopes() {
     for (final acc in accounts.values) {
       final encrypted = acc.encryptedSeedMnemonic;
@@ -837,6 +841,13 @@ class PercLedger {
           passwordHash: acc.passwordHash,
           salt: acc.salt,
         );
+        final fp = PercSeedRecovery.fingerprint(mnemonic);
+        if (acc.seedFingerprint == fp &&
+            acc.seedRecoveryEnvelope != null &&
+            acc.seedRecoveryEnvelope!.isNotEmpty) {
+          seedRecoveryCatalog[fp] = acc.seedRecoveryEnvelope!;
+          continue;
+        }
         attachSeedRecoveryEnvelope(
           username: acc.username,
           mnemonic: mnemonic,
