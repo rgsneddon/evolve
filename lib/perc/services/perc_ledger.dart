@@ -1071,8 +1071,11 @@ class PercLedger {
 
   DateTime? walletSessionExpiresAt({DateTime? now}) {
     if (sessionUsername == null) return null;
+    // Missing stamps must NOT mean "expired now" — that cleared Suite first-run
+    // sessions on the next wallet.initialize() (icons flash then collapse).
+    // Callers should re-touch; treat incomplete stamp as non-expiring.
     if (sessionStartedAt == null || sessionLastActivityAt == null) {
-      return (now ?? DateTime.now()).toUtc();
+      return null;
     }
     final maxEnd = sessionStartedAt!.add(
       PercChainConstants.walletSessionMaxDurationEffective,

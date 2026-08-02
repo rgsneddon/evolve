@@ -245,6 +245,17 @@ class PercWalletProvider extends ChangeNotifier {
         _publishRegistrationIfRecovered;
     _ledger.refreshPendingInboundTransfers();
     if (_ledger.isLoggedIn) {
+      // Repair incomplete session stamps (legacy / seed-import paths) so a just
+      // registered Suite user is not logged out on family boot.
+      if (_ledger.sessionStartedAt == null ||
+          _ledger.sessionLastActivityAt == null) {
+        final t = DateTime.now().toUtc();
+        _ledger.sessionStartedAt ??= t;
+        _ledger.sessionLastActivityAt = t;
+        try {
+          await PercLedgerHub.instance.persistLocal();
+        } catch (_) {}
+      }
       if (_ledger.isWalletSessionExpired()) {
         // Local-only logout so splash boot never blocks on seed/network sync.
         await _clearExpiredSessionOnBoot();
