@@ -191,6 +191,29 @@ class _WalletScreenState extends State<WalletScreen> {
     }
 
     if (!wallet.isLoggedIn) {
+      // Suite splash already created/signed-in the identity — no second form.
+      if (wallet.suppressSecondaryAuthWall ||
+          wallet.suiteSplashIdentityActive) {
+        return SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    strings.t('wallet_opening_message'),
+                    textAlign: TextAlign.center,
+                    key: const Key('suite_splash_session_restore'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
       if (_showTreasurySetup && wallet.needsTreasuryPassword) {
         return _treasurySetup(wallet, strings, showBack: true);
       }

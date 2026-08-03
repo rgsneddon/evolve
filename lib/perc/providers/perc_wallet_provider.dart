@@ -112,6 +112,14 @@ class PercWalletProvider extends ChangeNotifier {
   /// User may use Evolve only after register/login generates a Perccent address.
   bool get hasAppAccess => isLoggedIn && address.isNotEmpty;
 
+  /// Suite first-run/splash already established identity — skip secondary
+  /// create-account / login walls on this provider instance (Suite embed).
+  bool suiteSplashIdentityActive = false;
+
+  /// True when a secondary WalletAuth / login form must not be shown.
+  bool get suppressSecondaryAuthWall =>
+      suiteSplashIdentityActive || hasAppAccess;
+
   PercAmount get balance => _ledger.sessionBalance;
   PercAmount get cumulativeStaking =>
       _ledger.sessionAccount?.cumulativeStakingEarned ?? PercAmount.zero;
