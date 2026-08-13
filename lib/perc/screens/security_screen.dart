@@ -14,7 +14,7 @@ typedef BackupFileExporter = Future<bool> Function({
   required Uint8List bytes,
 });
 
-/// Backup export, file restore, and optional seed-phrase recovery.
+/// Backup export, file restore, and seed-phrase recovery (Backup tab surface).
 class SecurityScreen extends StatefulWidget {
   const SecurityScreen({
     super.key,
@@ -35,8 +35,10 @@ class SecurityScreen extends StatefulWidget {
 class _SecurityScreenState extends State<SecurityScreen> {
   final _exportPassCtrl = TextEditingController();
   final _restorePassCtrl = TextEditingController();
+  final _seedPhraseCtrl = TextEditingController();
   bool _obscureExport = true;
   bool _obscureRestore = true;
+  bool _seedBusy = false;
 
   SecurityRecoveryService get _recovery =>
       widget.recoveryService ?? SecurityRecoveryService.production();
@@ -48,6 +50,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
   void dispose() {
     _exportPassCtrl.dispose();
     _restorePassCtrl.dispose();
+    _seedPhraseCtrl.dispose();
     super.dispose();
   }
 
@@ -58,9 +61,11 @@ class _SecurityScreenState extends State<SecurityScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(strings.t('nav_security'))),
-      body: ListView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           Text(
             strings.t('security_intro'),
             style: const TextStyle(fontSize: 13, height: 1.45),
@@ -118,6 +123,37 @@ class _SecurityScreenState extends State<SecurityScreen> {
             icon: const Icon(Icons.upload_file_outlined),
             label: Text(strings.t('security_restore_action')),
           ),
+          const SizedBox(height: 24),
+          _sectionTitle(strings.t('security_seed_title')),
+          Text(strings.t('security_seed_note'),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF9BA3B8))),
+          const SizedBox(height: 8),
+          TextField(
+            key: const Key('security_seed_phrase_field'),
+            controller: _seedPhraseCtrl,
+            minLines: 2,
+            maxLines: 4,
+            textCapitalization: TextCapitalization.none,
+            autocorrect: false,
+            enableSuggestions: false,
+            decoration: InputDecoration(
+              labelText: strings.t('security_seed_phrase_label'),
+              hintText: strings.t('security_seed_phrase_hint'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            key: const Key('security_seed_recover_button'),
+            onPressed: _seedBusy ? null : () => _recoverFromSeed(wallet),
+            icon: _seedBusy
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.vpn_key_outlined),
+            label: Text(strings.t('security_seed_recover_action')),
+          ),
           if (wallet.localizedStatusMessage(
                   AppLocalizations.of(context.read<LocaleProvider>().config)) !=
               null) ...[
@@ -140,7 +176,8 @@ class _SecurityScreenState extends State<SecurityScreen> {
               style: const TextStyle(color: Colors.redAccent, fontSize: 12),
             ),
           ],
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -184,5 +221,23 @@ class _SecurityScreenState extends State<SecurityScreen> {
       if (bytes == null) return;
       await wallet.restoreFromEncryptedBackup(bytes, _restorePassCtrl.text);
     } catch (_) {}
+  }
+
+  Future<void> _recoverFromSeed(PercWalletProvider wallet) async {
+    final words = _seedPhraseCtrl.text
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return;
+    setState(() => _seedBusy = true);
+    try {
+      await wallet.recoverFromSeedPhrase(words);
+    } catch (_) {
+      // Provider surfaces localized error on the screen.
+    } finally {
+      if (mounted) setState(() => _seedBusy = false);
+    }
   }
 }

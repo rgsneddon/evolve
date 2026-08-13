@@ -46,8 +46,9 @@ void main() {
   }
 
   Future<void> pumpShell(WidgetTester tester, PercWalletProvider wallet) async {
+    // Skip EvolveProvider.initialize() — it starts Grok proxy HTTP timers
+    // that outlive widget tests under flutter_test.
     final evolve = EvolveProvider();
-    await evolve.initialize();
     final fcg = FcgVotingProvider(store: FcgStoreMemory());
     await fcg.initialize();
     final locale = await createTestLocaleProvider();
@@ -80,9 +81,18 @@ void main() {
         .toList();
 
     expect(labels.indexOf('Wallet'), 0);
-    expect(labels.indexOf('Security'), 1);
+    expect(labels.indexOf('Backup'), 1);
     expect(labels.indexOf('Credit'), 2);
     expect(labels, isNot(contains('VPN')));
+    // Backup destination uses backup/restore icons, not shield/security.
+    final backupDest = tester
+        .widgetList<NavigationDestination>(find.byType(NavigationDestination))
+        .firstWhere((d) => d.label == 'Backup');
+    expect((backupDest.icon as Icon).icon, Icons.backup_outlined);
+    expect(
+      (backupDest.selectedIcon as Icon).icon,
+      Icons.settings_backup_restore,
+    );
   });
 
   testWidgets('full app access nav has no VPN destination', (tester) async {
@@ -103,16 +113,16 @@ void main() {
 
     expect(labels, contains('Analysis'));
     expect(labels, contains('Wallet'));
-    expect(labels, contains('Security'));
+    expect(labels, contains('Backup'));
     expect(labels, contains('Voting'));
     expect(labels, contains('Credit'));
     expect(labels, isNot(contains('VPN')));
-    expect(labels.indexOf('Wallet'), lessThan(labels.indexOf('Security')));
-    expect(labels.indexOf('Security'), lessThan(labels.indexOf('Credit')));
+    expect(labels.indexOf('Wallet'), lessThan(labels.indexOf('Backup')));
+    expect(labels.indexOf('Backup'), lessThan(labels.indexOf('Credit')));
     expect(labels.last, 'Credit');
   });
 
-  testWidgets('logout from Wallet tab returns to wallet login, not Security',
+  testWidgets('logout from Wallet tab returns to wallet login, not Backup',
       (tester) async {
     PercNetworkCoordinator.instance.registerTestSeedLedger(
       _registrationSeedForTests(),

@@ -169,4 +169,26 @@ void main() {
     expect(blank.isLoggedIn, isTrue);
     expect(blank.statusMessage, 'wallet_status_backup_restored');
   });
+
+  testWidgets('Backup tab chrome exposes export, import, and seed recovery', (
+    tester,
+  ) async {
+    final wallet = await bootWallet();
+    await pumpSecurity(tester, wallet);
+
+    // AppBar / nav label is Backup (l10n nav_security → Backup).
+    expect(find.text('Backup'), findsWidgets);
+    expect(find.textContaining('Backup protects'), findsOneWidget);
+    // Section title + action button both mention these phrases.
+    expect(find.textContaining('Export encrypted backup'), findsWidgets);
+    expect(find.textContaining('Import backup file'), findsWidgets);
+
+    expect(find.byKey(const Key('security_export_pass_field')), findsOneWidget);
+    expect(find.byKey(const Key('security_export_button')), findsOneWidget);
+    expect(find.byKey(const Key('security_restore_pass_field')), findsOneWidget);
+    expect(find.byKey(const Key('security_restore_button')), findsOneWidget);
+    expect(find.byKey(const Key('security_seed_phrase_field')), findsOneWidget);
+    expect(find.byKey(const Key('security_seed_recover_button')), findsOneWidget);
+    expect(find.textContaining('Recover from seed phrase'), findsWidgets);
+  });
 }

@@ -36,7 +36,7 @@ class EvolveShellScreen extends StatefulWidget {
   final bool showBottomBar;
 
   /// When non-null, force this tab body (full-access order:
-  /// 0 Analysis, 1 Wallet, 2 Security, 3 Voting, 4 Credit).
+  /// 0 Analysis, 1 Wallet, 2 Backup, 3 Voting, 4 Credit).
   final int? tabIndex;
 
   @override
@@ -168,8 +168,8 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
               label: strings.t('nav_wallet'),
             ),
             NavigationDestination(
-              icon: const Icon(Icons.security_outlined),
-              selectedIcon: const Icon(Icons.security),
+              icon: const Icon(Icons.backup_outlined),
+              selectedIcon: const Icon(Icons.settings_backup_restore),
               label: strings.t('nav_security'),
             ),
             NavigationDestination(
@@ -190,8 +190,8 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
               label: strings.t('nav_wallet'),
             ),
             NavigationDestination(
-              icon: const Icon(Icons.security_outlined),
-              selectedIcon: const Icon(Icons.security),
+              icon: const Icon(Icons.backup_outlined),
+              selectedIcon: const Icon(Icons.settings_backup_restore),
               label: strings.t('nav_security'),
             ),
             NavigationDestination(
