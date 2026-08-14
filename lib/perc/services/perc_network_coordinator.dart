@@ -231,36 +231,45 @@ class PercNetworkCoordinator extends ChangeNotifier {
     PercLedgerHub hub,
   ) {
     final imported = _importedSeedTarget(hub);
-    if (imported == null) {
-      final localHeight = PercChainTip.height(hub.ledger);
-      if (localHeight > 0 && localHeight >= probe.blockHeight) {
-        return PercNetworkStatus(
-          evolutionaryChainId: PercChainAlignment.effectiveChainId(hub.ledger),
-          blockHeight: localHeight,
-          tipHash: PercChainTip.hash(hub.ledger),
-          revision: probe.revision,
-          networkGenesisRevision: probe.networkGenesisRevision,
-          sessionUsername: probe.sessionUsername,
-          publicAlias: probe.publicAlias,
-          endpoint: probe.endpoint,
-          walletAddress: probe.walletAddress,
-          updatedAt: probe.updatedAt,
-        );
-      }
+    final localHeight = PercChainTip.height(hub.ledger);
+    final tipH = PercChainTip.tallest(
+      localHeight: localHeight,
+      seedHeight: probe.blockHeight,
+      extraHeights: [imported?.height ?? 0],
+    );
+    // Never hide a taller live seed/explorer probe behind a stale local import.
+    if (probe.blockHeight == tipH && probe.blockHeight > 0) {
       return probe;
     }
-    return PercNetworkStatus(
-      evolutionaryChainId: imported.chainId,
-      blockHeight: imported.height,
-      tipHash: imported.tipHash,
-      revision: probe.revision,
-      networkGenesisRevision: probe.networkGenesisRevision,
-      sessionUsername: probe.sessionUsername,
-      publicAlias: probe.publicAlias,
-      endpoint: probe.endpoint,
-      walletAddress: probe.walletAddress,
-      updatedAt: probe.updatedAt,
-    );
+    if (imported != null && imported.height == tipH) {
+      return PercNetworkStatus(
+        evolutionaryChainId: imported.chainId,
+        blockHeight: imported.height,
+        tipHash: imported.tipHash,
+        revision: probe.revision,
+        networkGenesisRevision: probe.networkGenesisRevision,
+        sessionUsername: probe.sessionUsername,
+        publicAlias: probe.publicAlias,
+        endpoint: probe.endpoint,
+        walletAddress: probe.walletAddress,
+        updatedAt: probe.updatedAt,
+      );
+    }
+    if (localHeight > 0 && localHeight == tipH) {
+      return PercNetworkStatus(
+        evolutionaryChainId: PercChainAlignment.effectiveChainId(hub.ledger),
+        blockHeight: localHeight,
+        tipHash: PercChainTip.hash(hub.ledger),
+        revision: probe.revision,
+        networkGenesisRevision: probe.networkGenesisRevision,
+        sessionUsername: probe.sessionUsername,
+        publicAlias: probe.publicAlias,
+        endpoint: probe.endpoint,
+        walletAddress: probe.walletAddress,
+        updatedAt: probe.updatedAt,
+      );
+    }
+    return probe;
   }
 
   /// Syncs seed peer coordinates from the local ledger after commits.
@@ -275,21 +284,48 @@ class PercNetworkCoordinator extends ChangeNotifier {
     PercLedger remote, {
     PercNetworkStatus? seedStatus,
   }) {
-    final target = SeedAlignmentTarget.fromLedger(hub.ledger);
-    _networkBlockHeight = target.height;
-    _rememberPendingSeedTarget(
-      seedHeight: target.height,
-      seedTipHash: target.tipHash,
-      seedChainId: target.chainId,
-    );
-
+    final localTarget = SeedAlignmentTarget.fromLedger(hub.ledger);
     final seedUser = PercChainConstants.seedUsername;
     final existing = hub.ledger.networkNodes[seedUser];
+    final tipH = PercChainTip.tallest(
+      localHeight: localTarget.height,
+      seedHeight: seedStatus?.blockHeight ?? 0,
+      extraHeights: [
+        existing?.blockHeight ?? 0,
+        _pendingSeedHeight,
+        _networkBlockHeight,
+      ],
+    );
+    var tipHash = localTarget.tipHash;
+    var chainId = localTarget.chainId;
+    if (seedStatus != null &&
+        seedStatus.blockHeight == tipH &&
+        seedStatus.tipHash.isNotEmpty) {
+      tipHash = seedStatus.tipHash;
+      if (seedStatus.evolutionaryChainId.isNotEmpty) {
+        chainId = seedStatus.evolutionaryChainId;
+      }
+    } else if (_pendingSeedHeight == tipH && _pendingSeedTipHash.isNotEmpty) {
+      tipHash = _pendingSeedTipHash;
+      if (_pendingSeedChainId.isNotEmpty) chainId = _pendingSeedChainId;
+    } else if (existing != null &&
+        existing.blockHeight == tipH &&
+        (existing.tipHash ?? '').isNotEmpty) {
+      tipHash = existing.tipHash!;
+    }
+
+    _networkBlockHeight = tipH;
+    _rememberPendingSeedTarget(
+      seedHeight: tipH,
+      seedTipHash: tipHash,
+      seedChainId: chainId,
+    );
+
     hub.ledger.networkNodes[seedUser] = PercPeerNode(
       username: seedUser,
       endpoint: seedStatus?.endpoint ?? existing?.endpoint,
-      blockHeight: target.height,
-      tipHash: target.tipHash,
+      blockHeight: tipH,
+      tipHash: tipHash,
       online: seedStatus?.isFreshOnSeedPeer ?? existing?.online ?? _seedConnected,
       lastSeen:
           seedStatus?.updatedAt?.toUtc() ?? existing?.lastSeen ?? DateTime.now().toUtc(),
@@ -425,7 +461,10 @@ class PercNetworkCoordinator extends ChangeNotifier {
   }
 
   void _onHubChanged() {
-    _networkBlockHeight = _maxKnownHeight();
+    _networkBlockHeight = PercChainTip.tallest(
+      localHeight: _maxKnownHeight(),
+      seedHeight: _networkBlockHeight,
+    );
     notifyListeners();
   }
 
@@ -912,8 +951,28 @@ class PercNetworkCoordinator extends ChangeNotifier {
     if (hub == null) return;
 
     if (disableLiveNodesForTests) {
-      _networkBlockHeight = _maxKnownHeight();
-      _syncState = PercNetworkSyncState.synced;
+      if (testSeedReachable && testSeedLedger != null) {
+        final seed = PercLedger.fromJson(testSeedLedger!.toJson());
+        final status = PercNetworkStatus.fromLedger(
+          seed,
+          revision: 1,
+          endpoint: 'http://test-seed/perc',
+        );
+        _applySeedLedgerToHub(hub, seed, status);
+      }
+      final seedH =
+          testSeedLedger == null ? 0 : PercChainTip.height(testSeedLedger!);
+      _networkBlockHeight = PercChainTip.tallest(
+        localHeight: _maxKnownHeight(),
+        seedHeight: seedH,
+        extraHeights: [_networkBlockHeight],
+      );
+      final localH = PercChainTip.height(hub.ledger);
+      if (localH < _networkBlockHeight) {
+        _syncState = PercNetworkSyncState.syncing;
+      } else {
+        _syncState = PercNetworkSyncState.synced;
+      }
       notifyListeners();
       return;
     }

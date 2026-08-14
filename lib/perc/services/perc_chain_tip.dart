@@ -13,6 +13,39 @@ class PercChainTip {
 
   static int height(PercLedger ledger) => ledger.blockHeight;
 
+  /// Highest reachable tip among local, seed/explorer, and peer advertisements.
+  /// Same unit as [height] / perc_chain `percChainTipHeight` (`blocks.length`).
+  static int tallest({
+    required int localHeight,
+    int seedHeight = 0,
+    Iterable<int> extraHeights = const [],
+  }) {
+    var maxHeight = localHeight;
+    if (seedHeight > maxHeight) maxHeight = seedHeight;
+    for (final h in extraHeights) {
+      if (h > maxHeight) maxHeight = h;
+    }
+    return maxHeight;
+  }
+
+  /// True when [remoteHeight] is a strictly taller reachable tip.
+  static bool shouldAdoptTaller({
+    required int localHeight,
+    required int remoteHeight,
+  }) =>
+      remoteHeight > localHeight;
+
+  /// Shipped adopt entry: import [remote] when it is a taller reachable tip.
+  /// Returns [height] of [local] afterwards (equals the taller tip).
+  static int adoptTallerTip(
+    PercLedger local,
+    PercLedger remote, {
+    String? expectedTipHash,
+  }) {
+    local.importPeerLedger(remote, expectedTipHash: expectedTipHash);
+    return height(local);
+  }
+
   static String hash(PercLedger ledger) {
     final chainId = ledger.evolutionaryChainId.isEmpty
         ? PercChainConstants.evolutionaryChainId
