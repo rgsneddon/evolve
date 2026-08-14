@@ -1,0 +1,37 @@
+{
+  "source": "ssucf-fixture",
+  "topic": "What is the percent chance of Andy Burnham winning the general election in 2029?",
+  "posedQuestion": "What is the percent chance of Andy Burnham winning the general election in 2029?",
+  "region": "UK & Ireland",
+  "refinedScs": 59,
+  "baselineScs": 48,
+  "weightedScs": 61.7,
+  "percentChance": 44,
+  "calibratedPercentChance": 44,
+  "regressivePct": 64,
+  "progressivePct": 36,
+  "lean": "REGRESSIVE",
+  "partTwo": {
+    "refinedScs": 59,
+    "regressivePct": 64,
+    "progressivePct": 36,
+    "lean": "REGRESSIVE"
+  },
+  "forecast": {
+    "percentChance": 44,
+    "calibratedPercent": 44,
+    "heuristicPercent": 44
+  },
+  "constructs": {
+    "omega": 67,
+    "sigma": 60,
+    "tau": 54,
+    "mu": 61
+  },
+  "levers": {
+    "scsWithout": 59,
+    "scsWithMin": 56,
+    "scsWithMax": 59
+  },
+  "notes": "SSUCF Social Cohesion under Chronoflux-derived Covariant Continuity — variable payload for stats page cards. Headline % chance is calibrated (44), not the 64% regressive continuum share."
+}
