@@ -1,0 +1,9 @@
+8304df523f71e6ffd27dbcbec20c22f78278d2b8f9d9f23dcc2248da67b3e0ae  evolve-v4.1.10-ios-setup.ipa
+algorithm=SHA256
+algorithm_secondary=SHA512
+sha512=9108210e6b21d585cfbdcf64e3805ee5e762a9283032a090e3c747333291a3f36116003267ce8201d18f1c8fecd8520165424da1a2b938802778b9eabbef0d30
+version=4.1.10
+build=176
+platform=ios
+url=https://github.com/rgsneddon/evolve/releases/download/v4.1.10-ios-android/evolve-v4.1.10-ios-setup.ipa
+bundleId=com.evolve.chronoflux

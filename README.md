@@ -14,7 +14,7 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ## Quick start
 
-**Latest release:** v4.1.8 (build 174) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
+**Latest release:** v4.1.10 (build 176) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
 
 ### Windows (easiest)
 
@@ -26,7 +26,7 @@ Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evol
 
 ### Android
 
-Download **evolve-v4.1.8-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases** (the APK file itself is on GitHub Releases). Requires **Android 7.0+ (API 24)**. Verify SHA-256 before installing. If install fails after an older debug build, uninstall Evolve first, then reinstall. Enable “Install unknown apps” for the browser or Files app you use to open the APK. The in-app updater checks GitHub Releases first when a newer build is published.
+Download **evolve-v4.1.10-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases** (the APK file itself is on GitHub Releases). Requires **Android 7.0+ (API 24)**. Verify SHA-256 before installing. If install fails after an older debug build, uninstall Evolve first, then reinstall. Enable “Install unknown apps” for the browser or Files app you use to open the APK. The in-app updater checks GitHub Releases first when a newer build is published.
 
 ### iOS and macOS (build on a Mac)
 
