@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
+import 'package:evolve/perc/models/perc_transaction.dart';
 import 'package:evolve/perc/perc_chain_constants.dart';
 import 'package:evolve/perc/services/perc_chain_tip.dart';
 import 'package:evolve/perc/services/perc_faucet.dart';
@@ -131,6 +132,14 @@ void main() {
     expect(ledger.account('alice')!.balance, expected);
     expect(ledger.account('bob')!.balance, expected);
     expect(ledger.account(miner)!.balance, expected);
+    expect(
+      ledger.account(miner)!.transactions.first.kind,
+      PercTxKind.scenarioReward,
+    );
+    expect(
+      ledger.account('alice')!.transactions.first.kind,
+      PercTxKind.scenarioReward,
+    );
     expect(
       ledger.treasuryBalance,
       PercChainConstants.treasuryLaunchAllocation - expected * 3,

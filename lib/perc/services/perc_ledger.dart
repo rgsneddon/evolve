@@ -3170,10 +3170,9 @@ class PercLedger {
             _debit(treasury, reward.total);
             _credit(acc, reward.total);
             if (name == u) user.lastFaucetDrawAt = now;
-            final minerPay = extras.contains(name);
             final tx = PercTransaction(
               id: _newTxId(),
-              kind: minerPay ? PercTxKind.minerReward : PercTxKind.scenarioReward,
+              kind: PercTxKind.scenarioReward,
               amount: reward.total,
               timestamp: now,
               fromUsername: PercChainConstants.treasuryUsername,

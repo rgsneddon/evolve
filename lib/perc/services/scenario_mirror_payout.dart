@@ -6,8 +6,9 @@ const int minerHashPresenceMs = 72000;
 
 /// Recipients of one scenario faucet draw.
 ///
-/// Initiator always. When [minerRunning], every other registered user
-/// (not treasury / seed) and every [extraMiners] identity get the same unit.
+/// Initiator always. When [minerRunning], every user (registered accounts
+/// and miner wallets — miners are users) gets the same unit. Not treasury
+/// or seed.
 List<String> scenarioMirrorRecipients({
   required String initiator,
   required Iterable<String> users,
