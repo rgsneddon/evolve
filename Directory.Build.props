@@ -1,0 +1,9 @@
+<Project>
+  <!-- MSVC 14.51+ treats <experimental/coroutine> as an error. Flutter plugins
+       local_auth_windows and permission_handler_windows still include it. -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

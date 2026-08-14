@@ -1,6 +1,9 @@
 Evolve Chronoflux — Windows installer package
 ===============================================
 
+Full Windows-machine runbook: docs/WINDOWS_BUILDS.md
+4.1.10 leftover work (setup.exe + Authenticode): docs/WINDOWS_HANDOFF_4.1.10.md
+
 The Windows installer is a versioned setup executable:
 
   evolve-v{version}-windows-x64-setup.exe

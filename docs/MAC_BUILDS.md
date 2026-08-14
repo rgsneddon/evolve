@@ -1,6 +1,11 @@
 # Mac session runbook — Evolve suite (iOS + macOS)
 
-Use this on a Mac with Xcode when preparing real Apple artifacts. Windows can only stage, checksum, and publish.
+Use this on a Mac with Xcode when preparing real Apple artifacts. Windows can
+only stage, checksum, and publish Apple files — it cannot compile them.
+
+Windows PE / Inno / Authenticode live on a Windows x64 machine:
+[WINDOWS_BUILDS.md](WINDOWS_BUILDS.md) and the 4.1.10 pin
+[WINDOWS_HANDOFF_4.1.10.md](WINDOWS_HANDOFF_4.1.10.md).
 
 ## 0. Tools (once per Mac)
 
