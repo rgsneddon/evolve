@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Evolve
+Comment=Evolve Chronoflux — percent chance and social cohesion analysis
+Exec=evolve
+Icon=evolve
+Terminal=false
+Type=Application
+Categories=Science;Education;
+StartupWMClass=evolve

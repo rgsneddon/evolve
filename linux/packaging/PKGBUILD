@@ -1,0 +1,20 @@
+# Maintainer: Russell Sneddon <rus@restoreprivacy.online>
+pkgname=evolve
+pkgver=4.1.10
+pkgrel=1
+pkgdesc="Evolve Chronoflux — percent chance and social cohesion analysis"
+arch=('x86_64')
+url="https://github.com/rgsneddon/evolve"
+license=('LicenseRef-proprietary')
+depends=('gtk3' 'libsecret')
+source=("evolve-v${pkgver}-linux-x64.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  install -d "${pkgdir}/opt/evolve"
+  cp -a "${srcdir}/evolve/." "${pkgdir}/opt/evolve/"
+  install -d "${pkgdir}/usr/bin"
+  ln -s /opt/evolve/evolve "${pkgdir}/usr/bin/evolve"
+  install -Dm644 "${srcdir}/evolve/evolve.desktop" \
+    "${pkgdir}/usr/share/applications/evolve.desktop" 2>/dev/null || true
+}
