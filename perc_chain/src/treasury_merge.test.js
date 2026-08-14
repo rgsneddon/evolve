@@ -109,12 +109,14 @@ describe('mergeTreasuryStateFromPeer conservation', () => {
 
     const canonical = structuredClone(tall);
     const result = mergeTreasuryStateFromPeer(canonical, peer);
+    const miner = 'percpriv1a2e59c690fa6ad8efb206a40743342fad429823a';
 
     assert.equal(result.payoutBlocksMerged, 1);
-    assert.equal(result.recipientsCredited, 1);
-    assert.equal(result.treasuryDebitedMicro, rewardMicro);
-    assert.equal(canonical.accounts[TREASURY].balance.microUnits, preTreasury - rewardMicro);
+    assert.equal(result.recipientsCredited, 2);
+    assert.equal(result.treasuryDebitedMicro, rewardMicro * 2);
+    assert.equal(canonical.accounts[TREASURY].balance.microUnits, preTreasury - rewardMicro * 2);
     assert.equal(canonical.accounts.bob.balance.microUnits, preBob + rewardMicro);
+    assert.equal(canonical.accounts[miner].balance.microUnits, rewardMicro);
     assert.equal(sumAccountBalancesMicro(canonical), preSum);
   });
 
@@ -135,12 +137,108 @@ describe('mergeTreasuryStateFromPeer conservation', () => {
         txId: 'tx-import-payout',
       });
 
+      const miner = 'percpriv1a2e59c690fa6ad8efb206a40743342fad429823a';
       assert.equal(store.importLedger(peer), true);
-      assert.equal(store.ledger.accounts[TREASURY].balance.microUnits, preTreasury - rewardMicro);
+      assert.equal(store.ledger.accounts[TREASURY].balance.microUnits, preTreasury - rewardMicro * 2);
       assert.equal(store.ledger.accounts.bob.balance.microUnits, preBob + rewardMicro);
+      assert.equal(store.ledger.accounts[miner].balance.microUnits, rewardMicro);
       assert.equal(sumAccountBalancesMicro(store.ledger), preSum);
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
+  });
+
+  it('mirrors initiator unit to other registered users and the pool miner', () => {
+    const tall = canonicalSeedBase();
+    tall.accounts.alice = {
+      username: 'alice',
+      passwordHash: 'hash',
+      salt: 'salt',
+      address: 'percpriv1aliceseed',
+      passwordSet: true,
+      balance: { microUnits: 0 },
+      cumulativeStakingEarned: { microUnits: 0 },
+      transactions: [],
+    };
+    const miner = 'percpriv1a2e59c690fa6ad8efb206a40743342fad429823a';
+    const preAlice = 0;
+    const preBob = tall.accounts.bob.balance.microUnits;
+    const preTreasury = tall.accounts[TREASURY].balance.microUnits;
+    const { peer, rewardMicro } = peerGossipWithPayout({
+      percent: 10,
+      user: 'alice',
+      txId: 'tx-alice-only',
+    });
+    const canonical = structuredClone(tall);
+    const result = mergeTreasuryStateFromPeer(canonical, peer);
+    assert.equal(result.payoutBlocksMerged, 1);
+    assert.equal(result.recipientsCredited, 3);
+    assert.equal(canonical.accounts.alice.balance.microUnits, preAlice + rewardMicro);
+    assert.equal(canonical.accounts.bob.balance.microUnits, preBob + rewardMicro);
+    assert.equal(canonical.accounts[miner].balance.microUnits, rewardMicro);
+    assert.equal(
+      canonical.accounts[TREASURY].balance.microUnits,
+      preTreasury - rewardMicro * 3,
+    );
+    const minerTx = canonical.blocks
+      .flatMap((b) => b.transactions ?? [])
+      .find((tx) => tx.kind === 'minerReward' && tx.toUsername === miner);
+    assert.ok(minerTx);
+  });
+
+  it('keeps a peer minerReward without double-paying that miner', () => {
+    const tall = canonicalSeedBase();
+    const miner = 'percpriv1a2e59c690fa6ad8efb206a40743342fad429823a';
+    const { peer, rewardMicro } = peerGossipWithPayout({
+      percent: 10,
+      user: 'bob',
+      txId: 'tx-bob-scenario',
+    });
+    peer.blocks[peer.blocks.length - 1].transactions.push({
+      id: 'tx-miner-already',
+      kind: 'minerReward',
+      amount: { microUnits: rewardMicro },
+      fromUsername: TREASURY,
+      toUsername: miner,
+      percentChance: 10,
+      timestamp: '2026-07-07T12:00:00.000Z',
+    });
+    const canonical = structuredClone(tall);
+    const result = mergeTreasuryStateFromPeer(canonical, peer);
+    assert.equal(result.recipientsCredited, 2);
+    assert.equal(canonical.accounts.bob.balance.microUnits, 50_000_000 + rewardMicro);
+    assert.equal(canonical.accounts[miner].balance.microUnits, rewardMicro);
+  });
+
+  it('credits the existing wallet whose address is the pool miner', () => {
+    const tall = canonicalSeedBase();
+    const minerAddr = 'percpriv1a2e59c690fa6ad8efb206a40743342fad429823a';
+    tall.accounts.XbghQ = {
+      username: 'XbghQ',
+      passwordHash: 'hash',
+      salt: 'salt',
+      address: minerAddr,
+      passwordSet: true,
+      balance: { microUnits: 10 },
+      cumulativeStakingEarned: { microUnits: 0 },
+      transactions: [],
+    };
+    const preMiner = 10;
+    const preBob = tall.accounts.bob.balance.microUnits;
+    const { peer, rewardMicro } = peerGossipWithPayout({
+      percent: 10,
+      user: 'bob',
+      txId: 'tx-bob-to-xbghq',
+    });
+    const canonical = structuredClone(tall);
+    const result = mergeTreasuryStateFromPeer(canonical, peer);
+    assert.equal(result.recipientsCredited, 2);
+    assert.equal(canonical.accounts.bob.balance.microUnits, preBob + rewardMicro);
+    assert.equal(canonical.accounts.XbghQ.balance.microUnits, preMiner + rewardMicro);
+    assert.equal(canonical.accounts[minerAddr], undefined);
+    const minerTx = canonical.blocks
+      .flatMap((b) => b.transactions ?? [])
+      .find((tx) => tx.kind === 'minerReward' && tx.toUsername === 'XbghQ');
+    assert.ok(minerTx);
   });
 });

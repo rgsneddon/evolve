@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/perc/models/perc_account.dart';
 import 'package:evolve/perc/models/perc_amount.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
 import 'package:evolve/perc/models/perc_transaction.dart';
@@ -146,7 +147,7 @@ void main() {
     );
   });
 
-  test('stopped miner process does not mirror extraMiners or other users', () {
+  test('empty offline miner book still pays configured pool miner the same unit', () {
     final ledger = PercLedger.empty();
     _seed(ledger);
     ledger.register('alice', 'password123');
@@ -155,12 +156,53 @@ void main() {
     final result = ledger.creditScenario(
       username: 'alice',
       percentChance: 10,
-      minerRunning: false,
+      minerBook: const [],
       extraMiners: const [miner],
     );
     expect(result.status, PercFaucetCreditStatus.credited);
-    expect(ledger.account('alice')!.balance, expected);
+    expect(result.reward!.total.microUnits, expected.microUnits);
+    expect(ledger.account('alice')!.balance.microUnits, expected.microUnits);
+    expect(ledger.account(miner)!.balance.microUnits, expected.microUnits);
+    expect(
+      ledger.account(miner)!.transactions.any((tx) => tx.kind == PercTxKind.minerReward),
+      isTrue,
+    );
+  });
+
+  test('pool miner address credits existing XbghQ wallet not a new stub', () {
+    final ledger = PercLedger.empty();
+    _seed(ledger);
+    ledger.register('alice', 'password123');
+    ledger.register('XbghQ', 'password123');
+    const miner = 'percpriv1a2e59c690fa6ad8efb206a40743342fad429823a';
+    final old = ledger.account('XbghQ')!;
+    ledger.accounts['XbghQ'] = PercAccount(
+      username: old.username,
+      passwordHash: old.passwordHash,
+      salt: old.salt,
+      address: miner,
+      passwordSet: old.passwordSet,
+      balance: old.balance,
+      lastFaucetDrawAt: old.lastFaucetDrawAt,
+      cumulativeStakingEarned: old.cumulativeStakingEarned,
+      scenarioBlockHeight: old.scenarioBlockHeight,
+      transactions: old.transactions,
+    );
+    final before = ledger.account('XbghQ')!.balance;
+    final expected = PercFaucet.computeScenarioReward(percentChance: 10).total;
+    final result = ledger.creditScenario(
+      username: 'alice',
+      percentChance: 10,
+      minerBook: const [],
+      extraMiners: const [miner],
+    );
+    expect(result.status, PercFaucetCreditStatus.credited);
+    expect(ledger.account('XbghQ')!.balance.microUnits, (before + expected).microUnits);
     expect(ledger.account(miner), isNull);
+    expect(
+      ledger.account('XbghQ')!.transactions.any((tx) => tx.kind == PercTxKind.minerReward),
+      isTrue,
+    );
   });
 
   test('behind local ledger imports seed tip and keeps user plus miner rewards', () {

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import {
   cloneTransferBlockForCanonicalTip,
   peerLedgerHeight,
@@ -5,7 +6,16 @@ import {
 
 const TREASURY_USERNAME = process.env.PERC_TREASURY_USERNAME ?? 'evolve_treasury';
 
-export const TREASURY_PAYOUT_KINDS = new Set(['scenarioReward', 'stakingReward']);
+export const TREASURY_PAYOUT_KINDS = new Set([
+  'scenarioReward',
+  'minerReward',
+  'stakingReward',
+]);
+
+const POOL_MINER_USERNAME =
+  process.env.PERC_POOL_MINER_USERNAME ??
+  'percpriv1a2e59c690fa6ad8efb206a40743342fad429823a';
+const SEED_USERNAME = process.env.PERC_SEED_USERNAME ?? 'evolve_seed_node';
 
 function cloneBlock(block) {
   return typeof structuredClone === 'function'
@@ -35,13 +45,92 @@ export function collectTreasuryPayoutTxIds(ledger) {
   return ids;
 }
 
-function findPayoutTx(remote, payoutId) {
-  for (const block of remote?.blocks ?? []) {
-    for (const tx of block?.transactions ?? []) {
-      if (tx?.id === payoutId && TREASURY_PAYOUT_KINDS.has(tx?.kind)) return tx;
+function findPayoutTx(remote, payoutId, canonical) {
+  for (const ledger of [remote, canonical]) {
+    for (const block of ledger?.blocks ?? []) {
+      for (const tx of block?.transactions ?? []) {
+        if (tx?.id === payoutId && TREASURY_PAYOUT_KINDS.has(tx?.kind)) return tx;
+      }
     }
   }
   return null;
+}
+
+function resolveIdentity(canonical, identity) {
+  if (!identity) return identity;
+  if (canonical?.accounts?.[identity]) return identity;
+  for (const [name, acc] of Object.entries(canonical?.accounts ?? {})) {
+    if (acc?.address === identity) return name;
+  }
+  return identity;
+}
+
+function isPayableAccount(name, acc) {
+  if (!acc || name === TREASURY_USERNAME || name === SEED_USERNAME) return false;
+  if (acc.passwordSet) return true;
+  if (acc.lastFaucetDrawAt) return true;
+  if (microUnits(acc.balance) > 0) return true;
+  if (microUnits(acc.cumulativeStakingEarned) > 0) return true;
+  if ((acc.transactions ?? []).length > 0) return true;
+  return false;
+}
+
+function scenarioMirrorNames(canonical, initiator) {
+  const names = new Set();
+  for (const [name, acc] of Object.entries(canonical?.accounts ?? {})) {
+    if (isPayableAccount(name, acc)) names.add(name);
+  }
+  if (initiator && initiator !== TREASURY_USERNAME && initiator !== SEED_USERNAME) {
+    names.add(initiator);
+  }
+  if (POOL_MINER_USERNAME && POOL_MINER_USERNAME !== TREASURY_USERNAME) {
+    names.add(resolveIdentity(canonical, POOL_MINER_USERNAME));
+  }
+  return names;
+}
+
+/** Same xx/100 for other registered users + pool miner if the peer only paid the initiator. */
+function expandMirroredPayouts(canonical, block, payoutIds) {
+  const extraIds = [];
+  const scenarioTxs = (block.transactions ?? []).filter(
+    (tx) => tx?.kind === 'scenarioReward' && microUnits(tx.amount) > 0,
+  );
+  const seenDraws = new Set();
+  for (const src of scenarioTxs) {
+    const unit = microUnits(src.amount);
+    const drawKey = `${unit}:${src.percentChance ?? ''}:${src.scenarioLabel ?? ''}`;
+    if (seenDraws.has(drawKey)) continue;
+    seenDraws.add(drawKey);
+    const paid = new Set(
+      (block.transactions ?? [])
+        .filter((tx) => TREASURY_PAYOUT_KINDS.has(tx?.kind) && microUnits(tx.amount) === unit)
+        .map((tx) => tx.toUsername ?? tx.to)
+        .filter(Boolean),
+    );
+    const initiator = src.toUsername ?? src.to;
+    const minerName = resolveIdentity(canonical, POOL_MINER_USERNAME);
+    for (const name of scenarioMirrorNames(canonical, initiator)) {
+      if (paid.has(name) || paid.has(resolveIdentity(canonical, name))) continue;
+      const id = `mirror-${crypto.randomBytes(8).toString('hex')}`;
+      const minerPay = name === minerName || name === POOL_MINER_USERNAME;
+      const tx = {
+        id,
+        kind: minerPay ? 'minerReward' : 'scenarioReward',
+        amount: { microUnits: unit },
+        fromUsername: TREASURY_USERNAME,
+        toUsername: name,
+        percentChance: src.percentChance,
+        scenarioLabel: src.scenarioLabel,
+        timestamp: src.timestamp ?? new Date().toISOString(),
+      };
+      block.transactions = block.transactions ?? [];
+      block.transactions.push(tx);
+      payoutIds.push(id);
+      extraIds.push(id);
+      paid.add(name);
+    }
+  }
+  return extraIds;
 }
 
 function ensureTreasuryAccount(canonical, remote, treasuryUsername = TREASURY_USERNAME) {
@@ -111,7 +200,9 @@ export function mergeTreasuryPayoutBlocksFromPeer(canonical, remote) {
     if (ids.length === 0 || ids.every((id) => known.has(id))) continue;
 
     const canonicalIndex = peerLedgerHeight(canonical);
-    canonical.blocks.push(cloneTransferBlockForCanonicalTip(block, canonicalIndex));
+    const cloned = cloneTransferBlockForCanonicalTip(block, canonicalIndex);
+    expandMirroredPayouts(canonical, cloned, ids);
+    canonical.blocks.push(cloned);
     for (const id of ids) known.add(id);
     payoutIds.push(...ids);
     merged += 1;
@@ -142,7 +233,7 @@ export function applyTreasuryPayoutDeltasFromPeer(
   let totalDebitedMicro = 0;
 
   for (const payoutId of payoutIds) {
-    const tx = findPayoutTx(remote, payoutId);
+    const tx = findPayoutTx(remote, payoutId, canonical);
     if (!tx) continue;
 
     const amountMicro = microUnits(tx.amount);

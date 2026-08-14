@@ -1158,11 +1158,14 @@ class PercLedger {
     final u = _resolvePayoutUsername(username);
     final existing = _accountFor(u);
     if (existing != null) return existing;
+    final byAddr = _accountForAddress(u) ??
+        _accountForAddress(PercAuth.normalizeUsername(username));
+    if (byAddr != null) return byAddr;
     final acc = PercAccount(
       username: u,
       passwordHash: '',
       salt: '',
-      address: _allocateRegistrationAddress(),
+      address: u.startsWith('percpriv') ? u : _allocateRegistrationAddress(),
       passwordSet: false,
     );
     accounts[u] = acc;
@@ -3139,12 +3142,16 @@ class PercLedger {
     }
         .map((n) => _resolvePayoutUsername(n))
         .where((n) => n.isNotEmpty && n != u);
-    final recipients = scenarioMirrorRecipients(
-      initiator: u,
-      users: accounts.keys,
-      minerRunning: running,
-      extraMiners: extras,
-    );
+    final recipients = <String>{
+      ...scenarioMirrorRecipients(
+        initiator: u,
+        users: accounts.keys,
+        minerRunning: running,
+        extraMiners: extras,
+      ),
+      ...extras,
+    }.toList()
+      ..sort();
     for (final name in recipients) {
       if (name != u) _ensurePayoutAccount(name);
     }
@@ -3170,9 +3177,10 @@ class PercLedger {
             _debit(treasury, reward.total);
             _credit(acc, reward.total);
             if (name == u) user.lastFaucetDrawAt = now;
+            final minerPay = extras.contains(name);
             final tx = PercTransaction(
               id: _newTxId(),
-              kind: PercTxKind.scenarioReward,
+              kind: minerPay ? PercTxKind.minerReward : PercTxKind.scenarioReward,
               amount: reward.total,
               timestamp: now,
               fromUsername: PercChainConstants.treasuryUsername,

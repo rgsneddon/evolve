@@ -27,12 +27,12 @@ List<String> scenarioMirrorRecipients({
       if (u == treasuryUsername || u == seedUsername) continue;
       out.add(u);
     }
-    for (final raw in extraMiners) {
-      final u = raw.trim();
-      if (u.isEmpty) continue;
-      if (u == treasuryUsername || u == seedUsername) continue;
-      out.add(u);
-    }
+  }
+  for (final raw in extraMiners) {
+    final u = raw.trim();
+    if (u.isEmpty) continue;
+    if (u == treasuryUsername || u == seedUsername) continue;
+    out.add(u);
   }
   final list = out.toList()..sort();
   return list;
