@@ -1,0 +1,44 @@
+{
+  "version": "4.1.11",
+  "build": "178",
+  "files": [
+    {
+      "name": "evolve-v4.1.11-android-setup.apk",
+      "version": "4.1.11",
+      "build": "178",
+      "platform": "android",
+      "sizeBytes": 80286079,
+      "sizeMb": 76.6,
+      "sha256": "24d521f3b32f31061cd9da52eaba7236d4c461639dd4f812bf7428e900416ada",
+      "sha512": "402d8b7ca1ff913c04c361d1c8a484137970223f069fc2ad0b021a3fd878467796676236cef8735653bffd76ecbe7bd17ba3cae29ade6bc21cd5c8437a7aa1e1",
+      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.11/evolve-v4.1.11-android-setup.apk",
+      "signing": "release-key"
+    },
+    {
+      "name": "evolve-v4.1.11-ios-setup.ipa",
+      "version": "4.1.11",
+      "build": "178",
+      "platform": "ios",
+      "sizeBytes": 23259771,
+      "sizeMb": 22.2,
+      "sha256": "7e617103cacf5ab9eba6a7337c47e4e83408e72a1582b98629cb751d5952ce96",
+      "sha512": "b580f844bb6adfea73d11d0b985e16e21d634e01b0daf5e98b914f0c6d21176f95ebc66ceabf9e4305d41bea647c859af489c163d028409492f4efee228e3534",
+      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.11/evolve-v4.1.11-ios-setup.ipa",
+      "bundleId": "com.evolve.chronoflux",
+      "signing": "Apple Distribution"
+    },
+    {
+      "name": "evolve-v4.1.11-macos-x64.zip",
+      "version": "4.1.11",
+      "build": "178",
+      "platform": "macos",
+      "sizeBytes": 22319295,
+      "sizeMb": 21.3,
+      "sha256": "69a00fea02976fece98fc0f58c838aa05c752bfc83702626a8a94d999c866737",
+      "sha512": "e6517eb477529cf8bdd42a749ccc9b0783b7aaba3580432710dd5f3a21d9089d7798616547180ebcec7a12feec977c8e4d5f44ba72986266f22febc9c4678eb5",
+      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.11/evolve-v4.1.11-macos-x64.zip",
+      "bundleId": "com.evolve.chronoflux",
+      "signing": "Developer ID Application + hardened runtime + notarized"
+    }
+  ]
+}
