@@ -32,6 +32,8 @@ Download **evolve-v4.1.8-android-setup.apk** from [Downloads](https://rgsneddon.
 
 Apple binaries require Xcode. The repo includes a full **`ios/`** and **`macos/`** Flutter host (bundle ID `com.evolve.chronoflux`). For the late Mac session — tools, signing, IPA/macOS commands, and handoff into the Windows release pipeline — see **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**. Signing notes: [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md).
 
+Windows PE, Inno `setup.exe`, and Authenticode require a **Windows x64** machine (macOS cannot freeze `evolve.exe`). Runbook: **[docs/WINDOWS_BUILDS.md](docs/WINDOWS_BUILDS.md)**. Current pin: **[docs/WINDOWS_HANDOFF_4.1.10.md](docs/WINDOWS_HANDOFF_4.1.10.md)**.
+
 ---
 
 ## How to use Evolve
