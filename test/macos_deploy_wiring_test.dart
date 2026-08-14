@@ -16,6 +16,7 @@ void main() {
       'macos/Runner/Info.plist',
       'macos/SIGNING.md',
       'scripts/build_macos_installer.ps1',
+      'scripts/seal_macos_evolve.py',
       'scripts/macos_project_audit.ps1',
       'scripts/lib/macos_build.ps1',
       'docs/MAC_BUILDS.md',
@@ -37,6 +38,8 @@ void main() {
     expect(signing, contains('com.evolve.chronoflux'));
     expect(signing, contains('DEVELOPMENT_TEAM'));
     expect(signing, contains('flutter build macos'));
+    expect(signing, contains('notarytool'));
+    expect(signing, contains('stapler'));
 
     final releaseEnt =
         evolveRepoFile('macos/Runner/Release.entitlements').readAsStringSync();

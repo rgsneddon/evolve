@@ -75,6 +75,14 @@ xcrun notarytool store-credentials "evolve-notary" \
 
 ### Build, notarize, staple
 
+One-shot (re-sign without `get-task-allow`, notarize, staple, re-zip):
+
+```bash
+python3 scripts/seal_macos_evolve.py \
+  --app build/macos/Build/Products/Release/Evolve.app \
+  --out build/downloads/v4.1.10/evolve-v4.1.10-macos-x64.zip
+```
+
 ```bash
 cd /path/to/evolve
 export DEVELOPMENT_TEAM=SFCBP95595
