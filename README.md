@@ -18,7 +18,7 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ### Windows (easiest)
 
-Download **evolve-v4.1.8-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
+Download **evolve-v4.1.11-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
 
 ### Web
 
@@ -30,7 +30,7 @@ Download **evolve-v4.1.11-android-setup.apk** from [Downloads](https://rgsneddon
 
 ### iOS and macOS
 
-Download **evolve-v4.1.11-macos-x64.zip** (Developer ID, notarized) or **evolve-v4.1.11-ios-setup.ipa** (Apple Distribution) from [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11). Bundle ID `com.evolve.chronoflux`. Rebuild notes: **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**, [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md).
+Download **evolve-v4.1.11-macos-x64.zip** (Developer ID, notarized) or **evolve-v4.1.11-ios-setup.ipa** (Apple Distribution) from [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-macos-ios-android). Bundle ID `com.evolve.chronoflux`. Rebuild notes: **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**, [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md).
 
 ---
 
