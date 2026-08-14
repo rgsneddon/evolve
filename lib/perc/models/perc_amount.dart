@@ -24,6 +24,13 @@ class PercAmount {
   static PercAmount fromJson(Map<String, dynamic> json) =>
       PercAmount(json['microUnits'] as int? ?? json['balance'] as int? ?? 0);
 
+  /// Seed/public exports may omit amount objects on newer tip blocks.
+  static PercAmount fromJsonLoose(Object? json) {
+    if (json is Map<String, dynamic>) return fromJson(json);
+    if (json is Map) return fromJson(Map<String, dynamic>.from(json));
+    return PercAmount.zero;
+  }
+
   /// Fixed reward per completed scenario: 50 cent (0.00000050 PERC).
   static const scenarioBaseReward = PercAmount(50);
 

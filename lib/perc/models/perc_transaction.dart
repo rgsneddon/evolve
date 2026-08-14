@@ -115,10 +115,11 @@ class PercTransaction {
       };
 
   factory PercTransaction.fromJson(Map<String, dynamic> json) => PercTransaction(
-        id: json['id'] as String,
+        id: json['id'] as String? ?? 'tx-missing',
         kind: PercTxKindWire.fromWire(json['kind'] as String? ?? ''),
-        amount: PercAmount.fromJson(json['amount'] as Map<String, dynamic>),
-        timestamp: DateTime.parse(json['timestamp'] as String),
+        amount: PercAmount.fromJsonLoose(json['amount']),
+        timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
         fromUsername: json['fromUsername'] as String?,
         toUsername: json['toUsername'] as String?,
         memo: json['memo'] as String?,

@@ -57,13 +57,14 @@ class PercBlock {
       };
 
   factory PercBlock.fromJson(Map<String, dynamic> json) => PercBlock(
-        index: json['index'] as int,
-        timestamp: DateTime.parse(json['timestamp'] as String),
-        transactions: (json['transactions'] as List<dynamic>)
-            .map((e) => PercTransaction.fromJson(e as Map<String, dynamic>))
+        index: (json['index'] as num?)?.toInt() ?? 0,
+        timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        transactions: (json['transactions'] as List<dynamic>? ?? const [])
+            .whereType<Map>()
+            .map((e) => PercTransaction.fromJson(Map<String, dynamic>.from(e)))
             .toList(),
-        treasuryEmitted:
-            PercAmount.fromJson(json['treasuryEmitted'] as Map<String, dynamic>),
+        treasuryEmitted: PercAmount.fromJsonLoose(json['treasuryEmitted']),
         scenarioLabel: json['scenarioLabel'] as String?,
         triggerUsername: json['triggerUsername'] as String?,
         treasuryCycle: json['treasuryCycle'] as int? ?? 1,
