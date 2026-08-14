@@ -1,0 +1,13 @@
+{
+  "name": "evolve-v4.1.11-ios-setup.ipa",
+  "version": "4.1.11",
+  "build": "178",
+  "platform": "ios",
+  "sizeBytes": 23259771,
+  "sizeMb": 22.2,
+  "sha256": "7e617103cacf5ab9eba6a7337c47e4e83408e72a1582b98629cb751d5952ce96",
+  "sha512": "b580f844bb6adfea73d11d0b985e16e21d634e01b0daf5e98b914f0c6d21176f95ebc66ceabf9e4305d41bea647c859af489c163d028409492f4efee228e3534",
+  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.11/evolve-v4.1.11-ios-setup.ipa",
+  "bundleId": "com.evolve.chronoflux",
+  "signing": "Apple Distribution"
+}

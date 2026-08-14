@@ -135,7 +135,7 @@ void main() {
     expect(ledger.account(miner)!.balance, expected);
     expect(
       ledger.account(miner)!.transactions.first.kind,
-      PercTxKind.scenarioReward,
+      PercTxKind.minerReward,
     );
     expect(
       ledger.account('alice')!.transactions.first.kind,

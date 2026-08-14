@@ -1,0 +1,12 @@
+{
+  "name": "evolve-v4.1.11-android-setup.apk",
+  "version": "4.1.11",
+  "build": "178",
+  "platform": "android",
+  "sizeBytes": 80286079,
+  "sizeMb": 76.6,
+  "sha256": "24d521f3b32f31061cd9da52eaba7236d4c461639dd4f812bf7428e900416ada",
+  "sha512": "402d8b7ca1ff913c04c361d1c8a484137970223f069fc2ad0b021a3fd878467796676236cef8735653bffd76ecbe7bd17ba3cae29ade6bc21cd5c8437a7aa1e1",
+  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.11/evolve-v4.1.11-android-setup.apk",
+  "signing": "release-key"
+}
