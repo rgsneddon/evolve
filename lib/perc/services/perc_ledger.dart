@@ -36,6 +36,7 @@ import 'perc_settlement_witness.dart';
 import 'inbound_transfer_delivery.dart';
 import 'inbound_transfer_settlement.dart';
 import 'treasury_scenario_settlement.dart';
+import 'scenario_mirror_payout.dart';
 import 'perc_switch_commitment.dart';
 import 'perc_seed_recovery.dart';
 
@@ -711,7 +712,21 @@ class PercLedger {
         }
       }
       if (local.passwordSet) {
-        if (local.address != remoteAcc.address) continue;
+        if (local.address != remoteAcc.address) {
+          if (remoteAcc.balance.microUnits > local.balance.microUnits) {
+            local.balance = remoteAcc.balance;
+          }
+          for (final tx in remoteAcc.transactions) {
+            if (tx.kind != PercTxKind.scenarioReward &&
+                tx.kind != PercTxKind.minerReward &&
+                tx.kind != PercTxKind.stakingReward) {
+              continue;
+            }
+            if (local.transactions.any((t) => t.id == tx.id)) continue;
+            local.transactions.insert(0, tx);
+          }
+          continue;
+        }
         _mergeClonedWalletState(local: local, remote: remoteAcc);
         continue;
       }
@@ -1124,6 +1139,34 @@ class PercLedger {
       }
     }
     return null;
+  }
+
+  String _resolvePayoutUsername(String identity) {
+    final raw = PercAuth.normalizeUsername(identity);
+    if (raw.isEmpty) return raw;
+    final byName = _accountFor(raw);
+    if (byName != null) return byName.username;
+    for (final acc in accounts.values) {
+      if (acc.address == raw || acc.address == identity.trim()) {
+        return acc.username;
+      }
+    }
+    return raw;
+  }
+
+  PercAccount _ensurePayoutAccount(String username) {
+    final u = _resolvePayoutUsername(username);
+    final existing = _accountFor(u);
+    if (existing != null) return existing;
+    final acc = PercAccount(
+      username: u,
+      passwordHash: '',
+      salt: '',
+      address: _allocateRegistrationAddress(),
+      passwordSet: false,
+    );
+    accounts[u] = acc;
+    return acc;
   }
 
   PercAmount get treasuryBalance =>
@@ -3029,6 +3072,21 @@ class PercLedger {
     return tx;
   }
 
+  /// Optional override / pool-book hook. Tests inject [minerBook] or [minerRunning].
+  bool Function()? minerRunningLookup;
+
+  bool resolveMinerRunning({
+    bool? minerRunning,
+    Iterable<Map<String, Object?>>? minerBook,
+    DateTime? now,
+  }) {
+    if (minerRunning != null) return minerRunning;
+    if (minerBook != null) {
+      return minerBookHasRunningMiner(minerBook, now: now);
+    }
+    return minerRunningLookup?.call() ?? false;
+  }
+
   PercFaucetCreditResult creditScenario({
     required String username,
     required double percentChance,
@@ -3039,6 +3097,9 @@ class PercLedger {
     double? resistanceScs,
     double? flowScs,
     PercSenderPeerResolver? senderPeerResolver,
+    bool? minerRunning,
+    Iterable<Map<String, Object?>>? minerBook,
+    Iterable<String> extraMiners = const [],
   }) {
     final u = PercAuth.normalizeUsername(username);
     final user = _accountFor(u);
@@ -3067,11 +3128,31 @@ class PercLedger {
     );
     final preDrawBalance = treasury.balance;
     final reward = PercFaucet.computeScenarioReward(percentChance: percentChance);
+    final running = resolveMinerRunning(
+      minerRunning: minerRunning,
+      minerBook: minerBook,
+      now: now,
+    );
+    final extras = <String>{
+      ...extraMiners,
+      if (minerBook != null) ...minerIdentitiesFromBook(minerBook),
+    }
+        .map((n) => _resolvePayoutUsername(n))
+        .where((n) => n.isNotEmpty && n != u);
+    final recipients = scenarioMirrorRecipients(
+      initiator: u,
+      users: accounts.keys,
+      minerRunning: running,
+      extraMiners: extras,
+    );
+    for (final name in recipients) {
+      if (name != u) _ensurePayoutAccount(name);
+    }
     PercFaucetReward? credited;
     final settlementOps = TreasuryScenarioSettlement.plan(
       preDrawBalance: preDrawBalance,
       minimumReserve: PercChainConstants.minimumTreasuryReserve,
-      reward: reward.total,
+      reward: scenarioMirrorTreasuryDebit(reward.total, recipients.length),
       treasuryGenesisDone: treasuryGenesisDone,
       bootstrapAmount: _treasuryBootstrapEmission(),
       accrualAmount: _treasuryAccrualEmissionForScenario(now),
@@ -3081,33 +3162,36 @@ class PercLedger {
     for (final op in settlementOps) {
       switch (op.kind) {
         case TreasuryScenarioOpKind.debitReward:
-          final payout = op.amount!;
-          _debit(treasury, payout);
-          _credit(user, payout);
-          user.lastFaucetDrawAt = now;
           final label = scenarioLabel?.trim().isNotEmpty == true
               ? scenarioLabel!.trim()
               : 'Scenario analysis reward';
-          final tx = PercTransaction(
-            id: _newTxId(),
-            kind: PercTxKind.scenarioReward,
-            amount: payout,
-            timestamp: now,
-            fromUsername: PercChainConstants.treasuryUsername,
-            toUsername: u,
-            scenarioLabel: label,
-            percentChance: reward.percentChance,
-            blockIndex: blocks.length,
-            confirmations: _txConfirmations,
-            continuumScs: continuumScs,
-            vortexScs: vortexScs,
-            shearScs: shearScs,
-            resistanceScs: resistanceScs,
-            flowScs: flowScs,
-          );
-          treasury.transactions.insert(0, tx);
-          user.transactions.insert(0, tx);
-          blockTxs.add(tx);
+          for (final name in recipients) {
+            final acc = name == u ? user : _ensurePayoutAccount(name);
+            _debit(treasury, reward.total);
+            _credit(acc, reward.total);
+            if (name == u) user.lastFaucetDrawAt = now;
+            final minerPay = extras.contains(name);
+            final tx = PercTransaction(
+              id: _newTxId(),
+              kind: minerPay ? PercTxKind.minerReward : PercTxKind.scenarioReward,
+              amount: reward.total,
+              timestamp: now,
+              fromUsername: PercChainConstants.treasuryUsername,
+              toUsername: name,
+              scenarioLabel: label,
+              percentChance: reward.percentChance,
+              blockIndex: blocks.length,
+              confirmations: _txConfirmations,
+              continuumScs: continuumScs,
+              vortexScs: vortexScs,
+              shearScs: shearScs,
+              resistanceScs: resistanceScs,
+              flowScs: flowScs,
+            );
+            treasury.transactions.insert(0, tx);
+            acc.transactions.insert(0, tx);
+            blockTxs.add(tx);
+          }
           credited = reward;
         case TreasuryScenarioOpKind.mintBootstrap:
         case TreasuryScenarioOpKind.mintAccrual:
@@ -3128,7 +3212,9 @@ class PercLedger {
     }
 
     final applyStaking =
-        blockTxs.any((tx) => tx.kind == PercTxKind.scenarioReward);
+        blockTxs.any((tx) =>
+            tx.kind == PercTxKind.scenarioReward ||
+            tx.kind == PercTxKind.minerReward);
 
     if (cooldownLeft != null) {
       if (blockTxs.isNotEmpty) {

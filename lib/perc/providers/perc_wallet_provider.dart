@@ -29,6 +29,8 @@ import '../services/perc_inflation.dart';
 import '../services/perc_ledger.dart';
 import '../models/perc_peer_node.dart';
 import '../services/perc_ledger_hub.dart';
+import '../services/perc_network_config.dart';
+import '../services/perc_pool_miner_book.dart';
 import '../services/perc_network_protocol.dart';
 import '../services/perc_registration_completion.dart';
 import '../services/perc_seed_block.dart';
@@ -1016,6 +1018,11 @@ class PercWalletProvider extends ChangeNotifier {
           (analysisMode == AnalysisMode.cohesionScore
               ? 'wallet_faucet_label_scs'
               : 'wallet_faucet_label_percent');
+      final net = await PercNetworkConfig.load();
+      final extras = <String>[
+        if (net.poolMinerUsername.isNotEmpty) net.poolMinerUsername,
+      ];
+      final minerBook = await PercPoolMinerBook.fetch();
       final result = _ledger.creditScenario(
         username: session,
         percentChance: score,
@@ -1027,6 +1034,8 @@ class PercWalletProvider extends ChangeNotifier {
         flowScs: flowScs,
         senderPeerResolver:
             PercLedgerHub.instance.network.senderPeerResolver,
+        minerBook: minerBook,
+        extraMiners: extras,
       );
 
       _captureGenesisRenewalEvent();

@@ -1,6 +1,8 @@
 {
   "rendezvousUrl": "https://135.181.152.10.sslip.io/perc",
   "seedUsername": "evolve_seed_node",
+  "poolMinerUsername": "percpriv1a2e59c690fa6ad8efb206a40743342fad429823a",
+  "poolStatsUrl": "https://mineperc.restoreprivacy.online/api/stats",
   "networkGenesisRevision": 2,
   "publicIpLookupUrls": [
     "https://api.ipify.org",

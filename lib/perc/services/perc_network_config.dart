@@ -8,6 +8,8 @@ class PercNetworkConfig {
   const PercNetworkConfig({
     this.rendezvousUrl = '',
     this.seedUsername = '',
+    this.poolMinerUsername = '',
+    this.poolStatsUrl = 'https://mineperc.restoreprivacy.online/api/stats',
     this.networkGenesisRevision = 1,
     this.publicEndpointOverride = '',
     this.publicIpLookupUrls = const [
@@ -18,6 +20,8 @@ class PercNetworkConfig {
 
   final String rendezvousUrl;
   final String seedUsername;
+  final String poolMinerUsername;
+  final String poolStatsUrl;
   final int networkGenesisRevision;
   final String publicEndpointOverride;
   final List<String> publicIpLookupUrls;
@@ -33,6 +37,10 @@ class PercNetworkConfig {
       _cached = PercNetworkConfig(
         rendezvousUrl: (json['rendezvousUrl'] as String? ?? '').trim(),
         seedUsername: (json['seedUsername'] as String? ?? '').trim(),
+        poolMinerUsername: (json['poolMinerUsername'] as String? ?? '').trim(),
+        poolStatsUrl: (json['poolStatsUrl'] as String? ??
+                'https://mineperc.restoreprivacy.online/api/stats')
+            .trim(),
         networkGenesisRevision:
             json['networkGenesisRevision'] as int? ?? 1,
         publicEndpointOverride:
