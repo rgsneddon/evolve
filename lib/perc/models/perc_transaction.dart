@@ -4,6 +4,7 @@ import 'perc_amount.dart';
 enum PercTxKind {
   treasuryEmission,
   scenarioReward,
+  minerReward,
   transfer,
   feeBurn,
   transferRevert,
@@ -16,6 +17,7 @@ extension PercTxKindWire on PercTxKind {
   String get wireName => switch (this) {
         PercTxKind.treasuryEmission => 'treasuryEmission',
         PercTxKind.scenarioReward => 'scenarioReward',
+        PercTxKind.minerReward => 'minerReward',
         PercTxKind.transfer => 'transfer',
         PercTxKind.feeBurn => 'feeBurn',
         PercTxKind.transferRevert => 'transferRevert',
@@ -27,6 +29,7 @@ extension PercTxKindWire on PercTxKind {
   static PercTxKind fromWire(String raw) => switch (raw) {
         'treasuryEmission' => PercTxKind.treasuryEmission,
         'scenarioReward' => PercTxKind.scenarioReward,
+        'minerReward' => PercTxKind.minerReward,
         'transfer' => PercTxKind.transfer,
         'feeBurn' => PercTxKind.feeBurn,
         'transferFee' => PercTxKind.feeBurn,
@@ -84,6 +87,7 @@ class PercTransaction {
 
   bool get isIncoming =>
       kind == PercTxKind.scenarioReward ||
+      kind == PercTxKind.minerReward ||
       kind == PercTxKind.stakingReward ||
       kind == PercTxKind.transferRevert ||
       (kind == PercTxKind.transfer && toUsername != null);

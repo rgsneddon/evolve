@@ -1480,6 +1480,7 @@ class _WalletScreenState extends State<WalletScreen> {
             tx.kind == PercTxKind.feeBurn) &&
         tx.fromUsername == viewer;
     final isIn = tx.kind == PercTxKind.scenarioReward ||
+        tx.kind == PercTxKind.minerReward ||
         tx.kind == PercTxKind.stakingReward ||
         tx.kind == PercTxKind.transferRevert ||
         (tx.kind == PercTxKind.transfer && tx.toUsername == viewer) ||
@@ -1499,6 +1500,8 @@ class _WalletScreenState extends State<WalletScreen> {
         title = strings.t('wallet_tx_treasury');
       case PercTxKind.scenarioReward:
         title = walletL10n.scenarioLabel(tx.scenarioLabel);
+      case PercTxKind.minerReward:
+        title = tx.memo ?? strings.t('wallet_tx_staking');
       case PercTxKind.stakingReward:
         title = strings.t('wallet_tx_staking');
       case PercTxKind.transfer:
