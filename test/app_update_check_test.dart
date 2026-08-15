@@ -220,6 +220,11 @@ void main() {
     final urls = AppUpdateChecker.updateUrlsForRelease(release);
     expect(urls.first, endsWith('evolve-v$release-ios-setup.ipa'));
     expect(urls.any((u) => u.contains('downloads/v$release/')), isTrue);
+    if (release == '4.1.11') {
+      expect(urls.first, contains('/download/v4.1.11-bundle/'));
+      expect(AppUpdateChecker.githubReleaseTagFor('4.1.11'), 'v4.1.11-bundle');
+      expect(AppUpdateChecker.githubReleaseTagFor('4.1.12'), 'v4.1.12');
+    }
   });
 
   test('strips UTF-8 BOM from version.json bodies', () async {
