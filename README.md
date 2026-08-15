@@ -18,7 +18,7 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ### Windows (easiest)
 
-Download **evolve-v4.1.11-windows-x64-setup.exe** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or the **Releases** tab. Verify the attached `.sha256` checksum, then run the installer. A portable zip is also on each release.
+Download **[evolve-v4.1.11-windows-x64-setup.exe](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-windows-x64-setup.exe)** ([.sha256](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-windows-x64-setup.exe.sha256)) from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). A portable zip is also on that release.
 
 ### Web
 
@@ -26,11 +26,11 @@ Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evol
 
 ### Android
 
-Download **evolve-v4.1.11-android-setup.apk** from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or **Releases** (the APK file itself is on GitHub Releases). Requires **Android 7.0+ (API 24)**. Verify SHA-256 before installing. If install fails after an older debug build, uninstall Evolve first, then reinstall. Enable “Install unknown apps” for the browser or Files app you use to open the APK. The in-app updater checks GitHub Releases first when a newer build is published.
+Download **[evolve-v4.1.11-android-setup.apk](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-android-setup.apk)** ([.sha256](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-android-setup.apk.sha256)) from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). Requires **Android 7.0+ (API 24)**. If install fails after an older debug build, uninstall Evolve first, then reinstall. Enable “Install unknown apps” for the browser or Files app you use to open the APK.
 
 ### iOS and macOS
 
-Download **evolve-v4.1.11-macos-x64.zip** (Developer ID, notarized) or **evolve-v4.1.11-ios-setup.ipa** (Apple Distribution) from [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). Bundle ID `com.evolve.chronoflux`. Rebuild notes: **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**, [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md). **4.1.12+:** every platform goes on one tag — [docs/GITHUB_RELEASES.md](docs/GITHUB_RELEASES.md).
+Download **[evolve-v4.1.11-macos-x64.zip](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-macos-x64.zip)** (Developer ID, notarized) or **[evolve-v4.1.11-ios-setup.ipa](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-ios-setup.ipa)** (Apple Distribution) from [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). Bundle ID `com.evolve.chronoflux`. Rebuild notes: **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**, [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md). **4.1.12+:** every platform goes on one tag — [docs/GITHUB_RELEASES.md](docs/GITHUB_RELEASES.md).
 
 ---
 

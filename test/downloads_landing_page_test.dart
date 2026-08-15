@@ -100,6 +100,34 @@ void main() {
     expect(html, isNot(contains('btn-web')));
   });
 
+  test('README and installer JSON use the same advertised 4.1.11 download tag as landing pages', () {
+    final pubspec = evolveRepoFile('pubspec.yaml').readAsStringSync();
+    final release =
+        RegExp(r'version:\s*(\d+\.\d+\.\d+)\+').firstMatch(pubspec)!.group(1)!;
+    final landing = evolveRepoFile('download.html').readAsStringSync();
+    final tag = _evolveAdvertisedReleaseTag(landing, release);
+    final readme = evolveRepoFile('README.md').readAsStringSync();
+    _expectUnifiedEvolveReleaseDownloads(readme, release);
+    expect(
+      _evolveAdvertisedReleaseTag(readme, release),
+      tag,
+      reason: 'README must use the same GitHub release tag as download.html',
+    );
+    for (final meta in [
+      'installer/android/evolve-v$release-android.json',
+      'installer/ios/evolve-v$release-ios.json',
+      'installer/macos/evolve-v$release-macos.json',
+    ]) {
+      final json = evolveRepoFile(meta).readAsStringSync();
+      expect(
+        json,
+        contains('releases/download/$tag/'),
+        reason: '$meta must use advertised tag $tag',
+      );
+      expect(json, isNot(contains('macos-ios-android')));
+    }
+  });
+
   test('downloads index matches current release wording', () {
     final pubspec = evolveRepoFile('pubspec.yaml');
     expect(pubspec.existsSync(), isTrue);
