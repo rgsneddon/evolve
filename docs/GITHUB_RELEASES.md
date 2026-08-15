@@ -35,22 +35,22 @@ Do not build Windows / Linux / Arch from a clone that is behind `origin/main`. T
 1. **First machine** (whichever finishes first) creates a **draft** on `vX.Y.Z` and uploads its packages:
 
    ```powershell
-   pwsh ./scripts/upload_release_assets.ps1 -Version 4.1.12 -Draft
+   pwsh ./scripts/upload_release_assets.ps1 -Version 4.2.1 -Draft
    ```
 
 2. **Second machine** uploads onto **that same tag** (do not create another release):
 
    ```powershell
-   pwsh ./scripts/upload_release_assets.ps1 -Version 4.1.12
+   pwsh ./scripts/upload_release_assets.ps1 -Version 4.2.1
    ```
 
 3. When Windows + Linux + Arch + Android + macOS + iOS (whatever you are shipping) are on the draft, publish it as Latest:
 
    ```powershell
-   pwsh ./scripts/upload_release_assets.ps1 -Version 4.1.12 -PublishNow
+   pwsh ./scripts/upload_release_assets.ps1 -Version 4.2.1 -PublishNow
    ```
 
-`publish_github_release.ps1` also attaches to the existing `vX.Y.Z` tag if the release already exists. It strips a platform suffix if someone passes `-Version 4.1.12-windows`.
+`publish_github_release.ps1` also attaches to the existing `vX.Y.Z` tag if the release already exists. It strips a platform suffix if someone passes `-Version 4.2.1-windows`.
 
 ## Do not
 
@@ -60,4 +60,4 @@ Do not build Windows / Linux / Arch from a clone that is behind `origin/main`. T
 
 ## 4.1.11 (historical)
 
-`v4.1.11` is reserved by GitHub. The all-platform 4.1.11 files live on [`v4.1.11-bundle`](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). Do not fight that tag. **4.1.12+ uses `v4.1.12` only.**
+`v4.1.11` is reserved by GitHub. The all-platform 4.1.11 files live on [`v4.1.11-bundle`](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). Do not fight that tag. **4.2.1 uses `v4.2.1` only.**

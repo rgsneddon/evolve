@@ -104,10 +104,10 @@ void main() {
         .map((f) => f.uri.pathSegments.where((s) => s.isNotEmpty).last)
         .toList()
       ..sort();
-    expect(membership.release, '4.1.12');
-    expect(PercAppVersion.buildOf(PercAppVersion.current), greaterThan(178));
+    expect(membership.release, '4.2.1');
+    expect(PercAppVersion.buildOf(PercAppVersion.current), greaterThan(180));
     _writeLog(
-      'bundle-4.1.12-mac.log',
+      'bundle-4.2.1-mac.log',
       'release=${membership.release}\n'
       'pin=${PercAppVersion.current}\n'
       'bundle=${membership.bundleDirectory.path}\n'

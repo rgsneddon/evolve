@@ -429,9 +429,9 @@ Release pipeline entry points: `scripts/run_security_audit.ps1`, `scripts/scan_r
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/build_all.ps1
 powershell -ExecutionPolicy Bypass -File scripts/build_installers.ps1 -SkipCodeSign
-powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.1.3
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.2.1
 # Optional: capture release/Pages evidence for CI or audit
-powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.1.3 -SkipBuild -EvidenceDir .\build\release-evidence
+powershell -ExecutionPolicy Bypass -File scripts/publish_github_release.ps1 -Version 4.2.1 -SkipBuild -EvidenceDir .\build\release-evidence
 ```
 
 If the Windows INSTALL step fails with `C:\Program Files\evolve`, delete `build\windows` and rebuild (stale CMake cache).

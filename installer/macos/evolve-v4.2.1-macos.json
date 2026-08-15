@@ -3,10 +3,11 @@
   "version": "4.2.1",
   "build": "181",
   "platform": "macos",
-  "sizeBytes": 22328329,
+  "bundleId": "com.evolve.chronoflux",
+  "sizeBytes": 22335623,
   "sizeMb": 21.3,
-  "sha256": "pending-mac-rebuild",
+  "sha256": "27f2fbdf7f4999ba8c93d8ff6aa8bcf00c38190bc3f5b184b6724237bb8a5b27",
+  "sha512": "aa507af2010ab6637a0eab63e0b109bd4ea5d2ced581e5f447e3315f44b42cf8827acf0ceebaddaeaa9162b71d5cada7587f5d0a33862558651fafe9ff8ed715",
   "url": "https://github.com/rgsneddon/evolve/releases/download/v4.2.1/evolve-v4.2.1-macos-x64.zip",
-  "signing": "Developer ID Application + hardened runtime + notarized",
-  "bundleId": "com.evolve.chronoflux"
+  "signing": "Developer ID Application + hardened runtime + notarized"
 }

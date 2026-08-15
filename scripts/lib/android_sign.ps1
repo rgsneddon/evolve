@@ -73,14 +73,20 @@ function Find-ApkSigner {
 
     $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } elseif ($env:ANDROID_SDK_ROOT) {
         $env:ANDROID_SDK_ROOT
-    } else {
+    } elseif ($env:LOCALAPPDATA) {
         Join-Path $env:LOCALAPPDATA 'Android\Sdk'
+    } elseif ($env:HOME) {
+        Join-Path $env:HOME 'Library\Android\sdk'
+    } else {
+        $null
     }
 
-    $tool = Get-ChildItem -Path (Join-Path $sdk 'build-tools') -Recurse -Filter 'apksigner.bat' -ErrorAction SilentlyContinue |
-        Sort-Object { try { [version]$_.Directory.Name } catch { [version]'0.0' } } -Descending |
-        Select-Object -First 1
-    if ($tool) { return $tool.FullName }
+    if ($sdk -and (Test-Path (Join-Path $sdk 'build-tools'))) {
+        $tool = Get-ChildItem -Path (Join-Path $sdk 'build-tools') -Recurse -Include 'apksigner','apksigner.bat' -ErrorAction SilentlyContinue |
+            Sort-Object { try { [version]$_.Directory.Name } catch { [version]'0.0' } } -Descending |
+            Select-Object -First 1
+        if ($tool) { return $tool.FullName }
+    }
 
     throw @'
 apksigner not found. Install Android SDK build-tools or set APKSIGNER_PATH.

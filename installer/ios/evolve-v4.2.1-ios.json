@@ -1,13 +1,15 @@
 {
-  "name": "evolve-v4.2.1-ios-setup.ipa",
-  "version": "4.2.1",
+  "pagesUrl": "https://rgsneddon.github.io/evolve/downloads/v4.2.1/evolve-v4.2.1-ios-setup.ipa",
+  "sizeBytes": 23266789,
   "build": "181",
-  "platform": "ios",
-  "devices": "iphone+ipad",
-  "sizeBytes": 23262929,
-  "sizeMb": 22.2,
-  "sha256": "pending-mac-rebuild",
+  "version": "4.2.1",
   "url": "https://github.com/rgsneddon/evolve/releases/download/v4.2.1/evolve-v4.2.1-ios-setup.ipa",
-  "signing": "Apple Distribution",
-  "bundleId": "com.evolve.chronoflux"
+  "name": "evolve-v4.2.1-ios-setup.ipa",
+  "sha512": "d312ddbec57255d3a0dc829fe76d48fdf352eaca5a6512a5408b9db7496d6683c5c758ea02a777a0ea697192922a4843b80051390d01a1056a6fc09ac7afa4b2",
+  "sizeMb": 22.2,
+  "bundleId": "com.evolve.chronoflux",
+  "platform": "ios",
+  "sha256": "9073a7bd5a9d15d3b080a4d011a5ef2295cf2494bbeb90085fbb913662c52865",
+  "devices": "iphone+ipad",
+  "signing": "Apple Distribution"
 }

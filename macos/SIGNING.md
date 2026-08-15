@@ -80,7 +80,7 @@ One-shot (re-sign without `get-task-allow`, notarize, staple, re-zip):
 ```bash
 python3 scripts/seal_macos_evolve.py \
   --app build/macos/Build/Products/Release/Evolve.app \
-  --out build/downloads/v4.1.12/evolve-v4.1.12-macos-x64.zip
+  --out build/downloads/v4.2.1/evolve-v4.2.1-macos-x64.zip
 ```
 
 ```bash
@@ -91,10 +91,10 @@ flutter build macos --release
 # Package
 ditto -c -k --keepParent --sequesterRsrc \
   build/macos/Build/Products/Release/Evolve.app \
-  build/downloads/v4.1.8/evolve-v4.1.8-macos-x64.zip
+  build/downloads/v4.2.1/evolve-v4.2.1-macos-x64.zip
 
 # Submit + wait
-xcrun notarytool submit build/downloads/v4.1.8/evolve-v4.1.8-macos-x64.zip \
+xcrun notarytool submit build/downloads/v4.2.1/evolve-v4.2.1-macos-x64.zip \
   --keychain-profile "evolve-notary" --wait
 
 # Staple ticket onto the app, then re-zip
@@ -104,7 +104,7 @@ spctl --assess --type execute -v build/macos/Build/Products/Release/Evolve.app
 
 ditto -c -k --keepParent --sequesterRsrc \
   build/macos/Build/Products/Release/Evolve.app \
-  build/downloads/v4.1.8/evolve-v4.1.8-macos-x64.zip
+  build/downloads/v4.2.1/evolve-v4.2.1-macos-x64.zip
 ```
 
 Individual API keys may omit `--issuer`; team keys require it. A `401 Unauthenticated`

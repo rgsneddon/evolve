@@ -1,25 +1,48 @@
 # Shared environment helpers for Evolve Flutter builds on Windows.
 
 function Get-FlutterExe {
-    $candidates = @(
-        (Join-Path $env:LOCALAPPDATA 'flutter\bin\flutter.bat'),
-        'C:\src\flutter\bin\flutter.bat',
-        (Join-Path $env:USERPROFILE 'flutter\bin\flutter.bat')
-    )
-    foreach ($path in $candidates) {
-        if (Test-Path $path) { return $path }
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    if ($env:LOCALAPPDATA) {
+        $candidates.Add((Join-Path $env:LOCALAPPDATA 'flutter\bin\flutter.bat'))
     }
-    $onPath = Get-Command flutter.bat -ErrorAction SilentlyContinue
+    $candidates.Add('C:\src\flutter\bin\flutter.bat')
+    if ($env:USERPROFILE) {
+        $candidates.Add((Join-Path $env:USERPROFILE 'flutter\bin\flutter.bat'))
+        $candidates.Add((Join-Path $env:USERPROFILE 'flutter\bin\flutter'))
+    }
+    if ($env:HOME) {
+        $candidates.Add((Join-Path $env:HOME 'flutter\bin\flutter'))
+    }
+    $candidates.Add('/opt/homebrew/bin/flutter')
+    $candidates.Add('/usr/local/bin/flutter')
+    foreach ($path in $candidates) {
+        if ($path -and (Test-Path $path)) { return $path }
+    }
+    $onPath = Get-Command flutter -ErrorAction SilentlyContinue
     if ($onPath) { return $onPath.Source }
+    $onPathBat = Get-Command flutter.bat -ErrorAction SilentlyContinue
+    if ($onPathBat) { return $onPathBat.Source }
     throw 'Flutter not found. Install Flutter and add it to PATH, or place it at C:\src\flutter.'
 }
 
 function Get-JdkHome {
     $user = [Environment]::GetEnvironmentVariable('JAVA_HOME', 'User')
-    if ($user -and (Test-Path (Join-Path $user 'bin\java.exe'))) { return $user }
+    if ($user -and ((Test-Path (Join-Path $user 'bin\java.exe')) -or (Test-Path (Join-Path $user 'bin\java')))) { return $user }
 
     $machine = [Environment]::GetEnvironmentVariable('JAVA_HOME', 'Machine')
-    if ($machine -and (Test-Path (Join-Path $machine 'bin\java.exe'))) { return $machine }
+    if ($machine -and ((Test-Path (Join-Path $machine 'bin\java.exe')) -or (Test-Path (Join-Path $machine 'bin\java')))) { return $machine }
+
+    if ($env:JAVA_HOME -and ((Test-Path (Join-Path $env:JAVA_HOME 'bin\java.exe')) -or (Test-Path (Join-Path $env:JAVA_HOME 'bin\java')))) {
+        return $env:JAVA_HOME
+    }
+
+    foreach ($macJdk in @(
+        '/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home',
+        '/opt/homebrew/opt/openjdk@17',
+        '/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home'
+    )) {
+        if (Test-Path (Join-Path $macJdk 'bin/java')) { return $macJdk }
+    }
 
     $microsoftJdkRoot = 'C:\Program Files\Microsoft'
     if (Test-Path $microsoftJdkRoot) {
@@ -34,7 +57,9 @@ function Get-JdkHome {
     $java = Get-Command java -ErrorAction SilentlyContinue
     if ($java) {
         $javaHome = Split-Path (Split-Path $java.Source -Parent) -Parent
-        if (Test-Path (Join-Path $javaHome 'bin\java.exe')) { return $javaHome }
+        if ((Test-Path (Join-Path $javaHome 'bin\java.exe')) -or (Test-Path (Join-Path $javaHome 'bin\java'))) {
+            return $javaHome
+        }
     }
 
     return $null
@@ -45,13 +70,20 @@ function Get-AndroidSdkRoot {
         [Environment]::GetEnvironmentVariable('ANDROID_HOME', 'User'),
         [Environment]::GetEnvironmentVariable('ANDROID_SDK_ROOT', 'User'),
         [Environment]::GetEnvironmentVariable('ANDROID_HOME', 'Machine'),
-        (Join-Path $env:LOCALAPPDATA 'Android\Sdk')
+        $(if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'Android\Sdk' } else { $null }),
+        $(if ($env:HOME) { Join-Path $env:HOME 'Library\Android\sdk' } else { $null })
     ) | Where-Object { $_ }
 
     foreach ($root in $candidates) {
         if (Test-Path (Join-Path $root 'platform-tools')) { return $root }
     }
-    return Join-Path $env:LOCALAPPDATA 'Android\Sdk'
+    if ($env:LOCALAPPDATA) {
+        return Join-Path $env:LOCALAPPDATA 'Android\Sdk'
+    }
+    if ($env:HOME) {
+        return Join-Path $env:HOME 'Library\Android\sdk'
+    }
+    return $null
 }
 
 function Get-EdgeExecutable {
