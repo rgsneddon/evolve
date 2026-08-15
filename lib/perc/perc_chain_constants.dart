@@ -87,8 +87,19 @@ class PercChainConstants {
   /// Max analysis faucet payout per draw (100/100 PERC).
   static final PercAmount maxFaucetPayoutPerDraw = PercAmount.fromPerc(1);
 
-  /// Treasury accrues one max faucet draw per wallet cooldown window.
-  static PercAmount get treasuryEmissionPerCooldown => maxFaucetPayoutPerDraw;
+  /// Prior mint (before the action-as-block volume offset) was one max faucet
+  /// draw per cooldown. Keep this as the pre-change reference for tests.
+  static PercAmount get treasuryMintPriorPerCooldown => maxFaucetPayoutPerDraw;
+
+  /// Action-as-block raised volume; mint is reduced by two thirds (keep 1/3).
+  static const int treasuryMintKeepNumerator = 1;
+  static const int treasuryMintKeepDenominator = 3;
+
+  /// Treasury accrues one third of a max faucet draw per wallet cooldown window.
+  static PercAmount get treasuryEmissionPerCooldown => PercAmount(
+        (treasuryMintPriorPerCooldown.microUnits * treasuryMintKeepNumerator) ~/
+            treasuryMintKeepDenominator,
+      );
 
   /// Regeneration ratio — treasury tops up when balance falls below 66% of [treasuryEmissionPerMinute].
   static const int treasuryRegenerationRatioPercent = 66;

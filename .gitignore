@@ -51,6 +51,10 @@ build/uk_wards_may2025.csv
 # Local Grok proxy secrets (copy from grok_proxy.local.env.example)
 grok_proxy.local.env
 
+# Mishi moderator credentials — Desktop only; never commit extra copies
+mishi_credentials.txt
+**/mishi_credentials.txt
+
 # Windows Authenticode signing secrets (copy from code_sign.local.env.example)
 code_sign.local.env
 
@@ -66,3 +70,6 @@ perc_chain/cloudflared.exe
 perc_chain/data/
 tools/Microsoft.ArtifactSigning.Client/
 tools/trusted-signing/metadata.json
+
+# Built desktop bundle (source-only tree)
+mishi/Mishi.app/

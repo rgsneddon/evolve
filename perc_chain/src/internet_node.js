@@ -8,6 +8,10 @@ import {
   isHiddenPeer,
   listBlocks,
 } from './explorer_api.js';
+import { actionChain } from './action_block.js';
+import { confirmBlock } from './block_confirm.js';
+import { buildExplorerDiagrams } from './explorer_diagrams.js';
+import { rpaiNed } from './rpai_ned.js';
 import { LedgerStore, blockHeight, tipHash } from './ledger_store.js';
 import { regenerateTreasuryIfLow } from './treasury_regeneration.js';
 import {
@@ -312,6 +316,55 @@ const server = http.createServer(async (req, res) => {
     const detail = getBlockDetail(store.ledger, index);
     if (!detail) return json(res, 404, { error: 'block not found' });
     return json(res, 200, sanitizeForPublicExplorer(detail));
+  }
+
+  const confirmMatch = url.pathname.match(/^\/api\/confirm\/([^/]+)$/);
+  if (req.method === 'GET' && confirmMatch) {
+    const id = decodeURIComponent(confirmMatch[1]);
+    const result = confirmBlock(id, {
+      ledger: store.hasLedger() ? store.ledger : null,
+      actionBlocks: actionChain.blocks,
+    });
+    return json(res, 200, sanitizeForPublicExplorer(result));
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/diagrams') {
+    const epochId = url.searchParams.get('epoch') || 'current';
+    const payload = buildExplorerDiagrams({
+      ledger: store.hasLedger() ? store.ledger : null,
+      actionBlocks: actionChain.blocks,
+      rpaiStats: rpaiNed.stats(),
+      epochId,
+    });
+    return json(res, 200, sanitizeForPublicExplorer(payload));
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/rpai') {
+    return json(res, 200, sanitizeForPublicExplorer({ ned: rpaiNed.stats() }));
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/rpai/learn') {
+    const data = await readBody(req);
+    const result = rpaiNed.learn(data || {});
+    return json(res, 200, result);
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/action-block') {
+    const data = await readBody(req);
+    const kind = String(data?.kind || 'other');
+    const detail = String(data?.detail || '');
+    const block =
+      kind === 'tab_click'
+        ? actionChain.recordTabClick(detail)
+        : kind === 'keystroke'
+          ? actionChain.recordKeystroke(detail)
+          : actionChain.record(kind, detail);
+    rpaiNed.learn({
+      source: data?.source || 'evolve-wallet',
+      kind,
+      payload: detail,
+    });
+    return json(res, 200, { ok: true, block, confirm: actionChain.confirm(block.id) });
   }
 
   if (req.method === 'GET' && url.pathname === '/api/blocks') {

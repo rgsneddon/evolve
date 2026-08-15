@@ -11,7 +11,9 @@ import '../perc/services/perc_faucet_cooldown.dart';
 import '../platform/evolve_window_lifecycle.dart';
 import '../providers/evolve_provider.dart';
 import '../providers/locale_provider.dart';
+import '../fcg/mishi/mishi_rpai.dart';
 import '../fcg/screens/fcg_voting_screen.dart';
+import '../perc/services/perc_action_block.dart';
 import 'home_screen.dart';
 import '../perc/screens/credit_screen.dart';
 import '../perc/screens/security_screen.dart';
@@ -221,7 +223,19 @@ class _EvolveShellScreenState extends State<EvolveShellScreen>
             ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navIndex,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) {
+          final labels = wallet.hasAppAccess
+              ? const ['analysis', 'wallet', 'security', 'voting', 'credit']
+              : const ['wallet', 'security', 'credit'];
+          final tab = (i >= 0 && i < labels.length) ? labels[i] : 'tab-$i';
+          percActionChain.recordTabClick(tab);
+          rpaiNed.learn(RpaiEvent(
+            source: rpaiSourceEvolveWallet,
+            kind: 'tab_click',
+            payload: tab,
+          ));
+          setState(() => _index = i);
+        },
         destinations: destinations,
       ),
     );

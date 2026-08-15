@@ -25,7 +25,7 @@ void main() {
         PercChainConstants.faucetCooldown.inSeconds,
         context,
       ),
-      PercChainConstants.maxFaucetPayoutPerDraw,
+      PercChainConstants.treasuryEmissionPerCooldown,
     );
     expect(
       PercDynamicEmission.effectiveEmissionPerMinute(context).microUnits,
@@ -90,7 +90,7 @@ void main() {
     expect(PercDynamicEmission.combinedFactorPercent(hot), 1000);
     expect(
       PercDynamicEmission.effectiveEmissionPerCooldown(hot),
-      PercAmount(PercChainConstants.maxFaucetPayoutPerDraw.microUnits * 10),
+      PercAmount(PercChainConstants.treasuryEmissionPerCooldown.microUnits * 10),
     );
   });
 }

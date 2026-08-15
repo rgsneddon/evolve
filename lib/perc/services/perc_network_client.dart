@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../perc_chain_constants.dart';
 import 'perc_ledger.dart';
 import 'perc_network_protocol.dart';
+import 'perc_public_endpoint.dart';
 
 /// HTTP client for Perccent wallet-node sync.
 class PercNetworkClient {
@@ -18,6 +19,9 @@ class PercNetworkClient {
   static const _ledgerPath = '/perc/ledger';
 
   Future<PercNetworkStatus?> fetchStatus(String endpoint) async {
+    if (PercPublicEndpoint.isUnreachableCleartextPublicNode(endpoint)) {
+      return null;
+    }
     final uri = _resolve(endpoint, _statusPath);
     if (uri == null) return null;
     try {
@@ -31,6 +35,9 @@ class PercNetworkClient {
   }
 
   Future<PercLedger?> fetchLedger(String endpoint) async {
+    if (PercPublicEndpoint.isUnreachableCleartextPublicNode(endpoint)) {
+      return null;
+    }
     final uri = _resolve(endpoint, _ledgerPath);
     if (uri == null) return null;
     try {
@@ -47,6 +54,9 @@ class PercNetworkClient {
     required String endpoint,
     required PercLedger ledger,
   }) async {
+    if (PercPublicEndpoint.isUnreachableCleartextPublicNode(endpoint)) {
+      return false;
+    }
     final uri = _resolve(endpoint, _ledgerPath);
     if (uri == null) return false;
     for (var i = 0; i < 3; i++) {

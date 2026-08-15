@@ -51,4 +51,5 @@ flutter:
     - assets/flags/gb.png
     - assets/flags/us.png
     - assets/flags/eu.png
+    - assets/brand/restore_privacy_logo.png
     - LICENSE

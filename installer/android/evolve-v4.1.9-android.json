@@ -1,0 +1,19 @@
+{
+  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.9/evolve-v4.1.9-android-setup.apk",
+  "build": "175",
+  "platform": "android",
+  "version": "4.1.9",
+  "sizeMb": 80.2,
+  "sha256": "999890fce8442a52cdfa6def9dac63fb56a9a627ee6744aea113730524b06fbc",
+  "sha512": "0420573b9afbe5cdebebe5c9fc6996288ce0806644cf16f3e70f2da3f250cd0a0f915eb9986f5304b14c7be7eb8e87603a049d451ce79f4287f3753b47d1c4ce",
+  "name": "evolve-v4.1.9-android-setup.apk",
+  "minSdk": 24,
+  "sizeBytes": 80220463,
+  "abis": [
+    "arm64-v8a",
+    "armeabi-v7a",
+    "x86_64"
+  ],
+  "rendezvousUrl": "https://135.181.152.10.sslip.io/perc",
+  "note": "Helsinki perc seed \u2014 Render evolve-perc-internet paused"
+}

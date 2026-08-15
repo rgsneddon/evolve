@@ -17,11 +17,11 @@ void main() {
       PercChainConstants.emissionForElapsedSeconds(
         PercChainConstants.faucetCooldown.inSeconds,
       ),
-      PercChainConstants.maxFaucetPayoutPerDraw,
+      PercChainConstants.treasuryEmissionPerCooldown,
     );
     expect(
       PercChainConstants.treasuryEmissionPerMinute.microUnits,
-      (PercChainConstants.maxFaucetPayoutPerDraw.microUnits * 60) ~/
+      (PercChainConstants.treasuryEmissionPerCooldown.microUnits * 60) ~/
           PercChainConstants.faucetCooldown.inSeconds,
     );
     expect(PercChainConstants.confirmationsRequired, 1);

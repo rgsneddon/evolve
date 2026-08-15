@@ -1,6 +1,6 @@
 import {
   FAUCET_COOLDOWN_SECONDS,
-  MAX_FAUCET_PAYOUT_MICRO,
+  TREASURY_MINT_MICRO_PER_COOLDOWN,
   UNITS_PER_PERC,
 } from './chain_constants.js';
 
@@ -59,7 +59,7 @@ function combinedFactorPercent(context) {
 export function dynamicEmissionMicroPerMinute(ledger) {
   const context = emissionContextFromLedger(ledger);
   const combined = combinedFactorPercent(context);
-  const perCooldown = Math.floor((MAX_FAUCET_PAYOUT_MICRO * combined) / 100);
+  const perCooldown = Math.floor((TREASURY_MINT_MICRO_PER_COOLDOWN * combined) / 100);
   return Math.floor((perCooldown * 60) / FAUCET_COOLDOWN_SECONDS);
 }
 

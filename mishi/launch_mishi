@@ -1,0 +1,25 @@
+#!/bin/bash
+# Desktop-only Mishi launcher (macOS). Never used for iOS/Android.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+DESKTOP="${HOME}/Desktop"
+mkdir -p "$DESKTOP"
+# The moderator must only ever see ONE credentials file — Desktop only.
+rm -f "$ROOT/mishi/mishi_credentials.txt" "$ROOT/build/mishi/mishi_credentials.txt"
+find "$DESKTOP" -maxdepth 1 \( -iname 'mishi_cred*.txt' ! -name 'mishi_credentials.txt' \) -delete 2>/dev/null || true
+if [[ ! -f "$DESKTOP/mishi_credentials.txt" ]]; then
+  printf '%s\n' '# MISHI setup strings — keep this file on your Desktop' 'username=' 'password=' > "$DESKTOP/mishi_credentials.txt"
+fi
+APP="$ROOT/mishi/Mishi.app"
+if [[ ! -d "$APP" ]]; then
+  APP="$ROOT/build/mishi/Mishi.app"
+fi
+if [[ -d "$APP" ]]; then
+  exec open "$APP"
+fi
+if command -v flutter >/dev/null 2>&1; then
+  exec flutter run -d macos -t lib/mishi_main.dart "$@"
+fi
+echo "MISHI: flutter not on PATH and $APP missing" >&2
+exit 1

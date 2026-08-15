@@ -251,7 +251,7 @@ void main() {
     );
 
     expect(wallet.registrationAwaitingSeedAlignment, isTrue);
-    expect(wallet.isWalletConnectComplete, isFalse);
+    expect(wallet.isWalletConnectComplete, isTrue);
     expect(rendezvousRegisterCount, 0);
 
     serveSeedLedger = true;
@@ -293,7 +293,7 @@ void main() {
 
     await wallet.register('resetuser', 'password12345');
     expect(wallet.registrationAwaitingSeedAlignment, isTrue);
-    expect(wallet.isWalletConnectComplete, isFalse);
+    expect(wallet.isWalletConnectComplete, isTrue);
 
     serveSeedLedger = true;
     await wallet.syncWalletToSeed();

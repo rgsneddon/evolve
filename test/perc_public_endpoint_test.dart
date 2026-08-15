@@ -21,4 +21,23 @@ void main() {
       isFalse,
     );
   });
+
+  test('rejects cleartext public :9477 as a chain hop', () {
+    expect(
+      PercPublicEndpoint.isUnreachableCleartextPublicNode(
+        'http://217.142.21.226:9477',
+      ),
+      isTrue,
+    );
+    expect(
+      PercPublicEndpoint.isChainFetchEndpoint('http://217.142.21.226:9477'),
+      isFalse,
+    );
+    expect(
+      PercPublicEndpoint.isChainFetchEndpoint(
+        'https://135.181.152.10.sslip.io/perc',
+      ),
+      isTrue,
+    );
+  });
 }
