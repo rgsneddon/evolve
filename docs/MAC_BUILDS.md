@@ -1,6 +1,8 @@
-# Mac session runbook — Evolve suite (iOS + macOS)
+# Mac session runbook — Evolve suite (Android + macOS + iOS)
 
-Use this on a Mac with Xcode when preparing real Apple artifacts. Windows can only stage, checksum, and publish.
+**Machine split:** this Mac produces Android, macOS, and iOS. The Windows laptop produces Windows, Linux, and Arch Linux. See [MACHINE_SPLIT.md](MACHINE_SPLIT.md).
+
+Use this on a Mac with Xcode (Apple) and the Android SDK when preparing this machine’s commit deliverables. The Windows laptop builds Windows, Linux, and Arch Linux.
 
 ## 0. Tools (once per Mac)
 
@@ -36,6 +38,21 @@ export DEVELOPMENT_TEAM=XXXXXXXXXX   # 10-char Team ID
 ```
 
 Open each Xcode workspace once and select the Team if automatic signing prompts.
+
+## 1a. Evolve — Android APK (this Mac)
+
+```bash
+cd /path/to/evolve
+pwsh ./scripts/build_android_installer.ps1
+# If pwsh is not installed, same dest name:
+#   flutter build apk --release
+#   cp build/app/outputs/flutter-apk/app-release.apk \
+#      build/downloads/v{version}/evolve-v{version}-android-setup.apk
+```
+
+Expected:
+
+- Versioned: `build/downloads/v{version}/evolve-v{version}-android-setup.apk`
 
 ## 2. Evolve — iOS IPA
 

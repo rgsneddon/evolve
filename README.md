@@ -14,11 +14,11 @@ The **Chronoflux Principia**, realised by **Roy D Herbert**, is the core mechani
 
 ## Quick start
 
-**Latest release:** v4.1.11 (build 178) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
+**Latest release:** v4.1.12 (build 179) — [Downloads](https://rgsneddon.github.io/evolve/downloads/) · [Web app](https://rgsneddon.github.io/evolve/) · [Releases](https://github.com/rgsneddon/evolve/releases)
 
 ### Windows (easiest)
 
-Download **[evolve-v4.1.11-windows-x64-setup.exe](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-windows-x64-setup.exe)** ([.sha256](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-windows-x64-setup.exe.sha256)) from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). A portable zip is also on that release.
+Download **[evolve-v4.1.12-windows-x64-setup.exe](https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-windows-x64-setup.exe)** ([.sha256](https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-windows-x64-setup.exe.sha256)) from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.12). A portable zip is also on that release. Laptop-built Windows/Linux/Arch attach to the same tag when ready.
 
 ### Web
 
@@ -26,11 +26,15 @@ Live app: [https://rgsneddon.github.io/evolve/](https://rgsneddon.github.io/evol
 
 ### Android
 
-Download **[evolve-v4.1.11-android-setup.apk](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-android-setup.apk)** ([.sha256](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-android-setup.apk.sha256)) from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). Requires **Android 7.0+ (API 24)**. If install fails after an older debug build, uninstall Evolve first, then reinstall. Enable “Install unknown apps” for the browser or Files app you use to open the APK.
+Download **[evolve-v4.1.12-android-setup.apk](https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-android-setup.apk)** ([.sha256](https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-android-setup.apk.sha256)) from [Downloads](https://rgsneddon.github.io/evolve/downloads/) or [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.12). Requires **Android 7.0+ (API 24)**. If install fails after an older debug build, uninstall Evolve first, then reinstall. Enable “Install unknown apps” for the browser or Files app you use to open the APK.
 
 ### iOS and macOS
 
-Download **[evolve-v4.1.11-macos-x64.zip](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-macos-x64.zip)** (Developer ID, notarized) or **[evolve-v4.1.11-ios-setup.ipa](https://github.com/rgsneddon/evolve/releases/download/v4.1.11-bundle/evolve-v4.1.11-ios-setup.ipa)** (Apple Distribution) from [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). Bundle ID `com.evolve.chronoflux`. Rebuild notes: **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**, [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md). **4.1.12+:** every platform goes on one tag — [docs/GITHUB_RELEASES.md](docs/GITHUB_RELEASES.md).
+Download **[evolve-v4.1.12-macos-x64.zip](https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-macos-x64.zip)** (Developer ID, notarized) or **[evolve-v4.1.12-ios-setup.ipa](https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-ios-setup.ipa)** (Apple Distribution) from [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.12). Bundle ID `com.evolve.chronoflux`. Rebuild notes: **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**, [docs/MACHINE_SPLIT.md](docs/MACHINE_SPLIT.md), [docs/GITHUB_RELEASES.md](docs/GITHUB_RELEASES.md), [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md).
+
+**Build split:** this Mac builds Android / macOS / iOS; the laptop builds Windows / Linux / Arch. Every platform for 4.1.12 attaches to the same tag **`v4.1.12`**. See [docs/MACHINE_SPLIT.md](docs/MACHINE_SPLIT.md) and [docs/GITHUB_RELEASES.md](docs/GITHUB_RELEASES.md).
+
+**4.1.12 wallet:** Perccent sync adopts the tallest reachable HTTPS rendezvous tip and skips a dead public `http://…:9477` hop. After register, connect completes locally so the splash does not stay on Wallet loading….
 
 ---
 

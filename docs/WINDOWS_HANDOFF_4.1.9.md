@@ -1,5 +1,7 @@
 # Windows handoff — Evolve Chronoflux **4.1.9** (build **177**)
 
+**Machine split (current line):** this Mac produces Android, macOS, and iOS; the Windows laptop produces Windows, Linux, and Arch Linux. See [MACHINE_SPLIT.md](MACHINE_SPLIT.md). This page is the historical **4.1.9** PE handoff.
+
 **Audience:** Windows x64 build operator.  
 **Mac has already built** Android / macOS / iOS / web under `downloads/v4.1.9/`.  
 **You must native-rebuild Windows** (and Linux if shipping from a Linux agent). Do not rename an older EXE as 4.1.9.

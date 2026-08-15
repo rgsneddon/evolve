@@ -7,7 +7,7 @@
   "sizeMb": 21.3,
   "sha256": "31d2bc79f02f1c7db65d5ddc892c43e2871931faeb7197dc9f542b16c2a7c5e7",
   "sha512": "05a5458c027c45adf5266a73294b1885043d3dcba3dde4e9d417af8dceb1b67b2712ded1ed920310bd1a3172a33f6d97baddf0c755ee92cd1789049c452e2d14",
-  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.12-macos-ios-android/evolve-v4.1.12-macos-x64.zip",
+  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-macos-x64.zip",
   "signing": "Developer ID Application + hardened runtime + notarized",
   "bundleId": "com.evolve.chronoflux"
 }
