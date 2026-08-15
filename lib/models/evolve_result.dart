@@ -1,3 +1,4 @@
+import 'chronoflux_principia_snapshot.dart';
 import 'conclusion_explainer_data.dart';
 import 'forecast_result.dart';
 import 'part_percent_breakdown.dart';
@@ -115,6 +116,7 @@ class EvolveResult {
     this.partyRefinement,
     this.partBreakdown,
     this.partTwoRan = true,
+    this.principia,
   });
 
   final HydrodynamicCore core;
@@ -132,4 +134,7 @@ class EvolveResult {
   final ConclusionExplainerData explainerData;
   final NarrativePartyRefinement? partyRefinement;
   final PartPercentBreakdown? partBreakdown;
+
+  /// Tweet-core Principia fields used by the % chance calculator.
+  final ChronofluxPrincipiaSnapshot? principia;
 }

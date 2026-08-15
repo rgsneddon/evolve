@@ -4,7 +4,7 @@
 
 | Rule | Detail |
 |------|--------|
-| Tag | `vX.Y.Z` only (example: `v4.1.12`) |
+| Tag | `vX.Y.Z` only (current line: **`v4.2.1`**; never a platform suffix) |
 | Never | `v4.1.12-windows`, `v4.1.12-macos-ios-android`, `v4.1.12-linux`, `v4.1.12-bundle` |
 | Download URL | `https://github.com/rgsneddon/evolve/releases/download/vX.Y.Z/<file>` |
 | Immutable releases | **Leave OFF** so the second machine can attach files |

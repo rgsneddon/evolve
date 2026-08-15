@@ -1,5 +1,6 @@
 import '../models/analysis_mode.dart';
 import '../models/chronoflux_continuum_snapshot.dart';
+import '../models/chronoflux_principia_snapshot.dart';
 import '../models/locale_config.dart';
 import '../models/construct_input.dart';
 import '../models/scenario_input.dart';
@@ -8,6 +9,7 @@ import '../l10n/localized_output.dart';
 import 'cohesion_report_formatter.dart';
 import 'forecast_calibrator.dart';
 import 'grok_style_formatter.dart';
+import 'chronoflux_principia.dart';
 import 'chronoflux_weight_construal.dart';
 import 'conclusion_explainer_data_builder.dart';
 import 'continuum_conclusion_builder.dart';
@@ -77,7 +79,8 @@ class EvolveEngine {
       }
     }
     final partThree = _partThree(input, partTwo, out, locale);
-    final heuristicPct = _percentChance(partTwo, input);
+    final principia = _principiaFromPartTwo(partTwo, input);
+    final heuristicPct = _percentChance(partTwo, input, principia: principia);
     final forecast = forecastCalibrator.calibrate(
       input: input,
       locale: locale,
@@ -158,6 +161,7 @@ class EvolveEngine {
       partyRefinement: partyRefinement,
       partBreakdown: partBreakdown,
       partTwoRan: true,
+      principia: principia,
     );
   }
 
@@ -614,33 +618,75 @@ class EvolveEngine {
       regionId: locale.regionId,
     );
     final core = _refinedCore(baseline, contextLean: calcCtx.effectiveLean);
+    final principia = ChronofluxPrincipia.fromScenarioObservables(
+      regressivePct: core.regressivePct,
+      refinedScs: core.refinedScs,
+      shearScs: input.shear.scs,
+      continuumScs: core.continuumScs,
+      flowScs: core.flowScs,
+      resistanceScs: core.resistanceScs,
+      vortexScs: core.vortexScs,
+    );
     final continuumPercent = heuristicPercentChance(
       regressivePct: core.regressivePct,
       refinedScs: core.refinedScs,
       shearScs: input.shear.scs,
+      continuumScs: core.continuumScs,
+      flowScs: core.flowScs,
+      resistanceScs: core.resistanceScs,
+      vortexScs: core.vortexScs,
     );
     return ChronofluxContinuumSnapshot(
       regressivePct: core.regressivePct,
       refinedScs: core.refinedScs,
       shearScs: input.shear.scs,
       continuumPercent: continuumPercent,
+      principia: principia,
     );
   }
 
-  /// Chronoflux headline % — regressive continuum × 0.55 + σ × 0.25 + strain × 0.2.
+  /// Chronoflux headline % — tweet identities contracted on scenario observables.
   static double heuristicPercentChance({
     required double regressivePct,
     required double refinedScs,
     required double shearScs,
+    double continuumScs = 50,
+    double flowScs = 50,
+    double resistanceScs = 50,
+    double vortexScs = 50,
   }) =>
-      (regressivePct * 0.55 + shearScs * 0.25 + (100 - refinedScs) * 0.2).clamp(8, 92);
+      ChronofluxPrincipia.percentChanceFromObservables(
+        regressivePct: regressivePct,
+        refinedScs: refinedScs,
+        shearScs: shearScs,
+        continuumScs: continuumScs,
+        flowScs: flowScs,
+        resistanceScs: resistanceScs,
+        vortexScs: vortexScs,
+      );
 
-  double _percentChance(PartTwoSection two, ScenarioInput input) =>
-      heuristicPercentChance(
+  ChronofluxPrincipiaSnapshot _principiaFromPartTwo(
+    PartTwoSection two,
+    ScenarioInput input,
+  ) =>
+      ChronofluxPrincipia.fromScenarioObservables(
         regressivePct: two.regressivePct,
         refinedScs: two.refinedScs,
         shearScs: input.shear.scs,
+        continuumScs: two.core.continuumScs,
+        flowScs: two.core.flowScs,
+        resistanceScs: two.core.resistanceScs,
+        vortexScs: two.core.vortexScs,
       );
+
+  double _percentChance(
+    PartTwoSection two,
+    ScenarioInput input, {
+    ChronofluxPrincipiaSnapshot? principia,
+  }) {
+    final snap = principia ?? _principiaFromPartTwo(two, input);
+    return ChronofluxPrincipia.percentChanceFromSnapshot(snap);
+  }
 
   String _percentPhrase(
     double pct,

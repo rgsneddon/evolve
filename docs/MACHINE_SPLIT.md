@@ -10,7 +10,7 @@ This is the machine-split record in force for GitHub-commit release bundles.
 - this Mac → Android + macOS + iOS
 - the Windows laptop → Windows + Linux + Arch Linux
 
-Current release line is the pin in `pubspec.yaml` / `PercAppVersion.current` (today **4.1.12+179**). Mac-owned packages for that line belong in `build/downloads/v{version}/` with the installer-script basenames:
+Current release line is the pin in `pubspec.yaml` / `PercAppVersion.current` (today **4.2.1+181**). Handover: [HANDOVER_4.2.1_APPLE.md](HANDOVER_4.2.1_APPLE.md), [HANDOVER_4.2.1_LINUX_ARCH.md](HANDOVER_4.2.1_LINUX_ARCH.md). Mac-owned packages for that line belong in `build/downloads/v{version}/` with the installer-script basenames:
 
 - `evolve-v{version}-android-setup.apk`
 - `evolve-v{version}-macos-x64.zip`
@@ -20,7 +20,7 @@ Windows / Linux / Arch packages are laptop commit deliverables. They are not req
 
 This Mac builds Android / macOS / iOS for the current line. Windows / Linux / Arch stay on the laptop.
 
-GitHub-commit packages for this line attach to one tag, **`v{version}`** (today `v4.1.12`). This Mac uploads Android / macOS / iOS onto that tag; the laptop uploads Windows / Linux / Arch onto the same tag. Do not open a `v{version}-macos-ios-android` sibling. See [GITHUB_RELEASES.md](GITHUB_RELEASES.md).
+GitHub-commit packages for this line attach to one tag, **`v{version}`** (today `v4.2.1`). This Mac uploads Android / macOS / iOS (universal IPA = iPhone **and** iPad) onto that tag; the laptop uploads Windows / Linux / Arch onto the same tag. Do not open a `v{version}-macos-ios-android` sibling. See [GITHUB_RELEASES.md](GITHUB_RELEASES.md).
 
 The laptop sees Mac commits only after `git pull origin main`. Pull before every Windows / Linux / Arch rebuild so those packages include the same `main` tip (see [WINDOWS_RELEASES.md](WINDOWS_RELEASES.md)).
 

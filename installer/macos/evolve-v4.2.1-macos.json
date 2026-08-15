@@ -1,0 +1,12 @@
+{
+  "name": "evolve-v4.2.1-macos-x64.zip",
+  "version": "4.2.1",
+  "build": "181",
+  "platform": "macos",
+  "sizeBytes": 22328329,
+  "sizeMb": 21.3,
+  "sha256": "pending-mac-rebuild",
+  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.2.1/evolve-v4.2.1-macos-x64.zip",
+  "signing": "Developer ID Application + hardened runtime + notarized",
+  "bundleId": "com.evolve.chronoflux"
+}

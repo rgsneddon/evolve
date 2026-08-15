@@ -1,6 +1,6 @@
 # Mac session runbook — Evolve suite (Android + macOS + iOS)
 
-**Machine split:** this Mac produces Android, macOS, and iOS. The Windows laptop produces Windows, Linux, and Arch Linux. See [MACHINE_SPLIT.md](MACHINE_SPLIT.md).
+**Machine split:** this Mac produces Android, macOS, and iOS (one IPA covers iPhone **and** iPad). The Windows laptop produces Windows, Linux, and Arch Linux. See [MACHINE_SPLIT.md](MACHINE_SPLIT.md). Current pin handover: [HANDOVER_4.2.1_APPLE.md](HANDOVER_4.2.1_APPLE.md).
 
 Use this on a Mac with Xcode (Apple) and the Android SDK when preparing this machine’s commit deliverables. The Windows laptop builds Windows, Linux, and Arch Linux.
 

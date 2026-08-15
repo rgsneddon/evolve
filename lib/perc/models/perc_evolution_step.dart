@@ -9,6 +9,7 @@ class PercEvolutionStep {
     required this.evolutionEpoch,
     this.previousAppVersion = '',
     this.parentChronofluxFingerprint = '',
+    this.principia,
   });
 
   final String appVersion;
@@ -22,6 +23,9 @@ class PercEvolutionStep {
   /// Fingerprint of the parent evolution step, when available.
   final String parentChronofluxFingerprint;
 
+  /// Tweet-core Principia fields at this evolution hop (ledger hop/density).
+  final Map<String, dynamic>? principia;
+
   bool get hasParentLink =>
       previousAppVersion.isNotEmpty || parentChronofluxFingerprint.isNotEmpty;
 
@@ -34,6 +38,7 @@ class PercEvolutionStep {
     int? evolutionEpoch,
     String? previousAppVersion,
     String? parentChronofluxFingerprint,
+    Map<String, dynamic>? principia,
   }) =>
       PercEvolutionStep(
         appVersion: appVersion ?? this.appVersion,
@@ -45,6 +50,7 @@ class PercEvolutionStep {
         previousAppVersion: previousAppVersion ?? this.previousAppVersion,
         parentChronofluxFingerprint:
             parentChronofluxFingerprint ?? this.parentChronofluxFingerprint,
+        principia: principia ?? this.principia,
       );
 
   Map<String, dynamic> toJson() => {
@@ -58,6 +64,7 @@ class PercEvolutionStep {
           'previousAppVersion': previousAppVersion,
         if (parentChronofluxFingerprint.isNotEmpty)
           'parentChronofluxFingerprint': parentChronofluxFingerprint,
+        if (principia != null) 'principia': principia,
       };
 
   factory PercEvolutionStep.fromJson(Map<String, dynamic> json) =>
@@ -71,5 +78,8 @@ class PercEvolutionStep {
         previousAppVersion: '${json['previousAppVersion'] ?? ''}',
         parentChronofluxFingerprint:
             '${json['parentChronofluxFingerprint'] ?? ''}',
+        principia: json['principia'] is Map
+            ? Map<String, dynamic>.from(json['principia'] as Map)
+            : null,
       );
 }

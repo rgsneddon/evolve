@@ -1,0 +1,11 @@
+{
+  "name": "evolve-v4.2.1-android-setup.apk",
+  "version": "4.2.1",
+  "build": "181",
+  "platform": "android",
+  "sizeBytes": 80302643,
+  "sizeMb": 76.6,
+  "sha256": "pending-mac-rebuild",
+  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.2.1/evolve-v4.2.1-android-setup.apk",
+  "signing": "release-key"
+}

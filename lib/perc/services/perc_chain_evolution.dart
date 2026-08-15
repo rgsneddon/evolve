@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import '../../models/scenario_input.dart';
+import '../../services/chronoflux_principia.dart';
 import '../models/perc_evolution_step.dart';
 import '../perc_app_version.dart';
 import '../perc_chain_constants.dart';
@@ -54,6 +57,23 @@ class PercChainEvolution {
     final verification = _verifier.verify(principiaAnchor);
     final parentStep =
         ledger.evolutionSteps.isEmpty ? null : ledger.evolutionSteps.last;
+    final hopDensity = ledger.accounts.isEmpty
+        ? 0.0
+        : ledger.blockHeight / math.max(1, ledger.accounts.length);
+    final principia = ChronofluxPrincipia.fromHopDensity(
+      density: hopDensity.clamp(0.0, 1.5),
+      pressure: (ledger.evolutionEpoch / (ledger.evolutionEpoch + 4)).clamp(
+        0.0,
+        1.0,
+      ),
+      flow: ledger.totalMicroblocks > 0
+          ? (ledger.microblockCount / math.max(1, ledger.totalMicroblocks))
+              .clamp(0.0, 1.0)
+          : 0.0,
+      anisotropy: (ledger.networkNodes.length / math.max(1, ledger.accounts.length))
+          .clamp(0.0, 1.0),
+      hops: ledger.blockHeight,
+    );
     final step = PercEvolutionStep(
       appVersion: appVersion,
       timestamp: (now ?? DateTime.now()).toUtc(),
@@ -63,6 +83,7 @@ class PercChainEvolution {
       evolutionEpoch: ledger.evolutionEpoch,
       previousAppVersion: parentStep?.appVersion ?? lastVersion ?? '',
       parentChronofluxFingerprint: parentStep?.chronofluxFingerprint ?? '',
+      principia: principia.toJson(),
     );
 
     ledger.evolutionSteps = [...ledger.evolutionSteps, step];
