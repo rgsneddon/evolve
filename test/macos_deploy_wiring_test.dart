@@ -56,7 +56,7 @@ void main() {
     expect(script, contains(r'build\downloads\v'));
     expect(script, contains('Test-MacosBuildHost'));
     expect(script, contains('SkipMacosBuild'));
-    expect(script, contains('github.com/rgsneddon'));
+    expect(script, contains('Get-EvolveReleaseDownloadBase'));
   });
 
   test('Mac runbook covers tools, signing, IPA, macOS build, handoff', () {
@@ -69,6 +69,33 @@ void main() {
     expect(runbook, contains('build/downloads'));
     expect(runbook, contains('perccent_wallet'));
     expect(runbook, contains('GitHub Releases'));
+    expect(runbook, contains('GITHUB_RELEASES.md'));
+    expect(runbook, contains('upload_release_assets.ps1'));
+  });
+
+  test('publish and upload attach every platform to vX.Y.Z only', () {
+    final policy = evolveRepoFile('docs/GITHUB_RELEASES.md').readAsStringSync();
+    expect(policy, contains('vX.Y.Z'));
+    expect(policy, contains('This Windows PC'));
+    expect(policy, contains('Mac'));
+    expect(policy, contains('Never'));
+    expect(policy, contains('v4.1.12-macos-ios-android'));
+
+    final publish =
+        evolveRepoFile('scripts/publish_github_release.ps1').readAsStringSync();
+    expect(publish, contains('Get-EvolveCanonicalReleaseTag'));
+    expect(publish, contains('attaching assets to the same version tag'));
+    expect(publish, contains('one GitHub Release per version'));
+
+    final upload =
+        evolveRepoFile('scripts/upload_release_assets.ps1').readAsStringSync();
+    expect(upload, contains('Get-EvolveCanonicalReleaseTag'));
+    expect(upload, isNot(contains('macos-ios-android')));
+
+    final winDoc = evolveRepoFile('docs/WINDOWS_RELEASES.md').readAsStringSync();
+    expect(winDoc, contains('vX.Y.Z'));
+    expect(winDoc, contains('Linux'));
+    expect(winDoc, contains('Arch'));
   });
 
   test('macOS update URLs prefer GitHub Releases zip', () {

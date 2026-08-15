@@ -82,38 +82,31 @@ flutter build macos --release
 
 Use that repo’s packaging scripts if present (`scripts/build_*_installer.ps1`). Stage outputs under its `build/downloads/v{version}/`.
 
-## 5. Artifact handoff into the Windows release pipeline
+## 5. GitHub Releases — same tag as Windows (required)
 
-Binaries ship on **GitHub Releases**. gh-pages hosts checksums + downloads index only.
+**Full policy:** [GITHUB_RELEASES.md](GITHUB_RELEASES.md).
 
-1. Copy Mac-built packages into the Windows clone (or shared drive):
+Android, macOS, and iOS for version `X.Y.Z` attach to **`vX.Y.Z` only** — the same release Windows/Linux/Arch use. Never `vX.Y.Z-macos-ios-android`.
 
-   ```
-   evolve_app/build/downloads/v{version}/
-     evolve-v{version}-ios-setup.ipa
-     evolve-v{version}-ios-setup.ipa.sha256
-     evolve-v{version}-macos-x64.zip
-     evolve-v{version}-macos-x64.zip.sha256
-   ```
+```powershell
+# After packaging on the Mac:
+pwsh ./scripts/sign_download_packages.ps1 -Version {version}
+pwsh ./scripts/upload_release_assets.ps1 -Version {version}          # draft if missing
+# When this version is complete on both machines:
+# pwsh ./scripts/upload_release_assets.ps1 -Version {version} -PublishNow
+```
 
-2. On Windows (or any host with the repo):
+You may still copy Mac artifacts into the Windows clone for checksum/index updates:
 
-   ```powershell
-   cd evolve_app
-   # If you only have raw Flutter outputs, package without rebuilding:
-   ./scripts/build_ios_installer.ps1 -SkipIosBuild
-   ./scripts/build_macos_installer.ps1 -SkipMacosBuild
-   ./scripts/sign_download_packages.ps1 -Version {version}
-   ```
+```
+evolve/build/downloads/v{version}/
+  evolve-v{version}-ios-setup.ipa
+  evolve-v{version}-macos-x64.zip
+  evolve-v{version}-android-setup.apk
+  *.sha256
+```
 
-3. Publish:
-
-   ```powershell
-   ./scripts/deploy_downloads.ps1 -Version {version}   # checksums + index to gh-pages
-   ./scripts/publish_github_release.ps1 -Version {version} -SkipBuild -SkipCodeSign
-   ```
-
-4. Update `download.html` / downloads cards if a new platform card is required (iOS already present; add macOS card when first shipping desktop).
+Then on either machine: `./scripts/deploy_downloads.ps1 -Version {version}` (gh-pages checksums + index). Update `download.html` / downloads cards so every platform href is `…/releases/download/v{version}/…`.
 
 ## 6. Quick checks before leaving the Mac
 

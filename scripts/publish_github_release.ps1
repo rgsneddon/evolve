@@ -8,6 +8,8 @@ param(
     [switch]$SkipTests,
     [switch]$SkipPages,
     [switch]$RecreateRelease,
+    [switch]$Draft,
+    [switch]$PublishNow,
     [switch]$DryRun,
     [switch]$SkipCodeSign,
     [string]$EvidenceDir = ''
@@ -25,6 +27,9 @@ $Root = Split-Path $PSScriptRoot -Parent
 
 $tag = Get-EvolveCanonicalReleaseTag -Version $Version
 $versionNoV = $tag -replace '^v', ''
+if ($Version -match '[A-Za-z]' -and $Version -notmatch '^v?[0-9.]+$') {
+    Write-Host "Stripped platform suffix from '$Version' -> $tag (one GitHub Release per version)." -ForegroundColor Yellow
+}
 $pagesBranch = 'gh-pages'
 $owner = Get-GitHubOwner -Root $Root
 $remote = "https://github.com/$owner/$RepoName.git"
@@ -282,6 +287,7 @@ $ErrorActionPreference = $prevEap
 
 $publishMode = 'create'
 if ($releaseExists -and $RecreateRelease) {
+    Write-Host "WARNING: RecreateRelease deletes $tag. GitHub immutable tags cannot be reused. Prefer uploading onto the existing $tag." -ForegroundColor Yellow
     Write-Host "Deleting release $tag for clean recreate (tag preserved)." -ForegroundColor Yellow
     & gh release delete $tag --repo "$owner/$RepoName" --yes --cleanup-tag=false
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -292,18 +298,31 @@ if ($releaseExists -and $RecreateRelease) {
 $notesFile = Join-Path $env:TEMP "evolve-release-notes-$tag.md"
 [System.IO.File]::WriteAllText($notesFile, $notes, (New-Object System.Text.UTF8Encoding $false))
 
+# One GitHub Release per version number. Windows/Linux/Arch and Mac (Android/macOS/iOS)
+# must attach to this same $tag — never a platform-suffix sibling.
 if ($releaseExists) {
-    Write-Host "Release $tag exists; uploading refreshed assets (--clobber)." -ForegroundColor Yellow
-    $publishMode = 'clobber'
-    & gh release edit $tag --repo "$owner/$RepoName" --notes-file $notesFile
+    Write-Host "Release $tag exists; attaching assets to the same version tag." -ForegroundColor Yellow
+    $publishMode = 'attach'
+    $editArgs = @($tag, '--repo', "$owner/$RepoName", '--notes-file', $notesFile)
+    if ($PublishNow) { $editArgs += @('--draft=false', '--latest') }
+    & gh release edit @editArgs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     & gh release upload $tag --repo "$owner/$RepoName" --clobber @assets
 } else {
-    & gh release create $tag `
-        --repo "$owner/$RepoName" `
-        --title "Evolve Chronoflux $tag" `
-        --notes-file $notesFile `
-        @assets
+    $createArgs = @(
+        $tag,
+        '--repo', "$owner/$RepoName",
+        '--title', "Evolve Chronoflux $tag",
+        '--notes-file', $notesFile
+    )
+    if ($Draft -and -not $PublishNow) {
+        $createArgs += '--draft'
+        $publishMode = 'draft'
+    } elseif ($PublishNow) {
+        $createArgs += '--latest'
+        $publishMode = 'create-latest'
+    }
+    & gh release create @createArgs @assets
 }
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

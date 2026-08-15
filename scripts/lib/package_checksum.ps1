@@ -13,10 +13,7 @@ function Get-EvolveCanonicalReleaseTag {
         $v = $v.Substring(1)
     }
     if ($v -match '^(\d+(?:\.\d+)+)') {
-        $tag = "v$($Matches[1])"
-        # GitHub reserved v4.1.11 after an immutable-release delete; the published unified tag is v4.1.11-bundle.
-        if ($tag -eq 'v4.1.11') { return 'v4.1.11-bundle' }
-        return $tag
+        return "v$($Matches[1])"
     }
     throw "Invalid Evolve version: $Version"
 }
