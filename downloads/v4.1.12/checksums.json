@@ -1,44 +1,92 @@
-{
-  "version": "4.1.12",
-  "build": "179",
-  "files": [
-    {
-      "name": "evolve-v4.1.12-android-setup.apk",
-      "version": "4.1.12",
-      "build": "179",
-      "platform": "android",
-      "sizeBytes": 80302463,
-      "sizeMb": 76.6,
-      "sha256": "e7e20ea3417af29cb6881252c2a43b53f74ce47967801637c80f7de7fd96d322",
-      "sha512": "d88d983fe30082170c985131bab37685fb2967acd076233ae4d6da0251bc1a16ece8273ed803025d5d0f9d839b11a19c57269ae9ad9f910475ec38c31dc5d5e3",
-      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-android-setup.apk",
-      "signing": "release-key"
-    },
-    {
-      "name": "evolve-v4.1.12-ios-setup.ipa",
-      "version": "4.1.12",
-      "build": "179",
-      "platform": "ios",
-      "sizeBytes": 23262929,
-      "sizeMb": 22.2,
-      "sha256": "d4b711e1646d5bac21c981aaa71b154641f0fd69a67b316b292f97761561043f",
-      "sha512": "c689b0e4833ee691e6af3f7d6a8dbf5c74978031a40fa4f083d9760253192e3e3af7893f6ffc0da2315205b6d5c9b448dbaf2c4c15638ffa29a0e1b82ad25276",
-      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-ios-setup.ipa",
-      "signing": "Apple Distribution",
-      "bundleId": "com.evolve.chronoflux"
-    },
-    {
-      "name": "evolve-v4.1.12-macos-x64.zip",
-      "version": "4.1.12",
-      "build": "179",
-      "platform": "macos",
-      "sizeBytes": 22328329,
-      "sizeMb": 21.3,
-      "sha256": "31d2bc79f02f1c7db65d5ddc892c43e2871931faeb7197dc9f542b16c2a7c5e7",
-      "sha512": "05a5458c027c45adf5266a73294b1885043d3dcba3dde4e9d417af8dceb1b67b2712ded1ed920310bd1a3172a33f6d97baddf0c755ee92cd1789049c452e2d14",
-      "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-macos-x64.zip",
-      "signing": "Developer ID Application + hardened runtime + notarized",
-      "bundleId": "com.evolve.chronoflux"
-    }
-  ]
+﻿{
+    "build":  "179",
+    "version":  "4.1.12",
+    "algorithms":  [
+                       "SHA256",
+                       "SHA512"
+                   ],
+    "files":  [
+                  {
+                      "url":  "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-android-setup.apk",
+                      "build":  "179",
+                      "platform":  "android",
+                      "version":  "4.1.12",
+                      "sizeMb":  76.6,
+                      "sha512":  "d88d983fe30082170c985131bab37685fb2967acd076233ae4d6da0251bc1a16ece8273ed803025d5d0f9d839b11a19c57269ae9ad9f910475ec38c31dc5d5e3",
+                      "name":  "evolve-v4.1.12-android-setup.apk",
+                      "sha256":  "e7e20ea3417af29cb6881252c2a43b53f74ce47967801637c80f7de7fd96d322",
+                      "signing":  "release-key",
+                      "sizeBytes":  80302463
+                  },
+                  {
+                      "url":  "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-ios-setup.ipa",
+                      "build":  "179",
+                      "platform":  "ios",
+                      "version":  "4.1.12",
+                      "bundleId":  "com.evolve.chronoflux",
+                      "sizeMb":  22.2,
+                      "sha512":  "c689b0e4833ee691e6af3f7d6a8dbf5c74978031a40fa4f083d9760253192e3e3af7893f6ffc0da2315205b6d5c9b448dbaf2c4c15638ffa29a0e1b82ad25276",
+                      "name":  "evolve-v4.1.12-ios-setup.ipa",
+                      "sha256":  "d4b711e1646d5bac21c981aaa71b154641f0fd69a67b316b292f97761561043f",
+                      "signing":  "Apple Distribution",
+                      "sizeBytes":  23262929
+                  },
+                  {
+                      "url":  "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-macos-x64.zip",
+                      "build":  "179",
+                      "platform":  "macos",
+                      "version":  "4.1.12",
+                      "bundleId":  "com.evolve.chronoflux",
+                      "sizeMb":  21.3,
+                      "sha512":  "05a5458c027c45adf5266a73294b1885043d3dcba3dde4e9d417af8dceb1b67b2712ded1ed920310bd1a3172a33f6d97baddf0c755ee92cd1789049c452e2d14",
+                      "name":  "evolve-v4.1.12-macos-x64.zip",
+                      "sha256":  "31d2bc79f02f1c7db65d5ddc892c43e2871931faeb7197dc9f542b16c2a7c5e7",
+                      "signing":  "Developer ID Application + hardened runtime + notarized",
+                      "sizeBytes":  22328329
+                  },
+                  {
+                      "url":  "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-windows-x64-setup.exe",
+                      "build":  "179",
+                      "platform":  "windows",
+                      "version":  "4.1.12",
+                      "sizeMb":  13.5,
+                      "sha512":  "aa534c5e04c0fea351cb23c4e867a31dc03a034496a01291d4902f0688a87d5cdd185bc7cccf680c5b8db447d36ca0dfbe037b5af145c17e966c5a443ba56167",
+                      "name":  "evolve-v4.1.12-windows-x64-setup.exe",
+                      "sha256":  "76bc1a421d4f5ca6c31c9d47fdba77663155b4e27787e1129f0e618ad32a32a7",
+                      "signing":  "checksum-verified",
+                      "sizeBytes":  14131525
+                  }
+              ],
+    "packages":  [
+                     {
+                         "sha512":  "d88d983fe30082170c985131bab37685fb2967acd076233ae4d6da0251bc1a16ece8273ed803025d5d0f9d839b11a19c57269ae9ad9f910475ec38c31dc5d5e3",
+                         "sha256":  "e7e20ea3417af29cb6881252c2a43b53f74ce47967801637c80f7de7fd96d322",
+                         "url":  "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-android-setup.apk",
+                         "file":  "evolve-v4.1.12-android-setup.apk",
+                         "bytes":  80302463
+                     },
+                     {
+                         "sha512":  "c689b0e4833ee691e6af3f7d6a8dbf5c74978031a40fa4f083d9760253192e3e3af7893f6ffc0da2315205b6d5c9b448dbaf2c4c15638ffa29a0e1b82ad25276",
+                         "sha256":  "d4b711e1646d5bac21c981aaa71b154641f0fd69a67b316b292f97761561043f",
+                         "url":  "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-ios-setup.ipa",
+                         "file":  "evolve-v4.1.12-ios-setup.ipa",
+                         "bytes":  23262929
+                     },
+                     {
+                         "sha512":  "05a5458c027c45adf5266a73294b1885043d3dcba3dde4e9d417af8dceb1b67b2712ded1ed920310bd1a3172a33f6d97baddf0c755ee92cd1789049c452e2d14",
+                         "sha256":  "31d2bc79f02f1c7db65d5ddc892c43e2871931faeb7197dc9f542b16c2a7c5e7",
+                         "url":  "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-macos-x64.zip",
+                         "file":  "evolve-v4.1.12-macos-x64.zip",
+                         "bytes":  22328329
+                     },
+                     {
+                         "sha512":  "aa534c5e04c0fea351cb23c4e867a31dc03a034496a01291d4902f0688a87d5cdd185bc7cccf680c5b8db447d36ca0dfbe037b5af145c17e966c5a443ba56167",
+                         "sha256":  "76bc1a421d4f5ca6c31c9d47fdba77663155b4e27787e1129f0e618ad32a32a7",
+                         "url":  "https://github.com/rgsneddon/evolve/releases/download/v4.1.12/evolve-v4.1.12-windows-x64-setup.exe",
+                         "file":  "evolve-v4.1.12-windows-x64-setup.exe",
+                         "bytes":  14131525
+                     }
+                 ],
+    "generatedAt":  "2026-08-15T11:15:04.5756064Z",
+    "minimumAlgorithm":  "SHA256"
 }
