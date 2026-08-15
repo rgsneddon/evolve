@@ -18,6 +18,18 @@
 
 Stage everything under `build/downloads/vX.Y.Z/` with the usual names (`evolve-vX.Y.Z-windows-x64-setup.exe`, `…-android-setup.apk`, `…-macos-x64.zip`, `…-ios-setup.ipa`, `…-linux-x64.tar.gz`, `…-archlinux-x86_64.pkg.tar.zst`) plus `.sha256` sidecars.
 
+## Sync `main` before any package build
+
+Both machines build from **the same `origin/main` tip**. After the Mac pushes (or after you push from the laptop), the other machine:
+
+```powershell
+git fetch origin
+git checkout main
+git pull origin main
+```
+
+Do not build Windows / Linux / Arch from a clone that is behind `origin/main`. The laptop learns about Mac commits only by pulling GitHub — there is no other handoff.
+
 ## Deploy order (4.1.12 and later)
 
 1. **First machine** (whichever finishes first) creates a **draft** on `vX.Y.Z` and uploads its packages:

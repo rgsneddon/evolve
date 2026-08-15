@@ -5,6 +5,19 @@
 
 For version `X.Y.Z` you build **Windows**, **Linux**, and **Arch**. Upload them to tag **`vX.Y.Z`**. The Mac adds Android / macOS / iOS to **that same release**. Do not open `vX.Y.Z-windows` or any other sibling.
 
+**Always pull `main` first.** Windows / Linux / Arch builds must use the same commits the Mac already pushed (wallet tip-sync, Android Grok X Premium, version pin). Do not package from a stale clone.
+
+```powershell
+cd C:\Users\rgsne\evolve
+git fetch origin
+git checkout main
+git pull origin main
+git log -1 --oneline
+# confirm this matches https://github.com/rgsneddon/evolve/commits/main
+```
+
+Then package:
+
 ```powershell
 cd C:\Users\rgsne\evolve
 # after build_windows_installer / Linux / Arch packaging:

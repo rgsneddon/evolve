@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:evolve/models/grok_session.dart';
 import 'package:evolve/services/grok_auth_client.dart';
 import 'package:evolve/services/grok_oauth_flow.dart';
 import 'package:evolve/services/grok_oauth_redirect_io.dart';
@@ -12,15 +14,31 @@ void main() {
     expect(GrokOAuthRedirect.callbackScheme, 'evolve');
   });
 
-  test('desktop proxy config keeps localhost callback', () {
-    final config = GrokProxyConfig(
-      port: 8787,
-      mock: false,
-      xClientId: 'test-client',
-      xClientSecret: 'desktop-secret',
+  test('canConstrue requires connected premium non-mock X session', () {
+    expect(
+      const GrokSession(connected: true, premium: true, mock: false).canConstrue,
+      isTrue,
     );
-    expect(config.redirectUri, 'http://127.0.0.1:8787/auth/callback');
-    expect(config.effectiveClientSecret, 'desktop-secret');
+    expect(
+      const GrokSession(connected: true, premium: true, mock: true).canConstrue,
+      isFalse,
+    );
+  });
+
+  test('desktop proxy config keeps localhost callback', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    try {
+      final config = GrokProxyConfig(
+        port: 8787,
+        mock: false,
+        xClientId: 'test-client',
+        xClientSecret: 'desktop-secret',
+      );
+      expect(config.redirectUri, 'http://127.0.0.1:8787/auth/callback');
+      expect(config.effectiveClientSecret, 'desktop-secret');
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   test('sessionFromCallbackUri reports oauth errors', () async {

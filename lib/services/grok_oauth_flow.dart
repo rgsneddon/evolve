@@ -13,10 +13,21 @@ class GrokOAuthFlow {
 
   static bool get usesMobileDeepLink => GrokOAuthRedirect.usesMobileRedirect;
 
+  /// Tests replace the browser tab with a scripted callback.
+  @visibleForTesting
+  static Future<GrokSession> Function({
+    required Uri authorizeUrl,
+    required GrokAuthClient auth,
+  })? completeAuthorizationOverride;
+
   static Future<GrokSession> completeAuthorization({
     required Uri authorizeUrl,
     required GrokAuthClient auth,
   }) async {
+    final override = completeAuthorizationOverride;
+    if (override != null) {
+      return override(authorizeUrl: authorizeUrl, auth: auth);
+    }
     if (!usesMobileDeepLink) {
       throw UnsupportedError('Mobile OAuth flow is not available on this platform');
     }

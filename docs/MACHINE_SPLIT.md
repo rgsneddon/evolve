@@ -22,4 +22,6 @@ This Mac builds Android / macOS / iOS for the current line. Windows / Linux / Ar
 
 GitHub-commit packages for this line attach to one tag, **`v{version}`** (today `v4.1.12`). This Mac uploads Android / macOS / iOS onto that tag; the laptop uploads Windows / Linux / Arch onto the same tag. Do not open a `v{version}-macos-ios-android` sibling. See [GITHUB_RELEASES.md](GITHUB_RELEASES.md).
 
+The laptop sees Mac commits only after `git pull origin main`. Pull before every Windows / Linux / Arch rebuild so those packages include the same `main` tip (see [WINDOWS_RELEASES.md](WINDOWS_RELEASES.md)).
+
 See [MAC_BUILDS.md](MAC_BUILDS.md) (this Mac) and [WINDOWS_HANDOFF_4.1.9.md](WINDOWS_HANDOFF_4.1.9.md) (laptop PE history).

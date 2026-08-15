@@ -13,6 +13,10 @@ class GrokOAuthRedirect {
 
   static bool get usesMobileRedirect {
     if (kIsWeb) return false;
+    if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      return true;
+    }
     return Platform.isAndroid || Platform.isIOS;
   }
 

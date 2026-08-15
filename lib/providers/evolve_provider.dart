@@ -84,7 +84,6 @@ class EvolveProvider extends ChangeNotifier {
   int freshSession = 0;
   String _grokProxyBaseUrl = '';
   bool _grokConfigReady = false;
-  bool _androidHeuristicFallback = false;
   String? grokPendingAuthorizeUrl;
 
   final Map<AnalysisMode, ScenarioInput> _savedInputs = {};
@@ -108,7 +107,7 @@ class EvolveProvider extends ChangeNotifier {
   bool get _usesInBrowserGrok =>
       GrokServiceConfig.usesInBrowserConstrual(_grokProxyBaseUrl);
 
-  bool get _usesHeuristicConstrual => _usesInBrowserGrok || _androidHeuristicFallback;
+  bool get _usesHeuristicConstrual => _usesInBrowserGrok;
 
   /// True when a Grok proxy URL is configured (local or remote) for X OAuth + live construal.
   bool get grokProxyConfigured => _grokProxyBaseUrl.isNotEmpty;
@@ -116,7 +115,7 @@ class EvolveProvider extends ChangeNotifier {
   /// GitHub Pages / HTTPS web with no hosted proxy — uses in-browser heuristic construal.
   bool get grokUsesHeuristicWeb => _usesInBrowserGrok;
 
-  /// Web or Android fallback — no live proxy / X OAuth required for construal.
+  /// In-browser web only — Android must use live X Premium, never heuristic.
   bool get grokUsesHeuristicMode => _usesHeuristicConstrual;
 
   /// Grok construal can run (live proxy or heuristic mode).
@@ -195,7 +194,6 @@ class EvolveProvider extends ChangeNotifier {
     }
     await _ensureGrokProxyResolved();
     if (_usesInBrowserGrok) {
-      _androidHeuristicFallback = false;
       return true;
     }
 
@@ -203,7 +201,6 @@ class EvolveProvider extends ChangeNotifier {
       try {
         await GrokProxyLauncher.instance.ensureRunning();
         if (GrokProxyLauncher.instance.isEmbedded) {
-          _androidHeuristicFallback = false;
           final port = GrokProxyLauncher.instance.port;
           final local = 'http://127.0.0.1:$port';
           if (_grokProxyBaseUrl != local) {
@@ -216,9 +213,6 @@ class EvolveProvider extends ChangeNotifier {
         if (await _activeGrokAuth.isProxyReachable()) {
           return true;
         }
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          return _activateAndroidHeuristicFallback();
-        }
         return false;
       }
       if (await _activeGrokAuth.isProxyReachable()) {
@@ -226,29 +220,10 @@ class EvolveProvider extends ChangeNotifier {
       }
     }
 
-    final reachable = await _activeGrokAuth.isProxyReachable();
-    if (!reachable &&
-        !kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android) {
-      return _activateAndroidHeuristicFallback();
-    }
-    return reachable;
+    return _activeGrokAuth.isProxyReachable();
   }
-
-  bool _activateAndroidHeuristicFallback() {
-    _androidHeuristicFallback = true;
-    notifyListeners();
-    return true;
-  }
-
-  @visibleForTesting
-  bool activateAndroidHeuristicFallbackForTest() =>
-      _activateAndroidHeuristicFallback();
 
   String _heuristicReadyMessage() {
-    if (_androidHeuristicFallback) {
-      return strings.t('grok_android_heuristic_ready');
-    }
     if (_usesInBrowserGrok) {
       return strings.t('grok_web_heuristic_ready');
     }
@@ -286,7 +261,12 @@ class EvolveProvider extends ChangeNotifier {
     );
   }
 
-  GrokAuthClient get _activeGrokAuth => GrokAuthClient(baseUrl: _grokProxyBaseUrl);
+  GrokAuthClient get _activeGrokAuth {
+    if (_grokProxyBaseUrl.isEmpty || _grokProxyBaseUrl == _grokAuth.baseUrl) {
+      return _grokAuth;
+    }
+    return GrokAuthClient(baseUrl: _grokProxyBaseUrl);
+  }
 
   GrokConstrualService get _activeGrokConstrual {
     final base = _grokProxyBaseUrl;
@@ -377,18 +357,10 @@ class EvolveProvider extends ChangeNotifier {
 
     if (!grokSession.canConstrue) {
       if (!context.mounted) return;
-      if (!kIsWeb &&
-          defaultTargetPlatform == TargetPlatform.android &&
-          GrokProxyLauncher.instance.isEmbedded &&
-          GrokProxyLauncher.instance.usesMockConfig) {
-        _activateAndroidHeuristicFallback();
-        _finishHeuristicActivation(context);
-        return;
-      }
       final ok = await _connectGrok(context);
       if (!grokConstrualEnabled) return;
       if (!ok) {
-        grokConstrualEnabled = false;
+        // Keep Use on so the user can retry Sign in with X.
         isConnectingGrok = false;
         notifyListeners();
         if (context.mounted && statusMessage != null) {
@@ -499,9 +471,17 @@ class EvolveProvider extends ChangeNotifier {
       if (login.mock &&
           !kIsWeb &&
           defaultTargetPlatform == TargetPlatform.android) {
-        _activateAndroidHeuristicFallback();
-        _finishHeuristicActivation(context);
-        return true;
+        statusMessage = strings.t('grok_mock_mode_blocked');
+        grokSession = const GrokSession();
+        if (context.mounted) {
+          _showGrokSnackBar(context, statusMessage!, isError: true);
+          await _showGrokDialog(
+            context,
+            title: strings.t('grok_connect_title'),
+            body: strings.t('grok_mock_mode_blocked'),
+          );
+        }
+        return false;
       }
 
       final authorize = login.authorizeUrl;
