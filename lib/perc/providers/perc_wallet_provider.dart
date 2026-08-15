@@ -96,10 +96,7 @@ class PercWalletProvider extends ChangeNotifier {
   bool get registrationAwaitingSeedAlignment =>
       _registrationAwaitingSeedAlignment;
   bool get isWalletConnectComplete =>
-      hasAppAccess &&
-      !_postLoginSyncing &&
-      !_pendingSeedSetup &&
-      !_registrationAwaitingSeedAlignment;
+      hasAppAccess && !_postLoginSyncing && !_pendingSeedSetup;
   bool get sessionTimedOut => _sessionTimedOut;
   bool get isBlockchainLaunched => _ledger.isBlockchainLaunched;
   bool get isLoggedIn => _ledger.isLoggedIn;
@@ -468,6 +465,12 @@ class PercWalletProvider extends ChangeNotifier {
       _seedSetupUsername = null;
       _seedSetupMnemonic = null;
       _seedSetupPassword = null;
+      _materializeLocalRegistrationAccount(
+        username: username,
+        password: password,
+        seedMnemonic: mnemonic,
+      );
+      _postLoginSyncing = false;
       _armSessionTimeout();
       notifyListeners();
       await _completeRegistrationSessionStart(
@@ -613,7 +616,6 @@ class PercWalletProvider extends ChangeNotifier {
     required String statusKey,
     List<String>? seedMnemonic,
   }) async {
-    _postLoginSyncing = true;
     _registrationAwaitingSeedAlignment = false;
     notifyListeners();
     try {
@@ -623,6 +625,71 @@ class PercWalletProvider extends ChangeNotifier {
         seedMnemonic: seedMnemonic,
       );
 
+      _materializeLocalRegistrationAccount(
+        username: username,
+        password: password,
+        seedMnemonic: seedMnemonic,
+      );
+      await PercLedgerHub.instance.persistLocal();
+      // Splash must enter as soon as the local wallet exists. Tip sync continues
+      // in the background and must not hold Wallet loading… on a dead :9477.
+      _postLoginSyncing = false;
+      notifyListeners();
+
+      if (sessionTimeoutEnabled) {
+        unawaited(
+          _adoptRegistrationChain(
+            username: username,
+            password: password,
+            seedMnemonic: seedMnemonic,
+            statusKey: statusKey,
+          ),
+        );
+      } else {
+        await _adoptRegistrationChain(
+          username: username,
+          password: password,
+          seedMnemonic: seedMnemonic,
+          statusKey: statusKey,
+        );
+      }
+    } finally {
+      _postLoginSyncing = false;
+      // Successful local registration must not leave a sticky generic banner
+      // from a prior attempt or a best-effort seed attach glitch.
+      if (isLoggedIn) {
+        _clearStaleBootError();
+      }
+      notifyListeners();
+    }
+  }
+
+  void _materializeLocalRegistrationAccount({
+    required String username,
+    required String password,
+    List<String>? seedMnemonic,
+  }) {
+    final existing = _ledger.accounts[username];
+    if (existing == null || !existing.passwordSet) {
+      if (existing != null) _ledger.accounts.remove(username);
+      _ledger.register(username, password);
+    }
+    _ledger.login(username, password);
+    if (seedMnemonic != null && seedMnemonic.isNotEmpty) {
+      _ledger.attachSeedRecoveryEnvelope(
+        username: username,
+        mnemonic: seedMnemonic,
+      );
+    }
+  }
+
+  Future<void> _adoptRegistrationChain({
+    required String username,
+    required String password,
+    required String statusKey,
+    List<String>? seedMnemonic,
+  }) async {
+    try {
       final adoption =
           await PercLedgerHub.instance.adoptSeedChainForRegistration(
         username: username,
@@ -656,10 +723,9 @@ class PercWalletProvider extends ChangeNotifier {
           },
         );
       }
+    } catch (_) {
+      // Background tip adopt must not undo local registration.
     } finally {
-      _postLoginSyncing = false;
-      // Successful local registration must not leave a sticky generic banner
-      // from a prior attempt or a best-effort seed attach glitch.
       if (isLoggedIn) {
         _clearStaleBootError();
       }

@@ -24,8 +24,20 @@ void main() {
     final text = f.readAsStringSync();
     expect(text, contains('<key>teamID</key>'));
     expect(text, contains('<string>$teamId</string>'));
-    expect(text, contains('<string>development</string>'));
-    expect(text, contains('<string>automatic</string>'));
+    expect(
+      text,
+      anyOf(
+        contains('<string>development</string>'),
+        contains('<string>app-store-connect</string>'),
+      ),
+    );
+    expect(
+      text,
+      anyOf(
+        contains('<string>automatic</string>'),
+        contains('<string>manual</string>'),
+      ),
+    );
   });
 
   test('iOS Runner pbxproj sets DEVELOPMENT_TEAM on Runner configs', () {

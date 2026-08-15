@@ -4,6 +4,7 @@ import 'package:evolve/l10n/app_localizations.dart';
 import 'package:evolve/perc/models/perc_faucet_credit_result.dart';
 import 'package:evolve/perc/providers/perc_wallet_provider.dart';
 import 'package:evolve/perc/services/perc_ledger_hub.dart';
+import 'package:evolve/perc/services/perc_network_config.dart';
 import 'package:evolve/perc/services/perc_send_receive_actions.dart';
 import 'package:evolve/perc/services/perc_wallet_store_memory.dart';
 import 'package:evolve/models/locale_config.dart';
@@ -22,6 +23,8 @@ Future<PercWalletProvider> _fundedSender() async {
 void main() {
   setUp(() {
     PercLedgerHub.resetForTest();
+    PercNetworkConfig.resetForTest();
+    PercNetworkConfig.setCachedForTest(const PercNetworkConfig());
     PercWalletProvider.sessionTimeoutEnabled = false;
   });
 

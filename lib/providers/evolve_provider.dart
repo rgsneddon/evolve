@@ -26,6 +26,11 @@ import '../services/input_edit_guard.dart';
 import '../services/pathway_construal_service.dart';
 
 class EvolveProvider extends ChangeNotifier {
+  /// Widget tests skip the in-process Grok HTTP server so [HttpClient]
+  /// idle timers do not keep the suite alive. Grok-specific tests reset
+  /// this to false and start the proxy themselves.
+  static bool skipEmbeddedGrokProxyForTests = false;
+
   EvolveProvider({
     EvolveEngine? engine,
     NarrativeLinkReader? linkReader,
@@ -184,6 +189,10 @@ class EvolveProvider extends ChangeNotifier {
 
   /// Resolves proxy URL (web) and starts embedded proxy (Windows/Android/desktop).
   Future<bool> _ensureGrokProxyReady() async {
+    if (skipEmbeddedGrokProxyForTests) {
+      await _ensureGrokProxyResolved();
+      return _grokProxyBaseUrl.isNotEmpty;
+    }
     await _ensureGrokProxyResolved();
     if (_usesInBrowserGrok) {
       _androidHeuristicFallback = false;

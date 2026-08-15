@@ -16,6 +16,9 @@ class GrokProxyLauncher {
 
   static const defaultPort = 8787;
 
+  /// Widget/unit tests must not bind a localhost HttpServer (pending timers).
+  static bool disableEmbeddedProxyForTests = false;
+
   HttpServer? _server;
   GrokProxyStore? _store;
   int _port = defaultPort;
@@ -44,6 +47,7 @@ class GrokProxyLauncher {
 
   /// Bind localhost proxy, or reuse a healthy listener on [port].
   Future<void> ensureRunning({int port = defaultPort}) {
+    if (disableEmbeddedProxyForTests) return Future<void>.value();
     final next = _startChain.then((_) => _ensureRunningOnce(port));
     _startChain = next.catchError((_) {});
     return next;

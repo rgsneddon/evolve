@@ -26,7 +26,7 @@ void main() {
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password12345');
     ledger.register('alice', 'password12345');
-    ledger.sessionUsername = 'alice';
+    ledger.login('alice', 'password12345', now: DateTime.utc(2020, 1, 1));
     await store.save(ledger);
 
     final wallet = PercWalletProvider(store: store);

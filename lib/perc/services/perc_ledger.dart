@@ -823,8 +823,14 @@ class PercLedger {
     final acc = _accountFor(username);
     if (acc == null) throw StateError('Unknown account');
     PercSeedRecovery.validateMnemonic(mnemonic);
+    final snapshot = snapshotForBackup();
+    snapshot.seedRecoveryCatalog.clear();
+    for (final account in snapshot.accounts.values) {
+      account.seedRecoveryEnvelope = null;
+      account.encryptedSeedMnemonic = null;
+    }
     final envelope = PercSeedRecovery.encryptLedgerEnvelope(
-      ledger: snapshotForBackup(),
+      ledger: snapshot,
       words: mnemonic,
     );
     final fp = PercSeedRecovery.fingerprint(mnemonic);
@@ -843,9 +849,7 @@ class PercLedger {
 
   /// Re-encrypts seed envelopes after ledger mutations when mnemonic is stored at rest.
   ///
-  /// Skips accounts that already have a non-empty envelope for the current
-  /// fingerprint — re-attaching embeds the prior envelope into a new ciphertext
-  /// and grows without bound on every [persistLocal].
+  /// Snapshots omit prior envelopes so re-attach stays bounded.
   void refreshSeedRecoveryEnvelopes() {
     for (final acc in accounts.values) {
       final encrypted = acc.encryptedSeedMnemonic;
@@ -856,13 +860,6 @@ class PercLedger {
           passwordHash: acc.passwordHash,
           salt: acc.salt,
         );
-        final fp = PercSeedRecovery.fingerprint(mnemonic);
-        if (acc.seedFingerprint == fp &&
-            acc.seedRecoveryEnvelope != null &&
-            acc.seedRecoveryEnvelope!.isNotEmpty) {
-          seedRecoveryCatalog[fp] = acc.seedRecoveryEnvelope!;
-          continue;
-        }
         attachSeedRecoveryEnvelope(
           username: acc.username,
           mnemonic: mnemonic,

@@ -32,6 +32,53 @@ class PercPublicEndpoint {
     return !isLoopbackOrPrivateHost(uri.host);
   }
 
+  /// Advertised NAT wallet node: cleartext HTTP to a public host on :9477.
+  ///
+  /// These are what this device *advertises* after a public-IP lookup. They are
+  /// not a reachable perccent chain source (Android blocks cleartext; NAT does
+  /// not forward the wallet port).
+  static bool isUnreachableCleartextPublicNode(String? endpoint) {
+    if (endpoint == null || endpoint.trim().isEmpty) return false;
+    final uri = Uri.tryParse(endpoint.trim());
+    if (uri == null || uri.host.isEmpty) return false;
+    if (uri.scheme != 'http') return false;
+    if (isLoopbackOrPrivateHost(uri.host)) return false;
+    final port = uri.hasPort ? uri.port : 80;
+    return port == PercChainConstants.defaultNodePort;
+  }
+
+  /// True when [endpoint] may be used to fetch status/ledger/tip.
+  /// HTTPS rendezvous and loopback/LAN nodes qualify; public-IP:9477 does not.
+  static bool isChainFetchEndpoint(String? endpoint) {
+    if (endpoint == null || endpoint.trim().isEmpty) return false;
+    if (isUnreachableCleartextPublicNode(endpoint)) return false;
+    final uri = Uri.tryParse(endpoint.trim());
+    if (uri == null || uri.host.isEmpty) return false;
+    if (uri.scheme == 'https') return true;
+    return isLoopbackOrPrivateHost(uri.host);
+  }
+
+  /// Prefer the HTTPS rendezvous; never return a dead cleartext :9477 hop.
+  static String? preferredChainFetchEndpoint({
+    String? rendezvousUrl,
+    Iterable<String> advertised = const [],
+  }) {
+    final rendezvous = rendezvousUrl?.trim();
+    if (rendezvous != null &&
+        rendezvous.isNotEmpty &&
+        isChainFetchEndpoint(rendezvous)) {
+      return rendezvous;
+    }
+    for (final endpoint in advertised) {
+      if (isChainFetchEndpoint(endpoint)) return endpoint;
+    }
+    return null;
+  }
+
+  /// Shipped filter used by peer probe / gossip / ledger import.
+  static List<String> chainFetchEndpoints(Iterable<String> endpoints) =>
+      endpoints.where(isChainFetchEndpoint).toList(growable: false);
+
   Future<String?> resolveInternetEndpoint({required int port}) async {
     final config = await PercNetworkConfig.load();
     final override = config.publicEndpointOverride.trim();

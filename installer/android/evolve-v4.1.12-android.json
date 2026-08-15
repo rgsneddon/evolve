@@ -1,0 +1,12 @@
+{
+  "name": "evolve-v4.1.12-android-setup.apk",
+  "version": "4.1.12",
+  "build": "179",
+  "platform": "android",
+  "sizeBytes": 80302463,
+  "sizeMb": 76.6,
+  "sha256": "e7e20ea3417af29cb6881252c2a43b53f74ce47967801637c80f7de7fd96d322",
+  "sha512": "d88d983fe30082170c985131bab37685fb2967acd076233ae4d6da0251bc1a16ece8273ed803025d5d0f9d839b11a19c57269ae9ad9f910475ec38c31dc5d5e3",
+  "url": "https://github.com/rgsneddon/evolve/releases/download/v4.1.12-macos-ios-android/evolve-v4.1.12-android-setup.apk",
+  "signing": "release-key"
+}

@@ -8,6 +8,8 @@ class GrokProxyLauncher {
 
   static const defaultPort = 8787;
 
+  static bool disableEmbeddedProxyForTests = false;
+
   bool get supportsEmbeddedProxy => false;
   bool get isRunning => false;
   bool get isEmbedded => false;

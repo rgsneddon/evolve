@@ -65,6 +65,8 @@ void main() {
 
   testWidgets('generate fills twelve boxes without selectable copy text', (tester) async {
     final wallet = await pendingWallet();
+    PercWalletProvider.sessionTimeoutEnabled = false;
+    wallet.noteUserActivity();
     final locale = await createTestLocaleProvider();
     await tester.pumpWidget(
       MultiProvider(
@@ -72,8 +74,10 @@ void main() {
           ChangeNotifierProvider.value(value: wallet),
           ChangeNotifierProvider.value(value: locale),
         ],
-        child: const MaterialApp(
-          home: RegistrationSeedSetupDialog(),
+        child: MaterialApp(
+          home: RegistrationSeedSetupDialogHost(
+            child: const Scaffold(body: SizedBox()),
+          ),
         ),
       ),
     );
@@ -92,14 +96,24 @@ void main() {
       find.byKey(const Key('registration_seed_confirm_saved_button')),
     );
     await tester.tap(find.byKey(const Key('registration_seed_confirm_saved_button')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    for (var i = 0; i < 30 && !wallet.isWalletConnectComplete; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
 
     expect(wallet.pendingSeedSetup, isFalse);
-    expect(wallet.isWalletConnectComplete, isTrue);
+    expect(
+      wallet.isWalletConnectComplete,
+      isTrue,
+      reason:
+          'access=${wallet.hasAppAccess} post=${wallet.isPostLoginSyncing} '
+          'logged=${wallet.isLoggedIn} addr=${wallet.address}',
+    );
     expect(
       PercLedgerHub.instance.ledger.account('newuser')!.seedFingerprint,
       isNotNull,
     );
     await wallet.logout();
+    await tester.pump(const Duration(seconds: 4));
   });
 }

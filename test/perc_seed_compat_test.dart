@@ -36,13 +36,16 @@ void main() {
   Future<bool> liveSeedReachable() async {
     if (skipLive) return false;
     try {
-      await getJson('/health');
+      final response = await http
+          .get(Uri.parse('$base/health'))
+          .timeout(PercChainConstants.networkRequestTimeout);
+      if (response.statusCode != 200) {
+        _writeProbeLog('skipped: live seed HTTP ${response.statusCode}\n');
+        return false;
+      }
       return true;
-    } on TimeoutException {
-      _writeProbeLog('skipped: live seed unreachable (timeout)\n');
-      return false;
-    } on SocketException {
-      _writeProbeLog('skipped: live seed unreachable (socket)\n');
+    } catch (_) {
+      _writeProbeLog('skipped: live seed unreachable\n');
       return false;
     }
   }

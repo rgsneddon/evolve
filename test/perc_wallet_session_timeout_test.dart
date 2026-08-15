@@ -75,14 +75,15 @@ void main() {
     expect(ledger.sessionLastActivityAt, isNull);
   });
 
-  test('persisted session without timestamps is treated as expired', () {
+  test('persisted session without timestamps is not treated as expired', () {
     final ledger = PercLedger.empty();
     ledger.ensureTreasuryAccount();
     ledger.setupTreasuryPassword('password12345');
     ledger.register('alice', 'password12345');
     ledger.sessionUsername = 'alice';
 
-    expect(ledger.isWalletSessionExpired(), isTrue);
+    // Missing stamps are repaired on initialize; they must not log the user out.
+    expect(ledger.isWalletSessionExpired(), isFalse);
     expect(ledger.walletSessionRemaining(), Duration.zero);
   });
 

@@ -8,8 +8,13 @@ import 'package:evolve/services/grok_proxy_launcher.dart';
 import 'package:evolve/services/grok_service_config.dart';
 
 void main() {
+  setUp(() {
+    EvolveProvider.skipEmbeddedGrokProxyForTests = false;
+  });
+
   tearDown(() async {
     await GrokProxyLauncher.instance.stop();
+    EvolveProvider.skipEmbeddedGrokProxyForTests = true;
   });
 
   test('configured proxy URL enables live grok path', () {
