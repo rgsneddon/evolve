@@ -78,9 +78,9 @@ void main() {
     expect(html, contains('evolve-v$release-ios-setup.ipa'));
     expect(
       html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-ios-setup.ipa',
-      ),
+      contains(RegExp(
+        'github.com/rgsneddon/evolve/releases/download/v[^"/]+/evolve-v$release-ios-setup.ipa',
+      )),
     );
 
     final index = evolveRepoFile('downloads/index.html').readAsStringSync();

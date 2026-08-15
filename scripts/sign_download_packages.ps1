@@ -31,7 +31,9 @@ if (-not (Test-Path $SourceDir)) {
 }
 
 # Binaries ship on GitHub Releases; gh-pages only hosts checksum sidecars/index.
-$baseUrl = "https://github.com/rgsneddon/evolve/releases/download/v$Version"
+# Always the canonical vX.Y.Z tag — never a platform-suffix sibling.
+$Version = (Get-EvolveCanonicalReleaseTag -Version $Version).Substring(1)
+$baseUrl = Get-EvolveReleaseDownloadBase -Version $Version
 
 if ($VerifyOnly) {
     Invoke-ReleaseArtifactSecurityScan `

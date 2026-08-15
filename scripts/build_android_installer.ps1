@@ -76,7 +76,7 @@ if (-not $SkipCodeSign) {
 
 $abis = Get-ApkAbis $publishedPath
 $sizeMb = [math]::Round((Get-Item $publishedPath).Length / 1MB, 1)
-$secureUrl = "https://github.com/rgsneddon/evolve/releases/download/v$Version/$publishedName"
+$secureUrl = "$(Get-EvolveReleaseDownloadBase -Version $Version)/$publishedName"
 
 $signed = Write-PackageChecksumSidecar `
     -PackagePath $publishedPath `

@@ -8,8 +8,9 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\env.ps1"
 . "$PSScriptRoot\lib\github.ps1"
+. "$PSScriptRoot\lib\package_checksum.ps1"
 
-$tag = if ($Version -match '^v') { $Version } else { "v$Version" }
+$tag = Get-EvolveCanonicalReleaseTag -Version $Version
 $owner = Get-GitHubOwner -Root $Root
 $head = (git -C $Root rev-parse HEAD).Trim()
 

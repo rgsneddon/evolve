@@ -55,7 +55,7 @@ Copy-Item $stagingPath $publishedPath -Force
 
 $sizeMb = [math]::Round((Get-Item $publishedPath).Length / 1MB, 1)
 $secureUrl = "$PagesBaseUrl/v$Version/$publishedName"
-$releaseUrl = "https://github.com/rgsneddon/$ProductPrefix/releases/download/v$Version/$publishedName"
+$releaseUrl = "$(Get-EvolveReleaseDownloadBase -Version $Version -RepoName $ProductPrefix)/$publishedName"
 
 $signed = Write-PackageChecksumSidecar `
     -PackagePath $publishedPath `
@@ -82,7 +82,7 @@ $manifestPath = Join-Path $installerMetaDir "$ProductPrefix-v$Version-ios.json"
     pagesUrl = $secureUrl
 } | ConvertTo-Json -Depth 4 | Set-Content -Path $manifestPath -Encoding utf8
 
-Write-VersionChecksumManifest -VersionDir $versionedDir -BaseUrl "https://github.com/rgsneddon/$ProductPrefix/releases/download/v$Version" | Out-Null
+Write-VersionChecksumManifest -VersionDir $versionedDir -BaseUrl (Get-EvolveReleaseDownloadBase -Version $Version -RepoName $ProductPrefix) | Out-Null
 
 Write-Host ''
 Write-Host "iOS installer v$Version (build $Build) ready:" -ForegroundColor Green

@@ -4,6 +4,52 @@ function Get-AllowedChecksumAlgorithms {
     return @('SHA256', 'SHA512')
 }
 
+function Get-EvolveCanonicalReleaseTag {
+    param(
+        [Parameter(Mandatory = $true)][string]$Version
+    )
+    $v = $Version.Trim()
+    if ($v.StartsWith('v') -or $v.StartsWith('V')) {
+        $v = $v.Substring(1)
+    }
+    if ($v -match '^(\d+(?:\.\d+)+)') {
+        $tag = "v$($Matches[1])"
+        # GitHub reserved v4.1.11 after an immutable-release delete; the published unified tag is v4.1.11-bundle.
+        if ($tag -eq 'v4.1.11') { return 'v4.1.11-bundle' }
+        return $tag
+    }
+    throw "Invalid Evolve version: $Version"
+}
+
+function Get-EvolveReleaseDownloadBase {
+    param(
+        [Parameter(Mandatory = $true)][string]$Version,
+        [string]$Owner = 'rgsneddon',
+        [string]$RepoName = 'evolve'
+    )
+    $tag = Get-EvolveCanonicalReleaseTag -Version $Version
+    return "https://github.com/$Owner/$RepoName/releases/download/$tag"
+}
+
+function Rewrite-EvolveReleaseDownloadUrls {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text,
+        [Parameter(Mandatory = $true)][string]$Version,
+        [string]$Owner = 'rgsneddon',
+        [string]$RepoName = 'evolve'
+    )
+    $tag = Get-EvolveCanonicalReleaseTag -Version $Version
+    $repo = [regex]::Escape($RepoName)
+    # vX.Y.Z plus optional *platform* suffixes only (not -bundle / other aliases).
+    $platformSuffix = '(?:-(?:macos-ios-android|macos|ios|android|windows|linux|platforms|notarized|handoff|build\d+|bundle))*'
+    $suffixTag = "v[0-9.]+$platformSuffix"
+    $downloadPattern = "https://github\.com/([^/`"]+)/$repo/releases/download/$suffixTag/"
+    $tagPattern = "https://github\.com/([^/`"]+)/$repo/releases/tag/$suffixTag"
+    $text = $Text -replace $downloadPattern, "https://github.com/`$1/$RepoName/releases/download/$tag/"
+    $text = $text -replace $tagPattern, "https://github.com/`$1/$RepoName/releases/tag/$tag"
+    return $text
+}
+
 function Get-PackageFileHash {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
@@ -120,7 +166,8 @@ function Update-DownloadsIndexPage {
         [Parameter(Mandatory = $true)][string]$VersionDir,
         [string]$DownloadsIndex = '',
         [string]$Version = '',
-        [string]$Build = ''
+        [string]$Build = '',
+        [switch]$SkipSigningNotes
     )
 
     $Root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -158,6 +205,7 @@ function Update-DownloadsIndexPage {
     $win = $manifest.packages | Where-Object { $_.file -match 'evolve.*windows' } | Select-Object -First 1
     $apk = $manifest.packages | Where-Object { $_.file -match 'evolve.*android|evolve.*apk' } | Select-Object -First 1
     $ios = $manifest.packages | Where-Object { $_.file -match 'evolve.*ios|\.ipa$' } | Select-Object -First 1
+    $macos = $manifest.packages | Where-Object { $_.file -match 'evolve.*macos' } | Select-Object -First 1
     if (-not $win -or -not $apk) {
         throw 'checksums.json must include windows and android packages'
     }
@@ -165,71 +213,101 @@ function Update-DownloadsIndexPage {
     $winMb = [math]::Round($win.bytes / 1MB, 1)
     $apkMb = [math]::Round($apk.bytes / 1MB, 1)
     $iosMb = if ($ios) { [math]::Round($ios.bytes / 1MB, 1) } else { 0 }
-    $vPrefix = "v$Version"
+    $macosMb = if ($macos) { [math]::Round($macos.bytes / 1MB, 1) } else { 0 }
+    $canonicalTag = Get-EvolveCanonicalReleaseTag -Version $Version
+    $Version = $canonicalTag.Substring(1)
 
     . (Join-Path $PSScriptRoot 'github.ps1')
     $owner = Get-GitHubOwner -Root $Root
-    $releaseBase = "https://github.com/$owner/evolve/releases/download/v$Version"
-    $releasePage = "https://github.com/$owner/evolve/releases/tag/v$Version"
+    $releaseBase = Get-EvolveReleaseDownloadBase -Version $Version -Owner $owner -RepoName 'evolve'
+    # Consume vX.Y.Z and leftover platform-suffix tags (v4.1.11-macos-ios-android).
+    $hrefVer = 'v[0-9.]+(?:-(?:macos-ios-android|macos|ios|android|windows|linux|platforms|notarized|handoff|build\d+|bundle))*'
 
-    $html = Get-Content $DownloadsIndex -Raw
-    $html = $html -replace 'Latest release: <strong>v[0-9.]+</strong> \(build \d+\)',
-        "Latest release: <strong>v$Version</strong> (build $Build)"
-
-    $html = $html -replace 'evolve-v[0-9.]+-windows-x64-setup\.exe &middot; ~[0-9.]+ MB',
-        "$($win.file) &middot; ~$winMb MB"
-    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-windows-x64-setup\.exe"',
-        "href=`"$releaseBase/$($win.file)`""
-    $html = $html -replace '(?s)(<div class="grid">.*?<article class="card windows">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
-        "`${1}$($win.sha256)`${2}"
-    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-windows-x64-setup\.exe\.sha256"',
-        "href=`"$releaseBase/$($win.file).sha256`""
-
-    $html = $html -replace 'evolve-v[0-9.]+-android-setup\.apk &middot; ~[0-9.]+ MB',
-        "$($apk.file) &middot; ~$apkMb MB"
-    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-android-setup\.apk"',
-        "href=`"$releaseBase/$($apk.file)`""
-    $html = $html -replace '(?s)(<article class="card android">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
-        "`${1}$($apk.sha256)`${2}"
-    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-android-setup\.apk\.sha256"',
-        "href=`"$releaseBase/$($apk.file).sha256`""
-
-    $html = $html -replace '<code>evolve-v[0-9.]+-windows-x64-setup\.exe</code>',
-        "<code>$($win.file)</code>"
-    $html = $html -replace '<code>evolve-v[0-9.]+-android-setup\.apk</code>',
-        "<code>$($apk.file)</code>"
-    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)CHECKSUMS\.sha256"',
-        "href=`"$releaseBase/CHECKSUMS.sha256`""
-    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)CHECKSUMS\.sha512"',
-        "href=`"$releaseBase/CHECKSUMS.sha512`""
-    $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)checksums\.json"',
-        "href=`"$releaseBase/checksums.json`""
-
-    Set-Content -Path $DownloadsIndex -Value $html -NoNewline
-
-    . (Join-Path $PSScriptRoot 'release_signing_status.ps1')
-    Update-DownloadsInstallNotesForSigning -Root $Root -DownloadsIndex $DownloadsIndex -VersionDir $VersionDir | Out-Null
-    $html = Get-Content $DownloadsIndex -Raw
-
-    if ($ios) {
-        $html = $html -replace 'evolve-v[0-9.]+-ios-setup\.ipa &middot; ~[0-9.]+ MB',
-            "$($ios.file) &middot; ~$iosMb MB"
-        $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-ios-setup\.ipa"',
-            "href=`"$releaseBase/$($ios.file)`""
-        $html = $html -replace '(?s)(<article class="card ios">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
-            "`${1}$($ios.sha256)`${2}"
-        $html = $html -replace 'href="(?:v[0-9.]+/|https://github\.com/[^/]+/evolve/releases/download/v[0-9.]+/)evolve-v[0-9.]+-ios-setup\.ipa\.sha256"',
-            "href=`"$releaseBase/$($ios.file).sha256`""
-        $html = $html -replace '<code>evolve-v[0-9.]+-ios-setup\.ipa</code>',
-            "<code>$($ios.file)</code>"
+    $pages = [System.Collections.Generic.List[string]]::new()
+    $pages.Add($DownloadsIndex)
+    if ($DownloadsIndex -match '[\\/]downloads[\\/]index\.html$') {
+        $downloadHtml = Join-Path $Root 'download.html'
+        if (Test-Path $downloadHtml) { $pages.Add($downloadHtml) }
     }
 
-    Set-Content -Path $DownloadsIndex -Value $html -NoNewline
+    foreach ($page in $pages) {
+        $html = Get-Content $page -Raw
+        $html = Rewrite-EvolveReleaseDownloadUrls -Text $html -Version $Version -Owner $owner -RepoName 'evolve'
+        $html = $html -replace 'Latest release: <strong>v[0-9.]+</strong> \(build \d+\)',
+            "Latest release: <strong>v$Version</strong> (build $Build)"
+
+        $html = $html -replace 'evolve-v[0-9.]+-windows-x64-setup\.exe &middot; ~[0-9.]+ MB',
+            "$($win.file) &middot; ~$winMb MB"
+        $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)evolve-v[0-9.]+-windows-x64-setup\.exe`"",
+            "href=`"$releaseBase/$($win.file)`""
+        $html = $html -replace '(?s)(<div class="grid">.*?<article class="card windows">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
+            "`${1}$($win.sha256)`${2}"
+        $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)evolve-v[0-9.]+-windows-x64-setup\.exe\.sha256`"",
+            "href=`"$releaseBase/$($win.file).sha256`""
+
+        $html = $html -replace 'evolve-v[0-9.]+-android-setup\.apk &middot; ~[0-9.]+ MB',
+            "$($apk.file) &middot; ~$apkMb MB"
+        $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)evolve-v[0-9.]+-android-setup\.apk`"",
+            "href=`"$releaseBase/$($apk.file)`""
+        $html = $html -replace '(?s)(<article class="card android">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
+            "`${1}$($apk.sha256)`${2}"
+        $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)evolve-v[0-9.]+-android-setup\.apk\.sha256`"",
+            "href=`"$releaseBase/$($apk.file).sha256`""
+
+        $html = $html -replace '<code>evolve-v[0-9.]+-windows-x64-setup\.exe</code>',
+            "<code>$($win.file)</code>"
+        $html = $html -replace '<code>evolve-v[0-9.]+-android-setup\.apk</code>',
+            "<code>$($apk.file)</code>"
+        $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)CHECKSUMS\.sha256`"",
+            "href=`"$releaseBase/CHECKSUMS.sha256`""
+        $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)CHECKSUMS\.sha512`"",
+            "href=`"$releaseBase/CHECKSUMS.sha512`""
+        $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)checksums\.json`"",
+            "href=`"$releaseBase/checksums.json`""
+
+        Set-Content -Path $page -Value $html -NoNewline
+    }
+
+    if (-not $SkipSigningNotes) {
+        . (Join-Path $PSScriptRoot 'release_signing_status.ps1')
+        Update-DownloadsInstallNotesForSigning -Root $Root -DownloadsIndex $DownloadsIndex -VersionDir $VersionDir | Out-Null
+    }
+
+    foreach ($page in $pages) {
+        $html = Get-Content $page -Raw
+        $html = Rewrite-EvolveReleaseDownloadUrls -Text $html -Version $Version -Owner $owner -RepoName 'evolve'
+        if ($macos) {
+            $html = $html -replace 'evolve-v[0-9.]+-macos-x64\.zip &middot; ~[0-9.]+ MB',
+                "$($macos.file) &middot; ~$macosMb MB"
+            $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)evolve-v[0-9.]+-macos-x64\.zip`"",
+                "href=`"$releaseBase/$($macos.file)`""
+            $html = $html -replace '(?s)(<article class="card macos">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
+                "`${1}$($macos.sha256)`${2}"
+            $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)evolve-v[0-9.]+-macos-x64\.zip\.sha256`"",
+                "href=`"$releaseBase/$($macos.file).sha256`""
+            $html = $html -replace '<code>evolve-v[0-9.]+-macos-x64\.zip</code>',
+                "<code>$($macos.file)</code>"
+        }
+        if ($ios) {
+            $html = $html -replace 'evolve-v[0-9.]+-ios-setup\.ipa &middot; ~[0-9.]+ MB',
+                "$($ios.file) &middot; ~$iosMb MB"
+            $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)evolve-v[0-9.]+-ios-setup\.ipa`"",
+                "href=`"$releaseBase/$($ios.file)`""
+            $html = $html -replace '(?s)(<article class="card ios">.*?SHA-256:\s*<code[^>]*>)[a-f0-9]{64}(</code>)',
+                "`${1}$($ios.sha256)`${2}"
+            $html = $html -replace "href=`"(?:$hrefVer/|https://github\.com/[^/]+/evolve/releases/download/$hrefVer/)evolve-v[0-9.]+-ios-setup\.ipa\.sha256`"",
+                "href=`"$releaseBase/$($ios.file).sha256`""
+            $html = $html -replace '<code>evolve-v[0-9.]+-ios-setup\.ipa</code>',
+                "<code>$($ios.file)</code>"
+        }
+        Set-Content -Path $page -Value $html -NoNewline
+    }
     return [PSCustomObject]@{
         Version = $Version
         Build = $Build
         Windows = $win.file
         Android = $apk.file
+        macOS = if ($macos) { $macos.file } else { '' }
         iOS = if ($ios) { $ios.file } else { '' }
     }
 }

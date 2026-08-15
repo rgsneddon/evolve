@@ -5,6 +5,42 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'test_paths.dart';
 
+String _evolveAdvertisedReleaseTag(String html, String release) {
+  final match = RegExp(
+    'releases/download/(v[^/]+)/evolve-v${RegExp.escape(release)}-windows-x64-setup.exe',
+  ).firstMatch(html);
+  expect(
+    match,
+    isNotNull,
+    reason: 'Windows Evolve card must advertise a GitHub Releases download href',
+  );
+  final tag = match!.group(1)!;
+  expect(
+    tag,
+    isNot(contains('macos-ios-android')),
+    reason: 'advertised bundle must not be a platform-suffix sibling',
+  );
+  return tag;
+}
+
+void _expectUnifiedEvolveReleaseDownloads(String html, String release) {
+  final tag = _evolveAdvertisedReleaseTag(html, release);
+  for (final file in [
+    'evolve-v$release-windows-x64-setup.exe',
+    'evolve-v$release-android-setup.apk',
+    'evolve-v$release-macos-x64.zip',
+    'evolve-v$release-ios-setup.ipa',
+  ]) {
+    expect(
+      html,
+      contains(
+        'github.com/rgsneddon/evolve/releases/download/$tag/$file',
+      ),
+    );
+  }
+  expect(html, isNot(contains('v$release-macos-ios-android')));
+}
+
 String _perccentWalletSection(String html) {
   final marker = html.indexOf('class="perccent-wallet"');
   expect(marker, greaterThan(-1), reason: 'MY PERC section required');
@@ -53,32 +89,9 @@ void main() {
     final html = page.readAsStringSync();
     expect(html, contains('v$release'));
     expect(html, contains('build $build'));
-    expect(
-      html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-windows-x64-setup.exe',
-      ),
-    );
-    expect(
-      html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-android-setup.apk',
-      ),
-    );
     expect(html, contains('<article class="card ios">'));
     expect(html, contains('<article class="card macos">'));
-    expect(
-      html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-ios-setup.ipa',
-      ),
-    );
-    expect(
-      html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-macos-x64.zip',
-      ),
-    );
+    _expectUnifiedEvolveReleaseDownloads(html, release);
     // Real package presentation — not the historical 4 KB / ~0 MB stub
     expect(html, isNot(contains('~0 MB')));
     expect(html, isNot(contains('v4.0.0')));
@@ -122,32 +135,8 @@ void main() {
         ));
       }
     }
-    expect(
-      html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-windows-x64-setup.exe',
-      ),
-    );
-    expect(
-      html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-android-setup.apk',
-      ),
-    );
-    // Evolve platform installers (macOS + iOS) on the main downloads grid
     expect(html, contains('<article class="card macos">'));
-    expect(
-      html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-macos-x64.zip',
-      ),
-    );
-    expect(
-      html,
-      contains(
-        'github.com/rgsneddon/evolve/releases/download/v$release/evolve-v$release-ios-setup.ipa',
-      ),
-    );
+    _expectUnifiedEvolveReleaseDownloads(html, release);
     expect(html, isNot(contains('~0 MB')));
     expect(html, isNot(contains('Open Web App')));
     expect(html, isNot(contains('class="card web"')));

@@ -151,35 +151,37 @@ class AppUpdateChecker {
     if (kIsWeb) {
       return const ['https://rgsneddon.github.io/evolve/'];
     }
-    final tag = 'v$release';
+    // v4.1.11 was reserved by a deleted immutable GitHub Release; the unified bundle is v4.1.11-bundle.
+    final releaseTag = release == '4.1.11' ? 'v4.1.11-bundle' : 'v$release';
+    final pagesTag = 'v$release';
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return [
-          '$releasesBaseUrl/$tag/evolve-v$release-android-setup.apk',
-          '$downloadsBaseUrl$tag/evolve-v$release-android-setup.apk',
-          'https://github.com/rgsneddon/evolve/releases/tag/$tag',
-          '$downloadsBaseUrl$tag/',
+          '$releasesBaseUrl/$releaseTag/evolve-v$release-android-setup.apk',
+          '$downloadsBaseUrl$pagesTag/evolve-v$release-android-setup.apk',
+          'https://github.com/rgsneddon/evolve/releases/tag/$releaseTag',
+          '$downloadsBaseUrl$pagesTag/',
         ];
       case TargetPlatform.windows:
         return [
-          '$releasesBaseUrl/$tag/evolve-v$release-windows-x64-setup.exe',
-          '$downloadsBaseUrl$tag/evolve-v$release-windows-x64-setup.exe',
-          'https://github.com/rgsneddon/evolve/releases/tag/$tag',
-          '$downloadsBaseUrl$tag/',
+          '$releasesBaseUrl/$releaseTag/evolve-v$release-windows-x64-setup.exe',
+          '$downloadsBaseUrl$pagesTag/evolve-v$release-windows-x64-setup.exe',
+          'https://github.com/rgsneddon/evolve/releases/tag/$releaseTag',
+          '$downloadsBaseUrl$pagesTag/',
         ];
       case TargetPlatform.iOS:
         return [
-          '$releasesBaseUrl/$tag/evolve-v$release-ios-setup.ipa',
-          '$downloadsBaseUrl$tag/evolve-v$release-ios-setup.ipa',
-          'https://github.com/rgsneddon/evolve/releases/tag/$tag',
-          '$downloadsBaseUrl$tag/',
+          '$releasesBaseUrl/$releaseTag/evolve-v$release-ios-setup.ipa',
+          '$downloadsBaseUrl$pagesTag/evolve-v$release-ios-setup.ipa',
+          'https://github.com/rgsneddon/evolve/releases/tag/$releaseTag',
+          '$downloadsBaseUrl$pagesTag/',
         ];
       case TargetPlatform.macOS:
         return [
-          '$releasesBaseUrl/$tag/evolve-v$release-macos-x64.zip',
-          '$downloadsBaseUrl$tag/evolve-v$release-macos-x64.zip',
-          'https://github.com/rgsneddon/evolve/releases/tag/$tag',
-          '$downloadsBaseUrl$tag/',
+          '$releasesBaseUrl/$releaseTag/evolve-v$release-macos-x64.zip',
+          '$downloadsBaseUrl$pagesTag/evolve-v$release-macos-x64.zip',
+          'https://github.com/rgsneddon/evolve/releases/tag/$releaseTag',
+          '$downloadsBaseUrl$pagesTag/',
         ];
       default:
         return [downloadsBaseUrl];

@@ -104,7 +104,7 @@ $signed = Write-PackageChecksumSidecar `
     -Version $Version `
     -Build $Build `
     -Platform 'windows' `
-    -Url "https://github.com/rgsneddon/evolve/releases/download/v$Version/$publishedName"
+    -Url "$(Get-EvolveReleaseDownloadBase -Version $Version)/$publishedName"
 
 Write-Host ''
 Write-Host 'Installer ready:' -ForegroundColor Green
@@ -113,6 +113,6 @@ Write-Host "  $($signed.Sha256Path)"
 Write-Host "  $($signed.Sha512Path)"
 Write-Host ''
 Write-Host 'Release download URL:' -ForegroundColor Cyan
-Write-Host "  https://github.com/rgsneddon/evolve/releases/download/v$Version/$publishedName"
+Write-Host "  $(Get-EvolveReleaseDownloadBase -Version $Version)/$publishedName"
 Write-Host "SHA-256: $($signed.Sha256)" -ForegroundColor Cyan
 Write-Host "SHA-512: $($signed.Sha512)" -ForegroundColor Cyan

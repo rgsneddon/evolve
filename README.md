@@ -30,7 +30,7 @@ Download **evolve-v4.1.11-android-setup.apk** from [Downloads](https://rgsneddon
 
 ### iOS and macOS
 
-Download **evolve-v4.1.11-macos-x64.zip** (Developer ID, notarized) or **evolve-v4.1.11-ios-setup.ipa** (Apple Distribution) from [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-macos-ios-android). Bundle ID `com.evolve.chronoflux`. Rebuild notes: **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**, [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md).
+Download **evolve-v4.1.11-macos-x64.zip** (Developer ID, notarized) or **evolve-v4.1.11-ios-setup.ipa** (Apple Distribution) from [Releases](https://github.com/rgsneddon/evolve/releases/tag/v4.1.11-bundle). Bundle ID `com.evolve.chronoflux`. Rebuild notes: **[docs/MAC_BUILDS.md](docs/MAC_BUILDS.md)**, [ios/SIGNING.md](ios/SIGNING.md), [macos/SIGNING.md](macos/SIGNING.md).
 
 ---
 

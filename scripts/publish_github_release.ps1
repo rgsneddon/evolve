@@ -21,8 +21,9 @@ $Root = Split-Path $PSScriptRoot -Parent
 . "$PSScriptRoot\lib\code_sign.ps1"
 . "$PSScriptRoot\lib\android_sign.ps1"
 . "$PSScriptRoot\lib\release_signing_status.ps1"
+. "$PSScriptRoot\lib\package_checksum.ps1"
 
-$tag = if ($Version -match '^v') { $Version } else { "v$Version" }
+$tag = Get-EvolveCanonicalReleaseTag -Version $Version
 $versionNoV = $tag -replace '^v', ''
 $pagesBranch = 'gh-pages'
 $owner = Get-GitHubOwner -Root $Root
